@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prece Digital</title>
+    <link rel="stylesheet" href="src/styles/global.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegacion principal">
+        <strong class="brand">Prece Digital</strong>
+        <nav class="nav-list">
+          <a class="active" href="#panel">Panel</a>
+          <a href="#asistencia">Asistencia</a>
+          <a href="#estudiantes">Estudiantes</a>
+          <a href="#academica">Academica</a>
+          <a href="#legajos">Legajos</a>
+          <a href="#reportes">Reportes</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">MVP institucional</p>
+            <h1>Gestion escolar interna</h1>
+          </div>
+          <button type="button">Nueva carga</button>
+        </header>
+
+        <section class="summary-grid" aria-label="Indicadores iniciales">
+          <article>
+            <span>Asistencia hoy</span>
+            <strong>Sin datos</strong>
+          </article>
+          <article>
+            <span>Cursos activos</span>
+            <strong>0</strong>
+          </article>
+          <article>
+            <span>Importaciones</span>
+            <strong>0</strong>
+          </article>
+          <article>
+            <span>Alertas</span>
+            <strong>0</strong>
+          </article>
+        </section>
+
+        <section class="workspace-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <h2>Modulos base</h2>
+              <span id="api-status">Leyendo API</span>
+            </div>
+            <div id="module-list" class="module-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <h2>Prioridad del MVP</h2>
+            </div>
+            <ol class="task-list">
+              <li>Identidad, roles y permisos por alcance.</li>
+              <li>Estructura academica: cursos, turnos, materias y talleres.</li>
+              <li>Asistencia institucional y por materia.</li>
+              <li>Auditoria de cambios, accesos y exportaciones.</li>
+              <li>Importacion y exportacion controlada de Excel.</li>
+            </ol>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="src/app/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "@prece-digital/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon",
+    "start": "node src/server.mjs"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

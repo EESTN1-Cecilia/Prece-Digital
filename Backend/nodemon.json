@@ -1,0 +1,18 @@
+{
+  "watch": [
+    "config",
+    "controllers",
+    "middlewares",
+    "modules",
+    "routes",
+    "services",
+    "src",
+    "utils",
+    "../Shared/src"
+  ],
+  "ext": "js,mjs,json",
+  "ignore": [
+    "test"
+  ],
+  "exec": "node src/server.mjs"
+}

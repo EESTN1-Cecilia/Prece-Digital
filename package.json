@@ -1,9 +1,23 @@
 {
-  "name": "demo-repo",
-  "version": "0.2.0",
-  "description": "A sample package.json",
-  "dependencies": {
-    "@primer/css": "17.0.1"
+  "name": "prece-digital",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo inicial para Prece Digital.",
+  "type": "module",
+  "scripts": {
+    "dev": "node Shared/scripts/dev.mjs",
+    "dev:backend": "npm run dev -w @prece-digital/api",
+    "dev:web": "npm run dev -w @prece-digital/web",
+    "dev:mobile": "npm run dev -w @prece-digital/mobile",
+    "start:web": "npm run dev -w @prece-digital/web",
+    "start:api": "npm run start -w @prece-digital/api",
+    "check": "node --check Backend/src/server.mjs && node --check Backend/src/app.mjs && node --check Backend/config/app.config.mjs && node --check Backend/controllers/catalog.controller.mjs && node --check Backend/controllers/health.controller.mjs && node --check Backend/database/connection.config.mjs && node --check Backend/routes/index.mjs && node --check Backend/services/catalog.service.mjs && node --check Backend/middlewares/cors.middleware.mjs && node --check Backend/middlewares/not-found.middleware.mjs && node --check Backend/utils/http-response.mjs && node --check Frontend/web/src/app/main.js && node --check Frontend/web/src/components/module-list/module-list.js && node --check Frontend/web/src/config/env.js && node --check Frontend/web/src/services/catalog-api.js && node --check Frontend/mobile/App.js && node --check Frontend/mobile/src/app/App.js && node --check Shared/src/domain.mjs && node --check Shared/scripts/dev.mjs && node --check Shared/scripts/serve-static.mjs"
   },
+  "workspaces": [
+    "Backend",
+    "Frontend/web",
+    "Frontend/mobile",
+    "Shared"
+  ],
   "license": "MIT"
 }

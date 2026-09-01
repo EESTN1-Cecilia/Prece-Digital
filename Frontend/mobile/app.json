@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Prece Digital",
+    "slug": "prece-digital",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f6f7f9"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
