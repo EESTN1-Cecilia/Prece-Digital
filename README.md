@@ -1,52 +1,115 @@
 # Prece Digital
 
-Prece Digital es una plataforma web y movil para centralizar gestion escolar interna: asistencia, calificaciones, legajo digital, documentos, Excel, reportes y auditoria.
+Prece Digital es una plataforma web y móvil para centralizar la gestión escolar interna: asistencia, calificaciones, legajo digital, documentos, Excel, reportes y auditoría.
 
-Esta primera estructura deja un monorepo modular en JavaScript para comenzar el MVP con Node.js, React y React Native.
+El proyecto está dividido por sectores de desarrollo, utilizando **Node.js**, **React** y **React Native**.
 
 ## Estructura
 
 ```text
 Backend/
-  config/       Configuracion del backend.
-  controllers/  Entrada HTTP por recurso.
-  database/     Conexion, migraciones, seeds y repositorios.
-  middlewares/  Middlewares HTTP.
-  modules/      Modulos funcionales del MVP.
-  routes/       Registro de rutas versionadas.
-  scripts/      Tareas operativas del backend.
-  services/     Casos de uso y logica de aplicacion.
-  src/          Arranque de la API.
-  test/         Pruebas del backend.
-  utils/        Utilidades HTTP y soporte interno.
-Frontend/
-  web/          Aplicacion web React.
-    public/     Assets estaticos y manifest PWA.
-    src/
-      app/        Bootstrap de la app.
-      components/ Componentes reutilizables.
-      config/     Configuracion del frontend.
-      layouts/    Layouts de pantallas.
-      modules/    Modulos funcionales del MVP.
-      services/   Clientes HTTP y acceso a datos.
-      styles/     Estilos globales.
-      utils/      Utilidades puras.
-  mobile/       Aplicacion React Native.
-    src/
-      app/        Bootstrap mobile.
-      modules/    Modulos moviles.
-      services/   Clientes HTTP y adaptadores.
-      storage/    Persistencia offline controlada.
-      utils/      Utilidades puras.
-Shared/
-  docs/         Decisiones de arquitectura y alcance del MVP.
-  scripts/      Utilidades locales generales.
+  config/
+  controllers/
+  database/
+  middlewares/
+  modules/
+  routes/
+  scripts/
+  services/
   src/
-    constants/  Constantes compartidas.
-    types/      Tipos y contratos comunes.
-    validators/ Validaciones compartidas.
-    utils/      Utilidades puras.
+  test/
+  utils/
+
+Frontend/
+  web/
+    public/
+    src/
+      app/
+      components/
+      config/
+      layouts/
+      modules/
+      services/
+      styles/
+      utils/
+
+  mobile/
+    src/
+      app/
+      modules/
+      services/
+      storage/
+      utils/
+
+Shared/
+  docs/
+  scripts/
+  src/
+    constants/
+    types/
+    validators/
+    utils/
 ```
+
+## Organización de repositorios
+
+El desarrollo de Prece Digital está dividido principalmente en:
+
+- `Prece-Digital-Backend`
+- `Prece-Digital-Frontend`
+- `Prece-Digital-Docs`
+- `Prece-Digital` — repositorio principal e integrado.
+
+Cada sector trabaja sobre su propio repositorio.
+
+El repositorio principal contiene las versiones integradas de Backend y Frontend.
+
+## Integración mediante Git Subtree
+
+Las carpetas `Backend/` y `Frontend/` del repositorio principal se sincronizan con sus respectivos repositorios utilizando **Git subtree**.
+
+Esto permite mantener los proyectos separados durante el desarrollo y, al mismo tiempo, integrarlos dentro de `Prece-Digital` sin copiar y pegar archivos manualmente.
+
+### Primera importación
+
+```bash
+git subtree add --prefix=Backend backend main --squash
+git subtree add --prefix=Frontend frontend main --squash
+```
+
+### Actualizaciones posteriores
+
+Backend:
+
+```bash
+git fetch backend
+git subtree pull --prefix=Backend backend main --squash
+```
+
+Frontend:
+
+```bash
+git fetch frontend
+git subtree pull --prefix=Frontend frontend main --squash
+```
+
+Las integraciones deben realizarse desde una rama y enviarse mediante **Pull Request** hacia `main`.
+
+Ejemplo:
+
+```text
+Prece-Digital-Backend
+        ↓
+git subtree pull
+        ↓
+integrate/backend-...
+        ↓
+Pull Request
+        ↓
+Prece-Digital/main
+```
+
+`Shared/` permanece dentro del repositorio principal como espacio común para recursos utilizados por distintos sectores.
 
 ## Comandos
 
@@ -57,10 +120,26 @@ npm run start:web
 npm run dev
 ```
 
-La web queda disponible en `http://localhost:5173` con Vite y la API en `http://localhost:3000`.
+La aplicación web queda disponible en:
 
-Cada sector tiene su propio archivo de ejemplo de entorno:
+```text
+http://localhost:5173
+```
 
-- `Backend/.env.example`
-- `Frontend/web/.env.example`
-- `Frontend/mobile/.env.example`
+La API queda disponible en:
+
+```text
+http://localhost:3000
+```
+
+## Variables de entorno
+
+Cada sector dispone de su archivo de ejemplo:
+
+```text
+Backend/.env.example
+Frontend/web/.env.example
+Frontend/mobile/.env.example
+```
+
+Los archivos `.env` reales no deben subirse al repositorio.
