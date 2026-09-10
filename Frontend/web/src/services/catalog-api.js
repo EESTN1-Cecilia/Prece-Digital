@@ -1,50 +1,36 @@
-import { modules as fallbackModules } from "../../../../Shared/src/domain.mjs";
+/* Catalogo de modulos del sistema (GET /api/v1/modules).
+   Usa el cliente comun de services/http.js: el manejo de errores es el mismo que
+   el del resto de la aplicacion. */
+
 import { useEffect, useState } from "react";
-import { env } from "../config/env.js";
+import { pedir } from "./http.js";
 
-export async function getModules() {
-  try {
-    const response = await fetch(`${env.apiBaseUrl}/api/v1/modules`);
-
-    if (!response.ok) {
-      throw new Error(`API respondio ${response.status}`);
-    }
-
-    const payload = await response.json();
-    return {
-      data: payload.data,
-      source: "api"
-    };
-  } catch {
-    return {
-      data: fallbackModules,
-      source: "static"
-    };
-  }
+export function getModules() {
+  return pedir("/api/v1/modules", { recurso: "el catalogo de modulos" });
 }
 
 export function useCatalogModules() {
-  const [state, setState] = useState({
-    modules: fallbackModules,
-    source: "static"
-  });
+  const [estado, setEstado] = useState({ modules: [], error: null, cargando: true });
 
   useEffect(() => {
-    let isMounted = true;
+    let vigente = true;
 
-    getModules().then((result) => {
-      if (isMounted) {
-        setState({
-          modules: result.data,
-          source: result.source
-        });
-      }
-    });
+    getModules()
+      .then((modules) => {
+        if (vigente) {
+          setEstado({ modules, error: null, cargando: false });
+        }
+      })
+      .catch((error) => {
+        if (vigente) {
+          setEstado({ modules: [], error, cargando: false });
+        }
+      });
 
     return () => {
-      isMounted = false;
+      vigente = false;
     };
   }, []);
 
-  return state;
+  return estado;
 }
