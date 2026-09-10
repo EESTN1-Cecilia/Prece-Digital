@@ -83,3 +83,7 @@ export const authService = {
     return userRepository.publicView(updated);
   }
 };
+revokeUserSessions(target.id);
+return userRepository.publicView(updated);
+  }
+};
