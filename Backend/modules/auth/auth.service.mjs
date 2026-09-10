@@ -1,17 +1,44 @@
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
 import { HttpError } from "../../utils/http-error.mjs";
+import { permissionsForRole } from "../../config/permissions.config.mjs";
 import { evaluateAccess, extractContext } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
 
 const dummyHashPromise = bcrypt.hash("__dummy_password__", 10);
+
+function rolesFromAssignments(assignments = []) {
+  return [...new Set(assignments.map((assignment) => assignment.role))];
+}
+
+function permissionsFromRoles(roles = []) {
+  return [...new Set(roles.flatMap((role) => permissionsForRole(role)))];
+}
+
+function scopesFromAssignments(assignments = []) {
+  return [...new Set(assignments.flatMap((assignment) => Object.keys(assignment).filter((key) => key !== "role")))];
+}
+
+function sessionData(user) {
+  const publicUser = userRepository.publicView(user);
+  const roles = rolesFromAssignments(publicUser.assignments);
+
+  return {
+    ...publicUser,
+    user: publicUser,
+    usuario: publicUser,
+    roles,
+    permisos: permissionsFromRoles(roles),
+    alcances: scopesFromAssignments(publicUser.assignments)
+  };
+}
 
 function sessionPayload(user, accessToken, refreshToken) {
   return {
     accessToken,
     refreshToken,
     tokenType: "Bearer",
-    user: userRepository.publicView(user)
+    ...sessionData(user)
   };
 }
 
@@ -54,7 +81,7 @@ export const authService = {
   },
 
   me(user) {
-    return userRepository.publicView(user);
+    return sessionData(user);
   },
 
   listUsers() {

@@ -32,6 +32,7 @@ export function useSesion() {
     expirada: sesion.estado === SESION.expirada,
     aplicacionLista: estado.fase === FASE.lista,
     refrescar: acciones.refrescarSesion,
+    iniciarSesion: acciones.iniciarSesion,
     cerrarSesion: acciones.cerrarSesion,
     cambiarPerfilDemo: acciones.cambiarPerfilDemo
   };
