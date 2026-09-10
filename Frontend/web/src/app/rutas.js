@@ -23,6 +23,8 @@
                       (encabezado y pie) en lugar del layout de la aplicacion */
 
 import DashboardView from "../modules/dashboard/dashboard-view.js";
+import SecretariaView from "../modules/dashboard/secretaria-view.js";
+import AlumnoFormularioView from "../modules/students/alumno-formulario-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
@@ -51,6 +53,26 @@ export const RUTAS = [
     vista: DashboardView,
     seccion: "General",
     icono: "clipboard",
+    enMenu: true
+  },
+  {
+    patron: "#/inicio-secretaria",
+    titulo: "Inicio secretaria",
+    vista: SecretariaView,
+    seccion: "General",
+    icono: "students",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/alumnos/nuevo",
+    titulo: "Cargar alumno",
+    vista: AlumnoFormularioView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio-secretaria",
+    permisos: [PERMISOS.alumnosCrear],
     enMenu: true
   },
   {

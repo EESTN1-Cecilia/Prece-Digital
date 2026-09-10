@@ -18,7 +18,9 @@ export const PERMISOS = {
   usuariosCrear: permiso("identity", "create"),
   usuariosEditar: permiso("identity", "update"),
   rolesLeer: permiso("identity", "read"),
-  rolesEditar: permiso("identity", "update")
+  rolesEditar: permiso("identity", "update"),
+  alumnosLeer: permiso("students", "read"),
+  alumnosCrear: permiso("students", "create")
 };
 
 export function puede(sesion, permisoBuscado) {
