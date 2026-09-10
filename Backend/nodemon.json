@@ -2,6 +2,7 @@
   "watch": [
     "config",
     "controllers",
+    "database",
     "middlewares",
     "modules",
     "routes",

@@ -5,7 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon",
-    "start": "node src/server.mjs"
+    "start": "node src/server.mjs",
+    "test": "node --test --test-concurrency=1 \"test/**/*.mjs\"",
+    "auth:smoke": "node scripts/auth-smoke.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
