@@ -26,28 +26,39 @@ decisions/
 
 ## Forma de trabajo
 
-Los cambios de documentación deben realizarse mediante ramas. Cada persona tiene su rama específica (consultar issue).
+Los cambios de documentación deben realizarse mediante ramas.
 
-Estructura de ramas:
-`main` -> `docs` -> `docs1` / `docs2`
-
-Creas **Pull Request hacia `docs`**.
-
-### Antes de comenzar
-
-Siempre actualizá tu rama base desde `docs`:
+Antes de comenzar:
 
 ```bash
-git checkout docs
-git pull origin docs
-
-git checkout docs2 #reemplazar docs2 por tu rama
-git pull origin docs2
-
-# Si no tenés la rama docs1/docs2 local
-# git checkout -b docs2 origin/docs1
-# git checkout -b docs2 origin/docs2
+git checkout main
+git pull origin main
 ```
+
+Crear una rama:
+
+```bash
+git checkout -b docs/nombre-cambio
+```
+
+Ejemplos:
+
+```text
+docs/api-login
+docs/arquitectura
+docs/modelo-datos
+docs/manual-usuarios
+```
+
+Después:
+
+```bash
+git add .
+git commit -m "docs: documentar endpoint de login"
+git push -u origin docs/api-login
+```
+
+Luego se debe crear un **Pull Request hacia `main`**.
 
 ## Relación con Backend y Frontend
 
