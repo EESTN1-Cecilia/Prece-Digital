@@ -268,42 +268,76 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-width: 0;
-  min-height: 34px;
-  border: 2px solid var(--indigo);
-  border-radius: 5px;
-  padding: 5px 12px;
-  color: #ffffff;
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 13px;
-  transition: background 160ms ease, transform 160ms ease;
+  text-decoration: none;
+  user-select: none;
+  font-family: inherit;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  transition: all 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-button:hover {
   transform: translateY(-1px);
 }
 
+.action-button:active {
+  transform: translateY(0);
+}
+
+.action-button:focus-visible {
+  outline: 2px solid var(--sky);
+  outline-offset: 2px;
+}
+
 .action-button--primary {
-  background: var(--indigo);
+  background: #2b3a67;
+  color: #ffffff;
+  border: 1px solid #222e54;
 }
 
 .action-button--primary:hover {
-  background: var(--indigo-dark);
+  background: #1e2848;
+  border-color: #161e38;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(34, 42, 76, 0.25);
+}
+
+.action-button--primary:active {
+  background: #18203a;
+  box-shadow: 0 1px 3px rgba(34, 42, 76, 0.2);
 }
 
 .action-button--secondary {
-  background: var(--sky);
+  background: #eef4fb;
+  color: #1a4a7e;
+  border: 1.5px solid #bcd4ee;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .action-button--secondary:hover {
-  background: #71b5d1;
+  background: #dfeaf7;
+  border-color: #92bce6;
+  color: #123862;
+  box-shadow: 0 3px 8px rgba(43, 114, 186, 0.15);
+}
+
+.action-button--secondary:active {
+  background: #d0e1f3;
+  box-shadow: 0 1px 2px rgba(43, 114, 186, 0.1);
 }
 
 .action-button__icon {
   flex: none;
-  width: 19px;
-  height: 19px;
-  margin-right: 6px;
+  width: 17px;
+  height: 17px;
+  display: block;
 }
 
 .course-section {
@@ -2115,34 +2149,33 @@ a {
   max-width: 1160px;
 }
 
-.alumnos-header {
-  padding-bottom: 4px;
-}
-
-.alumnos-title-row {
+.alumnos-top-nav {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
 /* Botón Volver Atrás */
 .btn-volver-atras {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 14px 0 10px;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px 0 12px;
   border-radius: 8px;
   background: #ffffff;
   border: 1.5px solid #cbced4;
-  color: #334155;
-  font-size: 13px;
+  color: #222a4c;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 160ms cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  text-decoration: none;
 }
 
 .btn-volver-atras:hover {
@@ -2155,11 +2188,12 @@ a {
 
 .btn-volver-atras:active {
   transform: translateX(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .btn-volver-atras__icon {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   color: currentColor;
   transition: transform 160ms ease;
   flex-shrink: 0;
@@ -2173,8 +2207,61 @@ a {
   height: 38px;
   min-width: 140px;
   justify-content: center;
-  padding: 0 16px;
-  font-size: 14px;
+  padding: 0 18px;
+  font-size: 13.5px;
+}
+
+/* Badges Institucionales de la Barra Superior */
+.alumnos-top-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.badge-institucion {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #f1f3f5;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge-ciclo {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Encabezado Descriptivo */
+.alumnos-header-block {
+  margin: 14px 0 16px;
+}
+
+.alumnos-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alumnos-page-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  color: #17191f;
+  letter-spacing: -0.02em;
 }
 
 .alumnos-school-badge {
@@ -2185,9 +2272,9 @@ a {
 
 .alumnos-intro-desc {
   max-width: 980px;
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: #4a5160;
 }
 
@@ -2211,11 +2298,11 @@ a {
 .view-mode-toggle {
   display: inline-flex;
   align-items: center;
-  background: #eaedf2;
+  background: #ebedf2;
   padding: 3px;
   border-radius: 8px;
   gap: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid #cbced4;
 }
 
 .view-mode-btn {
@@ -2228,13 +2315,14 @@ a {
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: #555e6d;
+  color: #64748b;
   cursor: pointer;
   transition: all 140ms ease;
 }
 
 .view-mode-btn:hover {
-  color: var(--navy);
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .view-mode-btn.active {
@@ -2244,8 +2332,8 @@ a {
 }
 
 .view-mode-icon {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   display: block;
 }
 
@@ -3470,18 +3558,53 @@ a {
   font-size: 12px;
 }
 
+.table-action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 140ms ease;
+  user-select: none;
+}
+
+.table-action-link:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.12);
+}
+
 .table-action-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  color: #1a5894;
-  font-weight: 600;
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 140ms ease;
+  user-select: none;
+  font-family: inherit;
 }
 
 .table-action-btn:hover {
-  text-decoration: underline;
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
 }
 
 .text-center {
@@ -3594,10 +3717,12 @@ a {
 }
 
 .student-card-btn {
-  font-size: 12px;
-  min-height: 30px;
-  padding: 4px 8px;
+  font-size: 12.5px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 7px;
   text-decoration: none;
+  font-weight: 700;
 }
 
 /* Paginación */
@@ -3613,7 +3738,7 @@ a {
 .pagination-counter-text {
   font-size: 13px;
   color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .pagination-controls {
@@ -3623,33 +3748,44 @@ a {
 }
 
 .pagination-btn {
-  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 34px;
   border-radius: 6px;
   background: #ffffff;
   border: 1.5px solid #cbd5e1;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #334155;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: all 140ms ease;
+  user-select: none;
+  font-family: inherit;
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: var(--indigo);
-  color: var(--indigo-dark);
+  background: #f8fafc;
+  border-color: #2b72ba;
+  color: #1a4a7e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(43, 114, 186, 0.12);
 }
 
 .pagination-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .pagination-page-indicator {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 700;
   color: #64748b;
-  padding: 0 4px;
+  padding: 0 6px;
 }
 
 /* Botones Inferiores del Mockup */
@@ -3658,16 +3794,17 @@ a {
   justify-content: center;
   align-items: center;
   gap: 16px;
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   flex-wrap: wrap;
 }
 
-.alumnos-bottom-actions .action-button {
+.alumnos-bottom-actions .action-button,
+.alumnos-bottom-actions .btn-volver-atras {
   min-width: 140px;
   height: 38px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
 }
 

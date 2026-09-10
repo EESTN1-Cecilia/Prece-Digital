@@ -253,14 +253,10 @@ export default function AlumnosListView() {
           type: "button",
           className: "btn-volver-atras",
           onClick: () => {
-            if (window.history.length > 1) {
-              window.history.back();
-            } else {
-              window.location.hash = "#/inicio";
-            }
+            window.location.hash = "#/inicio";
           },
           title: "Volver al dashboard",
-          "aria-label": "Volver atrás"
+          "aria-label": "Volver al dashboard"
         },
         h(
           "svg",
@@ -278,37 +274,8 @@ export default function AlumnosListView() {
         ),
         h("span", null, "Volver al Dashboard")
       ),
-      h(
-        "div",
-        { className: "dashboard-top-bar__info" },
-        h("span", { className: "institution-tag" }, user.escuela || "E.E.S.T N°1 Monte Grande"),
-        h("span", { className: "cycle-tag" }, `Ciclo ${user.cicloLectivo || "2026"}`)
-      )
+      
     ),
-
-    // Encabezado institucional de Listado de Alumnos (acorde al mockup)
-    h(
-      "div",
-      { className: "welcome-panel__heading alumnos-header" },
-      h(
-        "div",
-        { className: "alumnos-header__text" },
-        h(
-          "div",
-          { className: "alumnos-title-row" },
-          h("h1", null, "Listado de Alumnos"),
-          h("span", { className: "alumnos-school-badge" }, "E.E.S.T N°1")
-        ),
-        h(
-          "p",
-          { className: "alumnos-intro-desc" },
-          "Consultá el padrón completo de estudiantes, filtrá por curso, división o estado, y accedé a la ficha de cada alumno. Desde acá también se cargan las altas nuevas y se exportan las planillas."
-        )
-      )
-    ),
-
-    // Doble onda decorativa institucional de Figma
-    h("div", { className: "doble-onda" }),
 
     // Contenedor principal "Listado de Alumnos"
     h(
@@ -849,14 +816,10 @@ export default function AlumnosListView() {
               type: "button",
               className: "btn-volver-atras btn-volver-atras--bottom",
               onClick: () => {
-                if (window.history.length > 1) {
-                  window.history.back();
-                } else {
-                  window.location.hash = "#/inicio";
-                }
+                window.location.hash = "#/inicio";
               },
-              title: "Volver atrás",
-              "aria-label": "Volver atrás"
+              title: "Volver al dashboard",
+              "aria-label": "Volver al dashboard"
             },
             h(
               "svg",

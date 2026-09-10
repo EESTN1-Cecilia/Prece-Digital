@@ -118,9 +118,9 @@ export function camposDeError(cuerpo) {
   const entradas = Array.isArray(crudo)
     ? crudo.map((item) => [item?.campo ?? item?.field, item?.mensaje ?? item?.message])
     : Object.entries(crudo).map(([campo, valor]) => [
-        campo,
-        typeof valor === "string" ? valor : (valor?.mensaje ?? valor?.message)
-      ]);
+      campo,
+      typeof valor === "string" ? valor : (valor?.mensaje ?? valor?.message)
+    ]);
 
   const campos = Object.fromEntries(
     entradas.filter(([campo, mensaje]) => campo && esMensajeApto(mensaje))
