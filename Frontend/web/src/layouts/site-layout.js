@@ -1,7 +1,4 @@
-import React from "react";
-import { useSesion } from "../estado/hooks.js";
-import { ACCESO, decidirAcceso } from "../app/navegacion.js";
-import { RUTAS } from "../app/rutas.js";
+import React, { useState } from "react";
 
 export const h = React.createElement;
 
@@ -9,10 +6,19 @@ export function IconoFigma({ nombre, className }) {
   return h("img", { className, src: `/assets/icons/${nombre}.svg`, alt: "", "aria-hidden": "true" });
 }
 
+export function ActionButton({ tone = "primary", icon, children, onClick, ...props }) {
+  return h(
+    "button",
+    { className: `action-button action-button--${tone}`, type: "button", onClick, ...props },
+    h(IconoFigma, { className: "action-button__icon", nombre: icon }),
+    h("span", null, children)
+  );
+}
+
 function Header({ ruta }) {
   const enlaces = [
-    ["Sobre Nosotros", "#nosotros"],
     ["Inicio", "#/inicio"],
+    ["Sobre Nosotros", "#nosotros"],
     ["Menú", "#menu"]
   ];
 
@@ -23,37 +29,58 @@ function Header({ ruta }) {
       "div",
       { className: "site-header__top" },
       h(
-        "a",
-        { href: "#/inicio", "aria-label": "Ir al inicio" },
-        h("img", {
-          className: "header-logo",
-          src: "/assets/prece-logo-horizontal.png",
-          alt: "Prece.Digital"
-        })
+        "div",
+        { className: "site-header__left" },
+        h(
+          "a",
+          { href: "#/inicio", "aria-label": "Ir al inicio" },
+          h("img", {
+            className: "header-logo",
+            src: "/assets/prece-logo-horizontal.png",
+            alt: "Prece.Digital"
+          })
+        )
       ),
       h(
-        "a",
-        { className: "profile-button", href: "#/login", "aria-label": "Iniciar sesion" },
-        h(IconoFigma, { className: "avatar-usuario", nombre: "avatar" })
-      )
-    ),
-    h(
-      "nav",
-      { className: "main-nav", "aria-label": "Navegación principal" },
-      enlaces.map(([label, href]) => {
-        const activo = href === ruta;
+        "div",
+        { className: "site-header__center" },
+        h(
+          "nav",
+          { className: "main-nav", "aria-label": "Navegación principal" },
+          enlaces.map(([label, href]) => {
+            const activo =
+              href === ruta ||
+              (href === "#/inicio" &&
+                (!ruta ||
+                  ruta === "#/inicio" ||
+                  ruta === "#/secretaria" ||
+                  ruta === "#/preceptoria" ||
+                  ruta === "#/alumnos" ||
+                  ruta === "#/alumnos/cargar" ||
+                  ruta === "#/alumnos/nuevo"));
 
-        return h(
-          "a",
-          {
-            key: href,
-            className: activo ? "active" : undefined,
-            href,
-            "aria-current": activo ? "page" : undefined
-          },
-          label
-        );
-      })
+            return h(
+              "a",
+              {
+                key: href,
+                className: `nav-pill-btn ${activo ? "active" : ""}`,
+                href,
+                "aria-current": activo ? "page" : undefined
+              },
+              label
+            );
+          })
+        )
+      ),
+      h(
+        "div",
+        { className: "site-header__right" },
+        h(
+          "button",
+          { className: "header-avatar-btn", type: "button", "aria-label": "Abrir perfil" },
+          h(IconoFigma, { className: "header-avatar-icon", nombre: "avatar" })
+        )
+      )
     )
   );
 }
@@ -67,22 +94,6 @@ function ContactLink({ icon, href, children }) {
   );
 }
 
-/* Enlaces del pie filtrados por la sesion: no se ofrece lo que no se puede
-   abrir. Ocultar una opcion no protege la ruta, que sigue evaluandose igual si
-   alguien escribe la direccion a mano. */
-function enlacesDisponibles(links, sesion) {
-  return links.filter(([, href]) => {
-    const ruta = RUTAS.find((candidata) => candidata.patron === href);
-
-    if (!ruta) {
-      /* Anclas de la pagina publica: no pasan por la tabla de rutas. */
-      return true;
-    }
-
-    return decidirAcceso({ ruta }, sesion).tipo === ACCESO.permitido;
-  });
-}
-
 function FooterLinks({ title, links }) {
   return h(
     "section",
@@ -93,8 +104,6 @@ function FooterLinks({ title, links }) {
 }
 
 function Footer() {
-  const sesion = useSesion();
-
   return h(
     "footer",
     { className: "site-footer" },
@@ -146,18 +155,18 @@ function Footer() {
         { className: "footer-nav" },
         h(FooterLinks, {
           title: "Links",
-          links: enlacesDisponibles(
-            [
-              ["Inicio", "#/inicio"],
-              ["Usuarios", "#/usuarios"],
-              ["Roles y permisos", "#/roles"],
-              ["Login", "#/login"],
-              ["Activar cuenta", "#/activar"],
-              ["Crear cuenta", "#/invitar"],
-              ["Sobre Nosotros", "#nosotros"]
-            ],
-            sesion
-          )
+          links: [
+            ["Inicio", "#/inicio"],
+            ["Observaciones", "#/preceptoria/observaciones"],
+            ["Inicio secretaria", "#/secretaria"],
+            ["Cargar alumno", "#/alumnos/cargar"],
+            ["Usuarios", "#/usuarios"],
+            ["Roles y permisos", "#/roles"],
+            ["Login", "#/login"],
+            ["Activar cuenta", "#/activar"],
+            ["Crear cuenta", "#/invitar"],
+            ["Sobre Nosotros", "#nosotros"]
+          ]
         }),
         h(FooterLinks, {
           title: "Ayuda",

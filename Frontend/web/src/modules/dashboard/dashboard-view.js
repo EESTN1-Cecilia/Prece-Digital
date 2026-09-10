@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { h, IconoFigma } from "../../layouts/site-layout.js";
+import { useState, useEffect } from "react";
+import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
+import { RoleSwitch } from "../../components/common/role-switch.js";
+import { AuthService } from "../../services/auth-service.js";
 import { Boton, Card } from "../../components/ui/index.js";
 
 function CourseHeader({ title, detail, open, onToggle }) {
@@ -100,15 +102,38 @@ function Dashboard() {
 export default function DashboardView() {
   const [gradeOpen, setGradeOpen] = useState(true);
   const [groupOpen, setGroupOpen] = useState(false);
+  const [user, setUser] = useState(AuthService.getCurrentUser());
+
+  useEffect(() => {
+    const handleRoleChanged = (e) => setUser(e.detail);
+    window.addEventListener("auth:role_changed", handleRoleChanged);
+    return () => window.removeEventListener("auth:role_changed", handleRoleChanged);
+  }, []);
+
+  const handleSwitchRole = (newRole) => {
+    AuthService.switchRole(newRole);
+    if (newRole === "secretaria") {
+      window.location.hash = "#/secretaria";
+    }
+  };
 
   return h(
     "section",
     { className: "welcome-panel" },
     h(
       "div",
+      { className: "dashboard-top-bar" },
+      h("div", { className: "dashboard-top-bar__info" },
+        h("span", { className: "institution-tag" }, user.escuela || "E.E.S.T N°1 Monte Grande"),
+        h("span", { className: "cycle-tag" }, `Ciclo ${user.cicloLectivo || "2026"}`)
+      ),
+      h(RoleSwitch, { activeRole: user.rol, onToggle: handleSwitchRole })
+    ),
+    h(
+      "div",
       { className: "welcome-panel__heading" },
       h("h1", null, "Bienvenido Preceptor ", h("span", null, "“Nombre”")),
-      h("p", null, "E.E.S.T N°1")
+      h("p", null, "E.E.S.T N°1 Monte Grande")
     ),
     h(
       "p",
