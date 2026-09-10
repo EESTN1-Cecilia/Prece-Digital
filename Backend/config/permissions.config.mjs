@@ -13,6 +13,9 @@ export const SCOPE_KEYS = ["schoolId", "courseId", "divisionId", "subjectId", "s
 export const PERMISSIONS = {
   USERS_READ: "users.read",
   USERS_DEACTIVATE: "users.deactivate",
+  IDENTITY_READ: "identity:read",
+  IDENTITY_CREATE: "identity:create",
+  IDENTITY_UPDATE: "identity:update",
   STUDENTS_READ: "students.read",
   STUDENTS_WRITE: "students.write",
   ATTENDANCE_READ: "attendance.read",

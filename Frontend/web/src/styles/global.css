@@ -526,6 +526,34 @@ a {
   white-space: nowrap;
 }
 
+.password-toggle {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+  place-items: center;
+}
+
+.password-toggle:hover {
+  background: rgba(70, 85, 156, 0.1);
+}
+
+.password-toggle img {
+  width: 19px;
+  height: 19px;
+}
+
+.password-toggle[aria-pressed="true"] {
+  background: rgba(141, 197, 220, 0.28);
+}
+
+.password-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 .form-links {
   display: flex;
   justify-content: space-between;
@@ -1627,7 +1655,8 @@ a {
 .ui-paginacion__numero:focus-visible,
 .ui-tabla__orden:focus-visible,
 .ui-modal__cerrar:focus-visible,
-.ui-alerta__cerrar:focus-visible {
+.ui-alerta__cerrar:focus-visible,
+.password-toggle:focus-visible {
   outline: 3px solid var(--indigo);
   outline-offset: 2px;
 }
