@@ -1,8 +1,7 @@
-import { sendJson } from "../utils/http-response.mjs";
+import { ApiError } from "../utils/api-error.mjs";
 
-export function notFound(response) {
-  sendJson(response, 404, {
-    error: "not_found",
-    message: "Endpoint no disponible"
-  });
+/* La ruta inexistente se resuelve como cualquier otro error previsto:
+   lo traduce el middleware centralizado. */
+export function notFound() {
+  throw new ApiError("NOT_FOUND", "El endpoint solicitado no existe.");
 }

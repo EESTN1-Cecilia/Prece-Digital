@@ -1,4 +1,4 @@
-import { modules, roles } from "../../Shared/src/domain.mjs";
+import { modules, roles } from "../config/domain.mjs";
 
 export function getModules() {
   return modules;
