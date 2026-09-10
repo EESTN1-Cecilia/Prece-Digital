@@ -2,11 +2,11 @@ import { h } from "../layouts/site-layout.js";
 
 /* Tarjeta blanca centrada con titulo y doble onda, comun a Login e Invitar Usuario.
    Los campos que van adentro salen de la biblioteca compartida (components/ui). */
-export function FormCard({ titulo, children, onSubmit }) {
+export function FormCard({ titulo, children, onSubmit, ancho = false }) {
   return h(
     "form",
     {
-      className: "form-card",
+      className: ancho ? "form-card form-card--ancho" : "form-card",
       onSubmit: (evento) => {
         evento.preventDefault();
         if (onSubmit) onSubmit(evento);
