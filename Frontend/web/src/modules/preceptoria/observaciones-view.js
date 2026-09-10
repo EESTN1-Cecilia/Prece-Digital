@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
+import { AuthService } from "../../services/auth-service.js";
+import { StudentsService } from "../students/students-service.js";
+import {
+  DEFAULT_OBSERVATION_SECTORS,
+  DEFAULT_OBSERVATION_TYPES,
+  buildObservationRecord,
+  getDefaultObservationForm,
+  getStoredObservations,
+  resolveResponsibleFromUser,
+  saveObservationRecords
+} from "./observaciones-service.js";
 
 const STORAGE_KEY = "prece-observaciones-filtros-v1";
 const DEFAULT_FILTERS = {
@@ -597,6 +608,226 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
   );
 }
 
+function ObservationFormInline({ initialAlumno = "", onSave, students = [], currentUser, onClose }) {
+  const [form, setForm] = useState(() =>
+    getDefaultObservationForm({
+      alumno: initialAlumno,
+      responsable: resolveResponsibleFromUser(currentUser, true)
+    })
+  );
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm(
+      getDefaultObservationForm({
+        alumno: initialAlumno,
+        responsable: resolveResponsibleFromUser(currentUser, true)
+      })
+    );
+    setError("");
+  }, [initialAlumno, currentUser]);
+
+  const setField = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (error) setError("");
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const trimmedAlumno = form.alumno.trim();
+    const trimmedTipo = form.tipo.trim();
+    const trimmedFecha = form.fecha.trim();
+    const trimmedDescripcion = form.descripcion.trim();
+    const trimmedSector = form.sector.trim();
+    const trimmedResponsable = form.responsable.trim();
+
+    if (!trimmedAlumno || !trimmedTipo || !trimmedFecha || !trimmedDescripcion || !trimmedSector || !trimmedResponsable) {
+      setError("Completá todos los campos obligatorios para registrar la observación.");
+      return;
+    }
+
+    setSaving(true);
+
+    const record = buildObservationRecord({
+      ...form,
+      alumno: trimmedAlumno,
+      tipo: trimmedTipo,
+      fecha: trimmedFecha,
+      descripcion: trimmedDescripcion,
+      sector: trimmedSector,
+      responsable: trimmedResponsable,
+      estado: form.estado || "Activa"
+    });
+
+    const stored = getStoredObservations();
+    saveObservationRecords([record, ...stored]);
+
+    setSaving(false);
+    onSave?.(record);
+    onClose?.();
+  };
+
+  const studentOptions = students.length
+    ? students.map((student) => {
+        const nombreCompleto = `${student.apellido || ""}, ${student.nombre || ""}`.replace(/,\s*$/, "").trim();
+        const curso = student.curso ? String(student.curso).replace(/\s+$/, "") : "";
+        const division = student.division ? String(student.division).replace(/\s+$/, "") : "";
+        return {
+          value: nombreCompleto,
+          label: `${nombreCompleto}${curso || division ? ` · ${curso}${division ? ` ${division}` : ""}` : ""}`
+        };
+      })
+    : [];
+
+  return h(
+    "form",
+    { className: "observation-form-card", onSubmit: handleSubmit },
+    h("div", { className: "observation-form__header" },
+      h("div", null,
+        h("span", { className: "student-detail__eyebrow" }, "Nueva observación"),
+        h("h3", null, "Registrar observación")
+      )
+    ),
+    h("div", { className: "form-section-header" },
+      h("h4", { className: "form-section-title" }, "Datos de la observación"),
+      h("span", { className: "form-section-desc" }, "Toda la información necesaria para el seguimiento")
+    ),
+    error ? h("p", { className: "form-error-message" }, error) : null,
+    h(
+      "div",
+      { className: "form-grid-2col observation-form__grid" },
+      h(
+        "div",
+        { className: "form-field" },
+        h("label", null, "Alumno"),
+        h(
+          "div",
+          { className: "form-control" },
+          h(
+            "select",
+            {
+              value: form.alumno,
+              onChange: (event) => setField("alumno", event.target.value),
+              disabled: Boolean(initialAlumno),
+              required: true
+            },
+            h("option", { value: "" }, "Seleccionar alumno"),
+            ...studentOptions.map((option) => h("option", { key: option.value, value: option.value }, option.label))
+          )
+        )
+      ),
+      h(
+        "div",
+        { className: "form-field" },
+        h("label", null, "Tipo de observación"),
+        h(
+          "div",
+          { className: "form-control" },
+          h(
+            "select",
+            {
+              value: form.tipo,
+              onChange: (event) => setField("tipo", event.target.value),
+              required: true
+            },
+            h("option", { value: "" }, "Seleccionar tipo"),
+            ...DEFAULT_OBSERVATION_TYPES.map((tipo) => h("option", { key: tipo, value: tipo }, tipo))
+          )
+        )
+      ),
+      h(
+        "div",
+        { className: "form-field" },
+        h("label", null, "Fecha"),
+        h(
+          "div",
+          { className: "form-control" },
+          h("input", {
+            type: "date",
+            value: form.fecha,
+            onChange: (event) => setField("fecha", event.target.value),
+            required: true
+          })
+        )
+      ),
+      h(
+        "div",
+        { className: "form-field" },
+        h("label", null, "Sector"),
+        h(
+          "div",
+          { className: "form-control" },
+          h(
+            "select",
+            {
+              value: form.sector,
+              onChange: (event) => setField("sector", event.target.value),
+              required: true
+            },
+            h("option", { value: "" }, "Seleccionar sector"),
+            ...DEFAULT_OBSERVATION_SECTORS.map((sector) => h("option", { key: sector, value: sector }, sector))
+          )
+        )
+      ),
+      h(
+        "div",
+        { className: "form-field" },
+        h("label", null, "Responsable"),
+        h(
+          "div",
+          { className: "form-control" },
+          h("input", {
+            type: "text",
+            value: form.responsable,
+            onChange: (event) => setField("responsable", event.target.value),
+            placeholder: "Responsable",
+            required: true
+          })
+        )
+      ),
+      h(
+        "div",
+        { className: "form-field" },
+        h("label", null, "Estado"),
+        h(
+          "div",
+          { className: "form-control" },
+          h(
+            "select",
+            { value: form.estado, onChange: (event) => setField("estado", event.target.value) },
+            h("option", { value: "" }, "Sin estado"),
+            h("option", { value: "Activa" }, "Activa"),
+            h("option", { value: "Modificada" }, "Modificada"),
+            h("option", { value: "Histórica" }, "Histórica")
+          )
+        )
+      )
+    ),
+    h(
+      "div",
+      { className: "form-field form-field--full" },
+      h("label", null, "Descripción"),
+      h("textarea", {
+        className: "observation-form__textarea",
+        value: form.descripcion,
+        maxLength: 500,
+        placeholder: "Describí la situación observada...",
+        onChange: (event) => setField("descripcion", event.target.value),
+        required: true
+      }),
+      h("small", { className: "observation-form__counter" }, `${form.descripcion.length}/500`)
+    ),
+    h(
+      "div",
+      { className: "form-actions-row" },
+      h("button", { type: "button", className: "btn-secundario", onClick: onClose }, "Cancelar"),
+      h("button", { type: "submit", className: "btn-primario", disabled: saving }, saving ? "Guardando..." : "Guardar observación")
+    )
+  );
+}
+
 export default function ObservacionesView() {
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [filtros, setFiltros] = useState(() => getSavedFilters());
@@ -604,12 +835,35 @@ export default function ObservacionesView() {
   const [estadoHistorial, setEstadoHistorial] = useState("Estado");
   const [sectorHistorial, setSectorHistorial] = useState("");
   const [responsableHistorial, setResponsableHistorial] = useState("");
+  const [showObservationForm, setShowObservationForm] = useState(false);
+  const [studentsForObservation, setStudentsForObservation] = useState([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(filtros));
     }
   }, [filtros]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const loadStudents = async () => {
+      try {
+        const res = await StudentsService.getAlumnos({ limit: 500, sortBy: "apellido", sortOrder: "asc" });
+        if (!isCancelled) {
+          setStudentsForObservation(Array.isArray(res?.data) ? res.data : []);
+        }
+      } catch {
+        if (!isCancelled) {
+          setStudentsForObservation([]);
+        }
+      }
+    };
+
+    loadStudents();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const updateFiltro = (key, value) => {
     setFiltros((prev) => ({ ...prev, [key]: value }));
@@ -623,19 +877,19 @@ export default function ObservacionesView() {
     setFiltros(DEFAULT_FILTERS);
   };
 
-  const tipos = [...new Set(OBSERVACIONES.map((observation) => observation.tipo))];
-  const sectores = [...new Set(OBSERVACIONES.map((observation) => observation.sector))].sort();
-  const responsables = [...new Set(OBSERVACIONES.map((observation) => observation.responsable))].sort();
-  const estados = [...new Set(OBSERVACIONES.map((observation) => observation.estado))];
+  const tipos = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.tipo).filter(Boolean))];
+  const sectores = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.sector).filter(Boolean))].sort();
+  const responsables = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.responsable).filter(Boolean))].sort();
+  const estados = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.estado).filter(Boolean))];
 
-  const observaciones = OBSERVACIONES.filter((observation) => {
+  const observaciones = [...OBSERVACIONES, ...getStoredObservations()].filter((observation) => {
     const query = (filtros.query || "").trim().toLowerCase();
     const coincideBusqueda =
       !query ||
-      observation.alumno.toLowerCase().includes(query) ||
-      observation.dni.toLowerCase().includes(query);
+      (observation.alumno || "").toLowerCase().includes(query) ||
+      (observation.dni || "").toLowerCase().includes(query);
 
-    const fechaObservacion = parseFecha(observation.fecha);
+    const fechaObservacion = parseFecha(observation.fecha || "01/01/2000");
     const fechaDesde = filtros.fechaDesde ? new Date(`${filtros.fechaDesde}T00:00:00`) : null;
     const fechaHasta = filtros.fechaHasta ? new Date(`${filtros.fechaHasta}T23:59:59`) : null;
 
@@ -656,20 +910,30 @@ export default function ObservacionesView() {
       coincideEstado
     );
   })
-    .sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha))
+    .sort((a, b) => parseFecha(b.fecha || "01/01/2000") - parseFecha(a.fecha || "01/01/2000"))
     .filter((observation, index, collection) => index === collection.findIndex((item) => item.alumno === observation.alumno));
 
+  const openObservationForm = (alumno = alumnoSeleccionado) => {
+    setShowObservationForm(true);
+  };
+
+  const handleObservationSaved = (record) => {
+    if (record?.alumno) {
+      setAlumnoSeleccionado(record.alumno);
+    }
+  };
+
   if (alumnoSeleccionado) {
-    const historialBase = OBSERVACIONES.filter((observation) => observation.alumno === alumnoSeleccionado);
+    const historialBase = [...OBSERVACIONES, ...getStoredObservations()].filter((observation) => observation.alumno === alumnoSeleccionado);
     const historial = historialBase.filter((observation) => {
       const coincideTipo = tipoHistorial === "Tipo de observación" || observation.tipo === tipoHistorial;
       const coincideEstado = estadoHistorial === "Estado" || observation.estado === estadoHistorial;
       const coincideSector = !sectorHistorial || observation.sector === sectorHistorial;
       const coincideResponsable = !responsableHistorial || observation.responsable === responsableHistorial;
       return coincideTipo && coincideEstado && coincideSector && coincideResponsable;
-    }).sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha));
-    const sectoresAlumno = [...new Set(historialBase.map((observation) => observation.sector))].sort();
-    const responsablesAlumno = [...new Set(historialBase.map((observation) => observation.responsable))].sort();
+    }).sort((a, b) => parseFecha(b.fecha || "01/01/2000") - parseFecha(a.fecha || "01/01/2000"));
+    const sectoresAlumno = [...new Set(historialBase.map((observation) => observation.sector).filter(Boolean))].sort();
+    const responsablesAlumno = [...new Set(historialBase.map((observation) => observation.responsable).filter(Boolean))].sort();
 
     const filtrosActivosHistorial = [
       tipoHistorial !== "Tipo de observación" ? { key: "tipo", label: `Tipo: ${tipoHistorial}`, onRemove: () => setTipoHistorial("Tipo de observación") } : null,
@@ -681,26 +945,35 @@ export default function ObservacionesView() {
     return h(
       "section",
       { className: "observations-panel" },
-      h(
-        "div",
-        null,
-        h(StudentDetail, {
-          alumno: alumnoSeleccionado,
-          observations: historial,
-          onBack: () => setAlumnoSeleccionado(null),
-          tipoFiltro: tipoHistorial,
-          estadoFiltro: estadoHistorial,
-          sectorFiltro: sectorHistorial,
-          responsableFiltro: responsableHistorial,
-          onTipoChange: setTipoHistorial,
-          onEstadoChange: setEstadoHistorial,
-          onSectorChange: setSectorHistorial,
-          onResponsableChange: setResponsableHistorial,
-          sectores: sectoresAlumno,
-          responsables: responsablesAlumno,
-          filtrosActivos: filtrosActivosHistorial
-        })
-      )
+      h(StudentDetail, {
+        alumno: alumnoSeleccionado,
+        observations: historial,
+        onBack: () => setAlumnoSeleccionado(null),
+        tipoFiltro: tipoHistorial,
+        estadoFiltro: estadoHistorial,
+        sectorFiltro: sectorHistorial,
+        responsableFiltro: responsableHistorial,
+        onTipoChange: setTipoHistorial,
+        onEstadoChange: setEstadoHistorial,
+        onSectorChange: setSectorHistorial,
+        onResponsableChange: setResponsableHistorial,
+        sectores: sectoresAlumno,
+        responsables: responsablesAlumno,
+        filtrosActivos: filtrosActivosHistorial
+      }),
+      h(ActionButton, {
+        icon: "clipboard",
+        onClick: () => openObservationForm(alumnoSeleccionado)
+      }, "Nueva observación"),
+      showObservationForm
+        ? h(ObservationFormInline, {
+            initialAlumno: alumnoSeleccionado || "",
+            onSave: handleObservationSaved,
+            students: studentsForObservation,
+            currentUser: AuthService.getCurrentUser(),
+            onClose: () => setShowObservationForm(false)
+          })
+        : null
     );
   }
 
@@ -716,7 +989,7 @@ export default function ObservacionesView() {
         h("h2", null, "Observaciones"),
         h("p", null, "Última observación por alumno")
       ),
-      h(ActionButton, { icon: "clipboard" }, "Nueva observación")
+      h(ActionButton, { icon: "clipboard", onClick: () => openObservationForm() }, "Nueva observación")
     ),
     h(ObservationFilters, {
       filtros,
@@ -728,13 +1001,22 @@ export default function ObservacionesView() {
       responsables,
       estados
     }),
+    showObservationForm
+      ? h(ObservationFormInline, {
+          initialAlumno: alumnoSeleccionado || "",
+          onSave: handleObservationSaved,
+          students: studentsForObservation,
+          currentUser: AuthService.getCurrentUser(),
+          onClose: () => setShowObservationForm(false)
+        })
+      : null,
     h(
       "div",
       { className: "observations-list" },
       observaciones.length
         ? observaciones.map((observation) =>
             h(ObservationCard, {
-              key: observation.id,
+              key: `${observation.id || observation.alumno}-${observation.fecha || Math.random()}`,
               observation,
               onView: () => setAlumnoSeleccionado(observation.alumno),
               onEdit: () => setAlumnoSeleccionado(observation.alumno)
