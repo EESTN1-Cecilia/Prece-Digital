@@ -2,6 +2,7 @@ import { healthCheck } from "../controllers/health.controller.mjs";
 import { listModules, listRoles } from "../controllers/catalog.controller.mjs";
 import { listStudents } from "../controllers/students.controller.mjs";
 import { listarCurso, listarDivision, listarGrupo, listarTaller } from "../modules/students/students.controller.mjs";
+import { crearAlumno, listarAlumnos, obtenerAlumno, modificarAlumno, desactivarAlumno } from "../modules/students/students.controller.mjs";
 import { verifyToken } from "../middlewares/auth.middleware.mjs";
 import { authorize } from "../middlewares/authorize.middleware.mjs";
 import { PERMISSIONS as P, ROLES } from "../config/permissions.config.mjs";
@@ -46,6 +47,11 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/students/listas/division", handler: listarDivision },
   { method: "GET", path: "/api/v1/students/listas/grupo", handler: listarGrupo },
   { method: "GET", path: "/api/v1/students/listas/taller", handler: listarTaller },
+  { method: "POST", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: crearAlumno },
+  { method: "GET", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: listarAlumnos },
+  { method: "GET", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: obtenerAlumno },
+  { method: "PATCH", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: modificarAlumno },
+  { method: "DELETE", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: desactivarAlumno },
 
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },
