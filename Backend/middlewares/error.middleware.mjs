@@ -11,6 +11,7 @@
 import { appConfig } from "../config/app.config.mjs";
 import { ApiError, conflicto } from "../utils/api-error.mjs";
 import { sendJson } from "../utils/http-response.mjs";
+import auditService from "../modules/audit/audit.service.mjs";
 
 /* Errores de MySQL que corresponden a una situacion prevista del negocio. */
 const ERRORES_MYSQL = {
@@ -38,8 +39,9 @@ function comoApiError(error) {
 }
 
 /* El log interno si guarda el detalle tecnico. Nunca incluye cuerpo de la peticion
-   ni cabeceras, para no registrar contrasenias ni tokens. */
-export function registrarError(error, { metodo, ruta, esperado }) {
+   ni cabeceras, para no registrar contrasenias ni tokens. Tambien se persiste en
+   el log de errores de la auditoria (sin datos sensibles). */
+export function registrarError(error, { metodo, ruta, esperado, usuarioId, ip }) {
   const linea = {
     momento: new Date().toISOString(),
     metodo,
@@ -51,10 +53,19 @@ export function registrarError(error, { metodo, ruta, esperado }) {
 
   if (esperado) {
     console.warn("[api]", linea);
-    return;
+  } else {
+    console.error("[api]", linea, error?.stack ?? "");
   }
 
-  console.error("[api]", linea, error?.stack ?? "");
+  auditService.registrarError({
+    usuarioId: usuarioId ?? null,
+    metodo,
+    ruta,
+    tipo: linea.tipo,
+    code: linea.code,
+    message: linea.message,
+    ip: ip ?? null
+  });
 }
 
 export function handleError(error, { request, response, url }) {
@@ -62,7 +73,13 @@ export function handleError(error, { request, response, url }) {
   const ruta = url?.pathname ?? request?.url;
   const previsto = comoApiError(error);
 
-  registrarError(error, { metodo, ruta, esperado: Boolean(previsto) });
+  registrarError(error, {
+    metodo,
+    ruta,
+    esperado: Boolean(previsto),
+    usuarioId: request?.usuario?.id ?? null,
+    ip: request?.socket?.remoteAddress ?? request?.connection?.remoteAddress ?? null
+  });
 
   if (previsto) {
     sendJson(response, previsto.status, {
