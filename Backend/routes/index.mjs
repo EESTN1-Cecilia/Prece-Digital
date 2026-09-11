@@ -17,6 +17,7 @@ import * as requestsController from "../modules/requests/requests.controller.mjs
 import * as reservationsController from "../modules/reservations/reservations.controller.mjs";
 import * as notificationsController from "../modules/notifications/notifications.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
+import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as authorizationController from "../controllers/authorization.controller.mjs";
 import { requierePermiso, requiereSesion } from "../middlewares/authorization.middleware.mjs";
 
@@ -46,6 +47,17 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/students/listas/division", handler: listarDivision },
   { method: "GET", path: "/api/v1/students/listas/grupo", handler: listarGrupo },
   { method: "GET", path: "/api/v1/students/listas/taller", handler: listarTaller },
+
+  { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },
+  { method: "GET", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.listTutors },
+  { method: "GET", path: "/api/v1/tutors/:tutorId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.getTutor },
+  { method: "PATCH", path: "/api/v1/tutors/:tutorId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.updateTutor },
+  { method: "DELETE", path: "/api/v1/tutors/:tutorId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.deactivateTutor },
+  { method: "GET", path: "/api/v1/tutors/:tutorId/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.listTutorStudents },
+  { method: "POST", path: "/api/v1/students/:studentId/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.associateTutor },
+  { method: "GET", path: "/api/v1/students/:studentId/tutors", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.listStudentTutors },
+  { method: "PATCH", path: "/api/v1/student-tutors/:relationId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.updateRelation },
+  { method: "DELETE", path: "/api/v1/student-tutors/:relationId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.unlinkRelation },
 
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },
