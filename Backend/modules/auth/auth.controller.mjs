@@ -33,6 +33,13 @@ export function me({ user }) {
   };
 }
 
+export function permissions({ user }) {
+  return {
+    statusCode: 200,
+    body: { data: authService.permissions(user) }
+  };
+}
+
 export function listUsers() {
   return {
     statusCode: 200,

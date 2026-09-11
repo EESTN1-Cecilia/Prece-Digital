@@ -1,3 +1,4 @@
+import { modules as domainModules } from "./domain.mjs";
 export const ROLES = {
   ADMIN: "admin",
   DIRECTOR: "director",
@@ -191,4 +192,79 @@ export function rolesPermitidos(operacion) {
   }
 
   return [];
+}
+
+/* ============================================================================
+   Catálogo central de autorización.
+
+   Un permiso se expresa como "<modulo>.<accion>". Las acciones canónicas son:
+   lectura, creación, modificación, eliminación, aprobación y carga. Por
+   compatibilidad se mantienen los códigos legados "write" (crear+modificar+cargar)
+   y "manage" (eliminar+aprobar), además de códigos puntuales como "users.deactivate".
+
+   Para agregar un rol nuevo solo hace falta una entrada en ROL_CATALOGO y su lista
+   en ROLE_PERMISSIONS; ningún controlador ni middleware debe cambiar.
+   ============================================================================ */
+
+export const ACCIONES = {
+  READ: "read",
+  CREATE: "create",
+  UPDATE: "update",
+  DELETE: "delete",
+  APPROVE: "approve",
+  UPLOAD: "upload",
+  WRITE: "write",
+  MANAGE: "manage"
+};
+
+export const MODULOS = Object.fromEntries([
+  ...domainModules.map((modulo) => [modulo.key, modulo.label]),
+  ["identity", "Identidad y acceso"]
+]);
+
+/* Construye el código de un permiso: permiso("students", "create") -> "students.create". */
+export function permiso(modulo, accion) {
+  return `${modulo}.${accion}`;
+}
+
+/* Traduce una acción (canónica o legada) a sus acciones canónicas equivalentes. */
+export function accionesCanonicas(accion) {
+  switch (accion) {
+    case ACCIONES.READ:
+      return [ACCIONES.READ];
+    case ACCIONES.CREATE:
+      return [ACCIONES.CREATE];
+    case ACCIONES.UPDATE:
+      return [ACCIONES.UPDATE];
+    case ACCIONES.DELETE:
+      return [ACCIONES.DELETE];
+    case ACCIONES.APPROVE:
+      return [ACCIONES.APPROVE];
+    case ACCIONES.UPLOAD:
+      return [ACCIONES.UPLOAD];
+    case ACCIONES.WRITE:
+      return [ACCIONES.CREATE, ACCIONES.UPDATE, ACCIONES.UPLOAD];
+    case ACCIONES.MANAGE:
+      return [ACCIONES.DELETE, ACCIONES.APPROVE];
+    default:
+      return [accion];
+  }
+}
+
+export function permisoValido(codigo) {
+  return typeof codigo === "string" && /^[a-z]+[.:][a-z]+$/.test(codigo);
+}
+
+export const ROL_CATALOGO = {
+  [ROLES.ADMIN]: { codigo: ROLES.ADMIN, nombre: "Administrador", descripcion: "Acceso total a todos los modulos del sistema" },
+  [ROLES.DIRECTOR]: { codigo: ROLES.DIRECTOR, nombre: "Direccion", descripcion: "Gestion integral de la institucion" },
+  [ROLES.SECRETARIO]: { codigo: ROLES.SECRETARIO, nombre: "Secretaria", descripcion: "Administracion academica y documentacion" },
+  [ROLES.PRECEPTOR]: { codigo: ROLES.PRECEPTOR, nombre: "Preceptoria", descripcion: "Seguimiento de estudiantes y asistencia" },
+  [ROLES.DOCENTE]: { codigo: ROLES.DOCENTE, nombre: "Docentes", descripcion: "Clases, notas y asistencia de sus cursos" },
+  [ROLES.JEFE_AREA]: { codigo: ROLES.JEFE_AREA, nombre: "Jefatura de Area", descripcion: "Planificacion curricular y equipos docentes" },
+  [ROLES.SERVER]: { codigo: ROLES.SERVER, nombre: "Responsable de Server", descripcion: "Infraestructura, espacios y operacion tecnica" }
+};
+
+export function catalogoRoles() {
+  return Object.values(ROL_CATALOGO);
 }
