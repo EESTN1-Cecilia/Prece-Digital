@@ -17,6 +17,7 @@ import * as requestsController from "../modules/requests/requests.controller.mjs
 import * as reservationsController from "../modules/reservations/reservations.controller.mjs";
 import * as notificationsController from "../modules/notifications/notifications.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
+import * as academicController from "../modules/academic/academic.controller.mjs";
 import * as authorizationController from "../controllers/authorization.controller.mjs";
 import { requierePermiso, requiereSesion } from "../middlewares/authorization.middleware.mjs";
 
@@ -47,6 +48,38 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/students/listas/grupo", handler: listarGrupo },
   { method: "GET", path: "/api/v1/students/listas/taller", handler: listarTaller },
 
+  { method: "POST", path: "/api/v1/ciclos", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.createCiclo },
+  { method: "GET", path: "/api/v1/ciclos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listCiclos },
+  { method: "GET", path: "/api/v1/ciclos/:cicloId", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.getCiclo },
+  { method: "PATCH", path: "/api/v1/ciclos/:cicloId", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.updateCiclo },
+  { method: "DELETE", path: "/api/v1/ciclos/:cicloId", middlewares: [verifyToken, required(P.ACADEMICS_MANAGE)], handler: academicController.deactivateCiclo },
+
+  { method: "POST", path: "/api/v1/orientaciones", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.createOrientacion },
+  { method: "GET", path: "/api/v1/orientaciones", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listOrientaciones },
+  { method: "GET", path: "/api/v1/orientaciones/:orientacionId", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.getOrientacion },
+  { method: "PATCH", path: "/api/v1/orientaciones/:orientacionId", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.updateOrientacion },
+  { method: "DELETE", path: "/api/v1/orientaciones/:orientacionId", middlewares: [verifyToken, required(P.ACADEMICS_MANAGE)], handler: academicController.deactivateOrientacion },
+
+  { method: "POST", path: "/api/v1/cursos", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.createCurso },
+  { method: "GET", path: "/api/v1/cursos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listCursos },
+  { method: "GET", path: "/api/v1/cursos/:cursoId", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.getCurso },
+  { method: "GET", path: "/api/v1/cursos/:cursoId/divisiones", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listDivisionesDeCurso },
+  { method: "GET", path: "/api/v1/cursos/:cursoId/alumnos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listAlumnosDeCurso },
+  { method: "GET", path: "/api/v1/cursos/:cursoId/materias", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listMateriasDeCurso },
+  { method: "GET", path: "/api/v1/cursos/:cursoId/docentes", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listDocentesDeCurso },
+  { method: "GET", path: "/api/v1/cursos/:cursoId/horarios", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listHorariosDeCurso },
+  { method: "PATCH", path: "/api/v1/cursos/:cursoId", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.updateCurso },
+  { method: "DELETE", path: "/api/v1/cursos/:cursoId", middlewares: [verifyToken, required(P.ACADEMICS_MANAGE)], handler: academicController.deactivateCurso },
+
+  { method: "POST", path: "/api/v1/divisiones", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.createDivision },
+  { method: "GET", path: "/api/v1/divisiones", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listDivisiones },
+  { method: "GET", path: "/api/v1/divisiones/:divisionId", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.getDivision },
+  { method: "GET", path: "/api/v1/divisiones/:divisionId/alumnos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listAlumnosDeDivision },
+  { method: "GET", path: "/api/v1/divisiones/:divisionId/materias", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listMateriasDeDivision },
+  { method: "GET", path: "/api/v1/divisiones/:divisionId/docentes", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listDocentesDeDivision },
+  { method: "GET", path: "/api/v1/divisiones/:divisionId/horarios", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listHorariosDeDivision },
+  { method: "PATCH", path: "/api/v1/divisiones/:divisionId", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.updateDivision },
+  { method: "DELETE", path: "/api/v1/divisiones/:divisionId", middlewares: [verifyToken, required(P.ACADEMICS_MANAGE)], handler: academicController.deactivateDivision },
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },
   { method: "GET", path: "/api/v1/buildings/:buildingId", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.getBuilding },
