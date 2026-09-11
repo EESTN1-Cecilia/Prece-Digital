@@ -28,3 +28,31 @@ Un valor omitido en la asignación significa “todo ese nivel”. Una asignaci�
 ## Bajas lógicas
 
 Las cuentas no se borran. Se desactivan (`isActive: false`, `deactivatedAt`) y se revocan sus sesiones.
+
+## Autorización
+
+La autorización decide qué puede hacer el usuario autenticado. Se aplica siempre en el
+backend: el frontend solo puede ocultar funcionalidades, eso es usabilidad, no seguridad.
+
+- **Identidad** → del token JWT verificado (`verifyToken` deja el usuario en `ctx.user`).
+- **Roles** → de las asignaciones del usuario en el store.
+- **Permisos** → del catálogo central `config/permissions.config.mjs` (`ROL_CATALOGO`,
+  `ROLE_PERMISSIONS` y los helpers de `modules/auth/permission.service.mjs`).
+
+Un permiso se escribe `modulo.accion`. Las acciones canónicas del catálogo son
+`read`, `create`, `update`, `delete`, `approve` y `upload`; se conservan las legadas
+`write` (crear+modificar+cargar) y `manage` (eliminar+aprobar), más puntuales como
+`users.deactivate`. El acceso se verifica con el middleware `authorize({ permission,
+roles, context })` antes de ejecutar el controlador.
+
+| Resultado | Respuesta |
+| --- | --- |
+| Sin token o token inválido | `401` |
+| Autenticado sin el permiso o el alcance | `403` |
+| Autenticado con permiso | Ejecuta la operación |
+
+`GET /auth/me` y `GET /auth/permissions` devuelven roles, permisos y un resumen por
+módulo calculados en el backend; el cliente nunca envía roles ni permisos. Un usuario
+no puede desactivar ni modificar su propia cuenta. Incorporar un rol nuevo es agregar
+su entrada en `ROL_CATALOGO` y su lista en `ROLE_PERMISSIONS`: no se toca ningún
+controlador ni middleware.
