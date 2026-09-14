@@ -1,18 +1,37 @@
 /* Chequeo de la logica pura del modulo: node --test src */
 
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { afterEach } from "node:test";
 import {
   coincide,
   construirConsulta,
   filtrarUsuarios,
+  iniciarSesion,
   listarUsuarios,
   normalizarUsuario,
+  obtenerSesion,
   paginar,
   validarUsuario
 } from "../../services/identity-api.js";
 import { PERMISOS, puede } from "../../utils/permisos.js";
 
+const fetchOriginal = globalThis.fetch;
+const windowOriginal = globalThis.window;
+
+function crearStorage() {
+  const datos = new Map();
+
+  return {
+    getItem: (clave) => datos.get(clave) ?? null,
+    setItem: (clave, valor) => datos.set(clave, String(valor)),
+    removeItem: (clave) => datos.delete(clave)
+  };
+}
+
+afterEach(() => {
+  globalThis.fetch = fetchOriginal;
+  globalThis.window = windowOriginal;
+});
 const usuarios = [
   normalizarUsuario({
     id: 1,
@@ -136,4 +155,53 @@ test("fuera del alta el rol no es obligatorio y el telefono se valida solo si vi
   assert.equal(validarUsuario(base), null);
   assert.equal(validarUsuario({ ...base, telefono: "+54 221 555-0000" }), null);
   assert.match(validarUsuario({ ...base, telefono: "no-es-telefono" }).telefono, /telefono/i);
+});
+
+test("obtenerSesion queda anonima cuando no hay token guardado", async () => {
+  globalThis.window = { localStorage: crearStorage() };
+
+  const resultado = await obtenerSesion();
+
+  assert.equal(resultado.origen, "anonima");
+  assert.equal(resultado.data, null);
+});
+
+test("iniciarSesion llama al backend, guarda tokens y normaliza la sesion", async () => {
+  const storage = crearStorage();
+  globalThis.window = { localStorage: storage };
+  globalThis.fetch = async (url, opciones) => {
+    assert.equal(String(url), "http://localhost:3000/api/v1/auth/login");
+    assert.equal(opciones.method, "POST");
+    assert.deepEqual(JSON.parse(opciones.body), {
+      email: "admin@prece.local",
+      password: "Admin123!"
+    });
+
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        accessToken: "access.demo",
+        refreshToken: "refresh.demo",
+        user: {
+          id: "usr_1",
+          email: "admin@prece.local",
+          displayName: "Administrador General",
+          assignments: [{ role: "admin", schoolId: "esc-1" }]
+        },
+        roles: ["admin"],
+        permisos: ["*"],
+        alcances: ["schoolId"]
+      })
+    };
+  };
+
+  const resultado = await iniciarSesion({ email: "admin@prece.local", password: "Admin123!" });
+
+  assert.equal(storage.getItem("prece.token"), "access.demo");
+  assert.equal(storage.getItem("prece.refreshToken"), "refresh.demo");
+  assert.equal(resultado.origen, "api");
+  assert.equal(resultado.data.usuario.email, "admin@prece.local");
+  assert.deepEqual(resultado.data.usuario.roles.map((rol) => rol.id), ["admin"]);
+  assert.deepEqual(resultado.data.permisos, ["*"]);
 });

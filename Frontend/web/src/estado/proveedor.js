@@ -5,7 +5,7 @@
    global y las cargas que bloquean el arranque.
 
    Antes cada vista llamaba a `useSesion()` por su cuenta y disparaba su propio
-   GET /api/v1/me: cuatro pedidos para el mismo dato y cuatro copias que podian
+   GET /api/v1/auth/me: cuatro pedidos para el mismo dato y cuatro copias que podian
    quedar desincronizadas. Ahora el pedido se hace una vez, aca.
 
    Lo que NO va en el estado global: filtros de una tabla, texto de un input,
@@ -20,8 +20,8 @@
 import React, { createContext, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
 const h = React.createElement;
-import { EVENTO_SESION_EXPIRADA, guardarToken, reiniciarSesionExpirada } from "../services/http.js";
-import { obtenerSesion, sesionDemo } from "../services/identity-api.js";
+import { EVENTO_SESION_EXPIRADA, reiniciarSesionExpirada } from "../services/http.js";
+import { cerrarSesionRemota, iniciarSesion as iniciarSesionApi, obtenerSesion, sesionDemo } from "../services/identity-api.js";
 import { listarNotificaciones, marcarNotificacionLeida } from "../services/notificaciones-api.js";
 
 export const ContextoEstado = createContext(null);
@@ -199,10 +199,29 @@ export function ProveedorEstado({ children }) {
   const cargarSesion = useCallback(async ({ silencioso = false } = {}) => {
     despachar({ tipo: "sesion/cargando", silencioso });
 
-    const { data, origen } = await obtenerSesion();
+    try {
+      const { data, origen } = await obtenerSesion();
 
-    if (vigente.current) {
-      despachar({ tipo: "sesion/lista", datos: data, origen });
+      if (!vigente.current) {
+        return;
+      }
+
+      if (data) {
+        despachar({ tipo: "sesion/lista", datos: data, origen });
+      } else {
+        despachar({ tipo: "sesion/anonima" });
+      }
+    } catch (error) {
+      if (!vigente.current) {
+        return;
+      }
+
+      if (error?.esSesionExpirada) {
+        despachar({ tipo: "sesion/expirada" });
+      } else {
+        despachar({ tipo: "sesion/anonima" });
+        despachar({ tipo: "error-global/mostrar", error });
+      }
     }
   }, []);
 
@@ -263,14 +282,30 @@ export function ProveedorEstado({ children }) {
     () => ({
       refrescarSesion: cargarSesion,
 
-      cerrarSesion() {
-        guardarToken(null);
-        reiniciarSesionExpirada();
-        despachar({ tipo: "sesion/anonima" });
-        window.location.hash = "#/login";
+      async iniciarSesion(credenciales) {
+        despachar({ tipo: "carga/iniciar", clave: "login" });
+
+        try {
+          const { data, origen } = await iniciarSesionApi(credenciales);
+          despachar({ tipo: "sesion/lista", datos: data, origen });
+          despachar({ tipo: "error-global/limpiar" });
+          return data;
+        } finally {
+          despachar({ tipo: "carga/terminar", clave: "login" });
+        }
       },
 
-      /* Solo mientras GET /api/v1/me no exista: permite mirar las pantallas con
+      async cerrarSesion() {
+        try {
+          await cerrarSesionRemota();
+        } finally {
+          reiniciarSesionExpirada();
+          despachar({ tipo: "sesion/anonima" });
+          window.location.hash = "#/login";
+        }
+      },
+
+      /* Permite mirar las pantallas con
          distintos permisos sin tocar codigo. */
       cambiarPerfilDemo(perfilId) {
         despachar({ tipo: "sesion/lista", datos: sesionDemo(perfilId), origen: "demo" });
@@ -311,7 +346,7 @@ export function ProveedorEstado({ children }) {
         despachar({ tipo: "carga/terminar", clave });
       }
     }),
-    [cargarSesion, cargarNotificaciones]
+    [cargarSesion, cargarNotificaciones, iniciarSesionApi]
   );
 
   const valor = useMemo(() => ({ estado, acciones }), [estado, acciones]);

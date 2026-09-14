@@ -144,6 +144,7 @@ export function registrar(error, contexto) {
    el token viaja en la cabecera Authorization. Guardarlo y renovarlo es tarea del
    modulo de autenticacion; aca solo se lee para firmar cada solicitud. */
 const CLAVE_TOKEN = "prece.token";
+const CLAVE_REFRESH_TOKEN = "prece.refreshToken";
 
 export function guardarToken(token) {
   try {
@@ -165,6 +166,36 @@ export function leerToken() {
   }
 }
 
+export function guardarRefreshToken(token) {
+  try {
+    if (token) {
+      window.localStorage.setItem(CLAVE_REFRESH_TOKEN, token);
+    } else {
+      window.localStorage.removeItem(CLAVE_REFRESH_TOKEN);
+    }
+  } catch {
+    /* Navegador sin almacenamiento disponible: la sesion dura lo que la pestania. */
+  }
+}
+
+export function leerRefreshToken() {
+  try {
+    return window.localStorage.getItem(CLAVE_REFRESH_TOKEN);
+  } catch {
+    return null;
+  }
+}
+
+export function guardarCredenciales({ accessToken, refreshToken } = {}) {
+  guardarToken(accessToken ?? null);
+  guardarRefreshToken(refreshToken ?? null);
+  reiniciarSesionExpirada();
+}
+
+export function limpiarCredenciales() {
+  guardarToken(null);
+  guardarRefreshToken(null);
+}
 let sesionYaInvalidada = false;
 
 function invalidarSesion() {
@@ -174,7 +205,7 @@ function invalidarSesion() {
 
   /* Una sola notificacion aunque varias pantallas reciban 401 a la vez. */
   sesionYaInvalidada = true;
-  guardarToken(null);
+  limpiarCredenciales();
   window.dispatchEvent(new CustomEvent(EVENTO_SESION_EXPIRADA));
 }
 
@@ -253,7 +284,7 @@ export async function pedir(ruta, opciones = {}) {
 
     registrar(error, { metodo, ruta });
 
-    if (error.esSesionExpirada) {
+    if (error.esSesionExpirada && token) {
       invalidarSesion();
     }
 

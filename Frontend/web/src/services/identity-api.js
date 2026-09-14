@@ -20,7 +20,11 @@
    y lo informan con `origen: "demo"` para que la vista lo muestre.
    Las escrituras nunca degradan: propagan el error del backend (401 / 403 / 404). */
 
+<<<<<<< HEAD
 import { ErrorApi, guardarToken, leerToken, pedir } from "./http.js";
+=======
+import { ErrorApi, guardarCredenciales, leerRefreshToken, leerToken, limpiarCredenciales, pedir } from "./http.js";
+>>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
 import { PERMISOS } from "../utils/permisos.js";
 
 export { ErrorApi };
@@ -72,17 +76,21 @@ function normalizarEstado(crudo) {
 /* Lista blanca: solo estos campos llegan a la vista. Si la API devolviera
    password_hash, tokens o credenciales, quedan descartados aca. */
 export function normalizarUsuario(crudo) {
-  const roles = primero(crudo, ["roles", "usuario_roles", "userRoles"]) ?? [];
+  const assignments = Array.isArray(crudo?.assignments) ? crudo.assignments : [];
+  const roles = primero(crudo, ["roles", "usuario_roles", "userRoles"]) ?? assignments.map((asignacion) => asignacion.role);
+  const displayName = primero(crudo, ["displayName", "display_name", "nombreCompleto", "fullName"]);
+  const [nombreDisplay, ...apellidoDisplay] = String(displayName ?? "").trim().split(/\s+/).filter(Boolean);
+  const email = primero(crudo, ["email", "correo"]);
 
   return {
     id: primero(crudo, ["id", "usuario_id", "userId"]),
-    nombre: primero(crudo, ["nombre", "firstName", "first_name"]),
-    apellido: primero(crudo, ["apellido", "lastName", "last_name"]),
-    usuario: primero(crudo, ["usuario", "username", "nombre_usuario"]),
-    email: primero(crudo, ["email", "correo"]),
+    nombre: primero(crudo, ["nombre", "firstName", "first_name"]) ?? nombreDisplay ?? null,
+    apellido: primero(crudo, ["apellido", "lastName", "last_name"]) ?? (apellidoDisplay.length ? apellidoDisplay.join(" ") : null),
+    usuario: primero(crudo, ["usuario", "username", "nombre_usuario"]) ?? email?.split("@")[0] ?? null,
+    email,
     dni: primero(crudo, ["dni", "documento"]),
     telefono: primero(crudo, ["telefono", "phone"]),
-    area: primero(crudo, ["area", "sector", "area_nombre", "sector_nombre"]),
+    area: primero(crudo, ["area", "sector", "area_nombre", "sector_nombre"]) ?? primero(assignments[0], ["schoolId", "areaId"]),
     roles: (Array.isArray(roles) ? roles : [roles]).map(normalizarRol).filter((rol) => rol.id),
     estado: normalizarEstado(crudo),
     creadoEn: primero(crudo, ["creadoEn", "creado_en", "createdAt", "created_at"]),
@@ -229,7 +237,7 @@ export const ACCIONES = [
    Es la fuente de verdad de la matriz; ACCIONES solo ordena las columnas. */
 export async function listarPermisos() {
   try {
-    const data = await pedir("/api/v1/permissions");
+    const data = await pedir("/api/v1/authorization/permissions");
 
     return {
       data: (Array.isArray(data) ? data : []).map((permiso) => ({
@@ -275,6 +283,37 @@ export async function listarModulos() {
 
 /* ---------- Usuarios ---------- */
 
+const PERMISOS_POR_ROL = {
+  admin: ["*"],
+  director: [PERMISOS.usuariosLeer, PERMISOS.usuariosCrear, PERMISOS.usuariosEditar, PERMISOS.rolesLeer, PERMISOS.rolesEditar],
+  secretario: [PERMISOS.usuariosLeer],
+  secretary: [PERMISOS.usuariosLeer],
+  preceptor: [],
+  docente: [],
+  jefe_area: [PERMISOS.usuariosLeer, PERMISOS.rolesLeer],
+  server: [PERMISOS.usuariosLeer, PERMISOS.rolesLeer]
+};
+
+function permisosDesdeRoles(roles = []) {
+  return [...new Set(roles.flatMap((rol) => PERMISOS_POR_ROL[rol?.id ?? rol] ?? []))];
+}
+
+function alcancesDesdeAsignaciones(asignaciones = []) {
+  return [...new Set(asignaciones.flatMap((asignacion) => Object.keys(asignacion).filter((clave) => clave !== "role")))];
+}
+
+function normalizarSesionAutenticada(datos = {}) {
+  const usuarioCrudo = datos.usuario ?? datos.user ?? datos;
+  const usuario = normalizarUsuario(usuarioCrudo);
+  const asignaciones = Array.isArray(usuarioCrudo?.assignments) ? usuarioCrudo.assignments : [];
+  const roles = (datos.roles ?? usuario.roles).map(normalizarRol).filter((rol) => rol.id);
+
+  return {
+    usuario: { ...usuario, roles },
+    permisos: datos.permisos ?? datos.permissions ?? permisosDesdeRoles(roles),
+    alcances: datos.alcances ?? datos.scopes ?? alcancesDesdeAsignaciones(asignaciones)
+  };
+}
 const USUARIOS_DEMO = [
   ["Lucia", "Gimenez", "lgimenez", "Direccion", ["director"], "activo", "2026-08-28T12:40:00"],
   ["Martin", "Sosa", "msosa", "Secretaria", ["secretary"], "activo", "2026-09-01T09:15:00"],
@@ -432,6 +471,7 @@ export function sesionDemo(perfilId = PERFILES_DEMO[1].id) {
   };
 }
 
+<<<<<<< HEAD
 const MAPA_PERMISOS_ROL = {
   admin: ["*"],
   "super-admin": ["*"],
@@ -464,10 +504,24 @@ const MAPA_PERMISOS_ROL = {
 
 export async function iniciarSesion({ email, password }) {
   const respuesta = await pedir("/api/v1/auth/login", {
+=======
+export async function obtenerSesion() {
+  if (!leerToken()) {
+    return { data: null, origen: "anonima" };
+  }
+
+  const data = await pedir("/api/v1/auth/me");
+  return { data: normalizarSesionAutenticada(data), origen: "api" };
+}
+
+export async function iniciarSesion({ email, password }) {
+  const data = await pedir("/api/v1/auth/login", {
+>>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
     method: "POST",
     body: JSON.stringify({ email, password })
   });
 
+<<<<<<< HEAD
   const token = respuesta?.accessToken ?? respuesta?.token;
   if (token) {
     guardarToken(token);
@@ -531,6 +585,28 @@ export async function obtenerSesion() {
       return { data: null, origen: "expirada" };
     }
     return { data: null, origen: "error", error };
+=======
+  if (!data?.accessToken || !data?.refreshToken) {
+    throw new ErrorApi(500, "El servidor no devolvio una sesion valida.", { alcance: "global" });
+  }
+
+  guardarCredenciales(data);
+  return { data: normalizarSesionAutenticada(data), origen: "api" };
+}
+
+export async function cerrarSesionRemota() {
+  const refreshToken = leerRefreshToken();
+
+  try {
+    if (refreshToken) {
+      await pedir("/api/v1/auth/logout", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken })
+      });
+    }
+  } finally {
+    limpiarCredenciales();
+>>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
   }
 }
 
@@ -566,7 +642,7 @@ export function cambiarEstadoUsuario(id, estado) {
 
 export async function listarPermisosDeRol(id) {
   try {
-    const data = await pedir(`/api/v1/roles/${encodeURIComponent(id)}/permissions`);
+    const data = await pedir(`/api/v1/authorization/roles/${encodeURIComponent(id)}/permissions`);
 
     return {
       data: Array.isArray(data) ? data : (data?.permisos ?? data?.permissions ?? []),
@@ -582,7 +658,7 @@ export async function listarPermisosDeRol(id) {
 }
 
 export function guardarPermisosDeRol(id, permisos) {
-  return pedir(`/api/v1/roles/${encodeURIComponent(id)}/permissions`, {
+  return pedir(`/api/v1/authorization/roles/${encodeURIComponent(id)}/permissions`, {
     method: "PUT",
     body: JSON.stringify({ permisos })
   });
