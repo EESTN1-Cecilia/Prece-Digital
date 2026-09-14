@@ -4,37 +4,6 @@ import { FormCard } from "../../components/form-card.js";
 import { Alerta, Boton, Campo } from "../../components/ui/index.js";
 import { useSesion } from "../../estado/index.js";
 
-<<<<<<< HEAD
-/* Figma: "Login - todos" (2138:2) y su variante "Activar Cuenta" (2179:60). */
-export default function LoginView({ titulo = "Iniciar Sesión" }) {
-  const { iniciarSesion } = useSesion();
-  const [correo, setCorreo] = useState("");
-  const [contrasena, setContrasena] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleSubmit = async (evento) => {
-    evento?.preventDefault();
-    if (!correo.trim() || !contrasena) return;
-
-    setError(null);
-    setCargando(true);
-
-    try {
-      await iniciarSesion({ email: correo.trim(), password: contrasena });
-      window.location.hash = "#/inicio";
-    } catch (err) {
-      setError(err?.mensaje ?? "Credenciales inválidas o cuenta desactivada");
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  return h(
-    FormCard,
-    { titulo, onSubmit: handleSubmit },
-    error ? h(Alerta, { tono: "error" }, error) : null,
-=======
 const INICIAL = { email: "", password: "" };
 
 function validar(datos) {
@@ -100,28 +69,10 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
           error.mensaje ?? error.message ?? "Revisa tus credenciales e intenta nuevamente."
         )
       : null,
->>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
     h(Campo, {
       etiqueta: "Correo institucional:",
       id: "email",
       tipo: "email",
-<<<<<<< HEAD
-      valor: correo,
-      onChange: setCorreo,
-      placeholder: "Ingrese su correo....",
-      requerido: true,
-      deshabilitado: cargando
-    }),
-    h(Campo, {
-      etiqueta: "Contraseña:",
-      id: "contrasena",
-      tipo: "password",
-      valor: contrasena,
-      onChange: setContrasena,
-      placeholder: "Ingrese su contraseña....",
-      requerido: true,
-      deshabilitado: cargando
-=======
       valor: datos.email,
       onChange: actualizar("email"),
       placeholder: "Ingrese su correo....",
@@ -154,7 +105,6 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
         },
         h("img", { src: "/assets/icons/eye.svg", alt: "", "aria-hidden": "true" })
       )
->>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
     }),
     h(
       "div",
@@ -162,19 +112,6 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
       h("a", { href: "#recuperar" }, "Olvide mi contraseña"),
       h("a", { href: "#soporte" }, "Soporte")
     ),
-<<<<<<< HEAD
-    h(
-      Boton,
-      {
-        className: "form-submit",
-        tipo: "submit",
-        ancho: true,
-        cargando
-      },
-      cargando ? "Iniciando sesión..." : "Iniciar Sesión"
-    )
-=======
     h(Boton, { className: "form-submit", tipo: "submit", ancho: true, cargando: enviando }, "Iniciar Sesión")
->>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
   );
 }

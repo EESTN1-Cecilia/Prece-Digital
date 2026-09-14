@@ -20,11 +20,7 @@
    y lo informan con `origen: "demo"` para que la vista lo muestre.
    Las escrituras nunca degradan: propagan el error del backend (401 / 403 / 404). */
 
-<<<<<<< HEAD
-import { ErrorApi, guardarToken, leerToken, pedir } from "./http.js";
-=======
 import { ErrorApi, guardarCredenciales, leerRefreshToken, leerToken, limpiarCredenciales, pedir } from "./http.js";
->>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
 import { PERMISOS } from "../utils/permisos.js";
 
 export { ErrorApi };
@@ -471,40 +467,6 @@ export function sesionDemo(perfilId = PERFILES_DEMO[1].id) {
   };
 }
 
-<<<<<<< HEAD
-const MAPA_PERMISOS_ROL = {
-  admin: ["*"],
-  "super-admin": ["*"],
-  "system-admin": [
-    PERMISOS.usuariosLeer,
-    PERMISOS.usuariosCrear,
-    PERMISOS.usuariosEditar,
-    PERMISOS.rolesLeer,
-    PERMISOS.rolesEditar
-  ],
-  director: ["*"],
-  secretario: [
-    PERMISOS.usuariosLeer,
-    PERMISOS.usuariosCrear,
-    PERMISOS.usuariosEditar,
-    PERMISOS.rolesLeer
-  ],
-  secretary: [
-    PERMISOS.usuariosLeer,
-    PERMISOS.usuariosCrear,
-    PERMISOS.usuariosEditar,
-    PERMISOS.rolesLeer
-  ],
-  preceptor: [PERMISOS.usuariosLeer],
-  "area-lead": [PERMISOS.usuariosLeer],
-  jefe_area: [PERMISOS.usuariosLeer],
-  docente: [],
-  teacher: []
-};
-
-export async function iniciarSesion({ email, password }) {
-  const respuesta = await pedir("/api/v1/auth/login", {
-=======
 export async function obtenerSesion() {
   if (!leerToken()) {
     return { data: null, origen: "anonima" };
@@ -516,76 +478,10 @@ export async function obtenerSesion() {
 
 export async function iniciarSesion({ email, password }) {
   const data = await pedir("/api/v1/auth/login", {
->>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
     method: "POST",
     body: JSON.stringify({ email, password })
   });
 
-<<<<<<< HEAD
-  const token = respuesta?.accessToken ?? respuesta?.token;
-  if (token) {
-    guardarToken(token);
-  }
-
-  const { data, origen } = await obtenerSesion();
-  return { token, data, origen };
-}
-
-export async function obtenerSesion() {
-  const token = leerToken();
-
-  if (!token) {
-    return { data: null, origen: "sin-token" };
-  }
-
-  try {
-    const raw = await pedir("/api/v1/auth/me");
-    const data = raw?.data ?? raw;
-
-    if (!data || (!data.id && !data.email)) {
-      return { data: null, origen: "sin-token" };
-    }
-
-    const assignments = data?.assignments ?? [];
-    const codigosRoles = assignments.map((a) => a.role ?? a.rol ?? a).filter(Boolean);
-    const roles = codigosRoles.map((codigo) => {
-      const demo = ROLES_DEMO.find((r) => r.id === codigo || r.id === codigo.replace("_", "-"));
-      return normalizarRol(demo ? { ...demo, id: codigo } : { id: codigo, nombre: codigo });
-    });
-
-    const permisosCalculados = [
-      ...new Set(codigosRoles.flatMap((r) => MAPA_PERMISOS_ROL[r] ?? MAPA_PERMISOS_ROL[r.replace("_", "-")] ?? []))
-    ];
-
-    const alcances = [
-      ...new Set(assignments.map((a) => a.schoolId ?? a.escuela_id).filter(Boolean))
-    ];
-
-    const usuario = normalizarUsuario({
-      id: data.id,
-      nombre: data.displayName ?? data.nombre ?? data.email.split("@")[0],
-      apellido: data.apellido ?? "",
-      email: data.email,
-      roles,
-      activo: data.isActive ?? true
-    });
-
-    return {
-      data: {
-        usuario,
-        roles,
-        permisos: data?.permisos ?? data?.permissions ?? (permisosCalculados.length ? permisosCalculados : ["*"]),
-        alcances: alcances.length ? alcances : ["school"]
-      },
-      origen: "api"
-    };
-  } catch (error) {
-    if (error.status === 401) {
-      guardarToken(null);
-      return { data: null, origen: "expirada" };
-    }
-    return { data: null, origen: "error", error };
-=======
   if (!data?.accessToken || !data?.refreshToken) {
     throw new ErrorApi(500, "El servidor no devolvio una sesion valida.", { alcance: "global" });
   }
@@ -606,7 +502,6 @@ export async function cerrarSesionRemota() {
     }
   } finally {
     limpiarCredenciales();
->>>>>>> 010894b2c6392ebe8fe48bafa272246de5ab7d60
   }
 }
 
