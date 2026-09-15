@@ -157,14 +157,8 @@ function Footer() {
           title: "Links",
           links: [
             ["Inicio", "#/inicio"],
+            ["Alumnos", "#/alumnos"],
             ["Observaciones", "#/preceptoria/observaciones"],
-            ["Inicio secretaria", "#/secretaria"],
-            ["Cargar alumno", "#/alumnos/cargar"],
-            ["Usuarios", "#/usuarios"],
-            ["Roles y permisos", "#/roles"],
-            ["Login", "#/login"],
-            ["Activar cuenta", "#/activar"],
-            ["Crear cuenta", "#/invitar"],
             ["Sobre Nosotros", "#nosotros"]
           ]
         }),
