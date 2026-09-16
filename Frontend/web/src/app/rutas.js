@@ -25,6 +25,9 @@
 import DashboardView from "../modules/dashboard/dashboard-view.js";
 import SecretariaView from "../modules/dashboard/secretaria-view.js";
 import AlumnoFormularioView from "../modules/students/alumno-formulario-view.js";
+import AlumnosListView from "../modules/students/alumnos-list-view.js";
+import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
+import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
@@ -66,6 +69,15 @@ export const RUTAS = [
     enMenu: true
   },
   {
+    patron: "#/alumnos/cargar",
+    titulo: "Cargar alumno",
+    vista: AlumnoFormularioView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/alumnos",
+    permisos: [PERMISOS.alumnosCrear]
+  },
+  {
     patron: "#/alumnos/nuevo",
     titulo: "Cargar alumno",
     vista: AlumnoFormularioView,
@@ -73,6 +85,37 @@ export const RUTAS = [
     icono: "clipboard",
     padre: "#/inicio-secretaria",
     permisos: [PERMISOS.alumnosCrear],
+    enMenu: true
+  },
+  {
+    patron: "#/alumnos/:id/perfil",
+    titulo: "Perfil completo del alumno",
+    vista: AlumnoPerfilView,
+    padre: "#/alumnos/:id",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/alumnos/:id/ficha",
+    titulo: "Ficha del alumno",
+    vista: AlumnoResumenView,
+    padre: "#/alumnos",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/alumnos/:id",
+    titulo: "Ficha del alumno",
+    vista: AlumnoResumenView,
+    padre: "#/alumnos",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/alumnos",
+    titulo: "Listado de Alumnos",
+    vista: AlumnosListView,
+    seccion: "General",
+    icono: "people",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
   {

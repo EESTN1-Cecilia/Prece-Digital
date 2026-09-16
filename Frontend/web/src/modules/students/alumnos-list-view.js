@@ -661,21 +661,10 @@ export default function AlumnosListView() {
                               "a",
                               {
                                 href: `#/alumnos/${alumno.id}`,
-                                className: "table-action-link",
+                                className: "table-action-link btn-ver-ficha-inline",
                                 title: `Ver ficha de ${alumno.nombre}`
                               },
-                              "Ver"
-                            ),
-                            h("span", { className: "action-separator" }, "|"),
-                            h(
-                              "button",
-                              {
-                                type: "button",
-                                className: "table-action-btn",
-                                onClick: () => alert(`Editar datos de ${alumno.apellido}, ${alumno.nombre}`),
-                                title: `Editar alumno ${alumno.nombre}`
-                              },
-                              "Editar"
+                              "Ver Ficha"
                             )
                           )
                         )
@@ -742,19 +731,10 @@ export default function AlumnosListView() {
                         "a",
                         {
                           href: `#/alumnos/${alumno.id}`,
-                          className: "action-button action-button--primary student-card-btn"
+                          className: "action-button action-button--primary student-card-btn student-card-btn--full"
                         },
                         h(IconoFigma, { className: "action-button__icon", nombre: "user-search" }),
                         h("span", null, "Ver Ficha")
-                      ),
-                      h(
-                        "button",
-                        {
-                          type: "button",
-                          className: "action-button action-button--secondary student-card-btn",
-                          onClick: () => alert(`Editar datos de ${alumno.apellido}, ${alumno.nombre}`)
-                        },
-                        h("span", null, "Editar")
                       )
                     )
                   )
