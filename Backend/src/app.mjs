@@ -5,6 +5,7 @@ import { notFound } from "../middlewares/not-found.middleware.mjs";
 import { matchRoute } from "../routes/index.mjs";
 import { RespuestaHttp, sendJson } from "../utils/http-response.mjs";
 import { readJsonBody } from "../utils/read-body.mjs";
+import auditService from "../modules/audit/audit.service.mjs";
 
 export function createApp(rutas = {}, { pool } = {}) {
   return createServer(async (request, response) => {
@@ -52,6 +53,8 @@ export function createApp(rutas = {}, { pool } = {}) {
       if (response.writableEnded) {
         return;
       }
+
+      auditService.registrarRequest(ctx, payload);
 
       if (payload instanceof RespuestaHttp) {
         sendJson(response, payload.status, payload.body);
