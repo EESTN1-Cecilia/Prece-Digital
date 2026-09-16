@@ -18,6 +18,7 @@ import * as reservationsController from "../modules/reservations/reservations.co
 import * as notificationsController from "../modules/notifications/notifications.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
 import * as academicController from "../modules/academic/academic.controller.mjs";
+import * as academicRecordsController from "../modules/academic-records/academic-records.controller.mjs";
 import * as authorizationController from "../controllers/authorization.controller.mjs";
 import { requierePermiso, requiereSesion } from "../middlewares/authorization.middleware.mjs";
 
@@ -80,6 +81,19 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/divisiones/:divisionId/horarios", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: academicController.listHorariosDeDivision },
   { method: "PATCH", path: "/api/v1/divisiones/:divisionId", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: academicController.updateDivision },
   { method: "DELETE", path: "/api/v1/divisiones/:divisionId", middlewares: [verifyToken, required(P.ACADEMICS_MANAGE)], handler: academicController.deactivateDivision },
+
+  { method: "POST", path: "/api/v1/situaciones-academicas", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_WRITE)], handler: academicRecordsController.createSituacion },
+  { method: "GET", path: "/api/v1/situaciones-academicas", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.listSituaciones },
+  { method: "GET", path: "/api/v1/situaciones-academicas/catalogos", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getCatalogos },
+  { method: "GET", path: "/api/v1/situaciones-academicas/pendientes", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.listPendientes },
+  { method: "GET", path: "/api/v1/situaciones-academicas/recursadas", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.listRecursadas },
+  { method: "GET", path: "/api/v1/situaciones-academicas/intensificadas", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.listIntensificadas },
+  { method: "GET", path: "/api/v1/situaciones-academicas/:situacionId", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getSituacion },
+  { method: "PATCH", path: "/api/v1/situaciones-academicas/:situacionId", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_WRITE)], handler: academicRecordsController.updateSituacion },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/situacion-academica", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getSituacionDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getSituacionDeAlumnoYMateria },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/historial-academico", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getHistorialDeAlumno },
+
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },
   { method: "GET", path: "/api/v1/buildings/:buildingId", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.getBuilding },
