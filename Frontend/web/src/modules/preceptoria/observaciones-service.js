@@ -14,6 +14,18 @@ export const DEFAULT_OBSERVATION_SECTORS = [
   "Secretaría"
 ];
 
+/* Endpoint reservado para cuando el backend exponga observaciones propias. */
+export const OBSERVATIONS_API_PATH = "/api/v1/observaciones";
+
+export async function getObservationsFromApi(httpClient) {
+  if (typeof httpClient !== "function") {
+    throw new TypeError("Se requiere un cliente HTTP para consultar observaciones.");
+  }
+
+  const response = await httpClient(OBSERVATIONS_API_PATH);
+  return Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
+}
+
 export function getDefaultObservationForm(initialValues = {}) {
   const base = {
     alumno: "",
