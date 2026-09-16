@@ -8,6 +8,7 @@ import { RoleSwitch } from "../../components/common/role-switch.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge, AccessDeniedState } from "../../components/common/state-handlers.js";
 import { SecretariaService } from "./secretaria-service.js";
 import { AuthService } from "../../services/auth-service.js";
+import { AlumnoMatrizModal } from "../students/alumno-matriz-wiew.js";
 
 export default function SecretariaDashboardView() {
   const [user, setUser] = useState(AuthService.getCurrentUser());
@@ -17,6 +18,7 @@ export default function SecretariaDashboardView() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [selectedTurnoFilter, setSelectedTurnoFilter] = useState("todos");
   const [selectedOrientacionFilter, setSelectedOrientacionFilter] = useState("todas");
+  const [matrizModalAbierto, setMatrizModalAbierto] = useState(false);
 
   // Escuchar cambios de rol globales
   useEffect(() => {
@@ -247,7 +249,10 @@ export default function SecretariaDashboardView() {
               icon: "filter",
               className: "dashboard-card--highlight"
             },
-            h(QuickAccessGrid, { userPermissions: user.permisos || ["all"] })
+            h(QuickAccessGrid, {
+              userPermissions: user.permisos || ["all"],
+              onOpenMatriz: () => setMatrizModalAbierto(true)
+            })
           ),
 
           // 2. Alumnos por Curso (27 divisiones de la BD) y 3. Inasistencias
@@ -516,6 +521,10 @@ export default function SecretariaDashboardView() {
                 )
           )
         )
-      : null
+      : null,
+    h(AlumnoMatrizModal, {
+      abierto: matrizModalAbierto,
+      onCerrar: () => setMatrizModalAbierto(false)
+    })
   );
 }

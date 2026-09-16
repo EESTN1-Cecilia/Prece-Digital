@@ -4,13 +4,13 @@ import { h, ActionButton } from "../../layouts/site-layout.js";
  * Grilla de accesos rápidos a las funcionalidades institucionales según permisos.
  * Con iconos SVG de Figma y sin emojis.
  */
-export function QuickAccessGrid({ userPermissions = ["all"] }) {
+export function QuickAccessGrid({ userPermissions = ["all"], onOpenMatriz = null }) {
   const allAccesses = [
     { id: "students", label: "Alumnos", icon: "people", href: "#/alumnos", permission: "students:view" },
     { id: "attendance", label: "Inasistencias", icon: "clipboard", href: "#/asistencias", permission: "attendance:view" },
     { id: "observations", label: "Observaciones", icon: "clipboard", href: "#/preceptoria/observaciones", permission: "observations:view" },
     { id: "grades", label: "Calificaciones", icon: "clipboard", href: "#/calificaciones", permission: "grades:view" },
-    { id: "matrix-book", label: "Libro Matriz", icon: "clipboard", href: "#/libro-matriz", permission: "matrix:view" },
+    { id: "matrix-book", label: "Libro Matriz", icon: "clipboard", onClick: onOpenMatriz, permission: "matrix:view" },
     { id: "documentation", label: "Documentación", icon: "clipboard", href: "#/documentacion", permission: "documents:view" }
   ];
 
@@ -22,18 +22,39 @@ export function QuickAccessGrid({ userPermissions = ["all"] }) {
     "div",
     { className: "quick-access-grid" },
     allowedAccesses.map((item) =>
-      h(
-        "a",
-        { key: item.id, href: item.href, className: "quick-access-link" },
-        h(
-          ActionButton,
-          {
-            icon: item.icon,
-            tone: item.tone || "primary"
-          },
-          item.label
-        )
-      )
+      item.onClick
+        ? h(
+            "button",
+            {
+              key: item.id,
+              type: "button",
+              className: "quick-access-link quick-access-btn-reset",
+              onClick: (e) => {
+                e.preventDefault();
+                item.onClick();
+              }
+            },
+            h(
+              ActionButton,
+              {
+                icon: item.icon,
+                tone: item.tone || "primary"
+              },
+              item.label
+            )
+          )
+        : h(
+            "a",
+            { key: item.id, href: item.href, className: "quick-access-link" },
+            h(
+              ActionButton,
+              {
+                icon: item.icon,
+                tone: item.tone || "primary"
+              },
+              item.label
+            )
+          )
     )
   );
 }

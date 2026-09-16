@@ -5,10 +5,13 @@ import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../compone
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { StudentsService } from "./students-service.js";
 import { AuthService } from "../../services/auth-service.js";
+import { AlumnoMatrizModal } from "./alumno-matriz-wiew.js";
 
 export default function AlumnosListView() {
   const [user, setUser] = useState(AuthService.getCurrentUser());
   const [viewMode, setViewMode] = useState("table"); // 'table' | 'card'
+  const [matrizAbierta, setMatrizAbierta] = useState(false);
+  const [alumnoMatriz, setAlumnoMatriz] = useState(null);
 
   // Parámetros de consulta y filtros
   const [searchQuery, setSearchQuery] = useState("");
@@ -370,6 +373,19 @@ export default function AlumnosListView() {
                 }
               },
               "Cargar Alumno"
+            ),
+            // Botón de Libro Matriz
+            h(
+              ActionButton,
+              {
+                icon: "clipboard",
+                tone: "secondary",
+                onClick: () => {
+                  setAlumnoMatriz(null);
+                  setMatrizAbierta(true);
+                }
+              },
+              "Libro Matriz"
             )
           )
         },
@@ -664,7 +680,32 @@ export default function AlumnosListView() {
                                 className: "table-action-link btn-ver-ficha-inline",
                                 title: `Ver ficha de ${alumno.nombre}`
                               },
-                              "Ver Ficha"
+                              "Ver"
+                            ),
+                            h("span", { className: "action-separator" }, "|"),
+                            h(
+                              "button",
+                              {
+                                type: "button",
+                                className: "table-action-btn",
+                                onClick: () => {
+                                  setAlumnoMatriz(alumno);
+                                  setMatrizAbierta(true);
+                                },
+                                title: `Ver y cargar matriz analítica de ${alumno.nombre}`
+                              },
+                              "Matriz"
+                            ),
+                            h("span", { className: "action-separator" }, "|"),
+                            h(
+                              "button",
+                              {
+                                type: "button",
+                                className: "table-action-btn",
+                                onClick: () => alert(`Editar datos de ${alumno.apellido}, ${alumno.nombre}`),
+                                title: `Editar alumno ${alumno.nombre}`
+                              },
+                              "Editar"
                             )
                           )
                         )
@@ -845,7 +886,14 @@ export default function AlumnosListView() {
             "Plantillas"
           )
         )
-      )
+      ),
+
+      // Modal de Carga de Matriz Oficial
+      h(AlumnoMatrizModal, {
+        abierto: matrizAbierta,
+        onCerrar: () => setMatrizAbierta(false),
+        alumnoInicial: alumnoMatriz
+      })
     )
   );
 }
