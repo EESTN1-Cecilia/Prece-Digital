@@ -10,6 +10,8 @@ import { AuthService } from "../services/auth-service.js";
 
 import AlumnosListView from "../modules/students/alumnos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
+import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
+import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
 
 function renderInicio() {
   const role = AuthService.getActiveRole();
@@ -33,10 +35,31 @@ const RUTAS = {
   "#/preceptoria/observaciones": () => h(ObservacionesView)
 };
 
+function resolverComponenteRuta(hash) {
+  const rawHash = hash || window.location.hash || "#/inicio";
+  const baseHash = rawHash.split("?")[0];
+
+  if (RUTAS[baseHash]) {
+    return RUTAS[baseHash]();
+  }
+
+  // Coincidencia para ruta de ficha y perfil de alumno: #/alumnos/:id, #/alumnos/:id/ficha, #/alumnos/:id/perfil
+  const matchAlumno = baseHash.match(/^#\/alumnos\/([^/?]+)(?:\/(ficha|perfil))?$/);
+  if (matchAlumno && matchAlumno[1] !== "cargar" && matchAlumno[1] !== "nuevo" && matchAlumno[1] !== "buscar") {
+    const studentId = decodeURIComponent(matchAlumno[1]);
+    const subvista = matchAlumno[2];
+    if (subvista === "perfil") {
+      return h(AlumnoPerfilView, { id: studentId, ruta: { parametros: { id: studentId } } });
+    }
+    return h(AlumnoResumenView, { id: studentId, ruta: { parametros: { id: studentId } } });
+  }
+
+  return renderInicio();
+}
+
 function rutaActual() {
   const hash = window.location.hash || "#/inicio";
-  const baseHash = hash.split("?")[0];
-  return RUTAS[baseHash] ? baseHash : "#/inicio";
+  return hash.split("?")[0];
 }
 
 function App() {
@@ -62,7 +85,7 @@ function App() {
     };
   }, []);
 
-  return h(SiteLayout, { ruta }, RUTAS[ruta] ? RUTAS[ruta]() : renderInicio());
+  return h(SiteLayout, { ruta }, resolverComponenteRuta(ruta));
 }
 
 createRoot(document.querySelector("#root")).render(h(App));
