@@ -9935,4 +9935,1018 @@ a {
   }
 }
 
+/* ==========================================================================
+   ESTILOS OFICIALES: LIBRO MATRIZ Y CERTIFICADO ANALÍTICO (FOTO EXACTA)
+   ========================================================================== */
+
+.matriz-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 999999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.matriz-modal-container {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 1080px;
+  max-height: 92vh;
+  margin: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #cbd5e1;
+  position: relative;
+  animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* BARRA DE HERRAMIENTAS ESTÁTICA / FIJA AL SCROLLEAR */
+.matriz-toolbar {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 12px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #334155;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.matriz-toolbar__left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.matriz-toolbar__title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.matriz-toolbar__badge {
+  font-size: 0.76rem;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-weight: 600;
+  display: inline-block;
+  width: fit-content;
+  letter-spacing: 0.02em;
+}
+
+.matriz-toolbar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* CONTENEDOR DE SCROLL PARA EL DOCUMENTO */
+.matriz-scroll-area {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scroll-behavior: smooth;
+  background: #f1f5f9;
+}
+
+/* DESPLEGABLES PERSONALIZADOS ESTILO PILL (DISEÑO IMAGEN 2 EN MODO OSCURO) */
+.custom-dark-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.custom-dark-dropdown__btn {
+  background: #1e293b;
+  color: #f8fafc;
+  border: 1.5px solid #475569;
+  border-radius: 12px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-height: 38px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.custom-dark-dropdown__btn:hover {
+  background: #334155;
+  border-color: #60a5fa;
+}
+
+.custom-dark-dropdown__btn--open {
+  background: #334155;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+}
+
+.custom-dark-dropdown__label-title {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.custom-dark-dropdown__btn-text {
+  color: #ffffff;
+  font-weight: 600;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-dark-dropdown__chevron {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.custom-dark-dropdown__chevron--open {
+  transform: rotate(180deg);
+  color: #38bdf8;
+}
+
+.custom-dark-dropdown__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: #0f172a;
+  border: 1.5px solid #334155;
+  border-radius: 14px;
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  min-width: 280px;
+  max-width: 380px;
+  z-index: 200;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-dark-dropdown__search-wrap {
+  padding: 10px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+.custom-dark-dropdown__search-input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: #f8fafc;
+  font-size: 0.82rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.custom-dark-dropdown__search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.custom-dark-dropdown__list {
+  max-height: 310px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.custom-dark-dropdown__list::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-dark-dropdown__list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.custom-dark-dropdown__item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.custom-dark-dropdown__item:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+.custom-dark-dropdown__item--active {
+  background: #1e293b;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.custom-dark-dropdown__item--empty {
+  color: #64748b;
+  font-style: italic;
+  justify-content: center;
+  cursor: default;
+}
+
+.custom-dark-dropdown__item-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-dark-dropdown__check-icon {
+  width: 16px;
+  height: 16px;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+/* BOTONES DE LA BARRA */
+.matriz-btn {
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+}
+
+.matriz-btn--primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.matriz-btn--primary:hover {
+  background: #1d4ed8;
+}
+
+.matriz-btn--secondary {
+  background: #334155;
+  color: #ffffff;
+  border: 1px solid #475569;
+}
+
+.matriz-btn--secondary:hover {
+  background: #475569;
+}
+
+.matriz-btn--active {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.matriz-btn--active:hover {
+  background: #15803d;
+}
+
+.matriz-btn--cancel {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.matriz-btn--cancel:hover {
+  background: #b91c1c;
+}
+
+.matriz-btn--close {
+  background: transparent;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  padding: 4px 10px;
+}
+
+.matriz-btn--close:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.matriz-btn-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.quick-access-btn-reset {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: inherit;
+  display: block;
+  width: 100%;
+}
+
+/* DESPLEGABLES PERSONALIZADOS PARA CELDAS DE TABLA EN MODO EDICIÓN (BLANCO LIMPIO) */
+.table-custom-dropdown {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.table-custom-dropdown__btn {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 22px;
+  transition: all 0.15s ease;
+}
+
+.table-custom-dropdown__btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.table-custom-dropdown__btn--open {
+  background: #f8fafc;
+  border-color: #475569;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.12);
+}
+
+.table-custom-dropdown__btn-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.table-custom-dropdown__chevron {
+  width: 12px;
+  height: 12px;
+  color: #64748b;
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
+}
+
+.table-custom-dropdown__chevron--open {
+  transform: rotate(180deg);
+  color: #0f172a;
+}
+
+.table-custom-dropdown__menu {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 130px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  z-index: 500;
+  padding: 4px;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.12s ease-out;
+}
+
+.table-custom-dropdown__item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: #1e293b;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  transition: all 0.12s ease;
+}
+
+.table-custom-dropdown__item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.table-custom-dropdown__item--active {
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.table-custom-dropdown__check-icon {
+  width: 12px;
+  height: 12px;
+  color: #0f172a;
+  flex-shrink: 0;
+}
+
+/* HOJA OFICIAL DE MATRIZ */
+.matriz-document-sheet {
+  background: #ffffff;
+  color: #000000;
+  padding: 36px 40px;
+  position: relative;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  box-sizing: border-box;
+  margin: 16px auto;
+  max-width: 980px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+}
+
+.matriz-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(200, 215, 235, 0.18) 0%, rgba(200, 215, 235, 0.05) 70%, transparent 100%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.matriz-official-header {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 14px;
+}
+
+.matriz-header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.matriz-qr-box {
+  width: 75px;
+  height: 75px;
+  flex-shrink: 0;
+}
+
+.matriz-qr-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.matriz-national-title-block {
+  text-align: center;
+  flex: 1;
+  padding: 0 10px;
+}
+
+/* LOGO ENTRE "REPÚBLICA" Y "ARGENTINA" */
+.matriz-rep-title-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.matriz-rep-word {
+  font-size: 1.48rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.02em;
+}
+
+.matriz-escudo-inline {
+  width: 32px;
+  height: 38px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.matriz-sub-law {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: 0.04em;
+}
+
+.matriz-sub-province {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.matriz-sub-prov-law {
+  margin: 3px 0 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.matriz-sub-dept {
+  margin: 1px 0 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.matriz-sub-dept-bold {
+  margin: 1px 0 0;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.matriz-serial-box {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.matriz-certification-text {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: justify;
+  margin-top: 10px;
+  color: #111827;
+}
+
+.matriz-highlight-field {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  padding: 0 3px;
+}
+
+/* TABLAS POR AÑO Y ACCORDEÓN */
+.matriz-tables-container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.matriz-year-section {
+  transition: all 0.2s ease;
+}
+
+.matriz-year-section--collapsed {
+  opacity: 0.92;
+}
+
+.matriz-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+  border: 1px solid #4b5563;
+}
+
+/* ENCABEZADO DE AÑO CLICKEABLE CON FLECHA (DISEÑO EXACTO ORIGINAL) */
+.matriz-table__header-year th {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.06em;
+  padding: 4px 6px;
+  border: 1px solid #4b5563;
+  position: relative;
+}
+
+.matriz-table__header-year--clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.matriz-table__header-year--clickable:hover th {
+  background: #e2e8f0;
+}
+
+.matriz-year-arrow {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: #1e293b;
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.matriz-year-arrow--collapsed {
+  transform: translateY(-50%) rotate(-90deg);
+  color: #64748b;
+}
+
+.matriz-year-arrow--open {
+  transform: translateY(-50%) rotate(0deg);
+}
+
+.matriz-table__header-cols th {
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 5px;
+  border: 1px solid #4b5563;
+  text-align: left;
+}
+
+.matriz-table__header-cols .col-espacio { width: 44%; }
+.matriz-table__header-cols .col-calif { width: 20%; text-align: left; }
+.matriz-table__header-cols .col-cond { width: 10%; text-align: center; }
+.matriz-table__header-cols .col-mes { width: 5%; text-align: center; }
+.matriz-table__header-cols .col-anio { width: 5%; text-align: center; }
+.matriz-table__header-cols .col-establ { width: 16%; text-align: center; }
+
+.matriz-row td {
+  padding: 3px 5px;
+  border: 1px solid #6b7280;
+  vertical-align: middle;
+  color: #000000;
+}
+
+.col-espacio-val {
+  font-weight: 600;
+  font-size: 0.73rem;
+  letter-spacing: 0.01em;
+}
+
+.col-calif-val {
+  font-size: 0.72rem;
+}
+
+.col-cond-val, .col-mes-val, .col-anio-val, .col-establ-val {
+  text-align: center;
+  font-size: 0.72rem;
+}
+
+.matriz-input-inline, .matriz-select-inline {
+  width: 100%;
+  font-size: 0.72rem;
+  padding: 2px 4px;
+  border: 1px solid #3b82f6;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+.matriz-input-anio {
+  width: 48px;
+  text-align: center;
+}
+
+/* PIE DE PÁGINA OFICIAL */
+.matriz-official-footer {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #9ca3af;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.matriz-promedio-block {
+  margin-bottom: 8px;
+}
+
+.matriz-promedio-text {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.matriz-obs-text {
+  margin: 2px 0 0;
+}
+
+.matriz-titulacion-block p {
+  margin: 3px 0;
+  text-align: justify;
+}
+
+.matriz-signatures-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+  align-items: flex-end;
+}
+
+.matriz-sig-box {
+  text-align: center;
+}
+
+.matriz-sig-line {
+  width: 60%;
+  height: 1px;
+  background: #4b5563;
+  margin: 0 auto 6px;
+}
+
+.matriz-sig-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.matriz-sig-role {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.matriz-sig-school {
+  margin: 1px 0 0;
+  font-size: 0.7rem;
+  color: #4b5563;
+}
+
+.matriz-digital-signature {
+  border: 1px dashed #64748b;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  color: #334155;
+  background: #f8fafc;
+}
+
+.matriz-digital-signature p {
+  margin: 1px 0;
+}
+
+.matriz-digital-agent {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.matriz-footer-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 14px;
+}
+
+.matriz-serial-bottom {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+/* VISTA DE PÁGINA DEDICADA */
+.matriz-view-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.matriz-view-header {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.matriz-view-header h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.75rem;
+}
+
+.matriz-view-header p {
+  margin: 0;
+  color: #475569;
+}
+
+/* ESTILOS DE IMPRESIÓN OFICIAL (MÁXIMO 2 PÁGINAS A4) */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
+  }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 7.2pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .matriz-document-sheet, .matriz-document-sheet * {
+    visibility: visible;
+  }
+  .matriz-document-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+  .matriz-modal-backdrop {
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+  .matriz-modal-container {
+    box-shadow: none !important;
+    border: none !important;
+    max-height: none !important;
+    background: transparent !important;
+  }
+  .matriz-scroll-area {
+    overflow: visible !important;
+    background: transparent !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+
+  /* Mostrar todas las materias y tablas sin importar colapso en pantalla */
+  .matriz-year-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 4px !important;
+  }
+  .matriz-table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  .matriz-table tbody {
+    display: table-row-group !important;
+  }
+  .matriz-table thead tr {
+    display: table-row !important;
+  }
+  .matriz-year-arrow {
+    display: none !important;
+  }
+
+  /* Salto de página exacto luego de 4° Año para que ocupe exactamente 2 páginas */
+  .matriz-year-section--cuarto {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .matriz-table__header-year th {
+    padding: 2px 4px !important;
+    font-size: 7.5pt !important;
+    background: #e2e8f0 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  .matriz-table__header-cols th {
+    padding: 1px 3px !important;
+    font-size: 5.8pt !important;
+    background: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  .matriz-row td {
+    padding: 1px 3px !important;
+    font-size: 5.8pt !important;
+    line-height: 1.1 !important;
+    border: 0.5pt solid #4b5563 !important;
+  }
+  .col-espacio-val {
+    font-size: 5.8pt !important;
+  }
+
+  .matriz-official-header {
+    margin-bottom: 2px !important;
+  }
+  .matriz-header-top-row {
+    margin-bottom: 3px !important;
+  }
+  .matriz-rep-word {
+    font-size: 1.1rem !important;
+  }
+  .matriz-escudo-inline {
+    width: 22px !important;
+    height: 26px !important;
+  }
+  .matriz-certification-text {
+    font-size: 6.2pt !important;
+    line-height: 1.15 !important;
+    margin-top: 2px !important;
+    margin-bottom: 3px !important;
+  }
+  .matriz-official-footer {
+    margin-top: 3px !important;
+    padding-top: 2px !important;
+    font-size: 6.2pt !important;
+    line-height: 1.15 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .matriz-titulacion-block p {
+    margin: 1px 0 !important;
+  }
+  .matriz-signatures-grid {
+    margin-top: 4px !important;
+    gap: 8px !important;
+  }
+  .matriz-sig-box {
+    margin-top: 1px !important;
+  }
+  .matriz-digital-signature {
+    padding: 3px 5px !important;
+    font-size: 5.5pt !important;
+    line-height: 1.1 !important;
+  }
+  .matriz-footer-bottom-row {
+    margin-top: 4px !important;
+  }
+  .matriz-qr-box {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .matriz-qr-img {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+
 

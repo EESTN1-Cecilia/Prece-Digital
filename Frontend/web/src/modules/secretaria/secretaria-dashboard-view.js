@@ -20,13 +20,20 @@ export default function SecretariaDashboardView() {
   const [selectedOrientacionFilter, setSelectedOrientacionFilter] = useState("todas");
   const [matrizModalAbierto, setMatrizModalAbierto] = useState(false);
 
-  // Escuchar cambios de rol globales
+  // Escuchar cambios de rol globales y eventos de apertura de modal
   useEffect(() => {
     const handleRoleChanged = (e) => {
       setUser(e.detail);
     };
+    const handleOpenMatriz = () => {
+      setMatrizModalAbierto(true);
+    };
     window.addEventListener("auth:role_changed", handleRoleChanged);
-    return () => window.removeEventListener("auth:role_changed", handleRoleChanged);
+    window.addEventListener("prece:open_matriz_modal", handleOpenMatriz);
+    return () => {
+      window.removeEventListener("auth:role_changed", handleRoleChanged);
+      window.removeEventListener("prece:open_matriz_modal", handleOpenMatriz);
+    };
   }, []);
 
   const fetchData = useCallback(async () => {
