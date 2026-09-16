@@ -17,6 +17,8 @@ import * as requestsController from "../modules/requests/requests.controller.mjs
 import * as reservationsController from "../modules/reservations/reservations.controller.mjs";
 import * as notificationsController from "../modules/notifications/notifications.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
+import * as groupsController from "../modules/groups/groups.controller.mjs";
+import * as reassignmentsController from "../modules/reassignments/reassignments.controller.mjs";
 import * as authorizationController from "../controllers/authorization.controller.mjs";
 import { requierePermiso, requiereSesion } from "../middlewares/authorization.middleware.mjs";
 
@@ -42,10 +44,10 @@ export const apiRoutes = [
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
 
   { method: "GET", path: "/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students", middlewares: [verifyToken, scoped(P.STUDENTS_READ)], handler: listStudents },
-  { method: "GET", path: "/api/v1/students/listas/curso", handler: listarCurso },
-  { method: "GET", path: "/api/v1/students/listas/division", handler: listarDivision },
-  { method: "GET", path: "/api/v1/students/listas/grupo", handler: listarGrupo },
-  { method: "GET", path: "/api/v1/students/listas/taller", handler: listarTaller },
+  { method: "GET", path: "/api/v1/students/listas/curso", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: listarCurso },
+  { method: "GET", path: "/api/v1/students/listas/division", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: listarDivision },
+  { method: "GET", path: "/api/v1/students/listas/grupo", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: listarGrupo },
+  { method: "GET", path: "/api/v1/students/listas/taller", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: listarTaller },
 
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },
@@ -93,11 +95,20 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/teachers/:teacherId/subjects", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeacherSubjects },
   { method: "DELETE", path: "/api/v1/teacher-subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeSubjectFromTeacher },
 
+  { method: "GET", path: "/api/v1/absences/available-spaces", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAvailableSpaces },
+  { method: "GET", path: "/api/v1/absences/affected-activities", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAffectedActivities },
+  { method: "GET", path: "/api/v1/absences/grid", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getGrid },
   { method: "POST", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createAbsence },
   { method: "GET", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAbsences },
+  { method: "GET", path: "/api/v1/absences/:absenceId/history", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsenceHistory },
+  { method: "GET", path: "/api/v1/absences/:absenceId/availability", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsenceAvailability },
+  { method: "POST", path: "/api/v1/absences/:absenceId/reactivate", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.reactivateAbsence },
   { method: "GET", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsence },
   { method: "PATCH", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateAbsence },
-  { method: "DELETE", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.deleteAbsence },
+  { method: "POST", path: "/api/v1/absences/:absenceId/annul", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.annulAbsence },
+  { method: "DELETE", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.annulAbsence },
+
+  { method: "PATCH", path: "/api/v1/absence-liberations/:availabilityId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateAvailabilityStatus },
 
   { method: "POST", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createIncident },
   { method: "GET", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listIncidents },
@@ -114,6 +125,34 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/workshop-sessions", middlewares: [verifyToken, required(P.WORKSHOPS_READ)], handler: workshopsController.listSessions },
   { method: "GET", path: "/api/v1/workshop-sessions/:sessionId", middlewares: [verifyToken, required(P.WORKSHOPS_READ)], handler: workshopsController.getSession },
   { method: "PATCH", path: "/api/v1/workshop-sessions/:sessionId", middlewares: [verifyToken, required(P.WORKSHOPS_WRITE)], handler: workshopsController.updateSession },
+
+  { method: "POST", path: "/api/v1/groups", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.createGroup },
+  { method: "GET", path: "/api/v1/groups", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroups },
+  { method: "GET", path: "/api/v1/groups/by-student/:studentId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listStudentGroups },
+  { method: "GET", path: "/api/v1/groups/by-course/:courseId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroupsByCourse },
+  { method: "GET", path: "/api/v1/groups/by-division/:divisionId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroupsByDivision },
+  { method: "POST", path: "/api/v1/groups/:groupId/members", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.addMember },
+  { method: "GET", path: "/api/v1/groups/:groupId/members", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroupMembers },
+  { method: "DELETE", path: "/api/v1/groups/:groupId/members/:studentId", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.removeMember },
+  { method: "GET", path: "/api/v1/groups/:groupId/planning", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.getGroupPlanning },
+  { method: "GET", path: "/api/v1/groups/:groupId/history", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.getGroupHistory },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/division", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/workshop", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/space", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/schedule", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "POST", path: "/api/v1/groups/:groupId/activate", middlewares: [verifyToken, required(P.GROUPS_MANAGE)], handler: groupsController.activateGroup },
+  { method: "POST", path: "/api/v1/groups/:groupId/deactivate", middlewares: [verifyToken, required(P.GROUPS_MANAGE)], handler: groupsController.deactivateGroup },
+  { method: "POST", path: "/api/v1/groups/:groupId/finalize", middlewares: [verifyToken, required(P.GROUPS_MANAGE)], handler: groupsController.finalizeGroup },
+  { method: "GET", path: "/api/v1/groups/:groupId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.getGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.updateGroup },
+
+  { method: "POST", path: "/api/v1/reassignments", middlewares: [verifyToken, required(P.REASSIGNMENTS_WRITE)], handler: reassignmentsController.createReassignment },
+  { method: "GET", path: "/api/v1/reassignments", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.listReassignments },
+  { method: "GET", path: "/api/v1/reassignments/current-space/:assignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.getCurrentSpace },
+  { method: "GET", path: "/api/v1/reassignments/by-activity/:assignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.listReassignmentsByActivity },
+  { method: "GET", path: "/api/v1/reassignments/:reassignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.getReassignment },
+  { method: "PATCH", path: "/api/v1/reassignments/:reassignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_WRITE)], handler: reassignmentsController.updateReassignment },
+  { method: "POST", path: "/api/v1/reassignments/:reassignmentId/revert", middlewares: [verifyToken, required(P.REASSIGNMENTS_WRITE)], handler: reassignmentsController.revertReassignment },
 
   { method: "POST", path: "/api/v1/inventory", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.createItem },
   { method: "GET", path: "/api/v1/inventory", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.listItems },

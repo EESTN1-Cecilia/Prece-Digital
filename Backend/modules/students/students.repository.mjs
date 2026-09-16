@@ -1,7 +1,9 @@
 import { getDatabasePool } from "../../database/client.mjs";
 
 /* Consultas SQL parametrizadas para listados de alumnos.
-   Toda la logica de negocio y validaciones vive en el service. */
+   Los listados por grupo y taller resuelven miembros via modulos
+   in-memory (Groups / Workshops) y luego buscan los datos personales
+   del alumno en MySQL con listarPorIds. */
 
 const CAMPOS_ALUMNO = `
   e.id AS alumno_id,
@@ -30,8 +32,6 @@ function joinsBase() {
   `;
 }
 
-/* Ordenamientos permitidos: mapas de "como viene del frontend" a SQL seguro.
-   Nunca se interpola el valor directamente. */
 const ORDEN_POR = {
   apellido: "e.apellido, e.nombre",
   apellido_desc: "e.apellido DESC, e.nombre DESC",
@@ -51,18 +51,49 @@ export function ordenSql(orden) {
   return ORDEN_POR[orden] ?? ORDEN_POR.apellido;
 }
 
-/* Filtros por curso/division/grupo/taller con contexto asociado. */
-export async function contextoCursoEscuela(escuelaId, anioCurso) {
+/* ------------------------------------------------------------------
+   Helpers de construccion dinamica de WHERE / params
+   ------------------------------------------------------------------ */
+
+function agregarFiltros(condiciones, params, filtros) {
+  if (filtros.soloActivos) {
+    condiciones.push("e.activo = 1");
+  }
+
+  if (filtros.condicion) {
+    condiciones.push("e.condicion = ?");
+    params.push(filtros.condicion);
+  }
+
+  if (filtros.periodo) {
+    condiciones.push("cl.anio = ?");
+    params.push(filtros.periodo);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Contexto (para la respuesta uniforme)
+   ------------------------------------------------------------------ */
+
+export async function contextoCursoEscuela(escuelaId, anioCurso, periodo) {
   const databasePool = getDatabasePool();
+  const condiciones = ["ad.escuela_id = ?", "ad.anio_curso = ?"];
+  const params = [escuelaId, anioCurso];
+
+  if (periodo) {
+    condiciones.push("cl.anio = ?");
+    params.push(periodo);
+  }
+
   const [filas] = await databasePool.query(
     `SELECT ad.anio_curso, cl.anio AS periodo, cl.id AS ciclo_lectivo_id
        FROM anios_divisiones ad
        JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
-      WHERE ad.escuela_id = ? AND ad.anio_curso = ?
+      WHERE ${condiciones.join(" AND ")}
       GROUP BY ad.anio_curso, cl.anio, cl.id
       ORDER BY cl.anio DESC
       LIMIT 1`,
-    [escuelaId, anioCurso]
+    params
   );
 
   return filas[0] ?? null;
@@ -84,44 +115,16 @@ export async function contextoDivision(escuelaId, anioDivisionId) {
   return filas[0] ?? null;
 }
 
-export async function contextoGrupoTaller(escuelaId, grupoTallerId) {
-  const databasePool = getDatabasePool();
-  const [filas] = await databasePool.query(
-    `SELECT gt.id AS grupo_taller_id, gt.nombre AS grupo_taller, gt.cupo_maximo,
-            m.nombre AS taller, m.id AS materia_id,
-            cl.anio AS periodo, cl.id AS ciclo_lectivo_id
-       FROM grupos_taller gt
-       LEFT JOIN materias m ON m.id = gt.materia_id
-       JOIN ciclos_lectivos cl ON cl.id = gt.ciclo_lectivo_id
-      WHERE gt.id = ? AND gt.escuela_id = ?
-      LIMIT 1`,
-    [grupoTallerId, escuelaId]
-  );
+/* ------------------------------------------------------------------
+   Listados por curso (anio) y por division — MySQL
+   ------------------------------------------------------------------ */
 
-  return filas[0] ?? null;
-}
-
-export async function contextoMateria(escuelaId, materiaId) {
-  const databasePool = getDatabasePool();
-  const [filas] = await databasePool.query(
-    `SELECT id AS materia_id, nombre AS taller
-       FROM materias
-      WHERE id = ? AND escuela_id = ?
-      LIMIT 1`,
-    [materiaId, escuelaId]
-  );
-
-  return filas[0] ?? null;
-}
-
-/* Lista alumnos por curso (anio), con filtros y paginacion. */
-export async function listarPorCurso({ escuelaId, anioCurso, soloActivos, orden, limite, offset }) {
+export async function listarPorCurso({ escuelaId, anioCurso, soloActivos, condicion, periodo, orden, limite, offset }) {
   const databasePool = getDatabasePool();
   const condiciones = ["e.escuela_id = ?", "ad.anio_curso = ?"];
+  const params = [escuelaId, anioCurso];
 
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
+  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
 
   const [filas] = await databasePool.query(
     `SELECT ${CAMPOS_ALUMNO}
@@ -129,38 +132,35 @@ export async function listarPorCurso({ escuelaId, anioCurso, soloActivos, orden,
      WHERE ${condiciones.join(" AND ")}
      ORDER BY ${ordenSql(orden)}
      LIMIT ? OFFSET ?`,
-    [escuelaId, anioCurso, limite, offset]
+    [...params, limite, offset]
   );
 
   return filas;
 }
 
-export async function totalPorCurso({ escuelaId, anioCurso, soloActivos }) {
+export async function totalPorCurso({ escuelaId, anioCurso, soloActivos, condicion, periodo }) {
   const databasePool = getDatabasePool();
   const condiciones = ["e.escuela_id = ?", "ad.anio_curso = ?"];
+  const params = [escuelaId, anioCurso];
 
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
+  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
 
   const [filas] = await databasePool.query(
     `SELECT COUNT(*) AS total
      ${joinsBase()}
      WHERE ${condiciones.join(" AND ")}`,
-    [escuelaId, anioCurso]
+    params
   );
 
   return filas[0].total;
 }
 
-/* Lista alumnos por division (anio_division_id), con filtros y paginacion. */
-export async function listarPorDivision({ escuelaId, anioDivisionId, soloActivos, orden, limite, offset }) {
+export async function listarPorDivision({ escuelaId, anioDivisionId, soloActivos, condicion, periodo, orden, limite, offset }) {
   const databasePool = getDatabasePool();
   const condiciones = ["e.escuela_id = ?", "ad.id = ?"];
+  const params = [escuelaId, anioDivisionId];
 
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
+  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
 
   const [filas] = await databasePool.query(
     `SELECT ${CAMPOS_ALUMNO}
@@ -168,121 +168,70 @@ export async function listarPorDivision({ escuelaId, anioDivisionId, soloActivos
      WHERE ${condiciones.join(" AND ")}
      ORDER BY ${ordenSql(orden)}
      LIMIT ? OFFSET ?`,
-    [escuelaId, anioDivisionId, limite, offset]
+    [...params, limite, offset]
   );
 
   return filas;
 }
 
-export async function totalPorDivision({ escuelaId, anioDivisionId, soloActivos }) {
+export async function totalPorDivision({ escuelaId, anioDivisionId, soloActivos, condicion, periodo }) {
   const databasePool = getDatabasePool();
   const condiciones = ["e.escuela_id = ?", "ad.id = ?"];
+  const params = [escuelaId, anioDivisionId];
 
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
+  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
 
   const [filas] = await databasePool.query(
     `SELECT COUNT(*) AS total
      ${joinsBase()}
      WHERE ${condiciones.join(" AND ")}`,
-    [escuelaId, anioDivisionId]
+    params
   );
 
   return filas[0].total;
 }
 
-/* Lista alumnos por grupo_taller, con filtros y paginacion. */
-export async function listarPorGrupoTaller({ escuelaId, grupoTallerId, soloActivos, orden, limite, offset }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "it.grupo_taller_id = ?", "it.activo = 1"];
+/* ------------------------------------------------------------------
+   Listados por IDs (puente con modulos in-memory)
+   ------------------------------------------------------------------ */
 
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
+export async function listarPorIds({ escuelaId, ids, soloActivos, condicion, orden, limite, offset }) {
+  if (!ids.length) return [];
+
+  const databasePool = getDatabasePool();
+  const placeholders = ids.map(() => "?").join(",");
+  const condiciones = ["e.escuela_id = ?", `e.id IN (${placeholders})`];
+  const params = [escuelaId, ...ids];
+
+  agregarFiltros(condiciones, params, { soloActivos, condicion });
 
   const [filas] = await databasePool.query(
-    `SELECT ${CAMPOS_ALUMNO}, it.grupo_taller_id, it.anio_division_id
-     FROM inscripciones_taller it
-     JOIN estudiantes e ON e.id = it.estudiante_id
-     JOIN anios_divisiones ad ON ad.id = e.anio_division_id
-     LEFT JOIN orientaciones o ON o.id = ad.orientacion_id
-     JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
+    `SELECT ${CAMPOS_ALUMNO}
+     ${joinsBase()}
      WHERE ${condiciones.join(" AND ")}
      ORDER BY ${ordenSql(orden)}
      LIMIT ? OFFSET ?`,
-    [escuelaId, grupoTallerId, limite, offset]
+    [...params, limite, offset]
   );
 
   return filas;
 }
 
-export async function totalPorGrupoTaller({ escuelaId, grupoTallerId, soloActivos }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "it.grupo_taller_id = ?", "it.activo = 1"];
+export async function totalPorIds({ escuelaId, ids, soloActivos, condicion }) {
+  if (!ids.length) return 0;
 
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
+  const databasePool = getDatabasePool();
+  const placeholders = ids.map(() => "?").join(",");
+  const condiciones = ["e.escuela_id = ?", `e.id IN (${placeholders})`];
+  const params = [escuelaId, ...ids];
+
+  agregarFiltros(condiciones, params, { soloActivos, condicion });
 
   const [filas] = await databasePool.query(
     `SELECT COUNT(*) AS total
-     FROM inscripciones_taller it
-     JOIN estudiantes e ON e.id = it.estudiante_id
-     JOIN anios_divisiones ad ON ad.id = e.anio_division_id
-     JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
+     ${joinsBase()}
      WHERE ${condiciones.join(" AND ")}`,
-    [escuelaId, grupoTallerId]
-  );
-
-  return filas[0].total;
-}
-
-/* Lista alumnos por taller (materia). */
-export async function listarPorTaller({ escuelaId, materiaId, soloActivos, orden, limite, offset }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "gt.materia_id = ?", "it.activo = 1"];
-
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
-
-  const [filas] = await databasePool.query(
-    `SELECT ${CAMPOS_ALUMNO}, m.nombre AS taller, m.id AS materia_id
-     FROM inscripciones_taller it
-     JOIN grupos_taller gt ON gt.id = it.grupo_taller_id
-     JOIN materias m ON m.id = gt.materia_id
-     JOIN estudiantes e ON e.id = it.estudiante_id
-     JOIN anios_divisiones ad ON ad.id = e.anio_division_id
-     LEFT JOIN orientaciones o ON o.id = ad.orientacion_id
-     JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
-     WHERE ${condiciones.join(" AND ")}
-     ORDER BY ${ordenSql(orden)}
-     LIMIT ? OFFSET ?`,
-    [escuelaId, materiaId, limite, offset]
-  );
-
-  return filas;
-}
-
-export async function totalPorTaller({ escuelaId, materiaId, soloActivos }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "gt.materia_id = ?", "it.activo = 1"];
-
-  if (soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
-
-  const [filas] = await databasePool.query(
-    `SELECT COUNT(*) AS total
-     FROM inscripciones_taller it
-     JOIN grupos_taller gt ON gt.id = it.grupo_taller_id
-     JOIN materias m ON m.id = gt.materia_id
-     JOIN estudiantes e ON e.id = it.estudiante_id
-     JOIN anios_divisiones ad ON ad.id = e.anio_division_id
-     JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
-     WHERE ${condiciones.join(" AND ")}`,
-    [escuelaId, materiaId]
+    params
   );
 
   return filas[0].total;

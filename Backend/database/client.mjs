@@ -2,8 +2,17 @@ import mysql from "mysql2/promise";
 import { getDatabaseConfig } from "./connection.config.mjs";
 
 let pool;
+let testPool;
+
+export function setTestPool(mockPool) {
+  testPool = mockPool;
+}
 
 export function getDatabasePool() {
+  if (testPool) {
+    return testPool;
+  }
+
   if (pool) {
     return pool;
   }
@@ -28,6 +37,11 @@ export async function checkDatabaseConnection() {
 }
 
 export async function closeDatabaseConnection() {
+  if (testPool) {
+    testPool = undefined;
+    return;
+  }
+
   if (!pool) {
     return;
   }

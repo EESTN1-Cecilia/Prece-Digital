@@ -1,0 +1,108 @@
+-- Migracion 002: ausencias docentes, liberaciones de espacios e historial
+-- Registra ausencias vinculadas a la asignacion horaria (schedule-assignment),
+-- crea liberaciones de espacio para el dia y horario afectados, y mantiene
+-- historial de cambios (trazabilidad).
+--
+-- Nota: el modulo de horarios/asignaciones opera actualmente en memoria
+-- (Backend/modules/schedules), por lo que schedule_assignment_id y
+-- schedule_id se conservan como referencia textual al identificador del
+-- modulo. Las columnas de curso, materia y espacio se derivan de la
+-- asignacion horaria al momento del registro.
+
+USE prece_digital;
+
+-- =====================================================================================
+-- AUSENCIAS DOCENTES
+-- =====================================================================================
+CREATE TABLE IF NOT EXISTS ausencias (
+  id                      VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo abs_ (coincide con el modulo en memoria)',
+  escuela_id              INT UNSIGNED NOT NULL,
+  docente_id              VARCHAR(40)  NOT NULL COMMENT 'FK al docente (modulo teachers en memoria)',
+  fecha                   DATE         NOT NULL,
+  schedule_assignment_id  VARCHAR(40)  NOT NULL COMMENT 'Asignacion horaria afectada (modulo schedules en memoria)',
+  schedule_id             VARCHAR(40)  NULL COMMENT 'Horario al que pertenece la asignacion (modulo schedules en memoria)',
+  curso_id                VARCHAR(40)  NULL COMMENT 'Curso/grupo afectado (derivado de la asignacion)',
+  division_id             VARCHAR(40)  NULL,
+  materia_id              VARCHAR(40)  NULL COMMENT 'Materia afectada (derivada de la asignacion)',
+  espacio_id              VARCHAR(40)  NOT NULL COMMENT 'Espacio afectado (derivado de la asignacion)',
+  dia_semana              VARCHAR(12)  NULL COMMENT 'lunes..domingo',
+  hora_inicio             TIME         NOT NULL,
+  hora_fin                TIME         NOT NULL,
+  tipo                    ENUM('injustificada','justificada','medica','personal','capacitacion','otra') NOT NULL DEFAULT 'injustificada',
+  motivo                  VARCHAR(255) NULL,
+  estado                  ENUM('activa','anulada') NOT NULL DEFAULT 'activa',
+  observaciones           TEXT         NULL,
+  registrado_por          INT UNSIGNED NULL COMMENT 'FK a usuarios',
+  modificado_por          INT UNSIGNED NULL COMMENT 'FK a usuarios',
+  creado_en               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_ausencia_unica (docente_id, schedule_assignment_id, fecha),
+  KEY ix_ausencias_escuela   (escuela_id),
+  KEY ix_ausencias_docente   (docente_id),
+  KEY ix_ausencias_curso     (curso_id),
+  KEY ix_ausencias_fecha     (fecha),
+  KEY ix_ausencias_espacio   (espacio_id),
+  KEY ix_ausencias_estado    (estado),
+  CONSTRAINT fk_aus_escuela  FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_aus_creador  FOREIGN KEY (registrado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_aus_modifica FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- LIBERACIONES DE ESPACIOS (disponibilidad generada por ausencias)
+-- Registro historico: el espacio queda disponible para un dia y horario puntuales
+-- como consecuencia de una ausencia. Se elimina al anular la ausencia.
+-- Se marca como "utilizada" cuando el modulo de reasignacion la consume.
+-- =====================================================================================
+CREATE TABLE IF NOT EXISTS disponibilidad_espacios (
+  id                      VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo ava_',
+  escuela_id              INT UNSIGNED NOT NULL,
+  espacio_id              VARCHAR(40)  NOT NULL COMMENT 'Espacio liberado',
+  schedule_assignment_id  VARCHAR(40)  NOT NULL COMMENT 'Asignacion horaria cuya clase quedo sin docente',
+  schedule_id             VARCHAR(40)  NULL COMMENT 'Horario al que pertenece la asignacion',
+  curso_id                VARCHAR(40)  NULL COMMENT 'Curso/grupo de la clase afectada',
+  division_id             VARCHAR(40)  NULL,
+  materia_id              VARCHAR(40)  NULL COMMENT 'Materia de la clase afectada',
+  docente_id              VARCHAR(40)  NOT NULL COMMENT 'Docente ausente',
+  fecha                   DATE         NOT NULL,
+  dia_semana              VARCHAR(12)  NULL,
+  hora_inicio             TIME         NOT NULL,
+  hora_fin                TIME         NOT NULL,
+  ausencia_id             VARCHAR(40)  NOT NULL COMMENT 'Ausencia que origino la liberacion',
+  ausencia_tipo           VARCHAR(20)  NULL COMMENT 'Tipo de ausencia (medica, personal, etc.)',
+  ausencia_motivo         VARCHAR(255) NULL COMMENT 'Motivo declarado de la ausencia',
+  motivo_liberacion       VARCHAR(40)  NOT NULL DEFAULT 'ausencia_docente' COMMENT 'Siempre ausencia_docente en este contexto',
+  estado                  ENUM('disponible_por_ausencia','utilizada','liberada') NOT NULL DEFAULT 'disponible_por_ausencia',
+  registrado_por          INT UNSIGNED NULL COMMENT 'FK a usuarios',
+  modificado_por          INT UNSIGNED NULL COMMENT 'FK a usuarios',
+  creado_en               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_disp_espacio_ausencia (ausencia_id),
+  KEY ix_disp_espacio   (espacio_id),
+  KEY ix_disp_fecha     (fecha),
+  KEY ix_disp_docente   (docente_id),
+  KEY ix_disp_estado    (estado),
+  CONSTRAINT fk_disp_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_disp_ausencia FOREIGN KEY (ausencia_id) REFERENCES ausencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_disp_creador  FOREIGN KEY (registrado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_disp_modifica FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- HISTORIAL DE CAMBIOS DE AUSENCIAS (trazabilidad completa)
+-- =====================================================================================
+CREATE TABLE IF NOT EXISTS historial_ausencias (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  ausencia_id     VARCHAR(40)  NOT NULL,
+  escuela_id      INT UNSIGNED NOT NULL,
+  accion          VARCHAR(20)  NOT NULL COMMENT 'create, update, annul, reactivate',
+  valor_anterior  JSON         NULL,
+  valor_nuevo     JSON         NULL,
+  usuario_id      INT UNSIGNED NULL COMMENT 'Quien realizo el cambio',
+  cambiado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY ix_hist_ausencia (ausencia_id),
+  KEY ix_hist_escuela  (escuela_id),
+  CONSTRAINT fk_his_ausencia FOREIGN KEY (ausencia_id) REFERENCES ausencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_his_usuario  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  CONSTRAINT fk_his_escuela  FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
+) ENGINE=InnoDB;

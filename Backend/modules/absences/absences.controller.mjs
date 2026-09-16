@@ -13,12 +13,43 @@ export function listAbsences({ url, user }) {
   return absencesService.listAbsences(query, user);
 }
 
-export function updateAbsence({ params, body }) {
-  return absencesService.updateAbsence(params.absenceId, body);
+export function updateAbsence({ params, body, user }) {
+  return absencesService.updateAbsence(params.absenceId, body, user);
 }
 
-export function deleteAbsence({ params }) {
-  return absencesService.deleteAbsence(params.absenceId);
+export function annulAbsence({ params, user }) {
+  return absencesService.annulAbsence(params.absenceId, user);
+}
+
+export function reactivateAbsence({ params, user }) {
+  return absencesService.reactivateAbsence(params.absenceId, user);
+}
+
+export function getAbsenceHistory({ params }) {
+  return absencesService.getAbsenceHistory(params.absenceId);
+}
+
+export function getAbsenceAvailability({ params }) {
+  return absencesService.getAbsenceAvailability(params.absenceId);
+}
+
+export function listAvailableSpaces({ url, user }) {
+  const query = Object.fromEntries(url.searchParams.entries());
+  return absencesService.listAvailableSpaces(query, user);
+}
+
+export function updateAvailabilityStatus({ params, body, user }) {
+  return absencesService.updateAbsenceAvailabilityStatus(params.availabilityId, body, user);
+}
+
+export function listAffectedActivities({ url, user }) {
+  const query = Object.fromEntries(url.searchParams.entries());
+  return absencesService.listAffectedActivities(query, user);
+}
+
+export function getGrid({ url, user }) {
+  const query = Object.fromEntries(url.searchParams.entries());
+  return absencesService.getGrid(query, user);
 }
 
 export function createIncident({ body, user }) {
