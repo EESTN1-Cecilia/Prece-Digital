@@ -2,8 +2,9 @@ import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
 import { HttpError } from "../../utils/http-error.mjs";
 import { permissionsForRole } from "../../config/permissions.config.mjs";
-import { evaluateAccess, extractContext } from "./permission.service.mjs";
+import { evaluateAccess, extractContext, resumenPermisos } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
+import { obtenerIpCliente, registrarFalloLogin, registrarLoginExitoso, revisarLogin } from "./login-throttle.service.mjs";
 
 const dummyHashPromise = bcrypt.hash("__dummy_password__", 10);
 
@@ -43,19 +44,26 @@ function sessionPayload(user, accessToken, refreshToken) {
 }
 
 export const authService = {
-  async login({ email, password }) {
+  async login({ email, password, request }) {
     if (!email || !password) {
       throw new HttpError(400, "invalid_credentials_payload", "Email y contraseña son obligatorios");
     }
+
+    const ip = obtenerIpCliente(request);
+    revisarLogin(email, ip);
 
     const user = userRepository.findByEmail(email, { includeInactive: true });
     const hash = user?.passwordHash ?? (await dummyHashPromise);
     const matches = await bcrypt.compare(password, hash);
 
     if (!user || !matches || !user.isActive) {
+      /* El fallo se cuenta por IP siempre, y por cuenta solo cuando la cuenta
+         existe, para no permitir bloquear emails inexistentes. */
+      registrarFalloLogin(email, ip, { trackEmail: Boolean(user) });
       throw new HttpError(401, "invalid_credentials", "Credenciales inválidas o cuenta desactivada");
     }
 
+    registrarLoginExitoso(email);
     return sessionPayload(user, signAccessToken(user), createRefreshToken(user.id));
   },
 
@@ -84,6 +92,18 @@ export const authService = {
     return sessionData(user);
   },
 
+  /* Roles, permisos y resumen por modulo del usuario autenticado. Se calculan en
+     el backend a partir del catalogo: la interfaz no puede agregarlos. */
+  permissions(user) {
+    const roles = rolesFromAssignments(user.assignments);
+
+    return {
+      roles,
+      permisos: permissionsFromRoles(roles),
+      resumen: resumenPermisos(user)
+    };
+  },
+
   listUsers() {
     return userRepository.list({ includeInactive: true }).map((user) => userRepository.publicView(user));
   },
@@ -93,6 +113,10 @@ export const authService = {
 
     if (!target) {
       throw new HttpError(404, "user_not_found", "Usuario no encontrado");
+    }
+
+    if (actor?.id && actor.id === target.id) {
+      throw new HttpError(403, "forbidden", "No puede modificar su propia cuenta");
     }
 
     const context = extractContext(contextSource);
