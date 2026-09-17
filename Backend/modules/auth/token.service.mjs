@@ -22,13 +22,14 @@ function expiresAtFromTtl(ttl) {
   return new Date(Date.now() + amount * multipliers[unit]).toISOString();
 }
 
+/* El payload del access token lleva solo lo minimo para identificar al usuario
+   (sub), su tipo y sus roles. Nunca datos sensibles ni el detalle de asignaciones. */
 export function signAccessToken(user) {
   return jwt.sign(
     {
       sub: user.id,
       typ: "access",
-      roles: [...new Set(user.assignments.map((assignment) => assignment.role))],
-      assignments: user.assignments
+      roles: [...new Set(user.assignments.map((assignment) => assignment.role))]
     },
     appConfig.jwtAccessSecret,
     { expiresIn: appConfig.jwtAccessExpiresIn }
@@ -40,6 +41,10 @@ export function verifyAccessToken(token) {
     const payload = jwt.verify(token, appConfig.jwtAccessSecret);
 
     if (payload.typ !== "access") {
+      throw new HttpError(401, "invalid_token", "Token de acceso inválido");
+    }
+
+    if (!payload.sub) {
       throw new HttpError(401, "invalid_token", "Token de acceso inválido");
     }
 
