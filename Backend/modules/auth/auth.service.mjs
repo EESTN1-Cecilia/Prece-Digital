@@ -4,6 +4,7 @@ import { HttpError } from "../../utils/http-error.mjs";
 import { permissionsForRole } from "../../config/permissions.config.mjs";
 import { evaluateAccess, extractContext } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
+import { obtenerIpCliente, registrarFalloLogin, registrarLoginExitoso, revisarLogin } from "./login-throttle.service.mjs";
 
 const dummyHashPromise = bcrypt.hash("__dummy_password__", 10);
 
@@ -43,19 +44,26 @@ function sessionPayload(user, accessToken, refreshToken) {
 }
 
 export const authService = {
-  async login({ email, password }) {
+  async login({ email, password, request }) {
     if (!email || !password) {
       throw new HttpError(400, "invalid_credentials_payload", "Email y contraseña son obligatorios");
     }
+
+    const ip = obtenerIpCliente(request);
+    revisarLogin(email, ip);
 
     const user = userRepository.findByEmail(email, { includeInactive: true });
     const hash = user?.passwordHash ?? (await dummyHashPromise);
     const matches = await bcrypt.compare(password, hash);
 
     if (!user || !matches || !user.isActive) {
+      /* El fallo se cuenta por IP siempre, y por cuenta solo cuando la cuenta
+         existe, para no permitir bloquear emails inexistentes. */
+      registrarFalloLogin(email, ip, { trackEmail: Boolean(user) });
       throw new HttpError(401, "invalid_credentials", "Credenciales inválidas o cuenta desactivada");
     }
 
+    registrarLoginExitoso(email);
     return sessionPayload(user, signAccessToken(user), createRefreshToken(user.id));
   },
 
