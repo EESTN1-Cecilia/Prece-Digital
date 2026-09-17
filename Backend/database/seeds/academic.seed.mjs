@@ -41,7 +41,7 @@ const DIVISIONES = [
   { id: "div-14", escuelaId: "esc-1", cursoId: "cur-10", nombre: "1ra" }
 ];
 
-const ALUMNOS = [
+export const ALUMNOS = [
   { id: "alu-1", escuelaId: "esc-1", apellido: "Pérez López", nombre: "Ana", dni: "40123456" },
   { id: "alu-2", escuelaId: "esc-1", apellido: "Gómez Ruiz", nombre: "Carla", dni: "42345678" },
   { id: "alu-3", escuelaId: "esc-1", apellido: "Fernández Díaz", nombre: "Diego", dni: "43456789" },
@@ -59,7 +59,7 @@ const MATRICULA = [
   { id: "mat-6", estudianteId: "alu-6", divisionId: "div-10" }
 ];
 
-const MATERIAS = [
+export const MATERIAS = [
   { id: "mat", nombre: "Matemática" },
   { id: "lng", nombre: "Lengua" },
   { id: "his", nombre: "Historia" },
