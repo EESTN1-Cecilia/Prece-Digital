@@ -9961,12 +9961,38 @@ a {
   max-width: 1080px;
   max-height: 92vh;
   margin: auto;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   border: 1px solid #cbd5e1;
   position: relative;
   animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* BOTÓN DE CIERRE EN LA BARRA SUPERIOR FIJA */
+.matriz-close-btn-topright {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.matriz-close-btn-topright:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.06);
 }
 
 @keyframes modalScaleIn {
@@ -10941,5 +10967,752 @@ a {
   }
 }
 
+/* ==========================================================================
+   ESTILOS OFICIALES: MODALES DE DOCUMENTACIÓN Y CONSTANCIAS ESCOLARES
+   (Situación Académica, RITE, Planilla Calificaciones, Alumno Regular, Pase)
+   ========================================================================== */
 
+.doc-modal-paper-wrap {
+  max-width: 900px !important;
+  background: #f1f5f9;
+  border-radius: 16px;
+  max-height: 92vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+}
 
+.doc-modal-paper-wrap--wide {
+  max-width: 1080px !important;
+}
+
+.doc-modal-paper-wrap--regular {
+  max-width: 760px !important;
+}
+
+/* Barra para agregar campos / materias en tiempo real */
+.doc-editor-bar {
+  background: #1e293b;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.doc-editor-label {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.doc-editor-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.doc-editor-input {
+  flex: 1;
+  max-width: 380px;
+  height: 34px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 0 12px;
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.doc-editor-input:focus {
+  border-color: #3b82f6;
+}
+
+.doc-editor-btn-add {
+  height: 34px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.doc-editor-btn-add:hover {
+  background: #1d4ed8;
+}
+
+/* Hoja de papel */
+.doc-paper-sheet {
+  background: #ffffff;
+  color: #1e293b;
+  margin: 20px auto;
+  padding: 40px 48px;
+  max-width: 800px;
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+.doc-paper-sheet--wide {
+  max-width: 980px;
+  padding: 32px 36px;
+}
+
+.doc-paper-sheet--compact {
+  max-width: 660px;
+  padding: 36px 40px;
+}
+
+/* Encabezados y logos */
+.doc-paper-header-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.doc-paper-logo-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.doc-paper-logo-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.doc-paper-logo-text {
+  font-size: 11px;
+  font-weight: 800;
+  color: #222a4c;
+  line-height: 1.25;
+  white-space: pre-line;
+  letter-spacing: 0.5px;
+}
+
+.doc-paper-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #222a4c;
+  letter-spacing: 0.8px;
+  margin: 0 0 28px 0;
+  text-transform: uppercase;
+}
+
+.doc-paper-subtitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222a4c;
+  letter-spacing: 0.4px;
+  margin: 24px 0 14px 0;
+  text-transform: uppercase;
+}
+
+.doc-paper-body-text {
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 2;
+  text-align: justify;
+}
+
+.doc-field-underlined {
+  border-bottom: 1.5px solid #222a4c;
+  padding: 0 6px;
+  display: inline-block;
+  color: #0f172a;
+}
+
+.doc-field--bold {
+  font-weight: 700;
+}
+
+.doc-field-highlight {
+  font-weight: 700;
+  color: #222a4c;
+}
+
+/* Renglones de materias adeudadas */
+.doc-paper-ruled-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0 28px 0;
+}
+
+.doc-ruled-line-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border-bottom: 1.5px solid #cbd5e1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.doc-line-number {
+  color: #64748b;
+  font-size: 12px;
+  width: 20px;
+}
+
+.doc-line-content {
+  flex: 1;
+}
+
+.doc-line-remove-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.doc-line-remove-btn:hover {
+  background: #fee2e2;
+}
+
+.doc-ruled-line-empty {
+  height: 28px;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.doc-paper-footer-legal {
+  font-size: 14.5px;
+  color: #1e293b;
+  line-height: 1.9;
+  text-align: justify;
+  margin-top: 24px;
+}
+
+/* Sello institucional circular */
+.doc-sello-circular {
+  width: 130px;
+  height: 130px;
+  border: 3px double #222a4c;
+  border-radius: 50%;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-4deg);
+  opacity: 0.92;
+  user-select: none;
+}
+
+.doc-sello-inner {
+  width: 100%;
+  height: 100%;
+  border: 1px dashed #222a4c;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px;
+}
+
+.doc-sello-top {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #222a4c;
+  letter-spacing: 0.2px;
+}
+
+.doc-sello-center {
+  font-size: 12px;
+  font-weight: 900;
+  color: #222a4c;
+  margin: 3px 0 1px 0;
+}
+
+.doc-sello-sub {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #2563eb;
+  letter-spacing: 0.5px;
+}
+
+.doc-sello-bottom {
+  font-size: 7px;
+  font-weight: 700;
+  color: #222a4c;
+  margin-top: 2px;
+}
+
+/* Firmas en pie */
+.doc-paper-signatures-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 36px;
+  padding-top: 16px;
+}
+
+.doc-paper-signature-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 240px;
+}
+
+.doc-paper-signature-line {
+  width: 100%;
+  border-bottom: 1.5px solid #222a4c;
+  margin-bottom: 8px;
+}
+
+.doc-paper-signature-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+}
+
+/* ==================== 2. ESTILOS RITE ==================== */
+.doc-rite-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 2px solid #222a4c;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.doc-rite-logo-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.doc-rite-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #222a4c;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px 0;
+  text-transform: uppercase;
+}
+
+.doc-rite-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.doc-rite-student-bar {
+  display: flex;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.doc-rite-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 18px;
+}
+
+.doc-rite-table th,
+.doc-rite-table td {
+  border: 1px solid #94a3b8;
+  padding: 5px 8px;
+}
+
+.doc-rite-table thead th {
+  background: #222a4c;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.doc-rite-table thead th.col-sub {
+  background: #2d3766;
+  font-size: 10px;
+}
+
+.doc-rite-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.doc-rite-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.doc-rite-asistencias-box,
+.doc-rite-firmas-box {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.doc-rite-box-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #222a4c;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+}
+
+.doc-rite-asist-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 3px 0;
+}
+
+.doc-rite-asist-row--total {
+  border-top: 1px dashed #cbd5e1;
+  margin-top: 4px;
+  padding-top: 4px;
+  font-weight: 700;
+  color: #222a4c;
+}
+
+.doc-rite-firmas-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.doc-rite-firma-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+}
+
+.doc-rite-firma-line {
+  width: 100%;
+  border-bottom: 1.5px solid #222a4c;
+  margin-bottom: 6px;
+}
+
+/* ==================== 3. ESTILOS PLANILLA ==================== */
+.doc-planilla-header {
+  border-bottom: 2px solid #222a4c;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.doc-planilla-top-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.doc-escuela-title {
+  color: #222a4c;
+  font-weight: 800;
+}
+
+.doc-planilla-main-title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #222a4c;
+  margin: 4px 0 12px 0;
+  letter-spacing: 0.6px;
+}
+
+.doc-planilla-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  margin-bottom: 10px;
+}
+
+.doc-planilla-stats-box {
+  display: flex;
+  justify-content: space-around;
+  background: #ffffff;
+  border: 1px dashed #222a4c;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.doc-stat-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.doc-planilla-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  margin-top: 14px;
+}
+
+.doc-planilla-table th,
+.doc-planilla-table td {
+  border: 1px solid #94a3b8;
+  padding: 4px 6px;
+}
+
+.doc-planilla-table thead th {
+  background: #222a4c;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: center;
+  font-size: 10.5px;
+  text-transform: uppercase;
+}
+
+.doc-planilla-table thead th.col-sub {
+  background: #2d3766;
+  font-size: 9.5px;
+}
+
+.doc-planilla-table tbody tr:hover {
+  background: #f1f5f9;
+}
+
+.doc-planilla-footer-signatures {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+  padding-top: 12px;
+}
+
+.doc-signature-line-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 220px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.doc-sig-line {
+  width: 100%;
+  border-bottom: 1.5px solid #222a4c;
+  margin-bottom: 6px;
+}
+
+/* ==================== 4. ESTILOS ALUMNO REGULAR ==================== */
+.doc-regular-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.doc-regular-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-regular-escuela {
+  font-size: 13px;
+  font-weight: 800;
+  color: #222a4c;
+}
+
+.doc-regular-tel {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.doc-regular-badge {
+  background: #222a4c;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: 6px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.doc-regular-est-row {
+  font-size: 14px;
+  margin-bottom: 20px;
+  color: #1e293b;
+}
+
+.doc-regular-body {
+  font-size: 15px;
+  line-height: 2.1;
+  color: #1e293b;
+  text-align: justify;
+}
+
+.doc-regular-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.doc-regular-firma-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 220px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.doc-regular-firma-line {
+  width: 100%;
+  border-bottom: 1.5px solid #222a4c;
+  margin-bottom: 6px;
+}
+
+/* ==================== 5. ESTILOS TRÁMITE / PASE ==================== */
+.doc-tramite-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-bottom: 2px solid #222a4c;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+}
+
+.doc-tramite-provincia {
+  font-size: 14px;
+  font-weight: 800;
+  color: #222a4c;
+  letter-spacing: 0.5px;
+}
+
+.doc-tramite-sub {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.doc-tramite-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #222a4c;
+  margin: 10px 0 0 0;
+  text-transform: uppercase;
+}
+
+.doc-tramite-body {
+  font-size: 14.5px;
+  line-height: 2.1;
+  color: #1e293b;
+  text-align: justify;
+}
+
+.doc-tramite-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 36px;
+}
+
+.doc-tramite-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 190px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #334155;
+  text-align: center;
+}
+
+.doc-tramite-line {
+  width: 100%;
+  border-bottom: 1.5px solid #222a4c;
+  margin-bottom: 6px;
+}
+
+/* Botones en Links del Footer */
+.footer-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s ease;
+  display: block;
+}
+
+.footer-link-btn:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* Reglas de Impresión para Documentos */
+@media print {
+  .doc-modal-paper-wrap {
+    max-width: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .doc-paper-sheet {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print,
+  .matriz-toolbar,
+  .doc-editor-bar,
+  .site-header,
+  .site-footer {
+    display: none !important;
+  }
+}
