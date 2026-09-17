@@ -56,7 +56,9 @@ export const PERMISSIONS = {
   CURRICULUM_MANAGE: "curriculum.manage",
   ACADEMICS_READ: "academics.read",
   ACADEMICS_WRITE: "academics.write",
-  ACADEMICS_MANAGE: "academics.manage"
+  ACADEMICS_MANAGE: "academics.manage",
+  AUDIT_READ: "audit:read",
+  AUDIT_EXPORT: "audit:export"
 };
 
 const ALL_PERMISSIONS = Object.values(PERMISSIONS);

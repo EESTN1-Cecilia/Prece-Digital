@@ -87,11 +87,11 @@ export function reducir(estado, accion) {
       return accion.silencioso
         ? { ...estado, revalidando: true }
         : {
-            ...estado,
-            fase: FASE.inicializando,
-            revalidando: false,
-            sesion: { ...estado.sesion, estado: SESION.cargando }
-          };
+          ...estado,
+          fase: FASE.inicializando,
+          revalidando: false,
+          sesion: { ...estado.sesion, estado: SESION.cargando }
+        };
 
     case "sesion/lista":
       return {
