@@ -1,6 +1,6 @@
 import { getDatabasePool } from "../../database/client.mjs";
 
-/* Busca un usuario por email (para el inicio de sesion). */
+
 export async function findUserByEmail(email) {
   const databasePool = getDatabasePool();
   const [filas] = await databasePool.query(
@@ -14,7 +14,7 @@ export async function findUserByEmail(email) {
   return filas[0] ?? null;
 }
 
-/* Busca un usuario por id sin exponer el hash de la contrasena. */
+
 export async function findUserById(id) {
   const databasePool = getDatabasePool();
   const [filas] = await databasePool.query(
@@ -30,7 +30,7 @@ export async function findUserById(id) {
   return filas[0] ?? null;
 }
 
-/* Roles activos del usuario con su alcance por escuela. */
+
 export async function findRolesByUserId(id) {
   const databasePool = getDatabasePool();
   const [filas] = await databasePool.query(

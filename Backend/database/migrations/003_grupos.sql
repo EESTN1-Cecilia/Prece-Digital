@@ -1,18 +1,5 @@
--- Migracion 003: grupos, burbujas y agrupaciones institucionales
--- Representa grupos completos o parciales de un curso, burbujas, grupos de
--- taller y agrupaciones temporales, con su planificacion de espacio/horario
--- y las asociaciones de alumnos (integrantes), manteniendo trazabilidad.
---
--- Nota: los modulos in-memory (groups, schedules, spaces, workshops) usan
--- identificadores textuales (prefijo grp_/sch_/spc_/wrk_); por eso las
--- columnas de referencia se modelan como VARCHAR(40) y NO como FK estrictas:
--- la coherencia el backend la mantiene el modulo de grupos via validaciones.
-
 USE prece_digital;
 
--- =====================================================================================
--- GRUPOS / BURBUJAS / AGRUPACIONES
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS grupos (
   id                 VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo grp_ (coincide con el modulo en memoria)',
   escuela_id         INT UNSIGNED NOT NULL,
@@ -43,11 +30,6 @@ CREATE TABLE IF NOT EXISTS grupos (
   CONSTRAINT fk_grp_modifica FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
--- =====================================================================================
--- INTEGRANTES DE GRUPOS (asociacion alumno-grupo)
--- Una fila por alumno y grupo. La asociacion se elimina o desactiva conservando
--- el historial de cambios (eliminacion logica via activo = 0).
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS grupo_integrantes (
   id              VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo gmb_',
   grupo_id        VARCHAR(40)  NOT NULL,
@@ -68,11 +50,6 @@ CREATE TABLE IF NOT EXISTS grupo_integrantes (
   CONSTRAINT fk_gmb_grupo      FOREIGN KEY (grupo_id) REFERENCES grupos(id)
 ) ENGINE=InnoDB;
 
--- =====================================================================================
--- HISTORIAL DE CAMBIOS DE GRUPOS (trazabilidad completa)
--- Registra creacion, modificaciones, cambios de estado y de integrantes,
--- y las asociaciones de curso, distribucion, espacio y horario.
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS historial_grupos (
   id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   grupo_id       VARCHAR(40)  NOT NULL,

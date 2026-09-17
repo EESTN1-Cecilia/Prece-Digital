@@ -8,9 +8,9 @@ const POR_PAGINA_DEFECTO = 20;
 const ANIOS_CURSO_VALIDOS = [1, 2, 3, 4, 5, 6, 7];
 const CONDICIONES_VALIDAS = ["regular", "irregular"];
 
-/* ------------------------------------------------------------------
-   Helpers
-   ------------------------------------------------------------------ */
+
+
+
 
 function escuelaIdInt(user) {
   const schoolId = user?.assignments?.[0]?.schoolId;
@@ -140,9 +140,9 @@ function filtrosResponse({ soloActivos, condicion, periodo, orden }) {
   return out;
 }
 
-/* ------------------------------------------------------------------
-   Listados especificos
-   ------------------------------------------------------------------ */
+
+
+
 
 export async function listarAlumnosPorCurso({ url, user }) {
   const escuelaId = escuelaIdInt(user);

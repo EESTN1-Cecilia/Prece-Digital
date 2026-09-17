@@ -1,9 +1,9 @@
 import { getDatabasePool } from "../../database/client.mjs";
 
-/* Consultas SQL parametrizadas para listados de alumnos.
-   Los listados por grupo y taller resuelven miembros via modulos
-   in-memory (Groups / Workshops) y luego buscan los datos personales
-   del alumno en MySQL con listarPorIds. */
+
+
+
+
 
 const CAMPOS_ALUMNO = `
   e.id AS alumno_id,
@@ -51,9 +51,9 @@ export function ordenSql(orden) {
   return ORDEN_POR[orden] ?? ORDEN_POR.apellido;
 }
 
-/* ------------------------------------------------------------------
-   Helpers de construccion dinamica de WHERE / params
-   ------------------------------------------------------------------ */
+
+
+
 
 function agregarFiltros(condiciones, params, filtros) {
   if (filtros.soloActivos) {
@@ -71,9 +71,9 @@ function agregarFiltros(condiciones, params, filtros) {
   }
 }
 
-/* ------------------------------------------------------------------
-   Contexto (para la respuesta uniforme)
-   ------------------------------------------------------------------ */
+
+
+
 
 export async function contextoCursoEscuela(escuelaId, anioCurso, periodo) {
   const databasePool = getDatabasePool();
@@ -115,9 +115,9 @@ export async function contextoDivision(escuelaId, anioDivisionId) {
   return filas[0] ?? null;
 }
 
-/* ------------------------------------------------------------------
-   Listados por curso (anio) y por division — MySQL
-   ------------------------------------------------------------------ */
+
+
+
 
 export async function listarPorCurso({ escuelaId, anioCurso, soloActivos, condicion, periodo, orden, limite, offset }) {
   const databasePool = getDatabasePool();
@@ -191,9 +191,9 @@ export async function totalPorDivision({ escuelaId, anioDivisionId, soloActivos,
   return filas[0].total;
 }
 
-/* ------------------------------------------------------------------
-   Listados por IDs (puente con modulos in-memory)
-   ------------------------------------------------------------------ */
+
+
+
 
 export async function listarPorIds({ escuelaId, ids, soloActivos, condicion, orden, limite, offset }) {
   if (!ids.length) return [];

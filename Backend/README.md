@@ -798,30 +798,57 @@ Permisos: `inventory.read`, `inventory.write`, `inventory.manage`.
 ```json
 {
   "name": "Proyector Epson",
-  "code": "PR-001",
+  "description": "Proyector del aula de informatica",
   "category": "tecnologia",
-  "brand": "Epson",
-  "model": "EB-X05",
   "quantity": 2,
   "minQuantity": 1,
-  "spaceId": "spc_...",
-  "schoolId": "esc-1"
+  "unit": "unidad",
+  "status": "disponible",
+  "location": "Server - Estante A"
 }
 ```
-**Respuesta 201:** `{ "data": { "id": "inv_...", "status": "disponible", ... } }`
+**Respuesta 201:** `{ "data": { "id": "inv_...", "createdBy": "usr_...", ... } }`
 
 **Categorías:** `mobiliario`, `equipamiento`, `material`, `herramienta`, `tecnologia`, `otro`.
-**Estados:** `disponible`, `en_uso`, `mantenimiento`, `dado_de_baja`.
+**Estados:** `disponible`, `agotado`, `danado`, `en_reparacion`, `inactivo`.
 
-### Movimientos (`/api/v1/inventory-movements`)
-- `POST` crea (**201**): `{ "itemId", "type", "quantity", "schoolId" }`.
-  - **Tipos:** `ingreso`, `egreso`, `transferencia`, `ajuste`.
-  - El egreso valida **stock suficiente** (error `400` si insuficiente) y actualiza el stock del ítem.
-- `GET` lista (filtros: `itemId`, `type`, `startDate`, `endDate`).
+El stock inicial (`quantity`) se registra como un movimiento automático de tipo `alta`
+para mantener el saldo sincronizado con el historial (el material se crea en 0).
+
+### Stock
+- `GET /api/v1/inventory/:itemId/stock` → stock vigente con nivel (`normal`, `bajo`, `agotado`).
+- `GET /api/v1/inventory/stock-low` → materiales con stock bajo o agotado.
+- `GET /api/v1/inventory/:itemId/stock/verify` → auditoría: reconstruye el stock
+  desde el historial de movimientos y devuelve `{ "stockActual", "stockCalculado", "consistente" }`.
+
+### Movimientos
+- `POST /api/v1/inventory/:itemId/movements` · `inventory.write` crea (**201**) con `{ "type", "quantity", "reason", "observations" }`.
+  - **Tipos:** `alta`, `baja`, `donacion`, `prestamo`, `devolucion`.
+  - `alta`, `donacion` y `devolucion` **incrementan**; `baja` y `prestamo` **decrementan**.
+  - La baja/préstamo valida **stock suficiente** (error `422` si insuficiente); el stock nunca queda negativo.
+  - `cantidad` es siempre un entero mayor a cero; `motivo` es obligatorio; el responsable se toma de la sesión autenticada (nunca del frontend).
+  - `devolucion` admite `referenceMovementId` (opcional): debe apuntar a un `prestamo`
+    del mismo material y la cantidad no puede superar su saldo pendiente.
+- `POST /api/v1/inventory/:itemId/movements/adjust` · `inventory.manage` → ajuste con
+  `{ "nuevoStock", "reason", "observations" }`: fija el stock al valor objetivo
+  (`cantidad` = `|nuevoStock - stockAnterior|`). Sin diferencia real devuelve `422`.
+- `GET /api/v1/inventory/:itemId/movements` (filtros: `type`, `motivo`, `fromDate`, `toDate`).
+- `GET /api/v1/inventory-movements` (filtros: `itemId`, `type`, `userId`, `motivo`, `fromDate`, `toDate`).
+- `GET /api/v1/inventory-movements/:movementId` → consulta de un movimiento por ID.
+
+Cada movimiento registra `previousStock`, `resultingStock`, `userId`, `schoolId`,
+`motivo` y `observaciones`. Los movimientos son inmutables e históricos (nunca se
+eliminan). La actualización de stock y la inserción del movimiento son **atómicas**:
+una validación fallida no deja ni stock ni movimiento parcial. Al agotarse el stock
+el material pasa a estado `agotado`; al reponerse vuelve a `disponible`.
 
 ### Otros recursos
-- `GET /api/v1/inventory` (filtros: `category`, `spaceId`, `status`).
-- `GET /api/v1/inventory/:itemId` · `PATCH /api/v1/inventory/:itemId` · `DELETE /api/v1/inventory/:itemId` (`inventory.manage`).
+- `GET /api/v1/inventory` (filtros: `category`, `status`, `location`, `unit`, `search`, `includeInactive`).
+- `GET /api/v1/inventory/:itemId` · `PATCH /api/v1/inventory/:itemId` (`inventory.write`) · `DELETE /api/v1/inventory/:itemId` (`inventory.manage`).
+- `PATCH` no modifica `quantity`: el stock solo cambia vía movimientos (error `422` si se envía).
+- `DELETE` es una baja que desactiva el material sin eliminar su historial; un material
+  desactivado no admite nuevas operaciones de stock.
+- `GET /api/v1/inventory/:itemId/history` → historial de modificaciones de datos (filtros: `changedBy`, `fromDate`, `toDate`).
 
 ---
 

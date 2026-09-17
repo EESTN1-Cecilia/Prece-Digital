@@ -1,4 +1,4 @@
-/* Manejo centralizado de errores: npm test */
+
 
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
@@ -10,7 +10,7 @@ const PUERTO = 3999;
 const base = `http://127.0.0.1:${PUERTO}`;
 let servidor;
 
-/* Juego de rutas propio del test: la app las recibe por parametro. */
+
 const rutasDePrueba = {
   "GET /health": healthCheck,
   "GET /test/validacion": () => {

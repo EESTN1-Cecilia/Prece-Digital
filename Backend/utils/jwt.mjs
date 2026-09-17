@@ -1,6 +1,6 @@
-/* JWT HS256 implementado con node:crypto.
-   No depende de librerias externas: firma y verifica el token con HMAC-SHA256
-   usando el secreto de la aplicacion (SESSION_SECRET). */
+
+
+
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { appConfig } from "../config/app.config.mjs";
@@ -19,7 +19,7 @@ function firmar(cabecera, cuerpo) {
   return createHmac("sha256", SECRETO).update(`${cabecera}.${cuerpo}`).digest("base64url");
 }
 
-/* Devuelve un token JWT (HS256) con el payload indicado y expiracion en segundos. */
+
 export function firmarToken(payload, expiracionSegundos = 8 * 60 * 60) {
   const ahora = Math.floor(Date.now() / 1000);
   const cabecera = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
@@ -35,7 +35,7 @@ export function firmarToken(payload, expiracionSegundos = 8 * 60 * 60) {
   return `${cabecera}.${cuerpo}.${firma}`;
 }
 
-/* Verifica la firma y la expiracion del token. Devuelve el payload o null. */
+
 export function verificarToken(token) {
   if (typeof token !== "string") {
     return null;

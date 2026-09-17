@@ -1,17 +1,5 @@
--- Migracion 004: reasignaciones de espacios
--- Registra movimientos temporales de actividades/assignments a espacios
--- alternativos, con trazabilidad completa del espacio original y destino,
--- validación de conflictos y relación con liberaciones de ausencias.
---
--- Nota: los modulos in-memory usan identificadores textuales (prefijo rsa_/
--- rsh_/sca_/spc_); las columnas de referencia se modelan como VARCHAR(40)
--- y NO como FK estrictas para mantener coherencia con los datos en memoria.
-
 USE prece_digital;
 
--- =====================================================================================
--- REASIGNACIONES DE ESPACIOS
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS reasignaciones_espacios (
   id                         VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo rsa_',
   asignacion_horaria_id      VARCHAR(40)  NOT NULL COMMENT 'Asignacion horaria afectada (schedules)',
@@ -52,10 +40,6 @@ CREATE TABLE IF NOT EXISTS reasignaciones_espacios (
   CONSTRAINT fk_rsa_liberacion  FOREIGN KEY (liberacion_id) REFERENCES espacio_disponibilidad(id)
 ) ENGINE=InnoDB;
 
--- =====================================================================================
--- HISTORIAL DE REASIGNACIONES (trazabilidad completa de cambios)
--- Registra creacion, actualizaciones, correcciones, reversiones.
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS historial_reasignaciones (
   id                    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   reasignacion_id       VARCHAR(40)  NOT NULL COMMENT 'Referencia a la reasignacion',

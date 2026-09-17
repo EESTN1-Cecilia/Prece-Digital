@@ -58,7 +58,7 @@ const reassignmentsRepository = {
     return reassignment ? clone(reassignment) : null;
   },
 
-  /* Busca la reasignación activa de una asignación horaria (máximo una). */
+  
   findActiveByAssignment(scheduleAssignmentId) {
     this.init();
     const reassignment = this.listReassignments({ scheduleAssignmentId, includeInactive: true }).find(

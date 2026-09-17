@@ -1,19 +1,5 @@
--- Migracion 002: ausencias docentes, liberaciones de espacios e historial
--- Registra ausencias vinculadas a la asignacion horaria (schedule-assignment),
--- crea liberaciones de espacio para el dia y horario afectados, y mantiene
--- historial de cambios (trazabilidad).
---
--- Nota: el modulo de horarios/asignaciones opera actualmente en memoria
--- (Backend/modules/schedules), por lo que schedule_assignment_id y
--- schedule_id se conservan como referencia textual al identificador del
--- modulo. Las columnas de curso, materia y espacio se derivan de la
--- asignacion horaria al momento del registro.
-
 USE prece_digital;
 
--- =====================================================================================
--- AUSENCIAS DOCENTES
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS ausencias (
   id                      VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo abs_ (coincide con el modulo en memoria)',
   escuela_id              INT UNSIGNED NOT NULL,
@@ -48,12 +34,6 @@ CREATE TABLE IF NOT EXISTS ausencias (
   CONSTRAINT fk_aus_modifica FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
--- =====================================================================================
--- LIBERACIONES DE ESPACIOS (disponibilidad generada por ausencias)
--- Registro historico: el espacio queda disponible para un dia y horario puntuales
--- como consecuencia de una ausencia. Se elimina al anular la ausencia.
--- Se marca como "utilizada" cuando el modulo de reasignacion la consume.
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS disponibilidad_espacios (
   id                      VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo ava_',
   escuela_id              INT UNSIGNED NOT NULL,
@@ -88,9 +68,6 @@ CREATE TABLE IF NOT EXISTS disponibilidad_espacios (
   CONSTRAINT fk_disp_modifica FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
--- =====================================================================================
--- HISTORIAL DE CAMBIOS DE AUSENCIAS (trazabilidad completa)
--- =====================================================================================
 CREATE TABLE IF NOT EXISTS historial_ausencias (
   id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   ausencia_id     VARCHAR(40)  NOT NULL,

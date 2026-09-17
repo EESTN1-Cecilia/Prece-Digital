@@ -1,7 +1,7 @@
 import { solicitudInvalida } from "./api-error.mjs";
 
-/* Lee el cuerpo JSON de una peticion. Devuelve un objeto vacio si no hay cuerpo.
-   Limita el tamano para evitar abuso de memoria. */
+
+
 const LIMITE_BYTES = 1_000_000;
 
 export function leerCuerpoJson(request) {

@@ -1,6 +1,6 @@
-/* Autorizacion por rol y permiso: npm test
 
-   Usa un doble de la conexion a MySQL, asi que corre sin base de datos. */
+
+
 
 import assert from "node:assert/strict";
 import test, { after, before, beforeEach } from "node:test";
@@ -10,7 +10,7 @@ import { apiRoutes } from "../routes/index.mjs";
 const PUERTO = 3998;
 const base = `http://127.0.0.1:${PUERTO}`;
 
-/* Estado de la base simulada. */
+
 const datos = {
   roles: [
     { id: 1, codigo: "super-admin", nombre: "Superadministrador", descripcion: null },
@@ -27,7 +27,7 @@ const datos = {
 
 const escrituras = [];
 
-/* Doble del pool: responde segun la consulta, sin base de datos real. */
+
 const pool = {
   async query(sql, params = []) {
     const consulta = sql.replace(/\s+/g, " ").trim();
@@ -82,7 +82,7 @@ const pool = {
 let servidor;
 let usuarioAutenticado = null;
 
-/* Simula lo que hara el middleware de JWT: dejar el usuario verificado en el request. */
+
 function conIdentidad(rutas) {
   const mapa = Array.isArray(rutas) ? Object.fromEntries(rutas.map((ruta) => [`${ruta.method} ${ruta.path}`, ruta.handler])) : rutas;
   return Object.fromEntries(

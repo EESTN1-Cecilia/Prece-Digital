@@ -1,15 +1,10 @@
--- Migracion 001: listados de alumnos por curso, division, grupo y taller
--- Aplica sobre una base creada con la version anterior de schema.sql
-
 USE prece_digital;
 
--- 1) Columna condicion academica en estudiantes
 ALTER TABLE estudiantes
   ADD COLUMN condicion ENUM('regular','irregular') NULL
   COMMENT 'Condicion academica segun trayectoria del ciclo lectivo'
   AFTER fecha_egreso;
 
--- 2) Inscripciones a grupos/talleres (base de los listados por grupo y taller)
 CREATE TABLE IF NOT EXISTS inscripciones_taller (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id       INT UNSIGNED NOT NULL,

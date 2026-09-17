@@ -683,30 +683,44 @@ Permisos: `inventory.read`, `inventory.write`, `inventory.manage`.
 ```json
 {
   "name": "Proyector Epson",
-  "code": "PR-001",
+  "description": "Proyector del aula de informatica",
   "category": "tecnologia",
-  "brand": "Epson",
-  "model": "EB-X05",
   "quantity": 2,
   "minQuantity": 1,
-  "spaceId": "spc_...",
-  "schoolId": "esc-1"
+  "unit": "unidad",
+  "status": "disponible",
+  "location": "Server - Estante A"
 }
 ```
-**Respuesta 201:** `{ "data": { "id": "inv_...", "status": "disponible", ... } }`
+**Respuesta 201:** `{ "data": { "id": "inv_...", "createdBy": "usr_...", ... } }`
 
 **Categorías:** `mobiliario`, `equipamiento`, `material`, `herramienta`, `tecnologia`, `otro`.
-**Estados:** `disponible`, `en_uso`, `mantenimiento`, `dado_de_baja`.
+**Estados:** `disponible`, `agotado`, `danado`, `en_reparacion`, `inactivo`.
 
-### Movimientos (`/api/v1/inventory-movements`)
-- `POST` crea (**201**): `{ "itemId", "type", "quantity", "schoolId" }`.
-  - **Tipos:** `ingreso`, `egreso`, `transferencia`, `ajuste`.
-  - El egreso valida **stock suficiente** (error `400` si insuficiente) y actualiza el stock del ítem.
-- `GET` lista (filtros: `itemId`, `type`, `startDate`, `endDate`).
+### Stock
+- `GET /api/v1/inventory/:itemId/stock` → stock vigente con nivel (`normal`, `bajo`, `agotado`).
+- `GET /api/v1/inventory/stock-low` → materiales con stock bajo o agotado.
+- `GET /api/v1/inventory/:itemId/stock/verify` → auditoría: reconstruye el stock
+  desde el historial y devuelve `{ "stockActual", "stockCalculado", "consistente" }`.
+
+### Movimientos
+- `POST /api/v1/inventory/:itemId/movements` · `inventory.write` crea (**201**) con `{ "type", "quantity", "reason", "observations" }`.
+  - **Tipos:** `alta`, `baja`, `donacion`, `prestamo`, `devolucion`.
+  - `alta`, `donacion`, `devolucion` **incrementan**; `baja`, `prestamo` **decrementan**.
+  - La baja/préstamo valida **stock suficiente** (error `422` si insuficiente); el stock nunca queda negativo.
+  - `cantidad` siempre entero > 0; `motivo` obligatorio; responsable desde la sesión autenticada.
+  - `devolucion` admite `referenceMovementId` (opcional): debe referenciar un `prestamo`
+    del mismo material y no puede superar el saldo pendiente.
+- `POST /api/v1/inventory/:itemId/movements/adjust` · `inventory.manage` → ajuste con
+  `{ "nuevoStock", "reason", "observations" }`: fija el stock al valor objetivo.
+- `GET /api/v1/inventory/:itemId/movements` (filtros: `type`, `motivo`, `fromDate`, `toDate`).
+- `GET /api/v1/inventory-movements` (filtros: `itemId`, `type`, `userId`, `motivo`, `fromDate`, `toDate`).
+- `GET /api/v1/inventory-movements/:movementId` → consulta de un movimiento por ID.
 
 ### Otros recursos
-- `GET /api/v1/inventory` (filtros: `category`, `spaceId`, `status`).
-- `GET /api/v1/inventory/:itemId` · `PATCH /api/v1/inventory/:itemId` · `DELETE /api/v1/inventory/:itemId` (`inventory.manage`).
+- `GET /api/v1/inventory` (filtros: `category`, `status`, `location`, `unit`, `search`, `includeInactive`).
+- `GET /api/v1/inventory/:itemId` · `PATCH /api/v1/inventory/:itemId` (`inventory.write`) · `DELETE /api/v1/inventory/:itemId` (`inventory.manage`).
+- `GET /api/v1/inventory/:itemId/history` → historial de modificaciones de datos.
 
 ---
 

@@ -1,18 +1,18 @@
-/* Manejo centralizado de errores.
 
-   Cualquier error que llegue hasta aca se traduce a la respuesta uniforme de la API:
 
-     { "error": { "code": "...", "message": "...", "details": [...] } }
 
-   Los errores previstos (ApiError) conservan su mensaje. Los inesperados se registran
-   completos en el log interno y al cliente solo le llega un mensaje generico: nunca
-   stack traces, SQL, rutas internas ni datos sensibles. */
+
+
+
+
+
+
 
 import { appConfig } from "../config/app.config.mjs";
 import { ApiError, conflicto } from "../utils/api-error.mjs";
 import { sendJson } from "../utils/http-response.mjs";
 
-/* Errores de MySQL que corresponden a una situacion prevista del negocio. */
+
 const ERRORES_MYSQL = {
   ER_DUP_ENTRY: () => conflicto("Ya existe un registro con esos datos."),
   ER_ROW_IS_REFERENCED_2: () =>
@@ -37,8 +37,8 @@ function comoApiError(error) {
   return traducir ? traducir() : null;
 }
 
-/* El log interno si guarda el detalle tecnico. Nunca incluye cuerpo de la peticion
-   ni cabeceras, para no registrar contrasenias ni tokens. */
+
+
 export function registrarError(error, { metodo, ruta, esperado }) {
   const linea = {
     momento: new Date().toISOString(),
@@ -75,8 +75,6 @@ export function handleError(error, { request, response, url }) {
     return;
   }
 
-  /* Error inesperado: el cliente recibe siempre lo mismo. Fuera de produccion se
-     agrega el mensaje original para poder diagnosticar durante el desarrollo. */
   sendJson(response, 500, {
     error: {
       code: "INTERNAL_ERROR",

@@ -101,8 +101,8 @@ function validateAssociationPayload(data) {
   return provided;
 }
 
-/* Conflicto: un alumno no puede pertenecer a grupos incompatibles que compartan
-   el mismo horario y espacio mientras ambos están activos. */
+
+
 function assertNoIncompatibleGroupForStudent(studentId, targetGroupId) {
   const groups = groupsRepository.listGroups({ includeInactive: true });
   const target = groups.find((g) => g.id === targetGroupId) ?? resolveGroup(targetGroupId);
@@ -126,7 +126,7 @@ function assertNoIncompatibleGroupForStudent(studentId, targetGroupId) {
   }
 }
 
-/* Verifica que un horario/espacio no generen conflictos con otro grupo activo de la misma escuela. */
+
 function assertNoGroupScheduleConflict({ scheduleId, spaceId, schoolId, school, excludeGroupId }) {
   if (!scheduleId && !spaceId) return;
   const groups = groupsRepository.listGroups({ schoolId, includeInactive: true }).filter((g) => g.id !== excludeGroupId && g.status === "activo");
@@ -252,7 +252,7 @@ const groupsService = {
     return { statusCode: 200, body: { data: enrichGroup(group) } };
   },
 
-  /* Asociar curso/división, taller, espacio u horario (endpoints dedicados). */
+  
   assign(id, data, user) {
     const current = resolveGroup(id);
     const provided = validateAssociationPayload(data);

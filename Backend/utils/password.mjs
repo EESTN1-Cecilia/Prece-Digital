@@ -1,5 +1,5 @@
-/* Hash seguro de contrasenas con scrypt (node:crypto).
-   Formato almacenado: scrypt:costo:salt_base64:hash_base64 */
+
+
 
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";

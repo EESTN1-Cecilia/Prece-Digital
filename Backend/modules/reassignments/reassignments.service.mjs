@@ -133,11 +133,11 @@ function enrichReassignment(reassignment) {
   };
 }
 
-/**
- * Valida y ejecuta el cambio de espacio sobre una asignación horaria.
- * Toda validación ocurre antes de qualquer mutación: si algo falla,
- * la asignación existente queda sin modificaciones.
- */
+
+
+
+
+
 function applyMove({
   scheduleAssignmentId,
   newSpaceId,

@@ -1,7 +1,7 @@
-/* Seed de usuarios demo para development.
-   Uso: node scripts/seed-usuarios.mjs
-   Crea (si no existen) la escuela + un usuario por rol con contrasena "Pr3ceD1git4l!"
-   Ejecutar una sola vez; es idempotente por email. */
+
+
+
+
 
 import { closeDatabaseConnection, getDatabasePool } from "../database/client.mjs";
 import { hashContrasena } from "../utils/password.mjs";

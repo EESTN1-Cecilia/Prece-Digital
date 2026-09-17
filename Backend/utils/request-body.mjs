@@ -1,6 +1,6 @@
 import { solicitudInvalida } from "./api-error.mjs";
 
-/* Limite defensivo: evita que una peticion enorme consuma memoria del proceso. */
+
 const LIMITE_BYTES = 100 * 1024;
 
 export async function leerCuerpoJson(request) {

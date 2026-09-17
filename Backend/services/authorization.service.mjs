@@ -1,9 +1,9 @@
-/* Autorización: qué puede hacer cada rol y, por lo tanto, cada usuario.
 
-   Un permiso es "<modulo>:<accion>", por ejemplo "identity:read". Los permisos de un
-   usuario son la unión de los permisos de todos sus roles activos.
 
-   Las consultas reciben la conexión por parámetro para poder probarlas con un doble. */
+
+
+
+
 
 import { getDatabasePool } from "../database/client.mjs";
 import { noEncontrado, errorDeValidacion } from "../utils/api-error.mjs";
@@ -63,8 +63,8 @@ export async function permisosDeRol(pool, codigoRol) {
   return { rol, permisos: filas.map((fila) => fila.codigo) };
 }
 
-/* Reemplaza por completo los permisos del rol. Se rechaza cualquier código que no
-   exista en el catálogo: así el cliente no puede inventar permisos. */
+
+
 export async function reemplazarPermisosDeRol(pool, codigoRol, codigos) {
   if (!Array.isArray(codigos)) {
     throw errorDeValidacion([{ field: "permisos", message: "Se espera una lista de permisos." }]);
@@ -104,8 +104,8 @@ export async function reemplazarPermisosDeRol(pool, codigoRol, codigos) {
   return { rol, permisos: unicos.sort() };
 }
 
-/* Permisos efectivos del usuario: unión de los permisos de sus roles activos.
-   Los roles se leen de la base, nunca de lo que envíe el cliente. */
+
+
 export async function permisosDeUsuario(pool, usuarioId) {
   const [filas] = await conexion(pool).query(
     `SELECT DISTINCT p.codigo

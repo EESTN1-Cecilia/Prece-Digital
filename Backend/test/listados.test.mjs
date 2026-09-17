@@ -1,5 +1,5 @@
-/* Listados de alumnos: autenticacion, permisos, validacion y formato.
-   Prueba la cadena completa de middleware moderna (verifyToken + required) */
+
+
 
 import assert from "node:assert/strict";
 import test, { after, before, beforeEach } from "node:test";
@@ -62,9 +62,9 @@ async function pedir(ruta, token) {
   return { status: respuesta.status, cuerpo: await respuesta.json() };
 }
 
-/* ------------------------------------------------------------------
-   Autenticacion (401)
-   ------------------------------------------------------------------ */
+
+
+
 
 test("un listado sin token devuelve 401", async () => {
   const { status, cuerpo } = await pedir("/api/v1/students/listas/curso?anioCurso=1");
@@ -79,9 +79,9 @@ test("un token invalido devuelve 401", async () => {
   assert.equal(status, 401);
 });
 
-/* ------------------------------------------------------------------
-   Autorizacion (403)
-   ------------------------------------------------------------------ */
+
+
+
 
 test("un rol sin permiso STUDENTS_READ devuelve 403", async () => {
   const { status, cuerpo } = await pedir("/api/v1/students/listas/curso?anioCurso=1", tokenDe(SIN_PERMISO_USER));
@@ -90,9 +90,9 @@ test("un rol sin permiso STUDENTS_READ devuelve 403", async () => {
   assert.equal(cuerpo.error.code, "forbidden");
 });
 
-/* ------------------------------------------------------------------
-   Validacion de parametros (422)
-   ------------------------------------------------------------------ */
+
+
+
 
 test("un curso fuera de rango devuelve 422", async () => {
   const { status, cuerpo } = await pedir("/api/v1/students/listas/curso?anioCurso=9", tokenDe(DIRECTOR_USER));
@@ -144,9 +144,9 @@ test("periodo invalido devuelve 422", async () => {
   assert.equal(cuerpo.error.details[0].field, "periodo");
 });
 
-/* ------------------------------------------------------------------
-   Respuesta uniforme de error
-   ------------------------------------------------------------------ */
+
+
+
 
 test("la respuesta de error es uniforme con el resto de la API", async () => {
   const { status, cuerpo } = await pedir("/api/v1/students/listas/curso?anioCurso=1");
@@ -156,9 +156,9 @@ test("la respuesta de error es uniforme con el resto de la API", async () => {
   assert.equal(typeof cuerpo.error.message, "string");
 });
 
-/* ------------------------------------------------------------------
-   Formato de respuesta (requiere mock de MySQL)
-   ------------------------------------------------------------------ */
+
+
+
 
 test("listado por curso devuelve formato uniforme con contexto y paginacion", async () => {
   const mockPool = {

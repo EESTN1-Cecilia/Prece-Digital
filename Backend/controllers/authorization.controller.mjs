@@ -62,8 +62,8 @@ export async function putRolePermissions({ request, params, pool, body }) {
   return { data: { rol: rol.codigo, nombre: rol.nombre, permisos } };
 }
 
-/* Identidad, roles y permisos del usuario autenticado. Solo datos propios y ningun
-   campo sensible: sin hash de contrasenia, sin tokens. */
+
+
 export async function getMe({ contexto, pool }) {
   return {
     data: {
