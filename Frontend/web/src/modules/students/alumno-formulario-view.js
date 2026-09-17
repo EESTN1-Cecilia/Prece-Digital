@@ -3,6 +3,8 @@ import { h } from "../../layouts/site-layout.js";
 import { FormCard, TituloSeccion } from "../../components/form-card.js";
 import { Boton, Campo, Select } from "../../components/ui/index.js";
 
+import { AlumnoMatrizModal } from "./alumno-matriz-wiew.js";
+
 /* Figma: "Cargar Alumno" (2237:2). */
 
 const CURSOS = ["1°", "2°", "3°", "4°", "5°", "6°", "7°"];
@@ -82,74 +84,78 @@ function BloqueAlumno({ indice }) {
 }
 
 export default function AlumnoFormularioView() {
-  /* El Figma dibuja dos bloques "Alumno" para mostrar la grilla de dos
-     columnas, no porque se carguen dos alumnos a la vez. Arranca en uno y la
-     tarjeta se ensancha recien cuando hay mas de uno. */
   const [alumnos, setAlumnos] = useState(1);
   const [modulos, setModulos] = useState(1);
+  const [modalMatrizAbierto, setModalMatrizAbierto] = useState(false);
 
   return h(
-    FormCard,
-    { titulo: "Cargar Alumno", ancho: alumnos > 1 },
+    React.Fragment,
+    null,
     h(
-      "div",
-      { className: "form-grid" },
-      Array.from({ length: alumnos }, (_, indice) => h(BloqueAlumno, { key: indice, indice }))
-    ),
-    h(
-      "div",
-      { className: "form-links" },
-      /* El Figma rotula este enlace "Agregar curso": es texto heredado de
-         "Crear Cuenta - Secretaria". Aca el bloque repetible es el alumno. */
+      FormCard,
+      { titulo: "Cargar Alumno", ancho: alumnos > 1 },
       h(
-        "button",
-        {
-          className: "form-link",
-          type: "button",
-          onClick: () => setAlumnos((actuales) => actuales + 1)
-        },
-        "Agregar alumno"
-      )
-    ),
-    h(
-      "section",
-      { className: "form-block form-block--centrado" },
-      h(TituloSeccion, null, "Tutor"),
-      Array.from({ length: modulos }, (_, fila) =>
-        h(
-          "div",
-          { key: fila },
-          h(Select, {
-            etiqueta: fila === 0 ? "Módulos:" : undefined,
-            id: `tutor-dia-${fila}`,
-            opciones: DIAS,
-            placeholder: "Día"
-          }),
-          h(Select, {
-            id: `tutor-modulo-${fila}`,
-            opciones: MODULOS,
-            placeholder: "Módulo"
-          })
-        )
+        "div",
+        { className: "form-grid" },
+        Array.from({ length: alumnos }, (_, indice) => h(BloqueAlumno, { key: indice, indice }))
       ),
       h(
         "div",
-        { className: "form-links form-links--derecha" },
+        { className: "form-links" },
         h(
           "button",
           {
             className: "form-link",
             type: "button",
-            onClick: () => setModulos((actuales) => actuales + 1)
+            onClick: () => setAlumnos((actuales) => actuales + 1)
           },
-          "Agregar día y módulo"
+          "Agregar alumno"
         )
+      ),
+      h(
+        "section",
+        { className: "form-block form-block--centrado" },
+        h(TituloSeccion, null, "Tutor"),
+        Array.from({ length: modulos }, (_, fila) =>
+          h(
+            "div",
+            { key: fila },
+            h(Select, {
+              etiqueta: fila === 0 ? "Módulos:" : undefined,
+              id: `tutor-dia-${fila}`,
+              opciones: DIAS,
+              placeholder: "Día"
+            }),
+            h(Select, {
+              id: `tutor-modulo-${fila}`,
+              opciones: MODULOS,
+              placeholder: "Módulo"
+            })
+          )
+        ),
+        h(
+          "div",
+          { className: "form-links form-links--derecha" },
+          h(
+            "button",
+            {
+              className: "form-link",
+              type: "button",
+              onClick: () => setModulos((actuales) => actuales + 1)
+            },
+            "Agregar día y módulo"
+          )
+        )
+      ),
+      h(
+        "div",
+        { className: "form-block--centrado" },
+        h(Boton, { className: "form-submit", tipo: "submit", ancho: true }, "Cargar Usuario")
       )
     ),
-    h(
-      "div",
-      { className: "form-block--centrado" },
-      h(Boton, { className: "form-submit", tipo: "submit", ancho: true }, "Cargar Usuario")
-    )
+    h(AlumnoMatrizModal, {
+      abierto: modalMatrizAbierto,
+      onCerrar: () => setModalMatrizAbierto(false)
+    })
   );
 }

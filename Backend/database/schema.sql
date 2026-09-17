@@ -502,6 +502,21 @@ CREATE TABLE auditoria_logs (
   CONSTRAINT fk_al_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
 ) ENGINE=InnoDB;
 
+-- Log de errores del servidor (fallos esperados e inesperados).
+-- No almacena cuerpo de la petición ni cabeceras: solo método, ruta, código y mensaje.
+CREATE TABLE logs_errores (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id      INT UNSIGNED NULL COMMENT 'Usuario autenticado al momento del fallo, si lo hay',
+  fecha           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  metodo          VARCHAR(10)  NULL,
+  ruta            VARCHAR(255) NULL,
+  tipo            ENUM('esperado','inesperado') NOT NULL DEFAULT 'inesperado',
+  code            VARCHAR(80)  NULL,
+  message         TEXT         NULL,
+  ip              VARCHAR(45)  NULL,
+  CONSTRAINT fk_le_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
 -- Lotes de importación de Excel (con soporte de reversión, según mvp-scope.md)
 CREATE TABLE lotes_importacion (
   id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -614,7 +629,8 @@ INSERT INTO permisos (codigo, modulo, accion, descripcion) VALUES
   ('files:read',                'files',              'read',    'Consultar plantillas y documentos'),
   ('files:upload',              'files',              'upload',  'Importar planillas y documentos'),
   ('files:approve',             'files',              'approve', 'Aprobar importaciones y exportaciones'),
-  ('audit:read',                'audit',              'read',    'Consultar el historial de auditoría');
+  ('audit:read',                'audit',              'read',    'Consultar el historial de auditoría'),
+  ('audit:export',              'audit',              'export',  'Exportar reportes de auditoría');
 
 -- super-admin: todos los permisos
 INSERT INTO rol_permisos (rol_id, permiso_id)
@@ -623,13 +639,13 @@ SELECT r.id, p.id FROM roles r CROSS JOIN permisos p WHERE r.codigo = 'super-adm
 -- system-admin: identidad completa y lectura del resto
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
-  ON p.modulo = 'identity' OR p.accion = 'read'
+  ON p.modulo = 'identity' OR p.accion = 'read' OR p.codigo = 'audit:export'
 WHERE r.codigo = 'system-admin';
 
 -- director: lectura general, aprobaciones y auditoría
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
-  ON p.accion IN ('read', 'approve')
+  ON p.accion IN ('read', 'approve', 'export')
 WHERE r.codigo = 'director';
 
 -- secretaría: estudiantes y estructura académica, más lectura general
