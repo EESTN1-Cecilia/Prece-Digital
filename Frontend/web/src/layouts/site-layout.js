@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { DocumentosManagerModal } from "../modules/documents/document-modals.js";
 
 export const h = React.createElement;
 
@@ -99,11 +100,28 @@ function FooterLinks({ title, links }) {
     "section",
     null,
     h("h2", null, title),
-    links.map(([label, href]) => h("a", { key: href, href }, label))
+    links.map(([label, action]) => {
+      if (typeof action === "function") {
+        return h(
+          "button",
+          {
+            key: label,
+            type: "button",
+            className: "footer-link-btn",
+            onClick: (e) => {
+              e.preventDefault();
+              action();
+            }
+          },
+          label
+        );
+      }
+      return h("a", { key: action, href: action }, label);
+    })
   );
 }
 
-function Footer() {
+function Footer({ onOpenDocumento }) {
   return h(
     "footer",
     { className: "site-footer" },
@@ -159,7 +177,12 @@ function Footer() {
             ["Inicio", "#/inicio"],
             ["Alumnos", "#/alumnos"],
             ["Observaciones", "#/preceptoria/observaciones"],
-            ["Sobre Nosotros", "#nosotros"]
+            ["Sobre Nosotros", "#nosotros"],
+            ["Constancia Situación Académica", () => onOpenDocumento("situacion_academica")],
+            ["RITE (Trayectorias Educativas)", () => onOpenDocumento("rite")],
+            ["Planilla de Calificaciones 2026", () => onOpenDocumento("planilla_calificaciones")],
+            ["Constancia de Alumno Regular", () => onOpenDocumento("alumno_regular")],
+            ["Certificado de Estudio en Trámite / Pase", () => onOpenDocumento("tramite_pase")]
           ]
         }),
         h(FooterLinks, {
@@ -177,11 +200,27 @@ function Footer() {
 }
 
 export function SiteLayout({ ruta, children }) {
+  const [modalDocumento, setModalDocumento] = useState(null);
+
+  useEffect(() => {
+    const handleAbrirDoc = (e) => {
+      if (e.detail && e.detail.tipo) {
+        setModalDocumento(e.detail.tipo);
+      }
+    };
+    window.addEventListener("prece:open_document_modal", handleAbrirDoc);
+    return () => window.removeEventListener("prece:open_document_modal", handleAbrirDoc);
+  }, []);
+
   return h(
     React.Fragment,
     null,
     h(Header, { ruta }),
     h("main", { className: "page", id: "inicio" }, children),
-    h(Footer)
+    h(Footer, { onOpenDocumento: (tipo) => setModalDocumento(tipo) }),
+    h(DocumentosManagerModal, {
+      modalActivo: modalDocumento,
+      onCerrar: () => setModalDocumento(null)
+    })
   );
 }

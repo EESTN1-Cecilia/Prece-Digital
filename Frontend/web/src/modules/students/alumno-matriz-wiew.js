@@ -837,19 +837,20 @@ export function AlumnoMatrizModal({
             "Imprimir / PDF"
           ),
 
-          // Botón Cerrar - Usando icono SVG
+          // Botón Cerrar en la barra superior que permanece fijo al scrollear
           onCerrar
             ? h(
                 "button",
                 {
                   type: "button",
-                  className: "matriz-btn matriz-btn--close",
+                  className: "matriz-close-btn-topright",
                   onClick: onCerrar,
-                  "aria-label": "Cerrar modal"
+                  "aria-label": "Cerrar modal",
+                  title: "Cerrar"
                 },
                 h(
                   "svg",
-                  { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", width: "18", height: "18" },
+                  { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.4", strokeLinecap: "round", strokeLinejoin: "round", width: "18", height: "18" },
                   h("line", { x1: "18", y1: "6", x2: "6", y2: "18" }),
                   h("line", { x1: "6", y1: "6", x2: "18", y2: "18" })
                 )
