@@ -4,40 +4,59 @@ import { h, ActionButton } from "../../layouts/site-layout.js";
  * Grilla de accesos rápidos a las funcionalidades institucionales según permisos.
  * Con iconos SVG de Figma y sin emojis.
  */
-export function QuickAccessGrid({ userPermissions = ["all"] }) {
+export function QuickAccessGrid({ userPermissions = ["all"], onOpenMatriz = null }) {
+  const handleMatrizClick = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (typeof onOpenMatriz === "function") {
+      onOpenMatriz();
+    }
+    window.dispatchEvent(new CustomEvent("prece:open_matriz_modal"));
+  };
+
   const allAccesses = [
-    { id: "students", label: "Alumnos", icon: "user-search", href: "#/alumnos", permission: "students:view" },
-    { id: "search-student", label: "Buscar Alumno", icon: "user-search", href: "#/alumnos/buscar", permission: "students:search" },
-    { id: "tutors", label: "Tutores", icon: "people", href: "#/tutores", permission: "tutors:view" },
+    { id: "students", label: "Alumnos", icon: "people", href: "#/alumnos", permission: "students:view" },
     { id: "attendance", label: "Inasistencias", icon: "clipboard", href: "#/asistencias", permission: "attendance:view" },
-    { id: "observations", label: "Observaciones", icon: "clipboard", href: "#/observaciones", permission: "observations:view" },
-    { id: "academic-status", label: "Situación Académica", icon: "filter", href: "#/situacion-academica", permission: "academics:view" },
+    { id: "observations", label: "Observaciones", icon: "clipboard", href: "#/preceptoria/observaciones", permission: "observations:view" },
     { id: "grades", label: "Calificaciones", icon: "clipboard", href: "#/calificaciones", permission: "grades:view" },
-    { id: "matrix-book", label: "Libro Matriz", icon: "clipboard", href: "#/libro-matriz", permission: "matrix:view" },
-    { id: "documentation", label: "Documentación", icon: "clipboard", href: "#/documentacion", permission: "documents:view" },
-    { id: "promotion", label: "Promoción y Cursos", icon: "filter", href: "#/promocion", permission: "promotion:view" }
+    { id: "matrix-book", label: "Libro Matriz", icon: "clipboard", onClick: handleMatrizClick, permission: "matrix:view" },
+    { id: "documentation", label: "Documentación", icon: "clipboard", href: "#/documentacion", permission: "documents:view" }
   ];
 
   const allowedAccesses = allAccesses.filter(
-    (item) => userPermissions.includes("all") || userPermissions.includes(item.permission)
+    (item) => userPermissions.includes("all") || userPermissions.includes(item.permission) || item.id === "matrix-book"
   );
 
   return h(
     "div",
     { className: "quick-access-grid" },
     allowedAccesses.map((item) =>
-      h(
-        "a",
-        { key: item.id, href: item.href, className: "quick-access-link" },
-        h(
-          ActionButton,
-          {
-            icon: item.icon,
-            tone: item.tone || "primary"
-          },
-          item.label
-        )
-      )
+      item.onClick
+        ? h(
+            "div",
+            { key: item.id, className: "quick-access-link" },
+            h(
+              ActionButton,
+              {
+                icon: item.icon,
+                tone: item.tone || "primary",
+                onClick: item.onClick
+              },
+              item.label
+            )
+          )
+        : h(
+            "a",
+            { key: item.id, href: item.href, className: "quick-access-link" },
+            h(
+              ActionButton,
+              {
+                icon: item.icon,
+                tone: item.tone || "primary"
+              },
+              item.label
+            )
+          )
     )
   );
 }

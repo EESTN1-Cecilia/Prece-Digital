@@ -1,9 +1,10 @@
 import { authService } from "./auth.service.mjs";
 
-export async function login({ body }) {
+export async function login({ body, request }) {
   const session = await authService.login({
     email: body.email,
-    password: body.password
+    password: body.password,
+    request
   });
 
   return {
@@ -30,6 +31,13 @@ export function me({ user }) {
   return {
     statusCode: 200,
     body: { data: authService.me(user) }
+  };
+}
+
+export function permissions({ user }) {
+  return {
+    statusCode: 200,
+    body: { data: authService.permissions(user) }
   };
 }
 

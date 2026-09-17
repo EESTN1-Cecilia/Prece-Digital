@@ -397,11 +397,11 @@ export async function listarUsuarios(filtros = {}) {
       origen: "api"
     };
   } catch (error) {
-    if (error.status === 401 || error.status === 403) {
+    if ((error.status === 401 || error.status === 403) && leerToken()) {
       throw error;
     }
 
-    /* El endpoint todavia no existe: filtramos y paginamos en memoria. */
+    /* El endpoint todavia no existe o no hay token: filtramos y paginamos en memoria. */
     return {
       ...paginar(filtrarUsuarios(USUARIOS_DEMO, filtros), pagina, porPagina),
       origen: "demo"
