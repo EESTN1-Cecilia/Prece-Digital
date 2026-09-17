@@ -15,6 +15,7 @@ import {
   StudentEditModal,
   StudentObservationModal
 } from "./components/profile/student-modals.js";
+import { AlumnoMatrizModal } from "./alumno-matriz-wiew.js";
 
 /**
  * AlumnoPerfilView: Vista completa y centralizada del Perfil del Alumno.
@@ -47,6 +48,7 @@ export default function AlumnoPerfilView({ id, ruta }) {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [observationModalOpen, setObservationModalOpen] = useState(false);
+  const [matrizModalOpen, setMatrizModalOpen] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const fetchProfile = async (isSilentRefresh = false) => {
@@ -344,14 +346,15 @@ export default function AlumnoPerfilView({ id, ruta }) {
       observacionesCount: observaciones.length
     }),
 
-    // Barra de Acciones Principales (Constancia, Pase, Edición, Observación)
+    // Barra de Acciones Principales (Constancia, Pase, Edición, Observación, Libro Matriz)
     h(StudentActionsBar, {
       alumno: datosPersonales,
       permisos: permisosAcciones,
       onOpenCertificateModal: handleOpenCertificate,
       onOpenTransferModal: () => setTransferModalOpen(true),
       onOpenEditModal: () => setEditModalOpen(true),
-      onOpenObservationModal: () => setObservationModalOpen(true)
+      onOpenObservationModal: () => setObservationModalOpen(true),
+      onOpenMatrizModal: () => setMatrizModalOpen(true)
     }),
 
     // Renderizado condicional del contenido según la Pestaña Activa
@@ -390,9 +393,9 @@ export default function AlumnoPerfilView({ id, ruta }) {
 
       activeTab === "libroMatriz"
         ? h(StudentGradeBookTab, {
-            libroMatriz,
             datosPersonales,
-            situacionAcademica
+            situacionAcademica,
+            onOpenMatrizModal: () => setMatrizModalOpen(true)
           })
         : null,
 
@@ -427,10 +430,17 @@ export default function AlumnoPerfilView({ id, ruta }) {
     }),
 
     h(StudentObservationModal, {
+      alumno: datosPersonales,
       isOpen: observationModalOpen,
       onClose: () => setObservationModalOpen(false),
       onSubmit: handleObservationSubmit,
       isSubmitting: actionSubmitting
+    }),
+
+    h(AlumnoMatrizModal, {
+      abierto: matrizModalOpen,
+      onCerrar: () => setMatrizModalOpen(false),
+      alumnoInicial: datosPersonales
     })
   );
 }

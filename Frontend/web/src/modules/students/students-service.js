@@ -932,22 +932,41 @@ export const StudentsService = {
   },
 
   _localAddObservation(studentId, payload) {
+    let alumnoObj = null;
+    try {
+      alumnoObj = this._findAlumno(studentId);
+    } catch {}
+
+    const alumnoNombre = alumnoObj?.nombreCompleto || 
+      (alumnoObj?.apellido ? `${alumnoObj.apellido}, ${alumnoObj.nombre || ""}`.trim() : payload?.alumno || "Estudiante");
+
     const newObs = {
-      id: `obs-${Date.now()}`,
+      id: payload.id || `obs-${Date.now()}`,
+      alumno: alumnoNombre,
+      dni: alumnoObj?.dni || payload.dni || "",
       fecha: payload.fecha || new Date().toISOString().split("T")[0],
-      tipo: payload.tipo || "Pedagógica",
+      tipo: payload.tipo || "Académica",
       descripcion: payload.descripcion || "",
       sector: payload.sector || "Preceptoría",
-      usuarioResponsable: payload.usuarioResponsable || "Preceptor",
-      estado: "Activa",
+      usuarioResponsable: payload.usuarioResponsable || payload.responsable || "Preceptor Turno Mañana",
+      responsable: payload.responsable || payload.usuarioResponsable || "Preceptor Turno Mañana",
+      estado: payload.estado || "Activa",
       creadoEn: new Date().toISOString(),
-      actualizadoEn: new Date().toISOString()
+      creada: new Date().toLocaleDateString("es-AR"),
+      actualizadoEn: new Date().toISOString(),
+      modificada: "-"
     };
 
     try {
       const stored = JSON.parse(localStorage.getItem(`prece_obs_${studentId}`) || "[]");
       stored.unshift(newObs);
       localStorage.setItem(`prece_obs_${studentId}`, JSON.stringify(stored));
+    } catch {}
+
+    try {
+      const globalStored = JSON.parse(localStorage.getItem("prece_observaciones_registradas_v1") || "[]");
+      globalStored.unshift(newObs);
+      localStorage.setItem("prece_observaciones_registradas_v1", JSON.stringify(globalStored));
     } catch {}
 
     return {

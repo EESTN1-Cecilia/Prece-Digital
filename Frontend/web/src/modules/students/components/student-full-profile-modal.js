@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { h, IconoFigma } from "../../../layouts/site-layout.js";
 import { StatusBadge, ConditionBadge } from "./student-badges.js";
+import { AlumnoMatrizModal } from "../alumno-matriz-wiew.js";
 
 const SECCIONES = [
   { id: "personales", label: "Datos Personales", icon: "people" },
@@ -20,6 +21,7 @@ const SECCIONES = [
  */
 export function StudentFullProfileModal({ alumno, resumen, onClose }) {
   const [activeTab, setActiveTab] = useState("personales");
+  const [matrizModalOpen, setMatrizModalOpen] = useState(false);
 
   if (!resumen && !alumno) return null;
 
@@ -229,15 +231,42 @@ export function StudentFullProfileModal({ alumno, resumen, onClose }) {
           ? h(
               "div",
               { className: "tab-pane-content" },
-              h("h3", { className: "tab-section-title" }, "Observaciones del Preceptor y Docentes"),
+              h("h3", { className: "tab-section-title" }, "Observaciones Institucionales y Seguimiento"),
               h(
                 "div",
-                { className: "observations-list" },
+                { className: "history-list", style: { marginTop: "12px" } },
                 h(
-                  "div",
-                  { className: "observation-item" },
-                  h("strong", null, "Observación de Preceptoría (Ciclo 2026)"),
-                  h("p", null, "Alumno con excelente conducta y participación activa en los talleres institucionales.")
+                  "article",
+                  { className: "history-item" },
+                  h(
+                    "div",
+                    { className: "history-item__main" },
+                    h(
+                      "div",
+                      { className: "history-item__top-grid" },
+                      h("div", { className: "history-item__field" }, h("dt", null, "Tipo"), h("dd", null, h("span", { className: "history-item__value history-item__value--type" }, "Académica"))),
+                      h("div", { className: "history-item__field" }, h("dt", null, "Estado"), h("dd", null, h("span", { className: "observation-status observation-status--activa" }, "Activa"))),
+                      h("div", { className: "history-item__field" }, h("dt", null, "ID"), h("dd", null, h("span", { className: "history-item__value history-item__value--id" }, "#OBS-1092"))),
+                      h("div", { className: "history-item__field" }, h("dt", null, "Fecha"), h("dd", { className: "font-semibold" }, "10/03/2026"))
+                    ),
+                    h(
+                      "div",
+                      { className: "history-item__content" },
+                      h(
+                        "div",
+                        { className: "history-item__details" },
+                        h("div", { className: "history-item__field history-item__field--full" }, h("dt", null, "Descripción"), h("dd", null, "El alumno manifiesta gran interés y compromiso en las actividades técnicas grupales.")),
+                        h("div", { className: "history-item__field" }, h("dt", null, "Sector"), h("dd", { className: "font-medium" }, "Preceptoría")),
+                        h("div", { className: "history-item__field" }, h("dt", null, "Responsable"), h("dd", { className: "font-medium" }, "Preceptor Turno Mañana"))
+                      ),
+                      h(
+                        "div",
+                        { className: "history-item__audit" },
+                        h("div", { className: "history-item__field" }, h("dt", null, "Creada"), h("dd", null, "10/03/2026")),
+                        h("div", { className: "history-item__field" }, h("dt", null, "Modificada"), h("dd", null, "—"))
+                      )
+                    )
+                  )
                 )
               )
             )
@@ -265,7 +294,21 @@ export function StudentFullProfileModal({ alumno, resumen, onClose }) {
               { className: "tab-pane-content" },
               h("h3", { className: "tab-section-title" }, "Libro Matriz y Registro Oficial"),
               h("p", null, `Folio Matriz: ${datos.id ? `LM-2026-${datos.id}` : "LM-2026-001"}`),
-              h("p", null, "Tomo: IV · Folio: 88 · Acta N° 124")
+              h("p", null, "Tomo: IV · Folio: 88 · Acta N° 124"),
+              h(
+                "div",
+                { style: { marginTop: "16px" } },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "action-button action-button--primary",
+                    onClick: () => setMatrizModalOpen(true)
+                  },
+                  h(IconoFigma, { className: "action-button__icon", nombre: "filter" }),
+                  h("span", null, "Abrir Libro Matriz Oficial Completo (7 Años)")
+                )
+              )
             )
           : null,
 
@@ -294,6 +337,11 @@ export function StudentFullProfileModal({ alumno, resumen, onClose }) {
           "Cerrar"
         )
       )
-    )
+    ),
+    h(AlumnoMatrizModal, {
+      abierto: matrizModalOpen,
+      onCerrar: () => setMatrizModalOpen(false),
+      alumnoInicial: datos
+    })
   );
 }
