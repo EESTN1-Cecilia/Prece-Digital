@@ -1,10 +1,10 @@
 import notificationsRepository from "./notifications.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 function validateRequired(fields, data) {
   for (const field of fields) {
     if (!data[field]) {
-      throw new HttpError(400, "validation_error", `El campo ${field} es requerido`);
+      throw errorHttp(422, "VALIDATION_ERROR", `El campo ${field} es requerido`);
     }
   }
 }
@@ -14,7 +14,7 @@ const notificationsService = {
     validateRequired(["recipientId", "title", "body"], data);
     const validTypes = ["sistema", "solicitud", "reserva", "ausencia", "inventario", "mensaje", "recordatorio"];
     if (data.type && !validTypes.includes(data.type)) {
-      throw new HttpError(400, "validation_error", `Tipo de notificación inválido. Tipos válidos: ${validTypes.join(", ")}`);
+      throw errorHttp(422, "VALIDATION_ERROR", `Tipo de notificación inválido. Tipos válidos: ${validTypes.join(", ")}`);
     }
     const notification = notificationsRepository.create({
       ...data,
@@ -27,7 +27,7 @@ const notificationsService = {
   getById(id) {
     const notification = notificationsRepository.findById(id);
     if (!notification) {
-      throw new HttpError(404, "not_found", "Notificación no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Notificación no encontrada");
     }
     return { statusCode: 200, body: { data: notification } };
   },
@@ -46,10 +46,10 @@ const notificationsService = {
   markAsRead(id, user) {
     const notification = notificationsRepository.findById(id);
     if (!notification) {
-      throw new HttpError(404, "not_found", "Notificación no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Notificación no encontrada");
     }
     if (notification.recipientId !== user.id) {
-      throw new HttpError(403, "forbidden", "No tiene permisos para modificar esta notificación");
+      throw errorHttp(403, "FORBIDDEN", "No tiene permisos para modificar esta notificación");
     }
     const updated = notificationsRepository.update(id, { isRead: true });
     return { statusCode: 200, body: { data: updated } };

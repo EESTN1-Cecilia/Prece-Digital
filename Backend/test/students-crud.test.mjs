@@ -14,7 +14,7 @@ import { apiRoutes } from "../routes/index.mjs";
 import { getStore, resetStore } from "../database/memory-store.mjs";
 import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { seedStudents } from "../database/seeds/students.seed.mjs";
-import studentRepository from "../modules/students/student.repository.mjs";
+import studentRepository from "../modules/students/students.repository.mjs";
 import { buscarDivision } from "../modules/students/catalogo.mjs";
 
 const PUERTO = 4002;
@@ -115,7 +115,7 @@ test("autenticado sin el permiso responde 403", async () => {
 
   assert.equal(crearDocente.status, 403);
   assert.equal(desactivarDocente.status, 403);
-  assert.equal(crearDocente.cuerpo.error.code, "forbidden");
+  assert.equal(crearDocente.cuerpo.error.code, "FORBIDDEN");
   assert.equal(listarServer.status, 403);
 });
 
@@ -251,7 +251,7 @@ test("listar: paginacion con meta completa (default activos)", async () => {
   assert.equal(status, 200);
   assert.equal(cuerpo.data.length, 20);
   assert.deepEqual(cuerpo.paginacion, {
-    total: 25,
+    total: 31,
     pagina: 1,
     porPagina: 20,
     totalPaginas: 2,
@@ -266,8 +266,8 @@ test("listar: segunda pagina con pagina anterior", async () => {
   });
 
   assert.equal(status, 200);
-  assert.equal(cuerpo.data.length, 5);
-  assert.equal(cuerpo.paginacion.total, 25);
+  assert.equal(cuerpo.data.length, 11);
+  assert.equal(cuerpo.paginacion.total, 31);
   assert.equal(cuerpo.paginacion.tieneAnterior, true);
   assert.equal(cuerpo.paginacion.tieneSiguiente, false);
 });
@@ -277,10 +277,10 @@ test("filtro por estado: activo, inactivo y todos", async () => {
   const inactivos = await pedir("GET", "/api/v1/students?estado=inactivo", { token: director.accessToken });
   const todos = await pedir("GET", "/api/v1/students?estado=todos", { token: director.accessToken });
 
-  assert.equal(activos.cuerpo.paginacion.total, 25);
+  assert.equal(activos.cuerpo.paginacion.total, 31);
   assert.equal(inactivos.cuerpo.paginacion.total, 1);
   assert.equal(inactivos.cuerpo.data[0].dni, "37776666");
-  assert.equal(todos.cuerpo.paginacion.total, 26);
+  assert.equal(todos.cuerpo.paginacion.total, 32);
 });
 
 test("busqueda parcial por apellido y nombre (case-insensitive) y DNI exacto", async () => {
@@ -302,8 +302,8 @@ test("filtros combinados: curso + division + condicion", async () => {
   });
 
   assert.equal(status, 200);
-  assert.equal(cuerpo.paginacion.total, 1);
-  assert.equal(cuerpo.data[0].dni, "40123124");
+  assert.equal(cuerpo.paginacion.total, 2);
+  assert.deepEqual(cuerpo.data.map((alumno) => alumno.dni).sort(), ["40123124", "42345678"]);
   assert.deepEqual(cuerpo.filtros.curso, 4);
   assert.equal(cuerpo.filtros.division, "1");
   assert.equal(cuerpo.filtros.condicion, "regular");
@@ -323,7 +323,7 @@ test("ordenamiento por dni ascendente y descendente", async () => {
   const descendente = await pedir("GET", "/api/v1/students?orden=dni_desc&porPagina=1", { token: director.accessToken });
 
   assert.equal(ascendente.cuerpo.data[0].dni, "20009999");
-  assert.equal(descendente.cuerpo.data[0].dni, "42234567");
+  assert.equal(descendente.cuerpo.data[0].dni, "46789012");
 });
 
 test("parametros invalidos de listado devuelven 422", async () => {

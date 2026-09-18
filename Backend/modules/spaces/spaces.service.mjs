@@ -1,5 +1,5 @@
 import spacesRepository from "./spaces.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 const SPACES_READ = "spaces.read";
 const SPACES_WRITE = "spaces.write";
@@ -17,27 +17,27 @@ export const SPACE_STATUS = {
 function validateRequired(fields, data) {
   for (const field of fields) {
     if (data[field] === undefined || data[field] === null || data[field] === "") {
-      throw new HttpError(400, "validation_error", `El campo ${field} es requerido`);
+      throw errorHttp(422, "VALIDATION_ERROR", `El campo ${field} es requerido`);
     }
   }
 }
 
 function validateType(type) {
   if (!SPACE_TYPES.includes(type)) {
-    throw new HttpError(400, "validation_error", `Tipo de espacio inválido. Tipos válidos: ${SPACE_TYPES.join(", ")}`);
+    throw errorHttp(422, "VALIDATION_ERROR", `Tipo de espacio inválido. Tipos válidos: ${SPACE_TYPES.join(", ")}`);
   }
 }
 
 function validateStatus(status) {
   if (!Object.values(SPACE_STATUS).includes(status)) {
-    throw new HttpError(400, "validation_error", `Estado inválido. Estados válidos: ${Object.values(SPACE_STATUS).join(", ")}`);
+    throw errorHttp(422, "VALIDATION_ERROR", `Estado inválido. Estados válidos: ${Object.values(SPACE_STATUS).join(", ")}`);
   }
 }
 
 function validateCapacity(capacity) {
   const value = Number(capacity);
   if (!Number.isInteger(value) || value <= 0) {
-    throw new HttpError(400, "validation_error", "La capacidad debe ser un número entero mayor a 0");
+    throw errorHttp(422, "VALIDATION_ERROR", "La capacidad debe ser un número entero mayor a 0");
   }
 }
 
@@ -46,7 +46,7 @@ function assertSpaceCodeUnique(code, schoolId, excludeId) {
     (s) => s.code === code && s.id !== excludeId
   );
   if (existing) {
-    throw new HttpError(409, "conflict", `Ya existe un espacio con el código "${code}" en la escuela`);
+    throw errorHttp(409, "CONFLICT", `Ya existe un espacio con el código "${code}" en la escuela`);
   }
 }
 
@@ -63,7 +63,7 @@ const spacesService = {
   getBuilding(id) {
     const building = spacesRepository.findBuildingById(id);
     if (!building) {
-      throw new HttpError(404, "not_found", "Edificio no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Edificio no encontrado");
     }
     return { statusCode: 200, body: { data: building } };
   },
@@ -79,7 +79,7 @@ const spacesService = {
   updateBuilding(id, data) {
     const building = spacesRepository.updateBuilding(id, data);
     if (!building) {
-      throw new HttpError(404, "not_found", "Edificio no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Edificio no encontrado");
     }
     return { statusCode: 200, body: { data: building } };
   },
@@ -103,7 +103,7 @@ const spacesService = {
   getSpace(id) {
     const space = spacesRepository.findSpaceById(id);
     if (!space) {
-      throw new HttpError(404, "not_found", "Espacio no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Espacio no encontrado");
     }
     return { statusCode: 200, body: { data: space } };
   },
@@ -134,7 +134,7 @@ const spacesService = {
     }
     const existing = spacesRepository.findSpaceById(id);
     if (!existing) {
-      throw new HttpError(404, "not_found", "Espacio no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Espacio no encontrado");
     }
     assertSpaceCodeUnique(data.code ?? existing.code, data.schoolId ?? existing.schoolId, id);
     const space = spacesRepository.updateSpace(id, {
@@ -147,7 +147,7 @@ const spacesService = {
   deleteSpace(id, user) {
     const space = spacesRepository.deleteSpace(id, user);
     if (!space) {
-      throw new HttpError(404, "not_found", "Espacio no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Espacio no encontrado");
     }
     return { statusCode: 200, body: { data: space } };
   },
@@ -164,7 +164,7 @@ const spacesService = {
   getCareer(id) {
     const career = spacesRepository.findCareerById(id);
     if (!career) {
-      throw new HttpError(404, "not_found", "Carrera no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Carrera no encontrada");
     }
     return { statusCode: 200, body: { data: career } };
   },
@@ -180,7 +180,7 @@ const spacesService = {
   updateCareer(id, data) {
     const career = spacesRepository.updateCareer(id, data);
     if (!career) {
-      throw new HttpError(404, "not_found", "Carrera no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Carrera no encontrada");
     }
     return { statusCode: 200, body: { data: career } };
   }

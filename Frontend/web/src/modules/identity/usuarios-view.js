@@ -15,9 +15,8 @@ import {
   Tabla
 } from "../../components/ui/index.js";
 import {
-  areasDemo,
   cambiarEstadoUsuario,
-  estadosDemo,
+  estadosDisponibles,
   listarRoles,
   listarUsuarios
 } from "../../services/identity-api.js";
@@ -119,7 +118,7 @@ export default function UsuariosView() {
   /* Los catalogos de area y estado se completan con lo que devuelva la API. */
   const areas = useMemo(
     () =>
-      [...new Set([...areasDemo(), ...(resultado?.items ?? []).map((usuario) => usuario.area)])]
+      [...new Set([...(resultado?.items ?? []).map((usuario) => usuario.area)])]
         .filter(Boolean)
         .sort()
         .map((area) => ({ id: area, nombre: area })),
@@ -128,7 +127,7 @@ export default function UsuariosView() {
 
   const estados = useMemo(
     () =>
-      [...new Set([...estadosDemo(), ...(resultado?.items ?? []).map((usuario) => usuario.estado)])]
+      [...new Set([...estadosDisponibles(), ...(resultado?.items ?? []).map((usuario) => usuario.estado)])]
         .filter(Boolean)
         .sort()
         .map((estado) => ({ id: estado, nombre: estado })),

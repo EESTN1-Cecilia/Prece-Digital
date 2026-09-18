@@ -1,145 +1,71 @@
 # Prece Digital
 
-Prece Digital es una plataforma web y móvil para centralizar la gestión escolar interna: asistencia, calificaciones, legajo digital, documentos, Excel, reportes y auditoría.
+Plataforma web y móvil para la gestión escolar interna: alumnos y legajos, observaciones, situación académica, estructura académica, identidad y permisos, auditoría.
 
-El proyecto está dividido por sectores de desarrollo, utilizando **Node.js**, **React** y **React Native**.
+Monorepo único con npm workspaces. Backend, Frontend y Shared viven y se versionan juntos: un cambio que toca la API y la pantalla va en el mismo Pull Request.
 
 ## Estructura
 
 ```text
-Backend/
-  config/
-  controllers/
-  database/
-  middlewares/
-  modules/
-  routes/
-  scripts/
-  services/
-  src/
-  test/
-  utils/
-
-Frontend/
-  web/
-    public/
-    src/
-      app/
-      components/
-      config/
-      layouts/
-      modules/
-      services/
-      styles/
-      utils/
-
-  mobile/
-    src/
-      app/
-      modules/
-      services/
-      storage/
-      utils/
-
-Shared/
-  docs/
-  scripts/
-  src/
-    constants/
-    types/
-    validators/
-    utils/
+Backend/            API Node.js (@prece-digital/api)
+Frontend/web/       React + Vite (@prece-digital/web)
+Frontend/mobile/    React Native + Expo (@prece-digital/mobile)
+Shared/             dominio compartido (módulos, roles, permisos) y scripts del monorepo
+.github/            CI, CODEOWNERS y plantilla de PR
 ```
 
-## Organización de repositorios
+## Instalación
 
-El desarrollo de Prece Digital está dividido principalmente en:
-
-- `Prece-Digital-Backend`
-- `Prece-Digital-Frontend`
-- `Prece-Digital-Docs`
-- `Prece-Digital` — repositorio principal e integrado.
-
-Cada sector trabaja sobre su propio repositorio.
-
-El repositorio principal contiene las versiones integradas de Backend y Frontend.
-
-## Integración mediante Git Subtree
-
-Las carpetas `Backend/` y `Frontend/` del repositorio principal se sincronizan con sus respectivos repositorios utilizando **Git subtree**.
-
-Esto permite mantener los proyectos separados durante el desarrollo y, al mismo tiempo, integrarlos dentro de `Prece-Digital` sin copiar y pegar archivos manualmente.
-
-### Primera importación
+Desde la raíz (instala todos los workspaces con un solo `package-lock.json`):
 
 ```bash
-git subtree add --prefix=Backend backend main --squash
-git subtree add --prefix=Frontend frontend main --squash
+npm install
+cp Backend/.env.example Backend/.env
+cp Frontend/web/.env.example Frontend/web/.env
 ```
-
-### Actualizaciones posteriores
-
-Backend:
-
-```bash
-git fetch backend
-git subtree pull --prefix=Backend backend main --squash
-```
-
-Frontend:
-
-```bash
-git fetch frontend
-git subtree pull --prefix=Frontend frontend main --squash
-```
-
-Las integraciones deben realizarse desde una rama y enviarse mediante **Pull Request** hacia `main`.
-
-Ejemplo:
-
-```text
-Prece-Digital-Backend
-        ↓
-git subtree pull
-        ↓
-integrate/backend-...
-        ↓
-Pull Request
-        ↓
-Prece-Digital/main
-```
-
-`Shared/` permanece dentro del repositorio principal como espacio común para recursos utilizados por distintos sectores.
 
 ## Comandos
 
 ```bash
-npm run check
-npm run start:api
-npm run start:web
-npm run dev
+npm run dev             # API (http://localhost:3000) + web (http://localhost:5173)
+npm run dev:api         # solo API
+npm run dev:web         # solo web
+npm test                # tests de Backend y Frontend web
+npm run check           # sintaxis de todo el JavaScript
+npm run build           # build de producción de la web
+npm run docs:endpoints  # regenera Backend/docs/ENDPOINTS.md
 ```
 
-La aplicación web queda disponible en:
+Usuarios de desarrollo: ver `Backend/README.md` (por ejemplo `secretario@prece.local` / `Secretaria123!`).
 
-```text
-http://localhost:5173
-```
+## Forma de trabajo (8 personas, un repo)
 
-La API queda disponible en:
+1. Rama desde `main` actualizado:
 
-```text
-http://localhost:3000
-```
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/nombre-corto
+   ```
 
-## Variables de entorno
+   Prefijos: `feature/`, `fix/`, `refactor/`, `docs/`, `chore/`.
 
-Cada sector dispone de su archivo de ejemplo:
+2. Commits con formato convencional: `feat(students): ...`, `fix(auth): ...`.
+3. Antes del push: `npm test`.
+4. Pull Request hacia `main`. El CI corre sintaxis, tests de ambos lados, el contrato Frontend↔Backend y el build.
+5. `CODEOWNERS` asigna revisores por carpeta: Backend revisa `Backend/`, Frontend revisa `Frontend/`, y ambos revisan `Shared/`, las rutas y los permisos.
 
-```text
-Backend/.env.example
-Frontend/web/.env.example
-Frontend/mobile/.env.example
-```
+### Configuración de GitHub (una vez, administrador de la organización)
 
-Los archivos `.env` reales no deben subirse al repositorio.
+- Crear los equipos `lideres`, `backend` y `frontend` en la organización `EESTN1-Cecilia` y cargar a sus integrantes.
+- Settings → Branches → regla para `main`: Pull Request obligatorio, 1 aprobación, "Require review from Code Owners", check `CI / test` obligatorio, sin push directo.
+- Archivar los repos `Prece-Digital-Backend` y `Prece-Digital-Frontend`: ya no se usan.
+
+## Reglas del proyecto
+
+- Rutas de la API: una sola lista en `Backend/routes/index.mjs`. Referencia generada: `Backend/docs/ENDPOINTS.md`.
+- El frontend llama a la API solo a través de `Frontend/web/src/services/http.js`.
+- Permisos con formato `modulo.accion`; módulos y roles en `Shared/src/domain.mjs`.
+- Errores de la API: `{ "error": { "code", "message", "details" } }` con `ApiError`.
+- Nada de datos de prueba en el frontend: los datos de desarrollo son los seeds del backend.
+- No subir archivos `.env`.

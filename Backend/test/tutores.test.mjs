@@ -80,7 +80,7 @@ test("sin autenticacion todas las operaciones devuelven 401", async () => {
   for (const [metodo, ruta, cuerpo] of rutas) {
     const { status, cuerpo: c } = await pedir(ruta, { method: metodo, cuerpo });
     assert.equal(status, 401, `${metodo} ${ruta}`);
-    assert.equal(c.error.code, "missing_token", `${metodo} ${ruta}`);
+    assert.equal(c.error.code, "MISSING_TOKEN", `${metodo} ${ruta}`);
   }
 });
 

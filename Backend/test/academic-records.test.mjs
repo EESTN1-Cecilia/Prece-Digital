@@ -65,7 +65,7 @@ after(async () => {
 test("las rutas de situacion academica exigen token (401)", async () => {
   const { status, cuerpo } = await pedir("GET", "/api/v1/situaciones-academicas");
   assert.equal(status, 401);
-  assert.equal(cuerpo.error.code, "missing_token");
+  assert.equal(cuerpo.error.code, "MISSING_TOKEN");
 
   const escritura = await pedir("POST", "/api/v1/situaciones-academicas", null, { alumnoId: "alu-1" });
   assert.equal(escritura.status, 401);
@@ -74,7 +74,7 @@ test("las rutas de situacion academica exigen token (401)", async () => {
 test("un docente con solo lectura no puede escribir ni modificar (403)", async () => {
   const crear = await pedir("POST", "/api/v1/situaciones-academicas", docente, { alumnoId: "alu-1", materiaId: "mat", anio: 2026 });
   assert.equal(crear.status, 403);
-  assert.equal(crear.cuerpo.error.code, "forbidden");
+  assert.equal(crear.cuerpo.error.code, "FORBIDDEN");
 
   const modificar = await pedir("PATCH", "/api/v1/situaciones-academicas/rs-1", docente, { estado: "aprobada" });
   assert.equal(modificar.status, 403);

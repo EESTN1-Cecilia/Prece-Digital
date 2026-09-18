@@ -7,4 +7,4 @@
    La guia esta en estado/README.md. */
 
 export { ProveedorEstado, ContextoEstado, ESTADO_INICIAL, FASE, SESION, reducir } from "./proveedor.js";
-export { useSesion, usePermisos, useNotificaciones, useErrorGlobal, useCarga } from "./hooks.js";
+export { useSesion, usePermisos, useNotificaciones, useErrorGlobal, useCarga, useUsuarioActual } from "./hooks.js";

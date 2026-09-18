@@ -7,7 +7,6 @@ import {
   construirConsulta,
   filtrarUsuarios,
   iniciarSesion,
-  listarUsuarios,
   normalizarUsuario,
   obtenerSesion,
   paginar,
@@ -117,18 +116,9 @@ test("normalizarUsuario descarta campos sensibles y unifica alias", () => {
 });
 
 test("puede no autoriza sin permiso explicito", () => {
-  assert.ok(puede({ permisos: ["*"] }, PERMISOS.usuariosEditar));
   assert.ok(puede({ permisos: [PERMISOS.usuariosLeer] }, PERMISOS.usuariosLeer));
   assert.ok(!puede({ permisos: [PERMISOS.usuariosLeer] }, PERMISOS.usuariosEditar));
   assert.ok(!puede(null, PERMISOS.usuariosLeer));
-});
-
-test("listarUsuarios degrada a demo cuando el endpoint no existe", async () => {
-  const resultado = await listarUsuarios({ q: "gimenez" });
-
-  assert.equal(resultado.origen, "demo");
-  assert.equal(resultado.total, 1);
-  assert.equal(resultado.items[0].usuario, "lgimenez");
 });
 
 test("validarUsuario exige los campos obligatorios y valida formatos", () => {

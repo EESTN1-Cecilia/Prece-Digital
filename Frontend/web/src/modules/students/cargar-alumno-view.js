@@ -2,23 +2,15 @@ import React, { useState, useEffect } from "react";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { StudentsService } from "./students-service.js";
-import { AuthService } from "../../services/auth-service.js";
+import { useUsuarioActual } from "../../estado/index.js";
 
 export default function CargarAlumnoView() {
-  const [user, setUser] = useState(AuthService.getCurrentUser());
+  const user = useUsuarioActual();
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(null);
   const [errors, setErrors] = useState({});
 
-  // Escuchar cambios de rol globales
-  useEffect(() => {
-    const handleRoleChanged = (e) => {
-      setUser(e.detail);
-    };
-    window.addEventListener("auth:role_changed", handleRoleChanged);
-    return () => window.removeEventListener("auth:role_changed", handleRoleChanged);
-  }, []);
 
   // Estado unificado del formulario
   const [formData, setFormData] = useState({
@@ -170,8 +162,10 @@ export default function CargarAlumnoView() {
       });
 
       setSaveSuccess(res.data);
-    } catch {
-      alert("Ocurrió un inconveniente al guardar el estudiante. Intente nuevamente.");
+    } catch (fallo) {
+      /* El backend valida curso/division, DNI unico y formatos: se muestra su motivo. */
+      const detalle = fallo?.campos ? Object.values(fallo.campos).join(" ") : "";
+      alert(`${fallo?.mensaje ?? "Ocurrió un inconveniente al guardar el estudiante."} ${detalle}`.trim());
     } finally {
       setSaving(false);
     }

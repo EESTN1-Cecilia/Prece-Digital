@@ -1,16 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
-import { AuthService } from "../../services/auth-service.js";
+import { useUsuarioActual } from "../../estado/index.js";
 import { StudentsService } from "../students/students-service.js";
 import {
   DEFAULT_OBSERVATION_SECTORS,
   DEFAULT_OBSERVATION_TYPES,
-  buildObservationRecord,
+  aRegistroVista,
   getDefaultObservationForm,
-  getStoredObservations,
   resolveResponsibleFromUser,
-  saveObservationRecords
 } from "./observaciones-service.js";
 
 const STORAGE_KEY = "prece-observaciones-filtros-v1";
@@ -41,60 +39,6 @@ function getSavedFilters() {
   }
 }
 
-const OBSERVACIONES = [
-  {
-    alumno: "Gómez, Mateo",
-    dni: "4821",
-    tipo: "Académica",
-    estado: "Activa",
-    id: "#OBS-1092",
-    fecha: "02/09/2026",
-    descripcion: "Se solicita reunión con el tutor pedagógico debido a entregas incompletas en la materia Taller.",
-    sector: "Preceptoría",
-    responsable: "Prof. Rossi M.",
-    creada: "02/09/2026",
-    modificada: "-"
-  },
-  {
-    alumno: "Gómez, Mateo",
-    dni: "4821",
-    tipo: "Convivencia",
-    estado: "Modificada",
-    id: "#OBS-1081",
-    fecha: "15/08/2026",
-    descripcion: "Llegada tarde reiterada sin justificación. Se notificó al adulto responsable.",
-    sector: "Equipo de Orientación (EOE)",
-    responsable: "Lic. Gómez S.",
-    creada: "14/08/2026",
-    modificada: "15/08/2026"
-  },
-  {
-    alumno: "Pérez, Ana",
-    dni: "4798",
-    tipo: "Asistencia",
-    estado: "Histórica",
-    id: "#OBS-1044",
-    fecha: "22/07/2026",
-    descripcion: "Se justificaron las inasistencias correspondientes al período informado y se cerró el caso de asistencia.",
-    sector: "Preceptoría",
-    responsable: "Prof. Rossi M.",
-    creada: "20/07/2026",
-    modificada: "-"
-  },
-  {
-    alumno: "López, Javier",
-    dni: "4815",
-    tipo: "Convivencia",
-    estado: "Activa",
-    id: "#OBS-1121",
-    fecha: "30/08/2026",
-    descripcion: "Se registró una instancia de falta de respeto en el aula y se solicita seguimiento con coordinación.",
-    sector: "Coordinación",
-    responsable: "Prof. Álvarez L.",
-    creada: "30/08/2026",
-    modificada: "-"
-  }
-];
 
 function parseFecha(valor) {
   const [dia, mes, anio] = valor.split("/");
@@ -938,7 +882,7 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
   );
 }
 
-function ObservationFormInline({ initialAlumno = "", onSave, students = [], currentUser, onClose }) {
+function ObservationFormInline({ initialAlumno = "", onSave, students = [], registros = [], currentUser, onClose }) {
   const [form, setForm] = useState(() =>
     getDefaultObservationForm({
       alumno: initialAlumno,
@@ -963,7 +907,7 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], curr
     if (error) setError("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const trimmedAlumno = form.alumno.trim();
@@ -978,25 +922,33 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], curr
       return;
     }
 
+    const alumno = students.find(
+      (student) => `${student.apellido || ""}, ${student.nombre || ""}`.replace(/,\s*$/, "").trim() === trimmedAlumno
+    );
+
+    if (!alumno) {
+      setError("Elegí un alumno del listado.");
+      return;
+    }
+
     setSaving(true);
 
-    const record = buildObservationRecord({
-      ...form,
-      alumno: trimmedAlumno,
-      tipo: trimmedTipo,
-      fecha: trimmedFecha,
-      descripcion: trimmedDescripcion,
-      sector: trimmedSector,
-      responsable: trimmedResponsable,
-      estado: form.estado || "Activa"
-    });
-
-    const stored = getStoredObservations();
-    saveObservationRecords([record, ...stored]);
-
-    setSaving(false);
-    onSave?.(record);
-    onClose?.();
+    try {
+      /* El responsable lo fija el backend con el usuario autenticado. */
+      const { data } = await StudentsService.addObservacion(alumno.id, {
+        tipo: trimmedTipo,
+        fecha: trimmedFecha,
+        descripcion: trimmedDescripcion,
+        sector: trimmedSector,
+        estado: form.estado || "Activa"
+      });
+      onSave?.(aRegistroVista(data));
+      onClose?.();
+    } catch (fallo) {
+      setError(fallo?.mensaje ?? fallo?.message ?? "No se pudo registrar la observación.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const studentOptions = students.length
@@ -1012,8 +964,7 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], curr
     : [];
   const responsibleOptions = [...new Set([
     resolveResponsibleFromUser(currentUser, true),
-    ...OBSERVACIONES.map((observation) => observation.responsable),
-    ...getStoredObservations().map((observation) => observation.responsable)
+    ...registros.map((observation) => observation.responsable)
   ].filter(Boolean))].sort();
 
   return h(
@@ -1182,6 +1133,7 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], curr
 }
 
 export default function ObservacionesView() {
+  const usuarioActual = useUsuarioActual();
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [filtros, setFiltros] = useState(() => getSavedFilters());
   const [tipoHistorial, setTipoHistorial] = useState("Tipo de observación");
@@ -1193,6 +1145,22 @@ export default function ObservacionesView() {
   const [fechaHastaHistorial, setFechaHastaHistorial] = useState("");
   const [showObservationForm, setShowObservationForm] = useState(false);
   const [studentsForObservation, setStudentsForObservation] = useState([]);
+  const [registros, setRegistros] = useState([]);
+  const [errorCarga, setErrorCarga] = useState(null);
+
+  const cargarRegistros = useCallback(async () => {
+    try {
+      const lista = await StudentsService.getObservaciones();
+      setRegistros((lista ?? []).map(aRegistroVista));
+      setErrorCarga(null);
+    } catch (fallo) {
+      setErrorCarga(fallo?.mensaje ?? "No se pudieron cargar las observaciones.");
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarRegistros();
+  }, [cargarRegistros]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1204,7 +1172,7 @@ export default function ObservacionesView() {
     let isCancelled = false;
     const loadStudents = async () => {
       try {
-        const res = await StudentsService.getAlumnos({ limit: 500, sortBy: "apellido", sortOrder: "asc" });
+        const res = await StudentsService.getTodosLosAlumnos({ estado: "activo", sortBy: "apellido", sortOrder: "asc" });
         if (!isCancelled) {
           setStudentsForObservation(Array.isArray(res?.data) ? res.data : []);
         }
@@ -1233,12 +1201,12 @@ export default function ObservacionesView() {
     setFiltros(DEFAULT_FILTERS);
   };
 
-  const tipos = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.tipo).filter(Boolean))];
-  const sectores = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.sector).filter(Boolean))].sort();
-  const responsables = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.responsable).filter(Boolean))].sort();
-  const estados = [...new Set([...OBSERVACIONES, ...getStoredObservations()].map((observation) => observation.estado).filter(Boolean))];
+  const tipos = [...new Set(registros.map((observation) => observation.tipo).filter(Boolean))];
+  const sectores = [...new Set(registros.map((observation) => observation.sector).filter(Boolean))].sort();
+  const responsables = [...new Set(registros.map((observation) => observation.responsable).filter(Boolean))].sort();
+  const estados = [...new Set(registros.map((observation) => observation.estado).filter(Boolean))];
 
-  const observaciones = [...OBSERVACIONES, ...getStoredObservations()].filter((observation) => {
+  const observaciones = registros.filter((observation) => {
     const query = (filtros.query || "").trim().toLowerCase();
     const coincideBusqueda =
       !query ||
@@ -1274,13 +1242,14 @@ export default function ObservacionesView() {
   };
 
   const handleObservationSaved = (record) => {
+    cargarRegistros();
     if (record?.alumno) {
       setAlumnoSeleccionado(record.alumno);
     }
   };
 
   if (alumnoSeleccionado) {
-    const historialBase = [...OBSERVACIONES, ...getStoredObservations()].filter((observation) => observation.alumno === alumnoSeleccionado);
+    const historialBase = registros.filter((observation) => observation.alumno === alumnoSeleccionado);
     const historial = historialBase.filter((observation) => {
       const query = queryHistorial.trim().toLowerCase();
       const fechaObservacion = parseFecha(observation.fecha || "01/01/2000");
@@ -1313,7 +1282,8 @@ export default function ObservacionesView() {
         initialAlumno: alumnoSeleccionado,
         onSave: handleObservationSaved,
         students: studentsForObservation,
-        currentUser: AuthService.getCurrentUser(),
+        registros,
+        currentUser: usuarioActual,
         onClose: () => setShowObservationForm(false)
       });
     }
@@ -1387,7 +1357,8 @@ export default function ObservacionesView() {
           initialAlumno: alumnoSeleccionado || "",
           onSave: handleObservationSaved,
           students: studentsForObservation,
-          currentUser: AuthService.getCurrentUser(),
+          registros,
+          currentUser: usuarioActual,
           onClose: () => setShowObservationForm(false)
         })
         : null
@@ -1399,7 +1370,8 @@ export default function ObservacionesView() {
       initialAlumno: "",
       onSave: handleObservationSaved,
       students: studentsForObservation,
-      currentUser: AuthService.getCurrentUser(),
+      registros,
+      currentUser: usuarioActual,
       onClose: () => setShowObservationForm(false)
     });
   }
@@ -1407,6 +1379,7 @@ export default function ObservacionesView() {
   return h(
     "section",
     { className: "observations-panel" },
+    errorCarga ? h("p", { className: "form-error", role: "alert" }, errorCarga) : null,
     h(
       "div",
       { className: "dashboard-top-bar alumnos-top-nav observations-top-nav" },
@@ -1464,7 +1437,8 @@ export default function ObservacionesView() {
         initialAlumno: alumnoSeleccionado || "",
         onSave: handleObservationSaved,
         students: studentsForObservation,
-        currentUser: AuthService.getCurrentUser(),
+        registros,
+        currentUser: usuarioActual,
         onClose: () => setShowObservationForm(false)
       })
       : null,

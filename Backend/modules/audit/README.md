@@ -31,16 +31,21 @@ Centraliza la trazabilidad de todo el backend:
 ```js
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
 
-const conAuditoria = auditarAccion({ tabla: "documentos", accion: "export" });
+const conAuditoria = auditarAccion({ tabla: "auditoria", accion: "export" });
 
-export const apiRoutes = {
-  "GET /api/v1/documents/:id/export": requerir(auth, conAuditoria(exportarDocumento))
-};
+export const apiRoutes = [
+  {
+    method: "GET",
+    path: "/api/v1/audit/export",
+    middlewares: [verifyToken, required(P.AUDIT_EXPORT)],
+    handler: conAuditoria(auditController.exportCsv)
+  }
+];
 ```
 
 ## Endpoints
 
-Todos requieren sesión. Permisos: `audit:read` para consulta, `audit:export` para la
+Todos requieren sesión. Permisos: `audit.read` para consulta, `audit.export` para la
 descarga.
 
 | Método y ruta | Descripción |

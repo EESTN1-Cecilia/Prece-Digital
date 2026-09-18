@@ -3,11 +3,22 @@ import { applyCors, isPreflight, METHODS_WITH_BODY } from "../middlewares/cors.m
 import { handleError } from "../middlewares/error.middleware.mjs";
 import { notFound } from "../middlewares/not-found.middleware.mjs";
 import { matchRoute } from "../routes/index.mjs";
-import { RespuestaHttp, sendJson } from "../utils/http-response.mjs";
+import { sendJson } from "../utils/http-response.mjs";
 import { readJsonBody } from "../utils/read-body.mjs";
 import auditService from "../modules/audit/audit.service.mjs";
 
-export function createApp(rutas = {}, { pool } = {}) {
+/* Servidor HTTP de la API.
+
+   `rutas` es siempre una lista con la forma de routes/index.mjs:
+     { method, path, middlewares?, handler }
+
+   Por cada peticion: CORS -> resolver ruta -> leer cuerpo -> middlewares -> handler
+   -> auditoria -> respuesta. Cualquier error termina en el middleware centralizado. */
+export function createApp(rutas) {
+  if (!Array.isArray(rutas)) {
+    throw new TypeError("createApp espera la lista de rutas (ver routes/index.mjs).");
+  }
+
   return createServer(async (request, response) => {
     applyCors(request, response);
 
@@ -17,24 +28,17 @@ export function createApp(rutas = {}, { pool } = {}) {
       return;
     }
 
-    const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
+    const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+    const ctx = { request, response, url, params: {}, user: null, body: {} };
 
     try {
-      const route = resolveRoute(rutas, request.method, url.pathname);
+      const route = matchRoute(rutas, request.method, url.pathname);
 
       if (!route) {
         notFound();
       }
 
-      const ctx = {
-        request,
-        response,
-        url,
-        params: route.params,
-        pool,
-        user: null,
-        body: {}
-      };
+      ctx.params = route.params;
 
       if (METHODS_WITH_BODY.has(request.method)) {
         ctx.body = await readJsonBody(request);
@@ -56,11 +60,6 @@ export function createApp(rutas = {}, { pool } = {}) {
 
       auditService.registrarRequest(ctx, payload);
 
-      if (payload instanceof RespuestaHttp) {
-        sendJson(response, payload.status, payload.body);
-        return;
-      }
-
       if (payload && Object.hasOwn(payload, "statusCode") && Object.hasOwn(payload, "body")) {
         sendJson(response, payload.statusCode, payload.body);
         return;
@@ -68,71 +67,7 @@ export function createApp(rutas = {}, { pool } = {}) {
 
       sendJson(response, 200, payload);
     } catch (error) {
-      handleError(error, { request, response, url });
+      handleError(error, { request, response, url, user: ctx.user });
     }
   });
-}
-
-function resolveRoute(rutas, method, pathname) {
-  if (Array.isArray(rutas)) {
-    return matchRoute(method, pathname);
-  }
-
-  return resolveRouteMap(rutas, method, pathname);
-}
-
-function resolveRouteMap(rutas, method, pathname) {
-  const exact = rutas[`${method} ${pathname}`];
-
-  if (exact) {
-    return {
-      handler: exact,
-      params: {},
-      middlewares: []
-    };
-  }
-
-  const pathTokens = pathname.split("/").filter(Boolean);
-
-  for (const [key, handler] of Object.entries(rutas)) {
-    const [routeMethod, pattern] = key.split(" ");
-
-    if (routeMethod !== method || !pattern?.includes(":")) {
-      continue;
-    }
-
-    const patternTokens = pattern.split("/").filter(Boolean);
-
-    if (patternTokens.length !== pathTokens.length) {
-      continue;
-    }
-
-    const params = {};
-    let matches = true;
-
-    for (let index = 0; index < patternTokens.length; index++) {
-      const patternToken = patternTokens[index];
-      const pathToken = pathTokens[index];
-
-      if (patternToken.startsWith(":")) {
-        params[patternToken.slice(1)] = decodeURIComponent(pathToken);
-        continue;
-      }
-
-      if (patternToken !== pathToken) {
-        matches = false;
-        break;
-      }
-    }
-
-    if (matches) {
-      return {
-        handler,
-        params,
-        middlewares: []
-      };
-    }
-  }
-
-  return null;
 }

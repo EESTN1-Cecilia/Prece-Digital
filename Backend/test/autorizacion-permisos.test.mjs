@@ -125,7 +125,7 @@ test("autenticado sin el permiso suficiente responde 403", async () => {
   const { status, cuerpo } = await pedir("/api/v1/users", { headers: tokenDe(docente.accessToken) });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("con el permiso correspondiente la operación se ejecuta", async () => {
@@ -172,7 +172,7 @@ test("un usuario no puede modificar su propia cuenta (auto-desactivarse)", async
     headers: tokenDe(director.accessToken)
   });
   assert.equal(auto.status, 403);
-  assert.equal(auto.cuerpo.error.code, "forbidden");
+  assert.equal(auto.cuerpo.error.code, "FORBIDDEN");
 
   const otro = await pedir(`/api/v1/users/${docenteId}/deactivate`, {
     method: "PATCH",

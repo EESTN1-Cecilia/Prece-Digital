@@ -1,6 +1,6 @@
 import { errorDeValidacion, noEncontrado, conflicto } from "../../utils/api-error.mjs";
 import { CAMPOS_TUTOR, DNI_RE, EMAIL_RE, ESTADOS_VALIDOS, ORDENES_TUTORES, PARENTESCOS_VALIDOS, TELEFONO_RE, normalizarParentesco } from "./validacion.mjs";
-import studentsRefRepository from "./students-refs.repository.mjs";
+import studentRepository from "../students/students.repository.mjs";
 import tutorsRepository from "./tutors.repository.mjs";
 
 const POR_PAGINA_MAXIMO = 100;
@@ -311,7 +311,7 @@ const tutorsService = {
   },
 
   associate(studentId, data, user) {
-    const estudiante = studentsRefRepository.findById(studentId);
+    const estudiante = studentRepository.findById(studentId);
 
     if (!estudiante) {
       throw noEncontrado("El alumno");
@@ -367,7 +367,7 @@ const tutorsService = {
   },
 
   listStudentTutors(studentId, query) {
-    const estudiante = studentsRefRepository.findById(studentId);
+    const estudiante = studentRepository.findById(studentId);
 
     if (!estudiante) {
       throw noEncontrado("El alumno");
@@ -419,7 +419,7 @@ const tutorsService = {
     const alumnos = tutorsRepository
       .listRelations({ tutorId, estado })
       .map((relacion) => {
-        const estudiante = studentsRefRepository.findById(relacion.studentId);
+        const estudiante = studentRepository.findById(relacion.studentId);
         return {
           ...relacion,
           alumno: estudiante

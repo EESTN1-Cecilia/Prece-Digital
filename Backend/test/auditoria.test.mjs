@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import test, { after, before, beforeEach } from "node:test";
 import { createApp } from "../src/app.mjs";
+import { rutas } from "./helpers.mjs";
 import { resetStore, getStore } from "../database/memory-store.mjs";
 import auditService from "../modules/audit/audit.service.mjs";
 import { exportCsv as exportAuditCsv, listLogs } from "../modules/audit/audit.controller.mjs";
@@ -27,7 +28,7 @@ const rutasDePrueba = {
 };
 
 before(async () => {
-  servidor = createApp(rutasDePrueba);
+  servidor = createApp(rutas(rutasDePrueba));
   await new Promise((listo) => servidor.listen(PUERTO, listo));
 });
 

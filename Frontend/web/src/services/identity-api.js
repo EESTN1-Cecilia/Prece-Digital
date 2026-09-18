@@ -1,27 +1,24 @@
 /* Adaptador de datos del modulo Identidad (usuarios, roles y permisos).
 
-   Endpoints que consume del backend (ver src/modules/identity/README.md):
-     GET    /api/v1/me
-     GET    /api/v1/users?q&rol&area&estado&page&pageSize
+   Endpoints que consume del backend:
+     POST   /api/v1/auth/login | /auth/logout
+     GET    /api/v1/auth/me
+     GET    /api/v1/users?q&rol&estado
      GET    /api/v1/users/:id
      POST   /api/v1/users
      PATCH  /api/v1/users/:id
      PUT    /api/v1/users/:id/roles
-     GET    /api/v1/roles                     (implementado)
-     GET    /api/v1/modules                   (implementado)
-     GET    /api/v1/permissions               (implementado)
-     GET    /api/v1/roles/:id/permissions     (implementado)
-     PUT    /api/v1/roles/:id/permissions     (implementado)
+     GET    /api/v1/authorization/roles
+     GET    /api/v1/authorization/modules
+     GET    /api/v1/authorization/permissions
+     GET    /api/v1/authorization/roles/:id/permissions
+     PUT    /api/v1/authorization/roles/:id/permissions
 
    El estado de la sesion vive en estado/, no aca: este archivo solo trae y normaliza
-   datos.
-
-   Las lecturas degradan a datos de demostracion cuando el endpoint todavia no existe,
-   y lo informan con `origen: "demo"` para que la vista lo muestre.
-   Las escrituras nunca degradan: propagan el error del backend (401 / 403 / 404). */
+   datos. No hay datos de demostracion: los errores del backend llegan a la vista. */
 
 import { ErrorApi, guardarCredenciales, leerRefreshToken, leerToken, limpiarCredenciales, pedir } from "./http.js";
-import { PERMISOS } from "../utils/permisos.js";
+import { actions as ACCIONES_DOMINIO, roles as ROLES_DOMINIO } from "../../../../Shared/src/domain.mjs";
 
 export { ErrorApi };
 
@@ -191,108 +188,49 @@ export function validarUsuario(datos = {}, { esAlta = false } = {}) {
 
 /* ---------- Catalogos ---------- */
 
-/* Espejo de Shared/src/domain.mjs para poder trabajar sin el monorepo.
-   La fuente de verdad es GET /api/v1/roles. */
-const ROLES_DEMO = [
-  { id: "super-admin", nombre: "Superadministrador", alcances: ["global"] },
-  { id: "system-admin", nombre: "Administrador del sistema", alcances: ["school"] },
-  { id: "director", nombre: "Directivo", alcances: ["school", "period"] },
-  { id: "secretary", nombre: "Secretaria", alcances: ["school", "course", "period"] },
-  { id: "area-lead", nombre: "Jefatura de area", alcances: ["school", "area", "subject", "period"] },
-  { id: "preceptor", nombre: "Preceptoria", alcances: ["school", "course", "shift", "period"] },
-  { id: "teacher", nombre: "Docencia", alcances: ["school", "course", "subject", "period"] },
-  {
-    id: "attendance-operator",
-    nombre: "Responsable operativo de asistencia",
-    alcances: ["school", "course", "shift", "period"]
-  }
-];
+/* Nombre legible de un rol a partir del catalogo compartido. */
+function conNombreDeRol(rol) {
+  const catalogo = ROLES_DOMINIO.find((item) => item.id === rol.id);
+  return { ...rol, nombre: rol.nombre && rol.nombre !== rol.id ? rol.nombre : (catalogo?.name ?? rol.id) };
+}
 
-const MODULOS_DEMO = [
-  { id: "identity", nombre: "Identidad y acceso" },
-  { id: "academic-structure", nombre: "Estructura academica" },
-  { id: "attendance", nombre: "Asistencia" },
-  { id: "students", nombre: "Estudiantes y legajos" },
-  { id: "grades", nombre: "Calificaciones" },
-  { id: "files", nombre: "Excel y documentos" },
-  { id: "audit", nombre: "Auditoria" }
-];
+/* Acciones canonicas (columnas de la matriz de permisos). */
+export const ACCIONES = ACCIONES_DOMINIO.filter((accion) => !["write", "manage"].includes(accion.id)).map((accion) => ({
+  id: accion.id,
+  nombre: accion.name
+}));
 
-/* Acciones definidas por el backend en su issue #13 (Roles y permisos):
-   lectura, creacion, modificacion, eliminacion, aprobacion y carga. */
-export const ACCIONES = [
-  { id: "read", nombre: "Consultar" },
-  { id: "create", nombre: "Crear" },
-  { id: "update", nombre: "Modificar" },
-  { id: "delete", nombre: "Eliminar" },
-  { id: "approve", nombre: "Aprobar" },
-  { id: "upload", nombre: "Cargar" }
-];
-
-/* Catalogo de permisos declarado por el backend: cada entrada trae modulo y accion.
-   Es la fuente de verdad de la matriz; ACCIONES solo ordena las columnas. */
 export async function listarPermisos() {
-  try {
-    const data = await pedir("/api/v1/authorization/permissions");
+  const data = await pedir("/api/v1/authorization/permissions");
 
-    return {
-      data: (Array.isArray(data) ? data : []).map((permiso) => ({
-        id: primero(permiso, ["id", "codigo", "code"]),
-        modulo: primero(permiso, ["modulo", "module"]),
-        accion: primero(permiso, ["accion", "action"])
-      })),
-      origen: "api"
-    };
-  } catch (error) {
-    if (error.status === 401 || error.status === 403) {
-      throw error;
-    }
-
-    return { data: [], origen: "demo" };
-  }
+  return {
+    data: (Array.isArray(data) ? data : []).map((permiso) => ({
+      id: primero(permiso, ["id", "codigo", "code"]),
+      modulo: primero(permiso, ["modulo", "module"]),
+      accion: primero(permiso, ["accion", "action"])
+    })),
+    origen: "api"
+  };
 }
 
 export async function listarRoles() {
-  try {
-    const data = await pedir("/api/v1/roles");
-    return { data: (Array.isArray(data) ? data : []).map(normalizarRol), origen: "api" };
-  } catch {
-    return { data: ROLES_DEMO, origen: "demo" };
-  }
+  const data = await pedir("/api/v1/authorization/roles");
+  return { data: (Array.isArray(data) ? data : []).map(normalizarRol).map(conNombreDeRol), origen: "api" };
 }
 
 export async function listarModulos() {
-  try {
-    const data = await pedir("/api/v1/modules");
+  const data = await pedir("/api/v1/authorization/modules");
 
-    return {
-      data: (Array.isArray(data) ? data : []).map((modulo) => ({
-        id: primero(modulo, ["id", "codigo"]),
-        nombre: primero(modulo, ["nombre", "name", "id"])
-      })),
-      origen: "api"
-    };
-  } catch {
-    return { data: MODULOS_DEMO, origen: "demo" };
-  }
+  return {
+    data: (Array.isArray(data) ? data : []).map((modulo) => ({
+      id: primero(modulo, ["id", "codigo"]),
+      nombre: primero(modulo, ["nombre", "name", "id"])
+    })),
+    origen: "api"
+  };
 }
 
 /* ---------- Usuarios ---------- */
-
-const PERMISOS_POR_ROL = {
-  admin: ["*"],
-  director: [PERMISOS.usuariosLeer, PERMISOS.usuariosCrear, PERMISOS.usuariosEditar, PERMISOS.rolesLeer, PERMISOS.rolesEditar],
-  secretario: [PERMISOS.usuariosLeer],
-  secretary: [PERMISOS.usuariosLeer],
-  preceptor: [],
-  docente: [],
-  jefe_area: [PERMISOS.usuariosLeer, PERMISOS.rolesLeer],
-  server: [PERMISOS.usuariosLeer, PERMISOS.rolesLeer]
-};
-
-function permisosDesdeRoles(roles = []) {
-  return [...new Set(roles.flatMap((rol) => PERMISOS_POR_ROL[rol?.id ?? rol] ?? []))];
-}
 
 function alcancesDesdeAsignaciones(asignaciones = []) {
   return [...new Set(asignaciones.flatMap((asignacion) => Object.keys(asignacion).filter((clave) => clave !== "role")))];
@@ -302,169 +240,38 @@ function normalizarSesionAutenticada(datos = {}) {
   const usuarioCrudo = datos.usuario ?? datos.user ?? datos;
   const usuario = normalizarUsuario(usuarioCrudo);
   const asignaciones = Array.isArray(usuarioCrudo?.assignments) ? usuarioCrudo.assignments : [];
-  const roles = (datos.roles ?? usuario.roles).map(normalizarRol).filter((rol) => rol.id);
+  const roles = (datos.roles ?? usuario.roles).map(normalizarRol).filter((rol) => rol.id).map(conNombreDeRol);
 
   return {
     usuario: { ...usuario, roles },
-    permisos: datos.permisos ?? datos.permissions ?? permisosDesdeRoles(roles),
+    /* Los permisos los calcula siempre el backend. */
+    permisos: datos.permisos ?? datos.permissions ?? [],
     alcances: datos.alcances ?? datos.scopes ?? alcancesDesdeAsignaciones(asignaciones)
   };
 }
-const USUARIOS_DEMO = [
-  ["Lucia", "Gimenez", "lgimenez", "Direccion", ["director"], "activo", "2026-08-28T12:40:00"],
-  ["Martin", "Sosa", "msosa", "Secretaria", ["secretary"], "activo", "2026-09-01T09:15:00"],
-  [
-    "Ana",
-    "Perez",
-    "aperez",
-    "Jefatura de Area",
-    ["area-lead", "teacher"],
-    "activo",
-    "2026-09-02T18:05:00"
-  ],
-  ["Diego", "Molina", "dmolina", "Preceptoria", ["preceptor"], "activo", "2026-09-03T07:50:00"],
-  [
-    "Sofia",
-    "Ramirez",
-    "sramirez",
-    "Preceptoria",
-    ["preceptor", "attendance-operator"],
-    "suspendido",
-    null
-  ],
-  ["Carlos", "Ibarra", "cibarra", "Matematica", ["teacher"], "activo", "2026-08-30T14:20:00"],
-  ["Valeria", "Ortiz", "vortiz", "Lengua", ["teacher"], "inactivo", "2026-06-11T10:00:00"],
-  [
-    "Julian",
-    "Ferreyra",
-    "jferreyra",
-    "Informatica",
-    ["system-admin"],
-    "activo",
-    "2026-09-03T08:30:00"
-  ],
-  ["Rocio", "Benitez", "rbenitez", "Taller", ["teacher"], "activo", "2026-08-25T16:45:00"],
-  ["Pablo", "Acosta", "pacosta", "Jefatura de Area", ["area-lead"], "activo", "2026-09-01T11:10:00"],
-  ["Camila", "Nunez", "cnunez", "Historia", ["teacher"], "pendiente", null],
-  [
-    "Nicolas",
-    "Vera",
-    "nvera",
-    "Preceptoria",
-    ["attendance-operator"],
-    "activo",
-    "2026-08-29T13:05:00"
-  ],
-  ["Florencia", "Cabrera", "fcabrera", "Secretaria", ["secretary"], "inactivo", "2026-05-02T09:40:00"],
-  ["Gonzalo", "Diaz", "gdiaz", "Informatica", ["super-admin"], "activo", "2026-09-03T06:20:00"]
-].map(([nombre, apellido, usuario, area, roles, estado, ultimoAcceso], indice) =>
-  normalizarUsuario({
-    id: indice + 1,
-    nombre,
-    apellido,
-    usuario,
-    email: `${usuario}@abc.gob.ar`,
-    area,
-    roles: roles.map((id) => ROLES_DEMO.find((rol) => rol.id === id)),
-    estado,
-    creado_en: `2026-0${(indice % 8) + 1}-1${indice % 9}T08:00:00`,
-    actualizado_en: "2026-09-02T10:00:00",
-    ultimo_acceso: ultimoAcceso
-  })
-);
 
-export function areasDemo() {
-  return [...new Set(USUARIOS_DEMO.map((usuario) => usuario.area))].sort();
+/* Estados posibles de una cuenta (el backend no borra usuarios: los desactiva). */
+export function estadosDisponibles() {
+  return ["activo", "inactivo"];
 }
 
-export function estadosDemo() {
-  return [...new Set(USUARIOS_DEMO.map((usuario) => usuario.estado))].sort();
+/* Areas presentes en los usuarios cargados (el backend no las define todavia). */
+export function areasDisponibles(usuarios = []) {
+  return [...new Set(usuarios.map((usuario) => usuario.area).filter(Boolean))].sort();
 }
 
+/* El backend filtra por texto, rol y estado; la paginacion se hace aca. */
 export async function listarUsuarios(filtros = {}) {
   const { pagina = 1, porPagina = 10 } = filtros;
+  const lista = await pedir(`/api/v1/users?${construirConsulta(filtros)}`);
+  const usuarios = filtrarUsuarios((Array.isArray(lista) ? lista : []).map(normalizarUsuario), filtros);
 
-  try {
-    const cuerpo = await pedir(`/api/v1/users?${construirConsulta(filtros)}`);
-    const lista = Array.isArray(cuerpo) ? cuerpo : (cuerpo?.items ?? []);
-    const total = Array.isArray(cuerpo) ? lista.length : (cuerpo?.total ?? lista.length);
-
-    return {
-      items: lista.map(normalizarUsuario),
-      total,
-      paginas: cuerpo?.paginas ?? cuerpo?.pages ?? Math.max(1, Math.ceil(total / porPagina)),
-      pagina,
-      origen: "api"
-    };
-  } catch (error) {
-    if ((error.status === 401 || error.status === 403) && leerToken()) {
-      throw error;
-    }
-
-    /* El endpoint todavia no existe o no hay token: filtramos y paginamos en memoria. */
-    return {
-      ...paginar(filtrarUsuarios(USUARIOS_DEMO, filtros), pagina, porPagina),
-      origen: "demo"
-    };
-  }
+  return { ...paginar(usuarios, pagina, porPagina), origen: "api" };
 }
 
 export async function obtenerUsuario(id) {
-  try {
-    const data = await pedir(`/api/v1/users/${encodeURIComponent(id)}`, {
-      recurso: "el usuario solicitado"
-    });
-    return { data: normalizarUsuario(data), origen: "api" };
-  } catch (error) {
-    if (error.status === 401 || error.status === 403) {
-      throw error;
-    }
-
-    const usuario = USUARIOS_DEMO.find((candidato) => String(candidato.id) === String(id));
-
-    if (!usuario) {
-      throw new ErrorApi(404, "El usuario no existe.");
-    }
-
-    return { data: usuario, origen: "demo" };
-  }
-}
-
-/* Perfiles de prueba mientras GET /api/v1/me no exista: permiten revisar el
-   ocultamiento de controles con distintos permisos. No sustituyen la validacion
-   del backend, que sigue respondiendo 401/403 ante cada escritura. */
-export const PERFILES_DEMO = [
-  { id: "super-admin", nombre: "Superadministrador", permisos: ["*"] },
-  {
-    id: "system-admin",
-    nombre: "Administrador del sistema",
-    permisos: [
-      ...new Set([
-        PERMISOS.usuariosLeer,
-        PERMISOS.usuariosCrear,
-        PERMISOS.usuariosEditar,
-        PERMISOS.rolesLeer,
-        PERMISOS.rolesEditar
-      ])
-    ]
-  },
-  {
-    id: "director",
-    nombre: "Directivo (solo consulta)",
-    permisos: [...new Set([PERMISOS.usuariosLeer, PERMISOS.rolesLeer])]
-  },
-  { id: "teacher", nombre: "Docencia (sin acceso)", permisos: [] }
-];
-
-export function sesionDemo(perfilId = PERFILES_DEMO[1].id) {
-  const perfil = PERFILES_DEMO.find((candidato) => candidato.id === perfilId) ?? PERFILES_DEMO[1];
-
-  return {
-    usuario: { nombre: "Perfil", apellido: "de prueba", roles: [{ id: perfil.id, nombre: perfil.nombre }] },
-    permisos: perfil.permisos,
-    alcances: ["school"],
-    perfilDemo: perfil.id
-  };
+  const data = await pedir(`/api/v1/users/${encodeURIComponent(id)}`, { recurso: "el usuario solicitado" });
+  return { data: normalizarUsuario(data), origen: "api" };
 }
 
 export async function obtenerSesion() {
@@ -529,27 +336,18 @@ export function actualizarUsuario(id, datos) {
   });
 }
 
-/* Baja logica: el backend desactiva la cuenta, nunca borra el registro
-   (issue #2 del backend). */
+/* Baja logica: el backend desactiva la cuenta, nunca borra el registro. */
 export function cambiarEstadoUsuario(id, estado) {
   return actualizarUsuario(id, { estado });
 }
 
 export async function listarPermisosDeRol(id) {
-  try {
-    const data = await pedir(`/api/v1/authorization/roles/${encodeURIComponent(id)}/permissions`);
+  const data = await pedir(`/api/v1/authorization/roles/${encodeURIComponent(id)}/permissions`);
 
-    return {
-      data: Array.isArray(data) ? data : (data?.permisos ?? data?.permissions ?? []),
-      origen: "api"
-    };
-  } catch (error) {
-    if (error.status === 401 || error.status === 403) {
-      throw error;
-    }
-
-    return { data: [], origen: "demo" };
-  }
+  return {
+    data: Array.isArray(data) ? data : (data?.permisos ?? data?.permissions ?? []),
+    origen: "api"
+  };
 }
 
 export function guardarPermisosDeRol(id, permisos) {

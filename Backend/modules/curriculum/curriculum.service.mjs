@@ -1,10 +1,10 @@
 import curriculumRepository from "./curriculum.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 function validateRequired(fields, data) {
   for (const field of fields) {
     if (!data[field]) {
-      throw new HttpError(400, "validation_error", `El campo ${field} es requerido`);
+      throw errorHttp(422, "VALIDATION_ERROR", `El campo ${field} es requerido`);
     }
   }
 }
@@ -22,7 +22,7 @@ const curriculumService = {
   getArea(id) {
     const area = curriculumRepository.findAreaById(id);
     if (!area) {
-      throw new HttpError(404, "not_found", "Área curricular no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Área curricular no encontrada");
     }
     return { statusCode: 200, body: { data: area } };
   },
@@ -39,7 +39,7 @@ const curriculumService = {
   updateArea(id, data) {
     const area = curriculumRepository.updateArea(id, data);
     if (!area) {
-      throw new HttpError(404, "not_found", "Área curricular no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Área curricular no encontrada");
     }
     return { statusCode: 200, body: { data: area } };
   },
@@ -48,7 +48,7 @@ const curriculumService = {
     validateRequired(["title", "areaId", "startDate", "endDate", "schoolId"], data);
     const validStatuses = ["borrador", "aprobado", "en_ejecucion", "finalizado", "archivado"];
     if (data.status && !validStatuses.includes(data.status)) {
-      throw new HttpError(400, "validation_error", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
+      throw errorHttp(422, "VALIDATION_ERROR", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
     }
     const plan = curriculumRepository.createPlan({
       ...data,
@@ -60,7 +60,7 @@ const curriculumService = {
   getPlan(id) {
     const plan = curriculumRepository.findPlanById(id);
     if (!plan) {
-      throw new HttpError(404, "not_found", "Plan curricular no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Plan curricular no encontrado");
     }
     return { statusCode: 200, body: { data: plan } };
   },
@@ -78,12 +78,12 @@ const curriculumService = {
     if (data.status) {
       const validStatuses = ["borrador", "aprobado", "en_ejecucion", "finalizado", "archivado"];
       if (!validStatuses.includes(data.status)) {
-        throw new HttpError(400, "validation_error", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
       }
     }
     const plan = curriculumRepository.updatePlan(id, data);
     if (!plan) {
-      throw new HttpError(404, "not_found", "Plan curricular no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Plan curricular no encontrado");
     }
     return { statusCode: 200, body: { data: plan } };
   },
@@ -92,11 +92,11 @@ const curriculumService = {
     validateRequired(["planId", "title"], data);
     const plan = curriculumRepository.findPlanById(data.planId);
     if (!plan) {
-      throw new HttpError(404, "not_found", "Plan curricular no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Plan curricular no encontrado");
     }
     const validTypes = ["actividad", "evaluacion", "tarea", "obra", "proyecto", "otra"];
     if (data.type && !validTypes.includes(data.type)) {
-      throw new HttpError(400, "validation_error", `Tipo de actividad inválido. Tipos válidos: ${validTypes.join(", ")}`);
+      throw errorHttp(422, "VALIDATION_ERROR", `Tipo de actividad inválido. Tipos válidos: ${validTypes.join(", ")}`);
     }
     const activity = curriculumRepository.createActivity({
       ...data,
@@ -108,7 +108,7 @@ const curriculumService = {
   getActivity(id) {
     const activity = curriculumRepository.findActivityById(id);
     if (!activity) {
-      throw new HttpError(404, "not_found", "Actividad no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Actividad no encontrada");
     }
     return { statusCode: 200, body: { data: activity } };
   },
@@ -126,18 +126,18 @@ const curriculumService = {
     if (data.status) {
       const validStatuses = ["pendiente", "en_progreso", "completada", "cancelada"];
       if (!validStatuses.includes(data.status)) {
-        throw new HttpError(400, "validation_error", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
       }
     }
     if (data.type) {
       const validTypes = ["actividad", "evaluacion", "tarea", "obra", "proyecto", "otra"];
       if (!validTypes.includes(data.type)) {
-        throw new HttpError(400, "validation_error", `Tipo de actividad inválido. Tipos válidos: ${validTypes.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Tipo de actividad inválido. Tipos válidos: ${validTypes.join(", ")}`);
       }
     }
     const activity = curriculumRepository.updateActivity(id, data);
     if (!activity) {
-      throw new HttpError(404, "not_found", "Actividad no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Actividad no encontrada");
     }
     return { statusCode: 200, body: { data: activity } };
   }

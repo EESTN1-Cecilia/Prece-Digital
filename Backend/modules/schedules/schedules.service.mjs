@@ -1,21 +1,21 @@
 import schedulesRepository from "./schedules.repository.mjs";
 import spacesRepository from "../spaces/spaces.repository.mjs";
 import teachersRepository from "../teachers/teachers.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 export const VALID_DAYS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 
 function validateRequired(fields, data) {
   for (const field of fields) {
     if (data[field] === undefined || data[field] === null || data[field] === "") {
-      throw new HttpError(400, "validation_error", `El campo ${field} es requerido`);
+      throw errorHttp(422, "VALIDATION_ERROR", `El campo ${field} es requerido`);
     }
   }
 }
 
 function validateDayOfWeek(dayOfWeek) {
   if (!VALID_DAYS.includes(dayOfWeek)) {
-    throw new HttpError(400, "validation_error", `Día inválido. Días válidos: ${VALID_DAYS.join(", ")}`);
+    throw errorHttp(422, "VALIDATION_ERROR", `Día inválido. Días válidos: ${VALID_DAYS.join(", ")}`);
   }
 }
 
@@ -23,7 +23,7 @@ const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function validateTime(time, label) {
   if (!TIME_REGEX.test(time)) {
-    throw new HttpError(400, "validation_error", `Formato de hora inválido para ${label}. Use HH:MM de 00:00 a 23:59`);
+    throw errorHttp(422, "VALIDATION_ERROR", `Formato de hora inválido para ${label}. Use HH:MM de 00:00 a 23:59`);
   }
 }
 
@@ -34,14 +34,14 @@ function toMinutes(time) {
 
 function validateRange(startTime, endTime) {
   if (toMinutes(endTime) <= toMinutes(startTime)) {
-    throw new HttpError(400, "validation_error", "El horario de fin debe ser posterior al de inicio");
+    throw errorHttp(422, "VALIDATION_ERROR", "El horario de fin debe ser posterior al de inicio");
   }
 }
 
 function resolveExistingSpace(spaceId) {
   const space = spacesRepository.findSpaceById(spaceId);
   if (!space) {
-    throw new HttpError(404, "not_found", "El espacio referenciado no existe");
+    throw errorHttp(404, "NOT_FOUND", "El espacio referenciado no existe");
   }
   return space;
 }
@@ -49,10 +49,10 @@ function resolveExistingSpace(spaceId) {
 function resolveExistingTeacher(teacherId) {
   const teacher = teachersRepository.findById(teacherId);
   if (!teacher) {
-    throw new HttpError(404, "not_found", "El docente referenciado no existe");
+    throw errorHttp(404, "NOT_FOUND", "El docente referenciado no existe");
   }
   if (!teacher.isActive) {
-    throw new HttpError(409, "conflict", "El docente referenciado está desactivado");
+    throw errorHttp(409, "CONFLICT", "El docente referenciado está desactivado");
   }
   return teacher;
 }
@@ -60,7 +60,7 @@ function resolveExistingTeacher(teacherId) {
 function resolveExistingSchedule(scheduleId) {
   const schedule = schedulesRepository.findScheduleById(scheduleId);
   if (!schedule) {
-    throw new HttpError(404, "not_found", "El horario referenciado no existe");
+    throw errorHttp(404, "NOT_FOUND", "El horario referenciado no existe");
   }
   return schedule;
 }
@@ -68,10 +68,10 @@ function resolveExistingSchedule(scheduleId) {
 function resolveExistingTimeSlot(timeSlotId) {
   const timeSlot = schedulesRepository.findTimeSlotById(timeSlotId);
   if (!timeSlot) {
-    throw new HttpError(404, "not_found", "La franja horaria referenciada no existe");
+    throw errorHttp(404, "NOT_FOUND", "La franja horaria referenciada no existe");
   }
   if (!timeSlot.isActive) {
-    throw new HttpError(409, "conflict", "La franja horaria referenciada está desactivada");
+    throw errorHttp(409, "CONFLICT", "La franja horaria referenciada está desactivada");
   }
   return timeSlot;
 }
@@ -99,7 +99,7 @@ function assertNoScheduleConflicts(candidate, { excludeId } = {}) {
       (a) => resource.get(a) === resource.value && rangesOverlap(candidate.startTime, candidate.endTime, a.startTime, a.endTime)
     );
     if (clash) {
-      throw new HttpError(409, "conflict", "Conflicto de horario detectado para el recurso indicado", {
+      throw errorHttp(409, "CONFLICT", "Conflicto de horario detectado para el recurso indicado", {
         resource: resource.key,
         existingId: clash.id
       });
@@ -120,7 +120,7 @@ const schedulesService = {
   getShift(id) {
     const shift = schedulesRepository.findShiftById(id);
     if (!shift) {
-      throw new HttpError(404, "not_found", "Turno no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Turno no encontrado");
     }
     return { statusCode: 200, body: { data: shift } };
   },
@@ -136,7 +136,7 @@ const schedulesService = {
   updateShift(id, data) {
     const shift = schedulesRepository.updateShift(id, data);
     if (!shift) {
-      throw new HttpError(404, "not_found", "Turno no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Turno no encontrado");
     }
     return { statusCode: 200, body: { data: shift } };
   },
@@ -145,7 +145,7 @@ const schedulesService = {
     validateRequired(["name", "dayOfWeek", "startTime", "endTime", "shiftId", "schoolId"], data);
     const validDays = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
     if (!validDays.includes(data.dayOfWeek)) {
-      throw new HttpError(400, "validation_error", `Día inválido. Días válidos: ${validDays.join(", ")}`);
+      throw errorHttp(422, "VALIDATION_ERROR", `Día inválido. Días válidos: ${validDays.join(", ")}`);
     }
     const timeSlot = schedulesRepository.createTimeSlot({
       ...data,
@@ -157,7 +157,7 @@ const schedulesService = {
   getTimeSlot(id) {
     const timeSlot = schedulesRepository.findTimeSlotById(id);
     if (!timeSlot) {
-      throw new HttpError(404, "not_found", "Franja horaria no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Franja horaria no encontrada");
     }
     return { statusCode: 200, body: { data: timeSlot } };
   },
@@ -176,12 +176,12 @@ const schedulesService = {
     if (data.dayOfWeek) {
       const validDays = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
       if (!validDays.includes(data.dayOfWeek)) {
-        throw new HttpError(400, "validation_error", `Día inválido. Días válidos: ${validDays.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Día inválido. Días válidos: ${validDays.join(", ")}`);
       }
     }
     const timeSlot = schedulesRepository.updateTimeSlot(id, data);
     if (!timeSlot) {
-      throw new HttpError(404, "not_found", "Franja horaria no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Franja horaria no encontrada");
     }
     return { statusCode: 200, body: { data: timeSlot } };
   },
@@ -198,7 +198,7 @@ const schedulesService = {
   getSchedule(id) {
     const schedule = schedulesRepository.findScheduleById(id);
     if (!schedule) {
-      throw new HttpError(404, "not_found", "Horario no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Horario no encontrado");
     }
     return { statusCode: 200, body: { data: schedule } };
   },
@@ -215,7 +215,7 @@ const schedulesService = {
   updateSchedule(id, data) {
     const schedule = schedulesRepository.updateSchedule(id, data);
     if (!schedule) {
-      throw new HttpError(404, "not_found", "Horario no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Horario no encontrado");
     }
     return { statusCode: 200, body: { data: schedule } };
   },
@@ -231,7 +231,7 @@ const schedulesService = {
 
     const space = resolveExistingSpace(data.spaceId);
     if (space.status !== "activo") {
-      throw new HttpError(409, "conflict", "El espacio no está disponible para asignación (debe estar activo)");
+      throw errorHttp(409, "CONFLICT", "El espacio no está disponible para asignación (debe estar activo)");
     }
 
     resolveExistingTeacher(data.teacherId);
@@ -268,7 +268,7 @@ const schedulesService = {
   getAssignment(id) {
     const assignment = schedulesRepository.findAssignmentById(id);
     if (!assignment) {
-      throw new HttpError(404, "not_found", "Asignación no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Asignación no encontrada");
     }
     return { statusCode: 200, body: { data: assignment } };
   },
@@ -302,7 +302,7 @@ const schedulesService = {
 
     const current = schedulesRepository.findAssignmentById(id);
     if (!current) {
-      throw new HttpError(404, "not_found", "Asignación no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Asignación no encontrada");
     }
 
     const startTime = data.startTime ?? current.startTime;
@@ -312,7 +312,7 @@ const schedulesService = {
     if (data.spaceId && data.spaceId !== current.spaceId) {
       const space = resolveExistingSpace(data.spaceId);
       if (space.status !== "activo") {
-        throw new HttpError(409, "conflict", "El espacio no está disponible para asignación (debe estar activo)");
+        throw errorHttp(409, "CONFLICT", "El espacio no está disponible para asignación (debe estar activo)");
       }
     }
     if (data.teacherId && data.teacherId !== current.teacherId) {
@@ -344,7 +344,7 @@ const schedulesService = {
   deleteAssignment(id) {
     const assignment = schedulesRepository.deleteAssignment(id);
     if (!assignment) {
-      throw new HttpError(404, "not_found", "Asignación no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Asignación no encontrada");
     }
     return { statusCode: 200, body: { data: assignment } };
   }

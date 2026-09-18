@@ -1,10 +1,10 @@
 import inventoryRepository from "./inventory.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 function validateRequired(fields, data) {
   for (const field of fields) {
     if (!data[field]) {
-      throw new HttpError(400, "validation_error", `El campo ${field} es requerido`);
+      throw errorHttp(422, "VALIDATION_ERROR", `El campo ${field} es requerido`);
     }
   }
 }
@@ -14,7 +14,7 @@ const inventoryService = {
     validateRequired(["name", "code", "category", "schoolId"], data);
     const validCategories = ["mobiliario", "equipamiento", "material", "herramienta", "tecnologia", "otro"];
     if (!validCategories.includes(data.category)) {
-      throw new HttpError(400, "validation_error", `Categoría inválida. Categorías válidas: ${validCategories.join(", ")}`);
+      throw errorHttp(422, "VALIDATION_ERROR", `Categoría inválida. Categorías válidas: ${validCategories.join(", ")}`);
     }
     const item = inventoryRepository.createItem({
       ...data,
@@ -26,7 +26,7 @@ const inventoryService = {
   getItem(id) {
     const item = inventoryRepository.findItemById(id);
     if (!item) {
-      throw new HttpError(404, "not_found", "Item no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Item no encontrado");
     }
     return { statusCode: 200, body: { data: item } };
   },
@@ -46,18 +46,18 @@ const inventoryService = {
     if (data.category) {
       const validCategories = ["mobiliario", "equipamiento", "material", "herramienta", "tecnologia", "otro"];
       if (!validCategories.includes(data.category)) {
-        throw new HttpError(400, "validation_error", `Categoría inválida. Categorías válidas: ${validCategories.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Categoría inválida. Categorías válidas: ${validCategories.join(", ")}`);
       }
     }
     if (data.status) {
       const validStatuses = ["disponible", "en_uso", "mantenimiento", "dado_de_baja"];
       if (!validStatuses.includes(data.status)) {
-        throw new HttpError(400, "validation_error", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
       }
     }
     const item = inventoryRepository.updateItem(id, data);
     if (!item) {
-      throw new HttpError(404, "not_found", "Item no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Item no encontrado");
     }
     return { statusCode: 200, body: { data: item } };
   },
@@ -65,7 +65,7 @@ const inventoryService = {
   deleteItem(id) {
     const item = inventoryRepository.deleteItem(id);
     if (!item) {
-      throw new HttpError(404, "not_found", "Item no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Item no encontrado");
     }
     return { statusCode: 200, body: { data: item } };
   },
@@ -74,14 +74,14 @@ const inventoryService = {
     validateRequired(["itemId", "type", "quantity", "schoolId"], data);
     const validTypes = ["ingreso", "egreso", "transferencia", "ajuste"];
     if (!validTypes.includes(data.type)) {
-      throw new HttpError(400, "validation_error", `Tipo de movimiento inválido. Tipos válidos: ${validTypes.join(", ")}`);
+      throw errorHttp(422, "VALIDATION_ERROR", `Tipo de movimiento inválido. Tipos válidos: ${validTypes.join(", ")}`);
     }
     const item = inventoryRepository.findItemById(data.itemId);
     if (!item) {
-      throw new HttpError(404, "not_found", "Item no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Item no encontrado");
     }
     if (data.type === "egreso" && item.quantity < data.quantity) {
-      throw new HttpError(400, "validation_error", "Stock insuficiente para el egreso");
+      throw errorHttp(422, "VALIDATION_ERROR", "Stock insuficiente para el egreso");
     }
     const newQuantity = data.type === "ingreso" 
       ? item.quantity + data.quantity 

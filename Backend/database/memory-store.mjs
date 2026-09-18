@@ -2,10 +2,11 @@ const store = {
   users: new Map(),
   refreshTokens: new Map(),
   students: new Map(),
-  studentsAudit: []
+  studentsAudit: [],
   loginAttempts: new Map(),
   auditLogs: new Map(),
-  errorLogs: new Map()
+  errorLogs: new Map(),
+  rolePermissions: new Map()
 };
 
 export function getStore() {
@@ -17,8 +18,8 @@ export function resetStore() {
   store.refreshTokens.clear();
   store.students.clear();
   store.studentsAudit.length = 0;
-}
   store.loginAttempts.clear();
   store.auditLogs.clear();
   store.errorLogs.clear();
+  store.rolePermissions.clear();
 }

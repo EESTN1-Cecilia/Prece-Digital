@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import { appConfig } from "../../config/app.config.mjs";
 import { refreshTokenRepository } from "../../database/repositories/refresh-token.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp, ApiError } from "../../utils/api-error.mjs";
 
 function hashToken(value) {
   return crypto.createHash("sha256").update(`${appConfig.jwtRefreshSecret}:${value}`).digest("hex");
@@ -41,20 +41,20 @@ export function verifyAccessToken(token) {
     const payload = jwt.verify(token, appConfig.jwtAccessSecret);
 
     if (payload.typ !== "access") {
-      throw new HttpError(401, "invalid_token", "Token de acceso inválido");
+      throw errorHttp(401, "INVALID_TOKEN", "Token de acceso inválido");
     }
 
     if (!payload.sub) {
-      throw new HttpError(401, "invalid_token", "Token de acceso inválido");
+      throw errorHttp(401, "INVALID_TOKEN", "Token de acceso inválido");
     }
 
     return payload;
   } catch (error) {
-    if (error instanceof HttpError) {
+    if (error instanceof ApiError) {
       throw error;
     }
 
-    throw new HttpError(401, "invalid_token", "Token de acceso inválido o vencido");
+    throw errorHttp(401, "INVALID_TOKEN", "Token de acceso inválido o vencido");
   }
 }
 
@@ -75,7 +75,7 @@ export function createRefreshToken(userId) {
 
 export function parseRefreshToken(token, { detectReuse = true } = {}) {
   if (typeof token !== "string" || !token.includes(".")) {
-    throw new HttpError(401, "invalid_refresh_token", "Refresh token inválido");
+    throw errorHttp(401, "INVALID_REFRESH_TOKEN", "Refresh token inválido");
   }
 
   const [id] = token.split(".");
@@ -83,7 +83,7 @@ export function parseRefreshToken(token, { detectReuse = true } = {}) {
   const hashed = hashToken(token);
 
   if (!stored || stored.tokenHash !== hashed) {
-    throw new HttpError(401, "invalid_refresh_token", "Refresh token inválido");
+    throw errorHttp(401, "INVALID_REFRESH_TOKEN", "Refresh token inválido");
   }
 
   if (stored.revokedAt) {
@@ -91,11 +91,11 @@ export function parseRefreshToken(token, { detectReuse = true } = {}) {
       refreshTokenRepository.revokeAllForUser(stored.userId);
     }
 
-    throw new HttpError(401, "refresh_token_reused", "Refresh token revocado. Inicie sesión de nuevo");
+    throw errorHttp(401, "REFRESH_TOKEN_REUSED", "Refresh token revocado. Inicie sesión de nuevo");
   }
 
   if (new Date(stored.expiresAt).getTime() <= Date.now()) {
-    throw new HttpError(401, "refresh_token_expired", "Refresh token vencido");
+    throw errorHttp(401, "REFRESH_TOKEN_EXPIRED", "Refresh token vencido");
   }
 
   return stored;
@@ -115,7 +115,7 @@ export function revokeRefreshToken(token) {
     refreshTokenRepository.revoke(stored.id);
     return stored;
   } catch (error) {
-    if (error instanceof HttpError && ["invalid_refresh_token", "refresh_token_expired", "refresh_token_reused"].includes(error.code)) {
+    if (error instanceof ApiError && ["INVALID_REFRESH_TOKEN", "REFRESH_TOKEN_EXPIRED", "REFRESH_TOKEN_REUSED"].includes(error.code)) {
       return null;
     }
 

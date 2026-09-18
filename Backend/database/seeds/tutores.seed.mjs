@@ -1,15 +1,5 @@
-import studentsRefRepository from "../../modules/tutors/students-refs.repository.mjs";
+import { seedStudents } from "./students.seed.mjs";
 import tutorsRepository from "../../modules/tutors/tutors.repository.mjs";
-
-/* Alumnos de referencia (registro minimo del legajo) usado para validar que las
-   relaciones tutor/alumno apuntan a alumnos existentes. */
-const ALUMNOS_REFERENCIA = [
-  { id: "alu-1", escuelaId: "esc-1", apellido: "Pérez López", nombre: "Ana", dni: "40123456" },
-  { id: "alu-2", escuelaId: "esc-1", apellido: "Pérez López", nombre: "Bruno", dni: "41234567" },
-  { id: "alu-3", escuelaId: "esc-1", apellido: "Gómez Ruiz", nombre: "Carla", dni: "42345678" },
-  { id: "alu-4", escuelaId: "esc-1", apellido: "Fernández Díaz", nombre: "Diego", dni: "43456789" },
-  { id: "alu-5", escuelaId: "esc-1", apellido: "Álvarez Castro", nombre: "Elena", dni: "44567890" }
-];
 
 const TUTORES = [
   {
@@ -98,9 +88,8 @@ const RELACIONES = [
 ];
 
 export function seedTutores() {
+  seedStudents();
   tutorsRepository.resetData();
-  studentsRefRepository.clear();
-  studentsRefRepository.setAll(ALUMNOS_REFERENCIA);
 
   for (const tutor of TUTORES) {
     tutorsRepository.createTutor(tutor);

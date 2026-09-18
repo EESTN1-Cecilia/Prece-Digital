@@ -1,10 +1,10 @@
 import teachersRepository from "./teachers.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 function validateRequired(fields, data) {
   for (const field of fields) {
     if (!data[field]) {
-      throw new HttpError(400, "validation_error", `El campo ${field} es requerido`);
+      throw errorHttp(422, "VALIDATION_ERROR", `El campo ${field} es requerido`);
     }
   }
 }
@@ -14,7 +14,7 @@ const teachersService = {
     validateRequired(["firstName", "lastName", "documentNumber", "email", "schoolId"], data);
     const existing = teachersRepository.findByDocument(data.documentNumber, data.schoolId);
     if (existing) {
-      throw new HttpError(409, "conflict", "Ya existe un docente con ese número de documento en la escuela");
+      throw errorHttp(409, "CONFLICT", "Ya existe un docente con ese número de documento en la escuela");
     }
     const teacher = teachersRepository.create({
       ...data,
@@ -26,7 +26,7 @@ const teachersService = {
   getById(id) {
     const teacher = teachersRepository.findById(id);
     if (!teacher) {
-      throw new HttpError(404, "not_found", "Docente no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Docente no encontrado");
     }
     return { statusCode: 200, body: { data: teacher } };
   },
@@ -43,12 +43,12 @@ const teachersService = {
     if (data.documentNumber) {
       const existing = teachersRepository.findByDocument(data.documentNumber, data.schoolId);
       if (existing && existing.id !== id) {
-        throw new HttpError(409, "conflict", "Ya existe un docente con ese número de documento en la escuela");
+        throw errorHttp(409, "CONFLICT", "Ya existe un docente con ese número de documento en la escuela");
       }
     }
     const teacher = teachersRepository.update(id, data);
     if (!teacher) {
-      throw new HttpError(404, "not_found", "Docente no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Docente no encontrado");
     }
     return { statusCode: 200, body: { data: teacher } };
   },
@@ -56,7 +56,7 @@ const teachersService = {
   deactivate(id) {
     const teacher = teachersRepository.deactivate(id);
     if (!teacher) {
-      throw new HttpError(404, "not_found", "Docente no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Docente no encontrado");
     }
     return { statusCode: 200, body: { data: teacher } };
   },
@@ -65,7 +65,7 @@ const teachersService = {
     validateRequired(["subjectId", "courseId", "divisionId", "schoolId"], data);
     const teacher = teachersRepository.findById(teacherId);
     if (!teacher) {
-      throw new HttpError(404, "not_found", "Docente no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Docente no encontrado");
     }
     const assignment = teachersRepository.addSubject(teacherId, data);
     return { statusCode: 201, body: { data: assignment } };
@@ -74,7 +74,7 @@ const teachersService = {
   removeSubject(assignmentId) {
     const assignment = teachersRepository.removeSubject(assignmentId);
     if (!assignment) {
-      throw new HttpError(404, "not_found", "Asignación no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Asignación no encontrada");
     }
     return { statusCode: 200, body: { data: assignment } };
   },

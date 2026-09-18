@@ -23,11 +23,12 @@
                       (encabezado y pie) en lugar del layout de la aplicacion */
 
 import DashboardView from "../modules/dashboard/dashboard-view.js";
-import SecretariaView from "../modules/dashboard/secretaria-view.js";
-import AlumnoFormularioView from "../modules/students/alumno-formulario-view.js";
+import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
+import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
 import AlumnosListView from "../modules/students/alumnos-list-view.js";
 import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
 import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
+import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
@@ -35,6 +36,7 @@ import UsuarioDetalleView from "../modules/identity/usuario-detalle-view.js";
 import UsuarioFormularioView from "../modules/identity/usuario-formulario-view.js";
 import RolesView from "../modules/identity/roles-view.js";
 import { PERMISOS } from "../utils/permisos.js";
+import InicioView from "./inicio.js";
 
 export const RUTAS = [
   {
@@ -53,39 +55,71 @@ export const RUTAS = [
   {
     patron: "#/inicio",
     titulo: "Inicio",
-    vista: DashboardView,
+    vista: InicioView,
     seccion: "General",
     icono: "clipboard",
     enMenu: true
   },
   {
-    patron: "#/inicio-secretaria",
-    titulo: "Inicio secretaria",
-    vista: SecretariaView,
+    patron: "#/preceptoria",
+    titulo: "Tablero de preceptoria",
+    vista: DashboardView,
     seccion: "General",
-    icono: "students",
+    icono: "attendance",
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
   {
+    patron: "#/secretaria",
+    titulo: "Tablero de secretaria",
+    vista: SecretariaDashboardView,
+    seccion: "General",
+    icono: "students",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosEditar],
+    enMenu: true
+  },
+  {
+    patron: "#/inicio-secretaria",
+    titulo: "Tablero de secretaria",
+    vista: SecretariaDashboardView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosEditar]
+  },
+  {
+    patron: "#/preceptoria/observaciones",
+    titulo: "Observaciones",
+    vista: ObservacionesView,
+    seccion: "General",
+    icono: "activity",
+    padre: "#/inicio",
+    permisos: [PERMISOS.observacionesLeer],
+    enMenu: true
+  },
+  {
     patron: "#/alumnos/cargar",
     titulo: "Cargar alumno",
-    vista: AlumnoFormularioView,
-    seccion: "General",
-    icono: "clipboard",
+    vista: CargarAlumnoView,
     padre: "#/alumnos",
     permisos: [PERMISOS.alumnosCrear]
   },
   {
     patron: "#/alumnos/nuevo",
     titulo: "Cargar alumno",
-    vista: AlumnoFormularioView,
+    vista: CargarAlumnoView,
     seccion: "General",
     icono: "clipboard",
-    padre: "#/inicio-secretaria",
+    padre: "#/alumnos",
     permisos: [PERMISOS.alumnosCrear],
     enMenu: true
+  },
+  {
+    patron: "#/alumnos/buscar",
+    titulo: "Listado de Alumnos",
+    vista: AlumnosListView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer]
   },
   {
     patron: "#/alumnos/:id/perfil",

@@ -7,7 +7,7 @@
 
 import { getStore } from "../../database/memory-store.mjs";
 import { appConfig } from "../../config/app.config.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 const WINDOW_MS = appConfig.loginWindowMs;
 const LOCK_MS = appConfig.loginLockMs;
@@ -106,7 +106,7 @@ export function revisarLogin(email, ip) {
   if (bloqueoEmail || bloqueoIp) {
     const retryAfter = Math.max(bloqueoEmail, bloqueoIp);
 
-    throw new HttpError(429, "TOO_MANY_ATTEMPTS", "Demasiados intentos de inicio de sesion. Intente nuevamente mas tarde", { retryAfter });
+    throw errorHttp(429, "TOO_MANY_ATTEMPTS", "Demasiados intentos de inicio de sesion. Intente nuevamente mas tarde", { retryAfter });
   }
 }
 

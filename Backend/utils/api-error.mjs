@@ -1,6 +1,10 @@
-/* Errores esperados de la API.
+/* Errores esperados de la API: unica clase de error del backend.
    Los servicios y controladores lanzan estos errores y el middleware centralizado
-   (middlewares/error.middleware.mjs) los traduce a la respuesta uniforme. */
+   (middlewares/error.middleware.mjs) los traduce a la respuesta uniforme:
+
+     { "error": { "code": "NOT_FOUND", "message": "...", "details": [...] } }
+
+   Los codigos van siempre en MAYUSCULAS_CON_GUION_BAJO. */
 
 export const CODIGOS = {
   VALIDATION_ERROR: 422,
@@ -9,6 +13,8 @@ export const CODIGOS = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  PAYLOAD_TOO_LARGE: 413,
+  TOO_MANY_ATTEMPTS: 429,
   INTERNAL_ERROR: 500
 };
 
@@ -48,4 +54,10 @@ export function noEncontrado(recurso = "El recurso solicitado") {
 
 export function conflicto(message = "La operacion entra en conflicto con datos existentes.") {
   return new ApiError("CONFLICT", message);
+}
+
+/* Para casos puntuales que no cubren los helpers de arriba (por ejemplo codigos
+   propios de autenticacion como INVALID_TOKEN). */
+export function errorHttp(status, code, message, details) {
+  return new ApiError(code, message, { status, details });
 }

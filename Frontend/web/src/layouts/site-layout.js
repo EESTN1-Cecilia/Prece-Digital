@@ -193,7 +193,9 @@ function Footer({ onOpenDocumento }) {
   );
 }
 
-export function SiteLayout({ ruta, children }) {
+/* Modal de documentacion oficial: cualquier pantalla lo abre con el evento
+   "prece:open_document_modal". Lo montan los dos layouts. */
+export function ModalDocumentosGlobal() {
   const [modalDocumento, setModalDocumento] = useState(null);
 
   useEffect(() => {
@@ -206,15 +208,21 @@ export function SiteLayout({ ruta, children }) {
     return () => window.removeEventListener("prece:open_document_modal", handleAbrirDoc);
   }, []);
 
+  return h(DocumentosManagerModal, {
+    modalActivo: modalDocumento,
+    onCerrar: () => setModalDocumento(null)
+  });
+}
+
+/* Layout de las rutas publicas (login, activar cuenta). Las pantallas internas
+   usan AppLayout (layouts/app-layout.js). */
+export function SiteLayout({ ruta, children }) {
   return h(
     React.Fragment,
     null,
     h(Header, { ruta }),
     h("main", { className: "page", id: "inicio" }, children),
-    h(Footer, { onOpenDocumento: (tipo) => setModalDocumento(tipo) }),
-    h(DocumentosManagerModal, {
-      modalActivo: modalDocumento,
-      onCerrar: () => setModalDocumento(null)
-    })
+    h(Footer),
+    h(ModalDocumentosGlobal)
   );
 }
