@@ -5,13 +5,13 @@ import { SummaryCard } from "../../components/dashboard/summary-card.js";
 import { AlertCard } from "../../components/dashboard/alert-card.js";
 import { QuickAccessGrid } from "../../components/dashboard/quick-access-grid.js";
 import { RoleSwitch } from "../../components/common/role-switch.js";
-import { LoadingState, EmptyState, ErrorState, StatusBadge, AccessDeniedState } from "../../components/common/state-handlers.js";
+import { LoadingState, EmptyState, ErrorState, StatusBadge} from "../../components/common/state-handlers.js";
 import { SecretariaService } from "./secretaria-service.js";
-import { AuthService } from "../../services/auth-service.js";
+import { useUsuarioActual } from "../../estado/index.js";
 import { AlumnoMatrizModal } from "../students/alumno-matriz-wiew.js";
 
 export default function SecretariaDashboardView() {
-  const [user, setUser] = useState(AuthService.getCurrentUser());
+  const user = useUsuarioActual();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,18 +20,13 @@ export default function SecretariaDashboardView() {
   const [selectedOrientacionFilter, setSelectedOrientacionFilter] = useState("todas");
   const [matrizModalAbierto, setMatrizModalAbierto] = useState(false);
 
-  // Escuchar cambios de rol globales y eventos de apertura de modal
+  // Apertura del Libro Matriz desde otros componentes
   useEffect(() => {
-    const handleRoleChanged = (e) => {
-      setUser(e.detail);
-    };
     const handleOpenMatriz = () => {
       setMatrizModalAbierto(true);
     };
-    window.addEventListener("auth:role_changed", handleRoleChanged);
     window.addEventListener("prece:open_matriz_modal", handleOpenMatriz);
     return () => {
-      window.removeEventListener("auth:role_changed", handleRoleChanged);
       window.removeEventListener("prece:open_matriz_modal", handleOpenMatriz);
     };
   }, []);
@@ -50,11 +45,10 @@ export default function SecretariaDashboardView() {
     }
   }, []);
 
+  /* El acceso lo decide la tabla de rutas (app/rutas.js) segun los permisos. */
   useEffect(() => {
-    if (user.rol === "secretaria") {
-      fetchData();
-    }
-  }, [user, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   const handleDismissAlert = async (alertId) => {
     await SecretariaService.dismissAlert(alertId);
@@ -67,11 +61,6 @@ export default function SecretariaDashboardView() {
     });
   };
 
-  const handleSwitchRole = (newRole) => {
-    const updatedUser = AuthService.switchRole(newRole);
-    setUser(updatedUser);
-  };
-
   const formatFechaHora = (date) => {
     if (!date) return "";
     return new Intl.DateTimeFormat("es-AR", {
@@ -80,33 +69,16 @@ export default function SecretariaDashboardView() {
     }).format(new Date(date));
   };
 
-  // Si el usuario tiene rol preceptor, mostramos control de acceso con botón para cambiar
-  if (user.rol !== "secretaria") {
-    return h(
-      "section",
-      { className: "secretaria-dashboard" },
-      h(
-        "div",
-        { className: "dashboard-top-bar" },
-        h(RoleSwitch, { activeRole: user.rol, onToggle: handleSwitchRole })
-      ),
-      h(AccessDeniedState, {
-        rolRequerido: "Secretaría",
-        onSwitchRole: handleSwitchRole
-      })
-    );
-  }
-
   // Filtrado de cursos por turno y orientación
   const cursosFiltrados = (data?.alumnosPorCurso || []).filter((c) => {
     const coincideTurno =
       selectedTurnoFilter === "todos" ||
-      c.turnoAula.toLowerCase().includes(selectedTurnoFilter.toLowerCase()) ||
-      c.turnoTaller.toLowerCase().includes(selectedTurnoFilter.toLowerCase());
+      String(c.turnoAula ?? "").toLowerCase().includes(selectedTurnoFilter.toLowerCase()) ||
+      String(c.turnoTaller ?? "").toLowerCase().includes(selectedTurnoFilter.toLowerCase());
 
     const coincideOrientacion =
       selectedOrientacionFilter === "todas" ||
-      c.orientacion.toLowerCase().includes(selectedOrientacionFilter.toLowerCase());
+      String(c.orientacion ?? "").toLowerCase().includes(selectedOrientacionFilter.toLowerCase());
 
     return coincideTurno && coincideOrientacion;
   });
@@ -124,7 +96,7 @@ export default function SecretariaDashboardView() {
         { className: "secretaria-eyebrow" },
         `${data?.institucion?.nombre || user.escuela} · CICLO ${data?.institucion?.cicloLectivo || user.cicloLectivo || 2026}`
       ),
-      h(RoleSwitch, { activeRole: user.rol, onToggle: handleSwitchRole })
+      h(RoleSwitch, { activeRole: "secretaria" })
     ),
 
     // Título institucional y botón "Actualizar datos"
@@ -183,25 +155,25 @@ export default function SecretariaDashboardView() {
                   "div",
                   { className: "metric-box-card" },
                   h("span", { className: "metric-box-card__label" }, "TOTAL DE ALUMNOS"),
-                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.total || 814),
+                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.total ?? 0),
                   h("span", { className: "metric-box-card__subtext" }, `Ciclo ${data?.institucion?.cicloLectivo || 2026}`)
                 ),
                 h(
                   "div",
                   { className: "metric-box-card" },
                   h("span", { className: "metric-box-card__label" }, "ACTIVOS"),
-                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.activos || 792),
+                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.activos ?? 0),
                   h(
                     "span",
                     { className: "metric-box-card__subtext" },
-                    `${data.resumenAlumnos?.total ? ((data.resumenAlumnos.activos / data.resumenAlumnos.total) * 100).toFixed(1).replace(".", ",") : "97,3"}% del padrón`
+                    `${data.resumenAlumnos?.total ? ((data.resumenAlumnos.activos / data.resumenAlumnos.total) * 100).toFixed(1).replace(".", ",") : "0"}% del padrón`
                   )
                 ),
                 h(
                   "div",
                   { className: "metric-box-card" },
                   h("span", { className: "metric-box-card__label" }, "INACTIVOS"),
-                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.inactivos || 22),
+                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.inactivos ?? 0),
                   h("span", { className: "metric-box-card__subtext" }, "Requieren revisión")
                 )
               ),
@@ -219,12 +191,9 @@ export default function SecretariaDashboardView() {
               "div",
               { className: "turnos-side-card" },
               h("span", { className: "turnos-side-card__label" }, "DISTRIBUCIÓN POR TURNOS"),
-              h("div", { className: "turnos-side-card__value" }, `${data.resumenAlumnos?.porTurno?.length || 2} turnos`),
-              (data.resumenAlumnos?.porTurno || [
-                { turno: "Mañana", cantidad: 418, porcentaje: 51.3 },
-                { turno: "Tarde", cantidad: 396, porcentaje: 48.7 }
-              ]).map((t) => {
-                const totalAlumnos = data.resumenAlumnos?.total || 814;
+              h("div", { className: "turnos-side-card__value" }, `${data.resumenAlumnos?.porTurno?.length ?? 0} turnos`),
+              (data.resumenAlumnos?.porTurno ?? []).map((t) => {
+                const totalAlumnos = data.resumenAlumnos?.total ?? 0;
                 const pct = t.porcentaje || (totalAlumnos > 0 ? (t.cantidad / totalAlumnos) * 100 : 50);
                 return h(
                   "div",
@@ -257,7 +226,7 @@ export default function SecretariaDashboardView() {
               className: "dashboard-card--highlight"
             },
             h(QuickAccessGrid, {
-              userPermissions: user.permisos || ["all"],
+              userPermissions: user.permisos,
               onOpenMatriz: () => setMatrizModalAbierto(true)
             })
           ),

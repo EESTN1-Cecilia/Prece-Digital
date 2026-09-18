@@ -1,4 +1,5 @@
 import { getStore } from "../../database/memory-store.mjs";
+import studentRepository from "../students/students.repository.mjs";
 import { normalizarTexto } from "./catalogo.mjs";
 
 function generateId(prefix) {
@@ -26,7 +27,6 @@ const academicRecordsRepository = {
     const store = getStore();
     const colecciones = [
       "academicRecordsSituaciones",
-      "academicRecordsStudentRefs",
       "academicRecordsSubjectRefs"
     ];
 
@@ -45,24 +45,16 @@ const academicRecordsRepository = {
     this.init();
     const store = getStore();
     store.academicRecordsSituaciones.clear();
-    store.academicRecordsStudentRefs.clear();
     store.academicRecordsSubjectRefs.clear();
     store.academicRecordsAudit.length = 0;
   },
 
   /* ---------------- Referencias de catalogo (alumnos y materias) ---------- */
 
-  setStudentsRef(lista) {
-    this.init();
-    for (const item of lista) {
-      getStore().academicRecordsStudentRefs.set(item.id, { ...item });
-    }
-  },
-
+  /* Los alumnos se leen del modulo students: es la unica fuente de alumnos. */
   findStudentRefById(id) {
-    this.init();
-    const item = getStore().academicRecordsStudentRefs.get(id);
-    return item ? clone(item) : null;
+    const alumno = studentRepository.findById(id);
+    return alumno ? { id: alumno.id, escuelaId: alumno.escuelaId, apellido: alumno.apellido, nombre: alumno.nombre, dni: alumno.dni } : null;
   },
 
   setSubjectsRef(lista) {

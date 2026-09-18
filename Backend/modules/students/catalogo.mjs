@@ -64,6 +64,9 @@ const DIVISIONES = [
   [7, "2", "tarde", ORIENTACION_PROGRAMACION]
 ];
 
+/* Catalogo completo, para listados y tableros. */
+export const DIVISIONES_CATALOGO = DIVISIONES.map(([anio, division, turno, orientacion]) => ({ anio, division, turno, orientacion }));
+
 export function buscarDivision(anio, division) {
   const división = String(division).trim();
   const entrada = DIVISIONES.find(([a, d]) => a === anio && d === división);

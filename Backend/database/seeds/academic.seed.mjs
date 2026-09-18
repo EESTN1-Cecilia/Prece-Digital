@@ -1,4 +1,5 @@
 import academicRepository from "../../modules/academic/academic.repository.mjs";
+import { seedStudents } from "./students.seed.mjs";
 
 const CICLOS = [
   { id: "cic-1", nombre: "Primer Ciclo", descripcion: "1ro a 3ro, sin orientacion", tipo: "primer", anioDesde: 1, anioHasta: 3 },
@@ -39,15 +40,6 @@ const DIVISIONES = [
   { id: "div-12", escuelaId: "esc-1", cursoId: "cur-8", nombre: "1ra" },
   { id: "div-13", escuelaId: "esc-1", cursoId: "cur-9", nombre: "1ra", estado: "inactivo", fechaBaja: "2025-12-20T00:00:00.000Z" },
   { id: "div-14", escuelaId: "esc-1", cursoId: "cur-10", nombre: "1ra" }
-];
-
-export const ALUMNOS = [
-  { id: "alu-1", escuelaId: "esc-1", apellido: "Pérez López", nombre: "Ana", dni: "40123456" },
-  { id: "alu-2", escuelaId: "esc-1", apellido: "Gómez Ruiz", nombre: "Carla", dni: "42345678" },
-  { id: "alu-3", escuelaId: "esc-1", apellido: "Fernández Díaz", nombre: "Diego", dni: "43456789" },
-  { id: "alu-4", escuelaId: "esc-1", apellido: "Álvarez Castro", nombre: "Elena", dni: "44567890" },
-  { id: "alu-5", escuelaId: "esc-1", apellido: "Soria Ríos", nombre: "Florencia", dni: "45678901" },
-  { id: "alu-6", escuelaId: "esc-1", apellido: "Medina Torres", nombre: "Juan", dni: "46789012" }
 ];
 
 const MATRICULA = [
@@ -107,6 +99,7 @@ const HORARIOS_RELACIONES = [
 ];
 
 export function seedAcademic() {
+  seedStudents();
   academicRepository.resetData();
 
   for (const ciclo of CICLOS) {
@@ -125,7 +118,6 @@ export function seedAcademic() {
     academicRepository.createDivision(division);
   }
 
-  academicRepository.setStudentsRef(ALUMNOS);
   academicRepository.setTeachersRef(DOCENTES);
   academicRepository.setSubjectsRef(MATERIAS);
   academicRepository.setSchedulesRef(HORARIOS);

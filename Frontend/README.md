@@ -1,165 +1,43 @@
 # Prece Digital - Frontend
 
-Repositorio de desarrollo del Frontend de **Prece Digital**.
-
-Contiene la aplicación web en React y la aplicación móvil en React Native.
+Aplicación web (React + Vite) y aplicación móvil (React Native + Expo). Forma parte del monorepo: instalación, ramas y PR se manejan desde la raíz (ver `README.md` de la raíz).
 
 ## Estructura
 
 ```text
 web/
-  public/
+  public/        assets estáticos
   src/
-    app/
-    components/
-    config/
-    layouts/
-    modules/
-    services/
-    styles/
-    utils/
+    app/         main.js (arranque), rutas.js (tabla de rutas y permisos), navegacion.js (guardia)
+    components/  ui/ (biblioteca común), common/, dashboard/
+    config/      env.js
+    estado/      estado global: sesión, permisos, notificaciones
+    layouts/     app-layout (pantallas internas) y site-layout (login)
+    modules/     vistas por dominio
+    services/    http.js (único cliente HTTP), identity-api.js, notificaciones-api.js
+    styles/      global.css
+    utils/       permisos.js, formato.js
 
 mobile/
-  src/
-    app/
-    modules/
-    services/
-    storage/
-    utils/
+  src/           app/, modules/, services/, storage/, utils/
 ```
 
-## Forma de trabajo
+## Comandos
 
-El equipo Frontend debe trabajar únicamente sobre este repositorio.
-
-No se deben realizar cambios directamente sobre la carpeta `Frontend/` del repositorio principal `Prece-Digital`.
-
-Flujo recomendado:
-
-```text
-main
- ↓
-crear rama de trabajo
- ↓
-desarrollar funcionalidad
- ↓
-push
- ↓
-Pull Request
- ↓
-revisión
- ↓
-merge a main
-```
-
-Antes de comenzar:
+Desde la raíz:
 
 ```bash
-git checkout main
-git pull origin main
+npm run dev:web                     # http://localhost:5173 (necesita la API: npm run dev:api)
+npm test -w @prece-digital/web
+npm run build -w @prece-digital/web
 ```
 
-Crear una rama:
+`web/.env.example` define `VITE_API_BASE_URL` (por defecto `http://localhost:3000`).
 
-```bash
-git checkout -b feature/nombre-funcionalidad
-```
+## Reglas
 
-Ejemplos:
-
-```text
-feature/login
-feature/dashboard
-feature/asistencias
-fix/navbar-mobile
-refactor/auth-service
-```
-
-Subir cambios:
-
-```bash
-git add .
-git commit -m "feat: agregar pantalla de login"
-git push -u origin feature/login
-```
-
-Luego se debe crear un **Pull Request hacia `main`**.
-
-## Trabajo con Backend
-
-Frontend puede necesitar ejecutar Backend para desarrollar o probar funcionalidades.
-
-Se recomienda tener ambos repositorios clonados dentro de una carpeta general:
-
-```text
-Prece-Digital-Workspace/
-├── Prece-Digital-Backend/
-└── Prece-Digital-Frontend/
-```
-
-Para actualizar Backend:
-
-```bash
-cd Prece-Digital-Backend
-git pull origin main
-```
-
-Frontend no debe copiar código del Backend ni modificarlo si no corresponde a su sector.
-
-## Integración con Prece-Digital
-
-Este repositorio es la fuente oficial del Frontend.
-
-Cuando una versión esté lista para integrarse al repositorio principal, el líder del sector utilizará **Git subtree**:
-
-```bash
-git fetch frontend
-git subtree pull --prefix=Frontend frontend main --squash
-```
-
-La integración debe realizarse desde una rama:
-
-```bash
-git checkout -b integrate/frontend-login
-```
-
-Luego se abre un Pull Request hacia `main` de `Prece-Digital`.
-
-No se deben copiar ni pegar carpetas manualmente entre repositorios.
-
-## Entorno local
-
-Instalar dependencias según corresponda:
-
-```bash
-npm install
-```
-
-Para la aplicación web:
-
-```bash
-npm run dev
-```
-
-Por defecto, la web queda disponible en:
-
-```text
-http://localhost:5173
-```
-
-Los archivos de entorno deben crearse tomando como referencia:
-
-```text
-web/.env.example
-mobile/.env.example
-```
-
-## Reglas básicas
-
-- No trabajar directamente sobre `main`.
-- No subir archivos `.env`.
-- Mantener `main` actualizado.
-- Utilizar ramas para nuevas funcionalidades y correcciones.
-- Utilizar Pull Requests.
-- No copiar Backend dentro de Frontend.
-- La integración hacia `Prece-Digital` se realiza mediante `git subtree`.
+- Toda llamada a la API pasa por `services/http.js` (`pedir`). No usar `fetch` directo.
+- La sesión sale de `GET /api/v1/auth/me` (estado global). No hay perfiles ni credenciales de demostración.
+- Las rutas se declaran en `app/rutas.js` con el permiso que exigen; el guardia de `app/main.js` decide el acceso. Es solo experiencia de uso: el backend valida cada operación.
+- Si la API falla, la vista muestra el error. No hay datos locales de respaldo.
+- Un endpoint nuevo tiene que existir en `Backend/routes/index.mjs`: el test de contrato del backend falla en el CI si no.

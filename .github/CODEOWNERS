@@ -1,0 +1,19 @@
+# Revisores obligatorios por carpeta del monorepo.
+# Los equipos se crean en GitHub: Organizacion EESTN1-Cecilia > Teams.
+# Con "Require review from Code Owners" activo en la proteccion de main, cada PR
+# pide aprobacion del equipo duenio de lo que toca.
+
+*                       @EESTN1-Cecilia/lideres
+
+/Backend/               @EESTN1-Cecilia/backend
+/Frontend/web/          @EESTN1-Cecilia/frontend
+/Frontend/mobile/       @EESTN1-Cecilia/frontend
+
+# Contrato compartido: lo revisan ambos equipos.
+/Shared/                @EESTN1-Cecilia/backend @EESTN1-Cecilia/frontend
+/Backend/routes/        @EESTN1-Cecilia/backend @EESTN1-Cecilia/frontend
+/Backend/config/permissions.config.mjs @EESTN1-Cecilia/backend @EESTN1-Cecilia/frontend
+
+/.github/               @EESTN1-Cecilia/lideres
+/package.json           @EESTN1-Cecilia/lideres
+/package-lock.json      @EESTN1-Cecilia/lideres

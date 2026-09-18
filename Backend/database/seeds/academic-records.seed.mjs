@@ -1,5 +1,6 @@
 import academicRecordsRepository from "../../modules/academic-records/academic-records.repository.mjs";
-import { ALUMNOS, MATERIAS } from "./academic.seed.mjs";
+import { MATERIAS } from "./academic.seed.mjs";
+import { seedStudents } from "./students.seed.mjs";
 
 const SITUACIONES = [
   {
@@ -108,8 +109,8 @@ const SITUACIONES = [
 ];
 
 export function seedAcademicRecords() {
+  seedStudents();
   academicRecordsRepository.resetData();
-  academicRecordsRepository.setStudentsRef(ALUMNOS);
   academicRecordsRepository.setSubjectsRef(MATERIAS);
 
   for (const situacion of SITUACIONES) {

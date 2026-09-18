@@ -1,4 +1,16 @@
-import { modules as domainModules } from "./domain.mjs";
+import { modules as domainModules, roles as domainRoles, permiso as armarPermiso } from "../../Shared/src/domain.mjs";
+import { getStore } from "../database/memory-store.mjs";
+
+/* Catalogo central de autorizacion del backend.
+
+   Un permiso es siempre "<modulo>.<accion>" (por ejemplo "students.read"). Los
+   modulos y roles salen de Shared/src/domain.mjs; aca se define que puede hacer
+   cada rol. Los permisos de un usuario son la union de los de sus roles.
+
+   PUT /api/v1/authorization/roles/:codigo/permissions puede reemplazar los
+   permisos de un rol en tiempo de ejecucion: el cambio vive en el store y
+   permissionsForRole() lo respeta. */
+
 export const ROLES = {
   ADMIN: "admin",
   DIRECTOR: "director",
@@ -14,11 +26,13 @@ export const SCOPE_KEYS = ["schoolId", "courseId", "divisionId", "subjectId", "s
 export const PERMISSIONS = {
   USERS_READ: "users.read",
   USERS_DEACTIVATE: "users.deactivate",
-  IDENTITY_READ: "identity:read",
-  IDENTITY_CREATE: "identity:create",
-  IDENTITY_UPDATE: "identity:update",
+  IDENTITY_READ: "identity.read",
+  IDENTITY_CREATE: "identity.create",
+  IDENTITY_UPDATE: "identity.update",
   STUDENTS_READ: "students.read",
   STUDENTS_WRITE: "students.write",
+  OBSERVATIONS_READ: "observations.read",
+  OBSERVATIONS_WRITE: "observations.write",
   ATTENDANCE_READ: "attendance.read",
   ATTENDANCE_WRITE: "attendance.write",
   GRADES_READ: "grades.read",
@@ -41,6 +55,7 @@ export const PERMISSIONS = {
   ABSENCES_MANAGE: "absences.manage",
   WORKSHOPS_READ: "workshops.read",
   WORKSHOPS_WRITE: "workshops.write",
+  WORKSHOPS_MANAGE: "workshops.manage",
   INVENTORY_READ: "inventory.read",
   INVENTORY_WRITE: "inventory.write",
   INVENTORY_MANAGE: "inventory.manage",
@@ -58,11 +73,11 @@ export const PERMISSIONS = {
   ACADEMICS_READ: "academics.read",
   ACADEMICS_WRITE: "academics.write",
   ACADEMICS_MANAGE: "academics.manage",
-  ACADEMIC_RECORDS_READ: "academics.records.read",
-  ACADEMIC_RECORDS_WRITE: "academics.records.write",
-  ACADEMIC_RECORDS_MANAGE: "academics.records.manage"
-  AUDIT_READ: "audit:read",
-  AUDIT_EXPORT: "audit:export"
+  ACADEMIC_RECORDS_READ: "academic-records.read",
+  ACADEMIC_RECORDS_WRITE: "academic-records.write",
+  ACADEMIC_RECORDS_MANAGE: "academic-records.manage",
+  AUDIT_READ: "audit.read",
+  AUDIT_EXPORT: "audit.export"
 };
 
 const ALL_PERMISSIONS = Object.values(PERMISSIONS);
@@ -72,6 +87,9 @@ export const ROLE_PERMISSIONS = {
   [ROLES.DIRECTOR]: ALL_PERMISSIONS,
   [ROLES.SECRETARIO]: [
     PERMISSIONS.USERS_READ,
+    PERMISSIONS.IDENTITY_READ,
+    PERMISSIONS.OBSERVATIONS_READ,
+    PERMISSIONS.OBSERVATIONS_WRITE,
     PERMISSIONS.STUDENTS_READ,
     PERMISSIONS.STUDENTS_WRITE,
     PERMISSIONS.SCHOOLS_READ,
@@ -92,6 +110,8 @@ export const ROLE_PERMISSIONS = {
   ],
   [ROLES.PRECEPTOR]: [
     PERMISSIONS.STUDENTS_READ,
+    PERMISSIONS.OBSERVATIONS_READ,
+    PERMISSIONS.OBSERVATIONS_WRITE,
     PERMISSIONS.ATTENDANCE_READ,
     PERMISSIONS.ATTENDANCE_WRITE,
     PERMISSIONS.SCHOOLS_READ,
@@ -111,6 +131,7 @@ export const ROLE_PERMISSIONS = {
   ],
   [ROLES.DOCENTE]: [
     PERMISSIONS.STUDENTS_READ,
+    PERMISSIONS.OBSERVATIONS_READ,
     PERMISSIONS.ATTENDANCE_READ,
     PERMISSIONS.ATTENDANCE_WRITE,
     PERMISSIONS.GRADES_READ,
@@ -126,6 +147,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.ACADEMIC_RECORDS_READ
   ],
   [ROLES.JEFE_AREA]: [
+    PERMISSIONS.OBSERVATIONS_READ,
+    PERMISSIONS.OBSERVATIONS_WRITE,
     PERMISSIONS.SCHEDULES_READ,
     PERMISSIONS.SCHEDULES_WRITE,
     PERMISSIONS.TEACHERS_READ,
@@ -176,6 +199,7 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.NOTIFICATIONS_WRITE,
     PERMISSIONS.WORKSHOPS_READ,
     PERMISSIONS.WORKSHOPS_WRITE,
+    PERMISSIONS.WORKSHOPS_MANAGE,
     PERMISSIONS.CURRICULUM_READ,
     PERMISSIONS.ACADEMICS_READ,
     PERMISSIONS.ACADEMICS_WRITE,
@@ -186,26 +210,21 @@ export const ROLE_PERMISSIONS = {
   ]
 };
 
+/* Permisos vigentes de un rol: los reemplazados en tiempo de ejecucion (si los hay)
+   o los definidos arriba. */
 export function permissionsForRole(role) {
-  return ROLE_PERMISSIONS[role] ?? [];
+  const reemplazo = getStore().rolePermissions.get(role);
+  return reemplazo ? [...reemplazo] : [...(ROLE_PERMISSIONS[role] ?? [])];
 }
 
-const LISTADOS_STUDENTS_ROLES = [
-  "super-admin",
-  "system-admin",
-  "director",
-  "secretary",
-  "area-lead",
-  "preceptor",
-  "attendance-operator"
-];
+export function replaceRolePermissions(role, permisos) {
+  getStore().rolePermissions.set(role, [...new Set(permisos)].sort());
+  return permissionsForRole(role);
+}
 
-export function rolesPermitidos(operacion) {
-  if (operacion === "students:listados") {
-    return LISTADOS_STUDENTS_ROLES;
-  }
-
-  return [];
+/* Todos los permisos que existen: la matriz de roles solo acepta estos codigos. */
+export function catalogoPermisos() {
+  return [...new Set(Object.values(PERMISSIONS))].sort();
 }
 
 /* ============================================================================
@@ -231,14 +250,11 @@ export const ACCIONES = {
   MANAGE: "manage"
 };
 
-export const MODULOS = Object.fromEntries([
-  ...domainModules.map((modulo) => [modulo.key, modulo.label]),
-  ["identity", "Identidad y acceso"]
-]);
+export const MODULOS = Object.fromEntries(domainModules.map((modulo) => [modulo.id, modulo.name]));
 
 /* Construye el código de un permiso: permiso("students", "create") -> "students.create". */
 export function permiso(modulo, accion) {
-  return `${modulo}.${accion}`;
+  return armarPermiso(modulo, accion);
 }
 
 /* Traduce una acción (canónica o legada) a sus acciones canónicas equivalentes. */
@@ -266,18 +282,12 @@ export function accionesCanonicas(accion) {
 }
 
 export function permisoValido(codigo) {
-  return typeof codigo === "string" && /^[a-z]+[.:][a-z]+$/.test(codigo);
+  return typeof codigo === "string" && /^[a-z][a-z-]*\.[a-z]+$/.test(codigo);
 }
 
-export const ROL_CATALOGO = {
-  [ROLES.ADMIN]: { codigo: ROLES.ADMIN, nombre: "Administrador", descripcion: "Acceso total a todos los modulos del sistema" },
-  [ROLES.DIRECTOR]: { codigo: ROLES.DIRECTOR, nombre: "Direccion", descripcion: "Gestion integral de la institucion" },
-  [ROLES.SECRETARIO]: { codigo: ROLES.SECRETARIO, nombre: "Secretaria", descripcion: "Administracion academica y documentacion" },
-  [ROLES.PRECEPTOR]: { codigo: ROLES.PRECEPTOR, nombre: "Preceptoria", descripcion: "Seguimiento de estudiantes y asistencia" },
-  [ROLES.DOCENTE]: { codigo: ROLES.DOCENTE, nombre: "Docentes", descripcion: "Clases, notas y asistencia de sus cursos" },
-  [ROLES.JEFE_AREA]: { codigo: ROLES.JEFE_AREA, nombre: "Jefatura de Area", descripcion: "Planificacion curricular y equipos docentes" },
-  [ROLES.SERVER]: { codigo: ROLES.SERVER, nombre: "Responsable de Server", descripcion: "Infraestructura, espacios y operacion tecnica" }
-};
+export const ROL_CATALOGO = Object.fromEntries(
+  domainRoles.map((rol) => [rol.id, { codigo: rol.id, nombre: rol.name, descripcion: rol.description }])
+);
 
 export function catalogoRoles() {
   return Object.values(ROL_CATALOGO);

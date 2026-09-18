@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DocumentosManagerModal } from "../modules/documents/document-modals.js";
+import { useSesion } from "../estado/hooks.js";
 
 export const h = React.createElement;
 
@@ -13,6 +14,170 @@ export function ActionButton({ tone = "primary", icon, children, onClick, ...pro
     { className: `action-button action-button--${tone}`, type: "button", onClick, ...props },
     h(IconoFigma, { className: "action-button__icon", nombre: icon }),
     h("span", null, children)
+  );
+}
+
+function UserAvatarMenu() {
+  const [abierto, setAbierto] = useState(false);
+  const containerRef = useRef(null);
+  const sesion = useSesion();
+  const usuario = sesion?.usuario;
+  const cerrarSesion = sesion?.cerrarSesion;
+
+  const nombre = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(" ") || usuario?.email || "Usuario";
+  const rol = sesion?.roles?.[0]?.nombre || sesion?.roles?.[0] || "Cuenta Activa";
+
+  useEffect(() => {
+    if (!abierto) return;
+
+    const handleClickFuera = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setAbierto(false);
+      }
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === "Escape") {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickFuera);
+    document.addEventListener("keydown", handleKeydown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickFuera);
+      document.removeEventListener("keydown", handleKeydown);
+    };
+  }, [abierto]);
+
+  return h(
+    "div",
+    { className: "header-avatar-container", ref: containerRef },
+    h(
+      "button",
+      {
+        className: `header-avatar-btn ${abierto ? "header-avatar-btn--active" : ""}`,
+        type: "button",
+        "aria-label": "Abrir opciones de perfil",
+        "aria-expanded": abierto,
+        onClick: () => setAbierto((prev) => !prev)
+      },
+      h(IconoFigma, { className: "header-avatar-icon", nombre: "avatar" })
+    ),
+    abierto
+      ? h(
+          "div",
+          { className: "header-user-modal", role: "dialog", "aria-label": "Menú de usuario" },
+          h(
+            "div",
+            { className: "header-user-modal__header" },
+            h(
+              "div",
+              { className: "header-user-modal__avatar-mini" },
+              h(IconoFigma, { nombre: "avatar" })
+            ),
+            h(
+              "div",
+              { className: "header-user-modal__info" },
+              h("strong", { className: "header-user-modal__name" }, nombre),
+              h("span", { className: "header-user-modal__email" }, usuario?.email || rol)
+            )
+          ),
+          h("div", { className: "header-user-modal__divider" }),
+          h(
+            "div",
+            { className: "header-user-modal__body" },
+            h(
+              "button",
+              {
+                type: "button",
+                className: "header-user-modal__item",
+                onClick: () => {
+                  setAbierto(false);
+                }
+              },
+              h(
+                "svg",
+                {
+                  className: "header-user-modal__icon",
+                  viewBox: "0 0 24 24",
+                  fill: "none",
+                  stroke: "currentColor",
+                  strokeWidth: "2",
+                  strokeLinecap: "round",
+                  strokeLinejoin: "round"
+                },
+                h("path", { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
+                h("circle", { cx: "12", cy: "7", r: "4" })
+              ),
+              h("span", null, "Mi Perfil")
+            ),
+            h(
+              "button",
+              {
+                type: "button",
+                className: "header-user-modal__item",
+                onClick: () => {
+                  setAbierto(false);
+                }
+              },
+              h(
+                "svg",
+                {
+                  className: "header-user-modal__icon",
+                  viewBox: "0 0 24 24",
+                  fill: "none",
+                  stroke: "currentColor",
+                  strokeWidth: "2",
+                  strokeLinecap: "round",
+                  strokeLinejoin: "round"
+                },
+                h("circle", { cx: "12", cy: "12", r: "3" }),
+                h("path", {
+                  d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                })
+              ),
+              h("span", null, "Configuración")
+            )
+          ),
+          h("div", { className: "header-user-modal__divider" }),
+          h(
+            "div",
+            { className: "header-user-modal__footer" },
+            h(
+              "button",
+              {
+                type: "button",
+                className: "header-user-modal__item header-user-modal__item--logout",
+                onClick: () => {
+                  setAbierto(false);
+                  if (typeof cerrarSesion === "function") {
+                    cerrarSesion();
+                  } else {
+                    window.location.hash = "#/login";
+                  }
+                }
+              },
+              h(
+                "svg",
+                {
+                  className: "header-user-modal__icon",
+                  viewBox: "0 0 24 24",
+                  fill: "none",
+                  stroke: "currentColor",
+                  strokeWidth: "2",
+                  strokeLinecap: "round",
+                  strokeLinejoin: "round"
+                },
+                h("path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" }),
+                h("polyline", { points: "16 17 21 12 16 7" }),
+                h("line", { x1: "21", y1: "12", x2: "9", y2: "12" })
+              ),
+              h("span", null, "Cerrar Sesión")
+            )
+          )
+        )
+      : null
   );
 }
 
@@ -76,11 +241,7 @@ function Header({ ruta }) {
       h(
         "div",
         { className: "site-header__right" },
-        h(
-          "button",
-          { className: "header-avatar-btn", type: "button", "aria-label": "Abrir perfil" },
-          h(IconoFigma, { className: "header-avatar-icon", nombre: "avatar" })
-        )
+        h(UserAvatarMenu)
       )
     )
   );
@@ -193,7 +354,9 @@ function Footer({ onOpenDocumento }) {
   );
 }
 
-export function SiteLayout({ ruta, children }) {
+/* Modal de documentacion oficial: cualquier pantalla lo abre con el evento
+   "prece:open_document_modal". Lo montan los dos layouts. */
+export function ModalDocumentosGlobal() {
   const [modalDocumento, setModalDocumento] = useState(null);
 
   useEffect(() => {
@@ -206,15 +369,21 @@ export function SiteLayout({ ruta, children }) {
     return () => window.removeEventListener("prece:open_document_modal", handleAbrirDoc);
   }, []);
 
+  return h(DocumentosManagerModal, {
+    modalActivo: modalDocumento,
+    onCerrar: () => setModalDocumento(null)
+  });
+}
+
+/* Layout de las rutas publicas (login, activar cuenta). Las pantallas internas
+   usan AppLayout (layouts/app-layout.js). */
+export function SiteLayout({ ruta, children }) {
   return h(
     React.Fragment,
     null,
     h(Header, { ruta }),
     h("main", { className: "page", id: "inicio" }, children),
-    h(Footer, { onOpenDocumento: (tipo) => setModalDocumento(tipo) }),
-    h(DocumentosManagerModal, {
-      modalActivo: modalDocumento,
-      onCerrar: () => setModalDocumento(null)
-    })
+    h(Footer),
+    h(ModalDocumentosGlobal)
   );
 }

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 import { permissionsForRole } from "../../config/permissions.config.mjs";
 import { evaluateAccess, extractContext, resumenPermisos } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
@@ -46,7 +46,7 @@ function sessionPayload(user, accessToken, refreshToken) {
 export const authService = {
   async login({ email, password, request }) {
     if (!email || !password) {
-      throw new HttpError(400, "invalid_credentials_payload", "Email y contraseña son obligatorios");
+      throw errorHttp(400, "INVALID_CREDENTIALS_PAYLOAD", "Email y contraseña son obligatorios");
     }
 
     const ip = obtenerIpCliente(request);
@@ -60,7 +60,7 @@ export const authService = {
       /* El fallo se cuenta por IP siempre, y por cuenta solo cuando la cuenta
          existe, para no permitir bloquear emails inexistentes. */
       registrarFalloLogin(email, ip, { trackEmail: Boolean(user) });
-      throw new HttpError(401, "invalid_credentials", "Credenciales inválidas o cuenta desactivada");
+      throw errorHttp(401, "INVALID_CREDENTIALS", "Credenciales inválidas o cuenta desactivada");
     }
 
     registrarLoginExitoso(email);
@@ -73,7 +73,7 @@ export const authService = {
 
     if (!user) {
       revokeUserSessions(rotated.userId);
-      throw new HttpError(401, "account_inactive", "La cuenta no está activa");
+      throw errorHttp(401, "ACCOUNT_INACTIVE", "La cuenta no está activa");
     }
 
     return sessionPayload(user, signAccessToken(user), rotated.refreshToken);
@@ -81,7 +81,7 @@ export const authService = {
 
   logout(refreshToken) {
     if (!refreshToken) {
-      throw new HttpError(400, "refresh_token_required", "El refresh token es obligatorio para cerrar sesión");
+      throw errorHttp(400, "REFRESH_TOKEN_REQUIRED", "El refresh token es obligatorio para cerrar sesión");
     }
 
     revokeRefreshToken(refreshToken);
@@ -104,19 +104,16 @@ export const authService = {
     };
   },
 
-  listUsers() {
-    return userRepository.list({ includeInactive: true }).map((user) => userRepository.publicView(user));
-  },
 
   deactivateUser(actor, targetUserId, contextSource) {
     const target = userRepository.findById(targetUserId, { includeInactive: true });
 
     if (!target) {
-      throw new HttpError(404, "user_not_found", "Usuario no encontrado");
+      throw errorHttp(404, "USER_NOT_FOUND", "Usuario no encontrado");
     }
 
     if (actor?.id && actor.id === target.id) {
-      throw new HttpError(403, "forbidden", "No puede modificar su propia cuenta");
+      throw errorHttp(403, "FORBIDDEN", "No puede modificar su propia cuenta");
     }
 
     const context = extractContext(contextSource);
@@ -126,15 +123,11 @@ export const authService = {
     });
 
     if (!access.allowed) {
-      throw new HttpError(403, "forbidden", "No tiene permiso para desactivar esta cuenta en el alcance indicado");
+      throw errorHttp(403, "FORBIDDEN", "No tiene permiso para desactivar esta cuenta en el alcance indicado");
     }
 
     const updated = userRepository.deactivate(target.id);
     revokeUserSessions(target.id);
     return userRepository.publicView(updated);
-  }
-};
-revokeUserSessions(target.id);
-return userRepository.publicView(updated);
   }
 };

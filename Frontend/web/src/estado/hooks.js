@@ -33,8 +33,7 @@ export function useSesion() {
     aplicacionLista: estado.fase === FASE.lista,
     refrescar: acciones.refrescarSesion,
     iniciarSesion: acciones.iniciarSesion,
-    cerrarSesion: acciones.cerrarSesion,
-    cambiarPerfilDemo: acciones.cambiarPerfilDemo
+    cerrarSesion: acciones.cerrarSesion
   };
 }
 
@@ -106,4 +105,31 @@ export function useCarga() {
     iniciar: acciones.iniciarCarga,
     terminar: acciones.terminarCarga
   };
+}
+
+/* Datos del usuario autenticado listos para mostrar en pantalla (nombre, rol
+   principal, escuela y ciclo). Reemplaza al viejo AuthService de perfiles demo:
+   todo sale de la sesion real (GET /api/v1/auth/me). */
+const ESCUELA = "E.E.S.T N°1 Monte Grande";
+
+export function useUsuarioActual() {
+  const { usuario, roles, permisos } = contexto().estado.sesion;
+
+  return useMemo(() => {
+    const codigos = roles.map((rol) => rol?.id ?? rol);
+    const nombre = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(" ") || usuario?.email || null;
+
+    return {
+      id: usuario?.id ?? null,
+      nombre,
+      email: usuario?.email ?? null,
+      roles: codigos,
+      /* Rol que decide el tablero de inicio. */
+      rol: codigos.includes("secretario") ? "secretaria" : codigos.includes("preceptor") ? "preceptor" : codigos[0] ?? null,
+      rolNombre: roles[0]?.nombre ?? null,
+      escuela: ESCUELA,
+      cicloLectivo: new Date().getFullYear(),
+      permisos
+    };
+  }, [usuario, roles, permisos]);
 }

@@ -6,11 +6,17 @@ Login propio con JWT, refresh tokens, control de permisos por rol y alcance, y b
 
 | Método | Ruta | Auth | Descripción |
 | --- | --- | --- | --- |
-| POST | `/auth/login` | No | Inicia sesión |
-| POST | `/auth/refresh` | No | Rota el refresh token y emite un access token nuevo |
-| POST | `/auth/logout` | No | Revoca el refresh token |
-| GET | `/auth/me` | Bearer | Perfil y asignaciones del usuario autenticado |
-| POST | `/auth/users/:userId/deactivate` | Bearer + `users.deactivate` | Baja lógica de la cuenta |
+| POST | `/api/v1/auth/login` | No | Inicia sesión |
+| POST | `/api/v1/auth/refresh` | No | Rota el refresh token y emite un access token nuevo |
+| POST | `/api/v1/auth/logout` | No | Revoca el refresh token |
+| GET | `/api/v1/auth/me` | Bearer | Perfil, roles y permisos del usuario autenticado |
+| GET | `/api/v1/auth/permissions` | Bearer | Roles, permisos y resumen por módulo |
+| GET | `/api/v1/users` | Bearer + `users.read` | Lista usuarios (filtros `q`, `rol`, `estado`) |
+| POST | `/api/v1/users` | Bearer + `identity.create` | Alta con contraseña temporal |
+| GET | `/api/v1/users/:userId` | Bearer + `users.read` | Detalle |
+| PATCH | `/api/v1/users/:userId` | Bearer + `identity.update` | Datos y estado (`activo`/`inactivo`) |
+| PUT | `/api/v1/users/:userId/roles` | Bearer + `identity.update` | Reemplaza los roles |
+| PATCH | `/api/v1/users/:userId/deactivate` | Bearer + `users.deactivate` | Baja lógica de la cuenta |
 
 ## Estrategia de autenticación
 

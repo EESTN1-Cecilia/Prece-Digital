@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
 import { createApp } from "../src/app.mjs";
+import { rutas } from "./helpers.mjs";
 import { healthCheck } from "../controllers/health.controller.mjs";
 import { conflicto, errorDeValidacion, noEncontrado, sinPermisos } from "../utils/api-error.mjs";
 
@@ -25,11 +26,6 @@ const rutasDePrueba = {
   "GET /test/conflicto": () => {
     throw conflicto("El DNI ya esta registrado.");
   },
-  "GET /test/mysql": () => {
-    const fallo = new Error("ER_DUP_ENTRY: Duplicate entry '30111222' for key 'uq_usuarios_dni'");
-    fallo.code = "ER_DUP_ENTRY";
-    throw fallo;
-  },
   "GET /test/interno": () => {
     throw new Error("SELECT * FROM usuarios WHERE id = 1 fallo en /var/app/db.mjs");
   },
@@ -40,7 +36,7 @@ const rutasDePrueba = {
 };
 
 before(async () => {
-  servidor = createApp(rutasDePrueba);
+  servidor = createApp(rutas(rutasDePrueba));
   await new Promise((listo) => servidor.listen(PUERTO, listo));
 });
 
@@ -82,14 +78,6 @@ test("los conflictos devuelven 409", async () => {
   assert.equal(status, 409);
   assert.equal(cuerpo.error.code, "CONFLICT");
   assert.equal(cuerpo.error.message, "El DNI ya esta registrado.");
-});
-
-test("un error de clave duplicada de MySQL se traduce a 409 sin exponer la consulta", async () => {
-  const { status, cuerpo } = await pedir("/test/mysql");
-
-  assert.equal(status, 409);
-  assert.equal(cuerpo.error.code, "CONFLICT");
-  assert.ok(!JSON.stringify(cuerpo).includes("uq_usuarios_dni"));
 });
 
 test("un error inesperado devuelve 500 sin SQL, rutas internas ni stack", async () => {

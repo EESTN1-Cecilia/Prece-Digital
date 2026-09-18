@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias (monorepo)
+        run: npm ci --workspace=@prece-digital/api --workspace=@prece-digital/web --include-workspace-root
+
+      - name: Sintaxis
+        run: npm run check
+
+      - name: Tests Backend (incluye contrato con el Frontend y docs de endpoints)
+        run: npm test -w @prece-digital/api
+
+      - name: Tests Frontend web
+        run: npm test -w @prece-digital/web
+
+      - name: Build Frontend web
+        run: npm run build -w @prece-digital/web

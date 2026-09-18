@@ -455,7 +455,7 @@ export function StudentEditModal({
   );
 }
 
-import { AuthService } from "../../../../services/auth-service.js";
+import { useUsuarioActual } from "../../../../estado/index.js";
 
 /**
  * Modal 4: Registrar / Cargar Observación Institucional
@@ -467,7 +467,7 @@ export function StudentObservationModal({
   onSubmit,
   isSubmitting = false
 }) {
-  const currentUser = typeof AuthService !== "undefined" ? AuthService.getCurrentUser() : null;
+  const currentUser = useUsuarioActual();
   const defaultResponsable = currentUser?.rolNombre || currentUser?.nombre || "Preceptor Turno Mañana";
 
   const [tipo, setTipo] = useState("Académica");

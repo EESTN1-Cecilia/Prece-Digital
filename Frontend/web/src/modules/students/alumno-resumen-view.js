@@ -3,14 +3,12 @@ import { h } from "../../layouts/site-layout.js";
 import { LoadingState, EmptyState, ErrorState, AccessDeniedState } from "../../components/common/state-handlers.js";
 import { StudentSummary } from "./components/student-summary.js";
 import { StudentsService } from "./students-service.js";
-import { AuthService } from "../../services/auth-service.js";
 
 /**
  * AlumnoResumenView: Vista del perfil resumido del alumno (Ficha de Alumno)
  * Maneja los estados Loading, Alumno Encontrado, Información Incompleta, Inexistente, Error y Acceso Denegado (401/403).
  */
 export default function AlumnoResumenView({ id }) {
-  const [user, setUser] = useState(AuthService.getCurrentUser());
   const [studentId, setStudentId] = useState(id);
   const [resumen, setResumen] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,16 +75,6 @@ export default function AlumnoResumenView({ id }) {
     fetchSummary();
   }, [fetchSummary]);
 
-  // Manejar cambio de roles para recargar datos y permisos
-  useEffect(() => {
-    const handleRoleChanged = (e) => {
-      setUser(e.detail);
-      fetchSummary(true);
-    };
-    window.addEventListener("auth:role_changed", handleRoleChanged);
-    return () => window.removeEventListener("auth:role_changed", handleRoleChanged);
-  }, [fetchSummary]);
-
   return h(
     "section",
     { className: "welcome-panel alumno-resumen-panel" },
@@ -98,13 +86,7 @@ export default function AlumnoResumenView({ id }) {
 
     // 2. Estado de Acceso Denegado (401 / 403)
     !loading && accessDenied
-      ? h(AccessDeniedState, {
-          rolRequerido: "Secretaría / Preceptoría / Directivo",
-          onSwitchRole: (nuevoRol) => {
-            AuthService.switchRole(nuevoRol);
-            fetchSummary(true);
-          }
-        })
+      ? h(AccessDeniedState, { rolRequerido: "Secretaría / Preceptoría / Directivo" })
       : null,
 
     // 3. Estado de Alumno Inexistente (404)

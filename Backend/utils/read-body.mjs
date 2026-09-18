@@ -1,39 +1,41 @@
-import { HttpError } from "./http-error.mjs";
+import { errorHttp, solicitudInvalida } from "./api-error.mjs";
 
+/* Unico lector del cuerpo JSON de la API. Lo usa src/app.mjs para todas las rutas
+   con cuerpo (POST, PUT, PATCH, DELETE) y deja el resultado en `ctx.body`: los
+   controladores nunca leen el request directamente.
+
+   Devuelve {} si no hay cuerpo. Limita el tamanio para evitar abuso de memoria. */
 const MAX_BODY_BYTES = 1024 * 1024;
 
-export function readJsonBody(request) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
+export async function readJsonBody(request) {
+  const trozos = [];
+  let total = 0;
 
-    request.on("data", (chunk) => {
-      size += chunk.length;
+  try {
+    for await (const trozo of request) {
+      total += trozo.length;
 
-      if (size > MAX_BODY_BYTES) {
-        reject(new HttpError(413, "payload_too_large", "El cuerpo de la solicitud supera el límite"));
-        request.destroy();
-        return;
+      if (total > MAX_BODY_BYTES) {
+        throw errorHttp(413, "PAYLOAD_TOO_LARGE", "El cuerpo de la solicitud supera el limite permitido.");
       }
 
-      chunks.push(chunk);
-    });
+      trozos.push(trozo);
+    }
+  } catch (error) {
+    if (error?.code === "PAYLOAD_TOO_LARGE") {
+      throw error;
+    }
 
-    request.on("end", () => {
-      if (size === 0) {
-        resolve({});
-        return;
-      }
+    throw solicitudInvalida("No se pudo leer el cuerpo de la solicitud.");
+  }
 
-      try {
-        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-      } catch {
-        reject(new HttpError(400, "invalid_json", "El cuerpo debe ser JSON válido"));
-      }
-    });
+  if (!total) {
+    return {};
+  }
 
-    request.on("error", () => {
-      reject(new HttpError(400, "invalid_body", "No se pudo leer el cuerpo de la solicitud"));
-    });
-  });
+  try {
+    return JSON.parse(Buffer.concat(trozos).toString("utf8"));
+  } catch {
+    throw solicitudInvalida("El cuerpo de la solicitud debe ser JSON valido.");
+  }
 }

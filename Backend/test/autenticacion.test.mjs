@@ -86,8 +86,8 @@ test("credenciales inválidas se rechazan sin revelar si el usuario existe", asy
 
   assert.equal(inexistente.status, 401);
   assert.equal(contrasenaErronea.status, 401);
-  assert.equal(inexistente.cuerpo.error.code, "invalid_credentials");
-  assert.equal(contrasenaErronea.cuerpo.error.code, "invalid_credentials");
+  assert.equal(inexistente.cuerpo.error.code, "INVALID_CREDENTIALS");
+  assert.equal(contrasenaErronea.cuerpo.error.code, "INVALID_CREDENTIALS");
   assert.equal(inexistente.cuerpo.error.message, contrasenaErronea.cuerpo.error.message);
   assert.ok(!JSON.stringify(inexistente.cuerpo).includes("token"));
 });
@@ -140,7 +140,7 @@ test("un token expirado es rechazado", async () => {
   const { status, cuerpo } = await me(vencido);
 
   assert.equal(status, 401);
-  assert.equal(cuerpo.error.code, "invalid_token");
+  assert.equal(cuerpo.error.code, "INVALID_TOKEN");
 });
 
 test("los endpoints protegidos no se ejecutan sin un token válido", async () => {

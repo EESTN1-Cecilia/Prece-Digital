@@ -1,13 +1,22 @@
+/* Registro unico de rutas de la API.
+
+   Cada ruta: { method, path, middlewares?, handler }.
+   - `:nombre` en el path llega al handler en `params`.
+   - Las rutas protegidas usan siempre [verifyToken, required(PERMISO)].
+   - El orden importa: gana la primera coincidencia.
+
+   Los permisos salen de config/permissions.config.mjs. */
+
 import { healthCheck } from "../controllers/health.controller.mjs";
 import { listModules, listRoles } from "../controllers/catalog.controller.mjs";
-import { listStudents } from "../controllers/students.controller.mjs";
-import { listarCurso, listarDivision, listarGrupo, listarTaller } from "../modules/students/students.controller.mjs";
-import { crearAlumno, listarAlumnos, obtenerAlumno, modificarAlumno, desactivarAlumno } from "../modules/students/students.controller.mjs";
+import * as authorizationController from "../controllers/authorization.controller.mjs";
 import { verifyToken } from "../middlewares/auth.middleware.mjs";
 import { authorize } from "../middlewares/authorize.middleware.mjs";
-import { PERMISSIONS as P, ROLES } from "../config/permissions.config.mjs";
+import { PERMISSIONS as P } from "../config/permissions.config.mjs";
 
 import * as authController from "../modules/auth/auth.controller.mjs";
+import * as usersController from "../modules/auth/users.controller.mjs";
+import * as studentsController from "../modules/students/students.controller.mjs";
 import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
@@ -22,23 +31,28 @@ import * as academicController from "../modules/academic/academic.controller.mjs
 import * as academicRecordsController from "../modules/academic-records/academic-records.controller.mjs";
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
-import * as authorizationController from "../controllers/authorization.controller.mjs";
-import { requierePermiso, requiereSesion } from "../middlewares/authorization.middleware.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
 
-const required = (permission, roles) => authorize({ permission, roles });
-const scoped = (permission, roles) => authorize({ permission, roles });
+/* Exige un permiso existente: un typo en P.ALGO rompe el arranque en lugar de
+   dejar la ruta abierta a cualquier usuario autenticado. */
+function required(permission) {
+  if (!permission) {
+    throw new Error("Ruta con permiso inexistente: revisar PERMISSIONS en config/permissions.config.mjs");
+  }
+
+  return authorize({ permission });
+}
 
 export const apiRoutes = [
   { method: "GET", path: "/health", handler: healthCheck },
   { method: "GET", path: "/api/v1/modules", handler: listModules },
   { method: "GET", path: "/api/v1/roles", handler: listRoles },
-  { method: "GET", path: "/api/v1/authorization/me", handler: requiereSesion(authorizationController.getMe) },
-  { method: "GET", path: "/api/v1/authorization/modules", handler: requierePermiso("identity:read", authorizationController.getModules) },
-  { method: "GET", path: "/api/v1/authorization/roles", handler: requierePermiso("identity:read", authorizationController.getRoles) },
-  { method: "GET", path: "/api/v1/authorization/permissions", handler: requierePermiso("identity:read", authorizationController.getPermissions) },
-  { method: "GET", path: "/api/v1/authorization/roles/:codigo/permissions", handler: requierePermiso("identity:read", authorizationController.getRolePermissions) },
-  { method: "PUT", path: "/api/v1/authorization/roles/:codigo/permissions", handler: requierePermiso("identity:update", authorizationController.putRolePermissions) },
+  { method: "GET", path: "/api/v1/authorization/me", middlewares: [verifyToken], handler: authorizationController.getMe },
+  { method: "GET", path: "/api/v1/authorization/modules", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getModules },
+  { method: "GET", path: "/api/v1/authorization/roles", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRoles },
+  { method: "GET", path: "/api/v1/authorization/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getPermissions },
+  { method: "GET", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRolePermissions },
+  { method: "PUT", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: authorizationController.putRolePermissions },
 
   { method: "POST", path: "/api/v1/auth/login", handler: authController.login },
   { method: "POST", path: "/api/v1/auth/refresh", handler: authController.refresh },
@@ -46,18 +60,32 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/auth/me", middlewares: [verifyToken], handler: authController.me },
   { method: "GET", path: "/api/v1/auth/permissions", middlewares: [verifyToken], handler: authController.permissions },
   { method: "GET", path: "/api/v1/users", middlewares: [verifyToken, required(P.USERS_READ)], handler: authController.listUsers },
+  { method: "POST", path: "/api/v1/users", middlewares: [verifyToken, required(P.IDENTITY_CREATE)], handler: usersController.createUser },
+  { method: "GET", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.USERS_READ)], handler: usersController.getUser },
+  { method: "PATCH", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.updateUser },
+  { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.replaceUserRoles },
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
 
-  { method: "GET", path: "/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students", middlewares: [verifyToken, scoped(P.STUDENTS_READ)], handler: listStudents },
-  { method: "GET", path: "/api/v1/students/listas/curso", handler: listarCurso },
-  { method: "GET", path: "/api/v1/students/listas/division", handler: listarDivision },
-  { method: "GET", path: "/api/v1/students/listas/grupo", handler: listarGrupo },
-  { method: "GET", path: "/api/v1/students/listas/taller", handler: listarTaller },
-  { method: "POST", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: crearAlumno },
-  { method: "GET", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: listarAlumnos },
-  { method: "GET", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: obtenerAlumno },
-  { method: "PATCH", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: modificarAlumno },
-  { method: "DELETE", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: desactivarAlumno },
+  { method: "GET", path: "/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: academicController.listAlumnosDeDivision },
+  { method: "GET", path: "/api/v1/students/listas/curso", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarCurso },
+  { method: "GET", path: "/api/v1/students/listas/division", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarDivision },
+  { method: "GET", path: "/api/v1/students/listas/grupo", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarGrupo },
+  { method: "GET", path: "/api/v1/students/listas/taller", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarTaller },
+  { method: "POST", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.crearAlumno },
+  { method: "GET", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarAlumnos },
+  { method: "GET", path: "/api/v1/students/divisions", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarDivisiones },
+  { method: "GET", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerAlumno },
+  { method: "PATCH", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.modificarAlumno },
+  { method: "DELETE", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.desactivarAlumno },
+  { method: "GET", path: "/api/v1/students/:studentId/summary", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerResumen },
+  { method: "GET", path: "/api/v1/students/:studentId/profile", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerPerfil },
+  { method: "GET", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservacionesDeAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: studentsController.crearObservacion },
+  { method: "POST", path: "/api/v1/students/:studentId/transfers", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.iniciarPase },
+  { method: "POST", path: "/api/v1/students/:studentId/certificate", middlewares: [verifyToken, required(P.DOCUMENTS_WRITE)], handler: studentsController.emitirConstancia },
+  { method: "GET", path: "/api/v1/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservaciones },
+  { method: "GET", path: "/api/v1/dashboard/secretaria", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.tableroSecretaria },
+  { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
 
   { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },
   { method: "GET", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.listTutors },
@@ -211,8 +239,8 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/notifications", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.listNotifications },
   { method: "GET", path: "/api/v1/notifications/unread-count", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getUnreadCount },
   { method: "GET", path: "/api/v1/notifications/:notificationId", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getNotification },
-  { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAsRead },
-  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAllRead },
+  { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.markAsRead },
+  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.markAllRead },
 
   { method: "POST", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.createArea },
   { method: "GET", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.listAreas },
@@ -229,12 +257,12 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/curriculum/activities/:activityId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.getActivity },
   { method: "PATCH", path: "/api/v1/curriculum/activities/:activityId", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.updateActivity },
 
-  { method: "GET", path: "/api/v1/audit/logs", handler: requierePermiso("audit:read", auditController.listLogs) },
-  { method: "GET", path: "/api/v1/audit/logs/:logId", handler: requierePermiso("audit:read", auditController.getLog) },
-  { method: "GET", path: "/api/v1/audit/errors", handler: requierePermiso("audit:read", auditController.listErrors) },
-  { method: "GET", path: "/api/v1/audit/errors/:errorId", handler: requierePermiso("audit:read", auditController.getError) },
-  { method: "GET", path: "/api/v1/audit/report", handler: requierePermiso("audit:read", auditController.report) },
-  { method: "GET", path: "/api/v1/audit/export", handler: requierePermiso("audit:export", auditarAccion({ tabla: "auditoria", accion: "export" })(auditController.exportCsv)) }
+  { method: "GET", path: "/api/v1/audit/logs", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.listLogs },
+  { method: "GET", path: "/api/v1/audit/logs/:logId", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.getLog },
+  { method: "GET", path: "/api/v1/audit/errors", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.listErrors },
+  { method: "GET", path: "/api/v1/audit/errors/:errorId", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.getError },
+  { method: "GET", path: "/api/v1/audit/report", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.report },
+  { method: "GET", path: "/api/v1/audit/export", middlewares: [verifyToken, required(P.AUDIT_EXPORT)], handler: auditarAccion({ tabla: "auditoria", accion: "export" })(auditController.exportCsv) }
 ];
 
 function tokenize(path) {
@@ -264,10 +292,10 @@ function matchPath(patternTokens, pathTokens) {
   return params;
 }
 
-export function matchRoute(method, pathname) {
+export function matchRoute(routes, method, pathname) {
   const pathTokens = tokenize(pathname);
 
-  for (const route of apiRoutes) {
+  for (const route of routes) {
     if (route.method !== method) {
       continue;
     }

@@ -1,4 +1,5 @@
 import { authService } from "./auth.service.mjs";
+import { usersService } from "./users.service.mjs";
 
 export async function login({ body, request }) {
   const session = await authService.login({
@@ -41,10 +42,10 @@ export function permissions({ user }) {
   };
 }
 
-export function listUsers() {
+export function listUsers({ url }) {
   return {
     statusCode: 200,
-    body: { data: authService.listUsers() }
+    body: { data: usersService.list(Object.fromEntries(url.searchParams.entries())) }
   };
 }
 

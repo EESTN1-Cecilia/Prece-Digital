@@ -32,10 +32,6 @@ function parseIntEnv(valor, defecto) {
 export const appConfig = {
   env: environment,
   apiPort: Number.parseInt(process.env.API_PORT ?? "3000", 10),
-  databaseClient: process.env.DATABASE_CLIENT ?? "mysql",
-  databaseUrl: process.env.DATABASE_URL ?? "",
-  productionDatabaseClient: process.env.PRODUCTION_DATABASE_CLIENT ?? "postgres",
-  productionDatabaseUrl: process.env.PRODUCTION_DATABASE_URL ?? "",
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET ?? process.env.SESSION_SECRET ?? "change-me-access",
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET ?? "change-me-refresh",
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? "15m",
@@ -43,6 +39,5 @@ export const appConfig = {
   loginMaxEmailAttempts: parseIntEnv("LOGIN_MAX_EMAIL_ATTEMPTS", 5),
   loginMaxIpAttempts: parseIntEnv("LOGIN_MAX_IP_ATTEMPTS", 20),
   loginWindowMs: parseIntEnv("LOGIN_WINDOW_MS", 15 * 60 * 1000),
-  loginLockMs: parseIntEnv("LOGIN_LOCK_MS", 15 * 60 * 1000),
-  authDevUserId: process.env.AUTH_DEV_USER_ID ?? ""
+  loginLockMs: parseIntEnv("LOGIN_LOCK_MS", 15 * 60 * 1000)
 };

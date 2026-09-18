@@ -9,7 +9,6 @@ sidebar.js          menú lateral
 encabezado-app.js   encabezado: migas, notificaciones y menú de usuario
 menu.js             lógica pura: armar el menú, la entrada activa y las migas
 site-layout.js      layout del sitio público: encabezado y pie del diseño original
-aviso-demo.js       aviso de sesión de demostración
 ```
 
 ## Dos layouts

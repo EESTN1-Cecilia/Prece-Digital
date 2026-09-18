@@ -4,49 +4,7 @@ import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../components/common/state-handlers.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { StudentsService } from "./students-service.js";
-import { AuthService } from "../../services/auth-service.js";
 
-/**
- * Catálogo institucional de las 27 divisiones de la E.E.S.T N°1 Monte Grande.
- */
-const CURSOS_CATALOG = [
-  // Ciclo Básico 1° Año
-  { id: 1, curso: "1°", division: "1", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 31, activos: 30, inactivos: 1 },
-  { id: 2, curso: "1°", division: "2", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 30, activos: 29, inactivos: 1 },
-  { id: 3, curso: "1°", division: "3", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 29, activos: 28, inactivos: 1 },
-  { id: 4, curso: "1°", division: "4", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 32, activos: 31, inactivos: 1 },
-  { id: 5, curso: "1°", division: "6", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 28, activos: 28, inactivos: 0 },
-
-  // Ciclo Básico 2° Año
-  { id: 6, curso: "2°", division: "1", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 30, activos: 29, inactivos: 1 },
-  { id: 7, curso: "2°", division: "2", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 31, activos: 30, inactivos: 1 },
-  { id: 8, curso: "2°", division: "3", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 28, activos: 27, inactivos: 1 },
-  { id: 9, curso: "2°", division: "4", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 29, activos: 28, inactivos: 1 },
-  { id: 10, curso: "2°", division: "6", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 27, activos: 27, inactivos: 0 },
-
-  // Ciclo Básico 3° Año
-  { id: 11, curso: "3°", division: "1", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 33, activos: 32, inactivos: 1 },
-  { id: 12, curso: "3°", division: "2", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 30, activos: 30, inactivos: 0 },
-  { id: 13, curso: "3°", division: "3", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 29, activos: 28, inactivos: 1 },
-  { id: 14, curso: "3°", division: "4", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 31, activos: 30, inactivos: 1 },
-  { id: 15, curso: "3°", division: "6", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 28, activos: 27, inactivos: 1 },
-
-  // Ciclo Superior - Técnico en Informática
-  { id: 16, curso: "4°", division: "1", anio: 4, orientacion: "Técnico en Informática", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 32, activos: 31, inactivos: 1 },
-  { id: 17, curso: "4°", division: "2", anio: 4, orientacion: "Técnico en Informática", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 30, activos: 29, inactivos: 1 },
-  { id: 18, curso: "5°", division: "1", anio: 5, orientacion: "Técnico en Informática", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 28, activos: 28, inactivos: 0 },
-  { id: 19, curso: "5°", division: "2", anio: 5, orientacion: "Técnico en Informática", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 29, activos: 28, inactivos: 1 },
-  { id: 20, curso: "6°", division: "1", anio: 6, orientacion: "Técnico en Informática", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 26, activos: 25, inactivos: 1 },
-  { id: 21, curso: "7°", division: "1", anio: 7, orientacion: "Técnico en Informática", turnoAula: "Mañana", turnoTaller: "Mañana", cantidad: 24, activos: 24, inactivos: 0 },
-
-  // Ciclo Superior - Técnico en Programación
-  { id: 22, curso: "4°", division: "3", anio: 4, orientacion: "Técnico en Programación", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 31, activos: 30, inactivos: 1 },
-  { id: 23, curso: "4°", division: "4", anio: 4, orientacion: "Técnico en Programación", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 30, activos: 29, inactivos: 1 },
-  { id: 24, curso: "5°", division: "3", anio: 5, orientacion: "Técnico en Programación", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 29, activos: 29, inactivos: 0 },
-  { id: 25, curso: "5°", division: "4", anio: 5, orientacion: "Técnico en Programación", turnoAula: "Tarde", turnoTaller: "Mañana", cantidad: 27, activos: 26, inactivos: 1 },
-  { id: 26, curso: "6°", division: "3", anio: 6, orientacion: "Técnico en Programación", turnoAula: "Mañana", turnoTaller: "Tarde", cantidad: 26, activos: 25, inactivos: 1 },
-  { id: 27, curso: "7°", division: "2", anio: 7, orientacion: "Técnico en Programación", turnoAula: "Tarde", turnoTaller: "Tarde", cantidad: 23, activos: 23, inactivos: 0 }
-];
 
 function IconAula({ className = "card-info-icon" }) {
   return h(
@@ -96,7 +54,20 @@ function IconMatricula({ className = "card-info-icon" }) {
 }
 
 export default function AlumnosListView() {
-  const [user, setUser] = useState(AuthService.getCurrentUser());
+
+  /* Directorio de cursos: catalogo de divisiones con cantidades reales (API). */
+  const [cursosCatalogo, setCursosCatalogo] = useState([]);
+  const [errorCatalogo, setErrorCatalogo] = useState(null);
+
+  useEffect(() => {
+    let vigente = true;
+    StudentsService.getDivisiones()
+      .then((divisiones) => vigente && setCursosCatalogo(divisiones))
+      .catch((fallo) => vigente && setErrorCatalogo(fallo?.mensaje ?? "No se pudo cargar el directorio de cursos."));
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
   // Estado del Curso Abierto: si es null, muestra las tarjetas de cursos; si no, muestra los alumnos del curso
   const [openCourse, setOpenCourse] = useState(null); // { curso: "1°", division: "1" } | null
@@ -133,14 +104,6 @@ export default function AlumnosListView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Escuchar cambios de rol globales
-  useEffect(() => {
-    const handleRoleChanged = (e) => {
-      setUser(e.detail);
-    };
-    window.addEventListener("auth:role_changed", handleRoleChanged);
-    return () => window.removeEventListener("auth:role_changed", handleRoleChanged);
-  }, []);
 
   // Sincronizar estado inicial y cambios en el hash URL (#/alumnos?curso=1°&div=1)
   useEffect(() => {
@@ -243,7 +206,7 @@ export default function AlumnosListView() {
   // Metadatos del curso actualmente abierto
   const activeCourseMeta = useMemo(() => {
     if (!openCourse) return null;
-    return CURSOS_CATALOG.find(
+    return cursosCatalogo.find(
       (c) =>
         c.curso.replace("°", "") === openCourse.curso.replace("°", "") &&
         String(c.division) === String(openCourse.division)
@@ -255,19 +218,19 @@ export default function AlumnosListView() {
       turnoTaller: "Tarde",
       cantidad: 30
     };
-  }, [openCourse]);
+  }, [openCourse, cursosCatalogo]);
 
   // Otras divisiones del mismo año (para alternar rápido)
   const peerDivisions = useMemo(() => {
     if (!openCourse) return [];
-    return CURSOS_CATALOG.filter(
+    return cursosCatalogo.filter(
       (c) => c.curso.replace("°", "") === openCourse.curso.replace("°", "")
     );
-  }, [openCourse]);
+  }, [openCourse, cursosCatalogo]);
 
   // Cursos filtrados para la pantalla de tarjetas (Nivel 1)
   const filteredCourseCards = useMemo(() => {
-    return CURSOS_CATALOG.filter((c) => {
+    return cursosCatalogo.filter((c) => {
       // Filtro por búsqueda de texto
       if (courseSearch.trim()) {
         const q = courseSearch.trim().toLowerCase();
@@ -295,7 +258,7 @@ export default function AlumnosListView() {
 
       return true;
     });
-  }, [courseSearch, courseFilterCiclo, courseFilterAnio, courseFilterTurno]);
+  }, [cursosCatalogo, courseSearch, courseFilterCiclo, courseFilterAnio, courseFilterTurno]);
 
   const handleSort = (field) => {
     if (sortBy === field) {
@@ -585,7 +548,7 @@ export default function AlumnosListView() {
               options: [
                 { value: "todas", label: "Todas las Condiciones" },
                 { value: "Regular", label: "Regular" },
-                { value: "Libre", label: "Libre" }
+                { value: "Irregular", label: "Irregular" }
               ]
             })
           )
@@ -705,7 +668,7 @@ export default function AlumnosListView() {
                           h(
                             "span",
                             {
-                              className: `condicion-tag ${alumno.condicion === "Libre" ? "condicion-tag--libre" : "condicion-tag--regular"}`
+                              className: `condicion-tag ${alumno.condicion === "Irregular" ? "condicion-tag--libre" : "condicion-tag--regular"}`
                             },
                             alumno.condicion || "Regular"
                           )
@@ -1048,8 +1011,10 @@ export default function AlumnosListView() {
           )
         ),
 
+        errorCatalogo ? h(ErrorState, { mensaje: errorCatalogo }) : null,
+
         // Mensaje cuando no hay cursos coincidentes con los filtros
-        filteredCourseCards.length === 0
+        !errorCatalogo && filteredCourseCards.length === 0
           ? h(EmptyState, {
               mensaje: "No se encontraron cursos coincidentes con los criterios de búsqueda seleccionados.",
               action: h(

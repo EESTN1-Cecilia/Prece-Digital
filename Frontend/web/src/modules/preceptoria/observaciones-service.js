@@ -14,18 +14,6 @@ export const DEFAULT_OBSERVATION_SECTORS = [
   "Secretaría"
 ];
 
-/* Endpoint reservado para cuando el backend exponga observaciones propias. */
-export const OBSERVATIONS_API_PATH = "/api/v1/observaciones";
-
-export async function getObservationsFromApi(httpClient) {
-  if (typeof httpClient !== "function") {
-    throw new TypeError("Se requiere un cliente HTTP para consultar observaciones.");
-  }
-
-  const response = await httpClient(OBSERVATIONS_API_PATH);
-  return Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
-}
-
 export function getDefaultObservationForm(initialValues = {}) {
   const base = {
     alumno: "",
@@ -52,30 +40,29 @@ export function resolveResponsibleFromUser(user, useAuthenticatedUserAsResponsib
   return user.rolNombre || user.nombre || "";
 }
 
-export function getStoredObservations() {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem("prece_observaciones_registradas_v1");
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function aFechaPantalla(valor) {
+  const texto = String(valor ?? "").slice(0, 10);
+  const [anio, mes, dia] = texto.split("-");
+  return anio && mes && dia ? `${dia}/${mes}/${anio}` : "-";
 }
 
-export function saveObservationRecords(observaciones) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(
-    "prece_observaciones_registradas_v1",
-    JSON.stringify(Array.isArray(observaciones) ? observaciones : [])
-  );
+/* Observacion de la API (GET /api/v1/observations) -> registro de pantalla. */
+export function aRegistroVista(observacion) {
+  return {
+    id: observacion.id,
+    alumnoId: observacion.alumnoId,
+    alumno: observacion.alumno,
+    dni: observacion.dni ?? "",
+    tipo: observacion.tipo,
+    estado: observacion.estado,
+    fecha: aFechaPantalla(observacion.fecha),
+    descripcion: observacion.descripcion,
+    sector: observacion.sector ?? "",
+    responsable: observacion.responsable ?? "",
+    creada: aFechaPantalla(observacion.creadoEn),
+    modificada: observacion.actualizadoEn && observacion.actualizadoEn !== observacion.creadoEn ? aFechaPantalla(observacion.actualizadoEn) : "-",
+    status: observacion.estado
+  };
 }
 
 export function buildObservationRecord(data) {

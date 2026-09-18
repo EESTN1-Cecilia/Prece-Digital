@@ -21,8 +21,8 @@ import React, { createContext, useCallback, useEffect, useMemo, useReducer, useR
 
 const h = React.createElement;
 import { EVENTO_SESION_EXPIRADA, reiniciarSesionExpirada } from "../services/http.js";
-import { cerrarSesionRemota, iniciarSesion as iniciarSesionApi, obtenerSesion, sesionDemo } from "../services/identity-api.js";
-import { listarNotificaciones, marcarNotificacionLeida } from "../services/notificaciones-api.js";
+import { cerrarSesionRemota, iniciarSesion as iniciarSesionApi, obtenerSesion } from "../services/identity-api.js";
+import { listarNotificaciones, marcarNotificacionLeida, marcarTodasLasNotificacionesLeidas } from "../services/notificaciones-api.js";
 
 export const ContextoEstado = createContext(null);
 
@@ -51,8 +51,7 @@ export const ESTADO_INICIAL = {
     roles: [],
     permisos: [],
     alcances: [],
-    origen: null,
-    perfilDemo: null
+    origen: null
   },
   notificaciones: {
     items: [],
@@ -74,8 +73,7 @@ function normalizarSesion(datos, origen) {
     roles: datos?.usuario?.roles ?? [],
     permisos: datos?.permisos ?? [],
     alcances: datos?.alcances ?? [],
-    origen,
-    perfilDemo: datos?.perfilDemo ?? null
+    origen
   };
 }
 
@@ -305,11 +303,6 @@ export function ProveedorEstado({ children }) {
         }
       },
 
-      /* Permite mirar las pantallas con
-         distintos permisos sin tocar codigo. */
-      cambiarPerfilDemo(perfilId) {
-        despachar({ tipo: "sesion/lista", datos: sesionDemo(perfilId), origen: "demo" });
-      },
 
       refrescarNotificaciones: cargarNotificaciones,
 
@@ -325,8 +318,14 @@ export function ProveedorEstado({ children }) {
         }
       },
 
-      marcarTodasLeidas() {
+      async marcarTodasLeidas() {
         despachar({ tipo: "notificaciones/todas-leidas" });
+
+        try {
+          await marcarTodasLasNotificacionesLeidas();
+        } catch (error) {
+          despachar({ tipo: "notificaciones/error", error });
+        }
       },
 
       mostrarErrorGlobal(error) {

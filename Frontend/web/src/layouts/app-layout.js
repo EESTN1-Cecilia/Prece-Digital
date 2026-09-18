@@ -10,7 +10,7 @@
 import React, { useEffect, useState } from "react";
 import { Sidebar } from "./sidebar.js";
 import { EncabezadoApp, Migas } from "./encabezado-app.js";
-import { AvisoSesionDemo } from "./aviso-demo.js";
+import { ModalDocumentosGlobal } from "./site-layout.js";
 
 const h = React.createElement;
 
@@ -45,9 +45,9 @@ export function AppLayout({ ruta, children }) {
         /* Las migas van sobre el contenido: en el encabezado azul competirian
            con la barra de secciones. */
         h(Migas, { hash: ruta }),
-        h(AvisoSesionDemo),
         children
       )
-    )
+    ),
+    h(ModalDocumentosGlobal)
   );
 }

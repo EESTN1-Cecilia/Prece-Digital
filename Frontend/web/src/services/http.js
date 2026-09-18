@@ -248,21 +248,22 @@ function errorDeRespuesta(respuesta, cuerpo, recurso) {
   });
 }
 
-/* `opciones` acepta lo mismo que fetch, mas:
+/* Unico cliente HTTP del frontend: todas las llamadas a la API pasan por aca.
+
+   `opciones` acepta lo mismo que fetch, mas:
      recurso: texto para el mensaje de 404 ("el usuario solicitado")
-     tiempoLimite: milisegundos antes de cortar la solicitud */
+     tiempoLimite: milisegundos antes de cortar la solicitud
+     crudo: devuelve el cuerpo completo ({ data, paginacion, ... }) en lugar de `data` */
 export async function pedir(ruta, opciones = {}) {
-  const { recurso, tiempoLimite = TIEMPO_LIMITE, ...resto } = opciones;
+  const { recurso, tiempoLimite = TIEMPO_LIMITE, crudo = false, ...resto } = opciones;
   const metodo = resto.method ?? "GET";
   let respuesta;
 
   const token = leerToken();
 
   try {
-    /* Sin `credentials`: la autenticacion es por token en la cabecera, asi que el
-       Access-Control-Allow-Origin: * que devuelve hoy el backend alcanza para leer.
-       Las escrituras siguen bloqueadas hasta que el backend responda OPTIONS
-       (su issue #70) permitiendo Authorization y Content-Type. */
+    /* Sin `credentials`: la autenticacion es por token en la cabecera. El backend
+       responde el preflight (OPTIONS) permitiendo Authorization y Content-Type. */
     respuesta = await fetch(`${env.apiBaseUrl}${ruta}`, {
       signal: AbortSignal.timeout(tiempoLimite),
       ...resto,
@@ -292,5 +293,5 @@ export async function pedir(ruta, opciones = {}) {
   }
 
   const cuerpo = await respuesta.json().catch(() => ({}));
-  return cuerpo?.data ?? cuerpo;
+  return crudo ? cuerpo : (cuerpo?.data ?? cuerpo);
 }
