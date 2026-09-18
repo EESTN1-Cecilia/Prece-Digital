@@ -273,21 +273,19 @@ export default function AlumnoPerfilView({ id, ruta }) {
     permisosAcciones = {}
   } = profileData;
 
-  const alumnoCompleto = useMemo(() => {
-    return {
-      ...datosPersonales,
-      ...situacionAcademica,
-      id: datosPersonales.id || studentId || 1,
-      apellido: datosPersonales.apellido || "",
-      nombre: datosPersonales.nombre || "",
-      dni: datosPersonales.dni || "",
-      curso: situacionAcademica.curso || datosPersonales.curso || "1°",
-      division: String(situacionAcademica.division || datosPersonales.division || "1"),
-      turno: situacionAcademica.turno || datosPersonales.turno || "Mañana",
-      orientacion: situacionAcademica.orientacion || datosPersonales.orientacion || "Ciclo Básico",
-      legajo: datosPersonales.legajo || situacionAcademica.legajo || "S/N"
-    };
-  }, [datosPersonales, situacionAcademica, studentId]);
+  const alumnoCompleto = {
+    ...datosPersonales,
+    ...situacionAcademica,
+    id: datosPersonales.id || studentId || 1,
+    apellido: datosPersonales.apellido || "",
+    nombre: datosPersonales.nombre || "",
+    dni: datosPersonales.dni || "",
+    curso: situacionAcademica.curso || datosPersonales.curso || "1°",
+    division: String(situacionAcademica.division || datosPersonales.division || "1"),
+    turno: situacionAcademica.turno || datosPersonales.turno || "Mañana",
+    orientacion: situacionAcademica.orientacion || datosPersonales.orientacion || "Ciclo Básico",
+    legajo: datosPersonales.legajo || situacionAcademica.legajo || "S/N"
+  };
 
   return h(
     "div",

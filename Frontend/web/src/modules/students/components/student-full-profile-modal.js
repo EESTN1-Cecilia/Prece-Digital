@@ -44,22 +44,20 @@ export function StudentFullProfileModal({ alumno, resumen, onClose }) {
   const academico = resumen?.estadoAcademico || {};
   const inasistencias = resumen?.inasistencias || {};
 
-  const alumnoCompleto = useMemo(() => {
-    return {
-      ...alumno,
-      ...datos,
-      ...escolar,
-      id: datos.id || alumno?.id || 1,
-      apellido: datos.apellido || alumno?.apellido || "",
-      nombre: datos.nombre || alumno?.nombre || "",
-      dni: datos.dni || alumno?.dni || "",
-      curso: escolar.curso || datos.curso || alumno?.curso || "1°",
-      division: String(escolar.division || datos.division || alumno?.division || "1"),
-      turno: escolar.turno || datos.turno || alumno?.turno || "Mañana",
-      orientacion: escolar.orientacion || datos.orientacion || alumno?.orientacion || "Ciclo Básico",
-      legajo: datos.legajo || alumno?.legajo || escolar.legajo || "S/N"
-    };
-  }, [datos, escolar, alumno]);
+  const alumnoCompleto = {
+    ...alumno,
+    ...datos,
+    ...escolar,
+    id: datos.id || alumno?.id || 1,
+    apellido: datos.apellido || alumno?.apellido || "",
+    nombre: datos.nombre || alumno?.nombre || "",
+    dni: datos.dni || alumno?.dni || "",
+    curso: escolar.curso || datos.curso || alumno?.curso || "1°",
+    division: String(escolar.division || datos.division || alumno?.division || "1"),
+    turno: escolar.turno || datos.turno || alumno?.turno || "Mañana",
+    orientacion: escolar.orientacion || datos.orientacion || alumno?.orientacion || "Ciclo Básico",
+    legajo: datos.legajo || alumno?.legajo || escolar.legajo || "S/N"
+  };
 
   const nombreCompleto = datos.nombreCompleto || `${datos.apellido}, ${datos.nombre}`;
 
