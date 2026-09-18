@@ -502,16 +502,21 @@ export function AlumnoMatrizModal({
   useEffect(() => {
     StudentsService.getAlumnos({ limit: 100 })
       .then((res) => {
-        if (res?.data && res.data.length > 0) {
-          setAlumnosList(res.data);
-        } else {
-          setAlumnosList(SAMPLE_ALUMNOS);
+        let list = res?.data && res.data.length > 0 ? res.data : SAMPLE_ALUMNOS;
+        if (alumnoInicial) {
+          const idx = list.findIndex((a) => String(a.id) === String(alumnoInicial.id));
+          if (idx >= 0) {
+            list[idx] = { ...list[idx], ...alumnoInicial };
+          } else {
+            list = [alumnoInicial, ...list];
+          }
         }
+        setAlumnosList(list);
       })
       .catch(() => {
-        setAlumnosList(SAMPLE_ALUMNOS);
+        setAlumnosList(alumnoInicial ? [alumnoInicial, ...SAMPLE_ALUMNOS] : SAMPLE_ALUMNOS);
       });
-  }, []);
+  }, [alumnoInicial]);
 
   // Si se provee alumnoInicial al montar o cambiar
   useEffect(() => {
@@ -586,13 +591,13 @@ export function AlumnoMatrizModal({
 
       setDatosEstudiante((prev) => ({
         ...prev,
-        apellido: (alumno.apellido || "").toUpperCase(),
-        nombre: (alumno.nombre || "").toUpperCase(),
+        apellido: (alumno.apellido || alumno.nombreCompleto?.split(",")?.[0] || "").trim().toUpperCase(),
+        nombre: (alumno.nombre || alumno.nombreCompleto?.split(",")?.[1] || "").trim().toUpperCase(),
         dni: alumno.dni || "",
-        lugarNacimiento: "EZEIZA (ARGENTINA)",
-        fechaNacimiento: "15 DE OCTUBRE DE 2005",
-        libroMatriz: String(Math.floor(Math.random() * 50) + 50),
-        folio: String(Math.floor(Math.random() * 30) + 1)
+        lugarNacimiento: alumno.lugarNacimiento || "EZEIZA (ARGENTINA)",
+        fechaNacimiento: alumno.fechaNacimiento || "15 DE OCTUBRE DE 2005",
+        libroMatriz: String(alumno.libroMatriz || Math.floor(Math.random() * 50) + 50),
+        folio: String(alumno.folio || Math.floor(Math.random() * 30) + 1)
       }));
     }
   };

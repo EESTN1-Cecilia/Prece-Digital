@@ -262,234 +262,276 @@ export default function SecretariaDashboardView() {
             })
           ),
 
-          // 2. Alumnos por Curso (27 divisiones de la BD) y 3. Inasistencias
+          // 3. Grilla de 2 Columnas Verticales
           h(
             "div",
             { className: "secretaria-grid-2col" },
 
-            // Tarjeta de Distribución de Cursos y Divisiones
+            // Columna Izquierda: Distribución por Curso y División + Alertas de Secretaría
             h(
-              DashboardCard,
-              {
-                title: "Distribución por Curso y División",
-                icon: "people",
-                badge: `${cursosFiltrados.length} Divisiones`,
-                actions: h(
-                  "div",
-                  { className: "filters-toolbar" },
-                  h(
+              "div",
+              { className: "secretaria-grid-column" },
+
+              // 3.1 Tarjeta de Distribución de Cursos y Divisiones
+              h(
+                DashboardCard,
+                {
+                  title: "Distribución por Curso y División",
+                  icon: "people",
+                  badge: `${cursosFiltrados.length} Divisiones`,
+                  actions: h(
                     "div",
-                    { className: "filter-pills" },
-                    ["todos", "mañana", "tarde"].map((turno) =>
-                      h(
-                        "button",
-                        {
-                          key: turno,
-                          type: "button",
-                          className: `filter-pill ${selectedTurnoFilter === turno ? "active" : ""}`,
-                          onClick: () => setSelectedTurnoFilter(turno)
-                        },
-                        turno.charAt(0).toUpperCase() + turno.slice(1)
+                    { className: "filters-toolbar" },
+                    h(
+                      "div",
+                      { className: "filter-pills" },
+                      ["todos", "mañana", "tarde"].map((turno) =>
+                        h(
+                          "button",
+                          {
+                            key: turno,
+                            type: "button",
+                            className: `filter-pill ${selectedTurnoFilter === turno ? "active" : ""}`,
+                            onClick: () => setSelectedTurnoFilter(turno)
+                          },
+                          turno.charAt(0).toUpperCase() + turno.slice(1)
+                        )
                       )
                     )
                   )
-                )
-              },
-              cursosFiltrados.length === 0
-                ? h(EmptyState, { mensaje: "No hay cursos registrados para los filtros seleccionados." })
-                : h(
-                    "div",
-                    { className: "table-responsive" },
-                    h(
-                      "table",
-                      { className: "custom-table" },
+                },
+                cursosFiltrados.length === 0
+                  ? h(EmptyState, { mensaje: "No hay cursos registrados para los filtros seleccionados." })
+                  : h(
+                      "div",
+                      { className: "table-responsive secretaria-cursos-table-wrap" },
                       h(
-                        "thead",
-                        null,
+                        "table",
+                        { className: "custom-table secretaria-cursos-table" },
                         h(
-                          "tr",
+                          "thead",
                           null,
-                          h("th", null, "Curso / Div"),
-                          h("th", null, "Orientación"),
-                          h("th", null, "Turno Aula / Taller"),
-                          h("th", null, "Alumnos"),
-                          h("th", null, "Estado"),
-                          h("th", null, "Acción")
-                        )
-                      ),
-                      h(
-                        "tbody",
-                        null,
-                        cursosFiltrados.map((item) =>
                           h(
                             "tr",
-                            { key: item.id },
-                            h("td", null, h("strong", null, `${item.curso} ${item.division}`)),
-                            h("td", null, h("span", { className: "orientation-tag" }, item.orientacion)),
-                            h("td", null, `${item.turnoAula} / ${item.turnoTaller}`),
-                            h("td", null, `${item.cantidad} (${item.porcentaje}%)`),
-                            h("td", null, h(StatusBadge, { status: item.estado })),
-                            h(
-                              "td",
-                              null,
+                            null,
+                            h("th", { className: "col-curso" }, "Curso"),
+                            h("th", { className: "col-orientacion" }, "Orientación"),
+                            h("th", { className: "col-turnos" }, "Turnos"),
+                            h("th", { className: "col-alumnos text-center" }, "Alumnos"),
+                            h("th", { className: "col-estado text-center" }, "Estado"),
+                            h("th", { className: "col-accion text-center" }, "Acción")
+                          )
+                        ),
+                        h(
+                          "tbody",
+                          null,
+                          cursosFiltrados.map((item) => {
+                            const orientacionLimpia = (item.orientacion || "").replace(/^Técnico en\s+/i, "");
+                            return h(
+                              "tr",
+                              { key: item.id },
                               h(
-                                "a",
-                                {
-                                  href: `#/alumnos?curso=${encodeURIComponent(item.curso)}&div=${encodeURIComponent(item.division)}`,
-                                  className: "table-action-link"
-                                },
-                                "Ver Alumnos"
+                                "td",
+                                { className: "col-curso" },
+                                h("strong", { className: "curso-nombre-bold" }, `${item.curso} ${item.division}`)
+                              ),
+                              h(
+                                "td",
+                                { className: "col-orientacion" },
+                                h(
+                                  "span",
+                                  { className: "orientation-tag", title: item.orientacion },
+                                  orientacionLimpia
+                                )
+                              ),
+                              h(
+                                "td",
+                                { className: "col-turnos" },
+                                h(
+                                  "div",
+                                  { className: "turno-compact-text" },
+                                  h("span", { className: "turno-aula-line" }, item.turnoAula),
+                                  h("span", { className: "turno-taller-line" }, ` / ${item.turnoTaller}`)
+                                )
+                              ),
+                              h(
+                                "td",
+                                { className: "col-alumnos text-center" },
+                                h(
+                                  "span",
+                                  { className: "alumnos-badge-count" },
+                                  h("strong", null, item.cantidad),
+                                  h("span", { className: "alumnos-sub-pct" }, ` (${item.porcentaje}%)`)
+                                )
+                              ),
+                              h(
+                                "td",
+                                { className: "col-estado text-center" },
+                                h(StatusBadge, { status: item.estado })
+                              ),
+                              h(
+                                "td",
+                                { className: "col-accion text-center" },
+                                h(
+                                  "a",
+                                  {
+                                    href: `#/alumnos?curso=${encodeURIComponent(item.curso)}&div=${encodeURIComponent(item.division)}`,
+                                    className: "btn-table-action-link",
+                                    title: `Ver alumnos de ${item.curso} ${item.division}`
+                                  },
+                                  "Ver Alumnos"
+                                )
                               )
-                            )
+                            );
+                          })
+                        )
+                      )
+                    )
+              ),
+
+              // 3.2 Tarjeta de Alertas de Secretaría
+              h(
+                DashboardCard,
+                {
+                  title: "Alertas de Secretaría",
+                  icon: "alert",
+                  badge: `${data.alertas?.length || 0} pendientes`
+                },
+                data.alertas?.length === 0
+                  ? h(EmptyState, { mensaje: "No hay alertas pendientes." })
+                  : h(
+                      "div",
+                      { className: "alerts-container" },
+                      data.alertas?.map((alerta) =>
+                        h(AlertCard, {
+                          key: alerta.id,
+                          alert: alerta,
+                          onDismiss: handleDismissAlert
+                        })
+                      )
+                    )
+              )
+            ),
+
+            // Columna Derecha: Resumen de Inasistencias + Situaciones Académicas Relevantes
+            h(
+              "div",
+              { className: "secretaria-grid-column" },
+
+              // 3.3 Tarjeta de Inasistencias Institucionales
+              h(
+                DashboardCard,
+                {
+                  title: "Resumen de Inasistencias Institucionales",
+                  icon: "attendance",
+                  actions: h(
+                    "a",
+                    { href: "#/asistencias", className: "attendance-module-link" },
+                    "Módulo Asistencias",
+                    h(
+                      "svg",
+                      {
+                        width: "13",
+                        height: "13",
+                        viewBox: "0 0 24 24",
+                        fill: "none",
+                        stroke: "currentColor",
+                        strokeWidth: "2.5",
+                        strokeLinecap: "round",
+                        strokeLinejoin: "round"
+                      },
+                      h("polyline", { points: "6 9 12 15 18 9" })
+                    )
+                  )
+                },
+                h(
+                  "div",
+                  { className: "attendance-summary-banner" },
+                  h("div", { className: "attendance-metric" },
+                    h("strong", null, data.inasistencias?.totalInasistencias || 0),
+                    h("span", null, "Total Inasistencias")
+                  ),
+                  h("div", { className: "attendance-metric text-success" },
+                    h("strong", null, data.inasistencias?.justificadas || 0),
+                    h("span", null, "Justificadas")
+                  ),
+                  h("div", { className: "attendance-metric text-danger" },
+                    h("strong", null, data.inasistencias?.injustificadas || 0),
+                    h("span", null, "Injustificadas")
+                  )
+                ),
+                h("h4", { className: "subsection-title" }, "Alumnos que requieren atención:"),
+                data.inasistencias?.alumnosAtencion?.length === 0
+                  ? h(EmptyState, { mensaje: "No hay alumnos en situación crítica de inasistencias." })
+                  : h(
+                      "ul",
+                      { className: "attention-list" },
+                      data.inasistencias?.alumnosAtencion?.map((al) =>
+                        h(
+                          "li",
+                          { key: al.id, className: "attention-list__item" },
+                          h(
+                            "div",
+                            null,
+                            h("strong", { className: "attention-list__name" }, al.nombre),
+                            h("span", { className: "attention-list__course" }, `Legajo: ${al.legajo} • Curso: ${al.curso}`)
+                          ),
+                          h(
+                            "div",
+                            { className: "attention-list__right" },
+                            h("span", { className: "attention-list__faltas" }, `${al.faltas} faltas`),
+                            h(StatusBadge, { status: al.estado })
                           )
                         )
                       )
                     )
-                  )
-            ),
-
-            // Tarjeta de Inasistencias Institucionales
-            h(
-              DashboardCard,
-              {
-                title: "Resumen de Inasistencias Institucionales",
-                icon: "clipboard",
-                actions: h(
-                  "a",
-                  { href: "#/asistencias", className: "attendance-module-link" },
-                  "Módulo Asistencias",
-                  h(
-                    "svg",
-                    {
-                      width: "13",
-                      height: "13",
-                      viewBox: "0 0 24 24",
-                      fill: "none",
-                      stroke: "currentColor",
-                      strokeWidth: "2.5",
-                      strokeLinecap: "round",
-                      strokeLinejoin: "round"
-                    },
-                    h("polyline", { points: "6 9 12 15 18 9" })
-                  )
-                )
-              },
-              h(
-                "div",
-                { className: "attendance-summary-banner" },
-                h("div", { className: "attendance-metric" },
-                  h("strong", null, data.inasistencias?.totalInasistencias || 0),
-                  h("span", null, "Total Inasistencias")
-                ),
-                h("div", { className: "attendance-metric text-success" },
-                  h("strong", null, data.inasistencias?.justificadas || 0),
-                  h("span", null, "Justificadas")
-                ),
-                h("div", { className: "attendance-metric text-danger" },
-                  h("strong", null, data.inasistencias?.injustificadas || 0),
-                  h("span", null, "Injustificadas")
-                )
               ),
-              h("h4", { className: "subsection-title" }, "Alumnos que requieren atención:"),
-              data.inasistencias?.alumnosAtencion?.length === 0
-                ? h(EmptyState, { mensaje: "No hay alumnos en situación crítica de inasistencias." })
-                : h(
-                    "ul",
-                    { className: "attention-list" },
-                    data.inasistencias?.alumnosAtencion?.map((al) =>
-                      h(
-                        "li",
-                        { key: al.id, className: "attention-list__item" },
+
+              // 3.4 Tarjeta de Situaciones Académicas Relevantes
+              h(
+                DashboardCard,
+                {
+                  title: "Situaciones Académicas Relevantes",
+                  icon: "academic"
+                },
+                h(
+                  "div",
+                  { className: "academic-overview-metrics" },
+                  h("div", { className: "academic-badge" },
+                    h("strong", null, data.situacionesAcademicas?.totalMateriasPendientes || 0),
+                    h("span", null, "Materias Previas")
+                  ),
+                  h("div", { className: "academic-badge" },
+                    h("strong", null, data.situacionesAcademicas?.totalMateriasDesaprobadas || 0),
+                    h("span", null, "Materias Desaprobadas")
+                  ),
+                  h("div", { className: "academic-badge" },
+                    h("strong", null, data.situacionesAcademicas?.evaluacionesPendientes || 0),
+                    h("span", null, "Mesas de Examen")
+                  )
+                ),
+                h("h4", { className: "subsection-title" }, "Casos para revisión:"),
+                data.situacionesAcademicas?.casosDestacados?.length === 0
+                  ? h(EmptyState, { mensaje: "Sin casos académicos pendientes de revisión." })
+                  : h(
+                      "div",
+                      { className: "academic-cases" },
+                      data.situacionesAcademicas?.casosDestacados?.map((caso) =>
                         h(
                           "div",
-                          null,
-                          h("strong", { className: "attention-list__name" }, al.nombre),
-                          h("span", { className: "attention-list__course" }, `Legajo: ${al.legajo} • Curso: ${al.curso}`)
-                        ),
-                        h(
-                          "div",
-                          { className: "attention-list__right" },
-                          h("span", { className: "attention-list__faltas" }, `${al.faltas} faltas`),
-                          h(StatusBadge, { status: al.estado })
+                          { key: caso.id, className: "academic-case-card" },
+                          h(
+                            "div",
+                            { className: "academic-case-card__header" },
+                            h("strong", null, caso.alumno),
+                            h(StatusBadge, { status: caso.situacion })
+                          ),
+                          h("p", { className: "academic-case-card__detail" }, caso.detalle),
+                          h("span", { className: "academic-case-card__course" }, `Curso: ${caso.curso}`)
                         )
                       )
                     )
-                  )
-            )
-          ),
-
-          // 4. Alertas de Secretaría y 5. Situaciones Académicas Relevantes (2 Columnas)
-          h(
-            "div",
-            { className: "secretaria-grid-2col" },
-
-            // Tarjeta de Alertas
-            h(
-              DashboardCard,
-              {
-                title: "Alertas de Secretaría",
-                icon: "filter",
-                badge: `${data.alertas?.length || 0} pendientes`
-              },
-              data.alertas?.length === 0
-                ? h(EmptyState, { mensaje: "No hay alertas pendientes." })
-                : h(
-                    "div",
-                    { className: "alerts-container" },
-                    data.alertas?.map((alerta) =>
-                      h(AlertCard, {
-                        key: alerta.id,
-                        alert: alerta,
-                        onDismiss: handleDismissAlert
-                      })
-                    )
-                  )
-            ),
-
-            // Tarjeta de Situaciones Académicas
-            h(
-              DashboardCard,
-              {
-                title: "Situaciones Académicas Relevantes",
-                icon: "clipboard"
-              },
-              h(
-                "div",
-                { className: "academic-overview-metrics" },
-                h("div", { className: "academic-badge" },
-                  h("strong", null, data.situacionesAcademicas?.totalMateriasPendientes || 0),
-                  h("span", null, "Materias Previas")
-                ),
-                h("div", { className: "academic-badge" },
-                  h("strong", null, data.situacionesAcademicas?.totalMateriasDesaprobadas || 0),
-                  h("span", null, "Materias Desaprobadas")
-                ),
-                h("div", { className: "academic-badge" },
-                  h("strong", null, data.situacionesAcademicas?.evaluacionesPendientes || 0),
-                  h("span", null, "Mesas de Examen")
-                )
-              ),
-              h("h4", { className: "subsection-title" }, "Casos para revisión:"),
-              data.situacionesAcademicas?.casosDestacados?.length === 0
-                ? h(EmptyState, { mensaje: "Sin casos académicos pendientes de revisión." })
-                : h(
-                    "div",
-                    { className: "academic-cases" },
-                    data.situacionesAcademicas?.casosDestacados?.map((caso) =>
-                      h(
-                        "div",
-                        { key: caso.id, className: "academic-case-card" },
-                        h(
-                          "div",
-                          { className: "academic-case-card__header" },
-                          h("strong", null, caso.alumno),
-                          h(StatusBadge, { status: caso.situacion })
-                        ),
-                        h("p", { className: "academic-case-card__detail" }, caso.detalle),
-                        h("span", { className: "academic-case-card__course" }, `Curso: ${caso.curso}`)
-                      )
-                    )
-                  )
+              )
             )
           ),
 
@@ -498,7 +540,7 @@ export default function SecretariaDashboardView() {
             DashboardCard,
             {
               title: "Registro de Actividad y Auditoría Reciente",
-              icon: "clipboard",
+              icon: "activity",
               className: "dashboard-card--full"
             },
             data.actividadReciente?.length === 0

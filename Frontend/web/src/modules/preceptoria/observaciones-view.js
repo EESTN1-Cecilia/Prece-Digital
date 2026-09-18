@@ -859,6 +859,7 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
       ? h(
         "div",
         { className: "search-input-wrapper observations-toolbar__search" },
+        h(IconoFigma, { className: "search-input-icon", nombre: "search" }),
         h("input", {
           type: "search",
           className: "search-input",

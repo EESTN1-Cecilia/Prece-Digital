@@ -455,30 +455,59 @@ export function StudentEditModal({
   );
 }
 
+import { AuthService } from "../../../../services/auth-service.js";
+
 /**
- * Modal 4: Registrar Nueva Observación
+ * Modal 4: Registrar / Cargar Observación Institucional
  */
 export function StudentObservationModal({
+  alumno = {},
   isOpen,
   onClose,
   onSubmit,
   isSubmitting = false
 }) {
-  const [tipo, setTipo] = useState("Pedagógica");
+  const currentUser = typeof AuthService !== "undefined" ? AuthService.getCurrentUser() : null;
+  const defaultResponsable = currentUser?.rolNombre || currentUser?.nombre || "Preceptor Turno Mañana";
+
+  const [tipo, setTipo] = useState("Académica");
   const [sector, setSector] = useState("Preceptoría");
+  const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
+  const [estado, setEstado] = useState("Activa");
+  const [responsable, setResponsable] = useState(defaultResponsable);
   const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
+  const nombreAlumno = alumno?.nombreCompleto || 
+    (alumno?.apellido ? `${alumno.apellido}, ${alumno.nombre || ""}`.trim() : alumno?.nombre || "Estudiante");
+  const dniAlumno = alumno?.dni || "S/D";
+  const cursoAlumno = alumno?.curso ? `${alumno.curso}° ${alumno.division ? `${alumno.division}°` : ""}`.trim() : null;
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!descripcion.trim()) {
-      setError("Debe ingresar la descripción de la observación.");
+    const trimmedDesc = descripcion.trim();
+    const trimmedTipo = tipo.trim();
+    const trimmedSector = sector.trim();
+    const trimmedFecha = fecha.trim();
+    const trimmedResponsable = responsable.trim();
+
+    if (!trimmedDesc || !trimmedTipo || !trimmedSector || !trimmedFecha) {
+      setError("Completá todos los campos obligatorios para registrar la observación.");
       return;
     }
+
     setError("");
-    onSubmit({ tipo, sector, descripcion: descripcion.trim() });
+    onSubmit({
+      tipo: trimmedTipo,
+      sector: trimmedSector,
+      fecha: trimmedFecha,
+      estado: estado || "Activa",
+      responsable: trimmedResponsable || defaultResponsable,
+      usuarioResponsable: trimmedResponsable || defaultResponsable,
+      descripcion: trimmedDesc
+    });
   };
 
   return h(
@@ -486,99 +515,276 @@ export function StudentObservationModal({
     { className: "modal-overlay" },
     h(
       "div",
-      { className: "modal-container modal-md" },
+      { className: "modal-container modal-lg observation-modal-dialog" },
+      // Header
       h(
         "div",
         { className: "modal-header" },
         h(
           "div",
           { className: "modal-title-wrap" },
-          h("h2", { className: "modal-title" }, "Registrar Observación Institucional")
+          h(
+            "div",
+            { className: "section-icon-badge", style: { width: "38px", height: "38px", minWidth: "38px" } },
+            h(
+              "svg",
+              { className: "profile-section-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+              h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+              h("polyline", { points: "14 2 14 8 20 8" }),
+              h("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
+              h("line", { x1: "16", y1: "17", x2: "8", y2: "17" }),
+              h("polyline", { points: "10 9 9 9 8 9" })
+            )
+          ),
+          h(
+            "div",
+            null,
+            h("h2", { className: "modal-title" }, "Cargar Observación"),
+            h("p", { className: "text-xs text-muted", style: { margin: "2px 0 0" } }, "Registrá una observación para el seguimiento institucional del estudiante.")
+          )
         ),
         h(
           "button",
-          { type: "button", className: "modal-close-btn", onClick: onClose },
+          {
+            type: "button",
+            className: "modal-close-btn",
+            onClick: onClose,
+            "aria-label": "Cerrar modal"
+          },
           "✕"
         )
       ),
+
+      // Form with guaranteed scrollable modal-body and fixed footer
       h(
         "form",
-        { onSubmit: handleSubmit },
+        {
+          onSubmit: handleSubmit,
+          style: { display: "flex", flexDirection: "column", flex: "1 1 auto", minHeight: "0", overflow: "hidden" }
+        },
+        
+        // Scrollable Body
         h(
           "div",
-          { className: "modal-body" },
-          error
-            ? h("div", { className: "error-alert-box mb-3" }, error)
-            : null,
+          { className: "modal-body", style: { padding: "20px 24px", overflowY: "auto", flex: "1 1 auto" } },
+
+          // Alumno Context Banner
           h(
             "div",
-            { className: "form-row-2" },
+            {
+              className: "active-filters-bar",
+              style: {
+                background: "#eff6ff",
+                borderColor: "#bfdbfe",
+                borderRadius: "10px",
+                padding: "10px 16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px"
+              }
+            },
             h(
               "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Tipo de Observación *"),
-              h(
-                "select",
-                {
-                  className: "form-control",
-                  value: tipo,
-                  onChange: (e) => setTipo(e.target.value)
-                },
-                h("option", { value: "Pedagógica" }, "Pedagógica"),
-                h("option", { value: "Administrativa" }, "Administrativa"),
-                h("option", { value: "Convivencia" }, "Convivencia"),
-                h("option", { value: "Salud" }, "Salud / Médica"),
-                h("option", { value: "General" }, "General")
-              )
+              { style: { display: "flex", alignItems: "center", gap: "8px" } },
+              h("span", { style: { color: "#1d4ed8", fontSize: "12px", fontWeight: "700" } }, "Alumno:"),
+              h("strong", { style: { color: "#0f172a", fontSize: "14px", fontWeight: "700" } }, nombreAlumno)
             ),
             h(
               "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Sector Emisor *"),
+              { style: { display: "flex", gap: "14px", fontSize: "13px", color: "#475569", fontWeight: "500" } },
+              dniAlumno !== "S/D" ? h("span", null, `DNI: ${dniAlumno}`) : null,
+              cursoAlumno ? h("span", null, `Curso: ${cursoAlumno}`) : null
+            )
+          ),
+
+          // Section Header
+          h(
+            "div",
+            { className: "form-section-header", style: { marginBottom: "16px", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px" } },
+            h("h3", { className: "form-section-title", style: { fontSize: "15px", fontWeight: "700", color: "#1e293b", margin: "0 0 2px 0" } }, "Información del seguimiento"),
+            h("span", { className: "form-section-desc", style: { fontSize: "13px", color: "#64748b" } }, "Toda la información necesaria para registrar la situación institucional")
+          ),
+
+          error ? h("p", { className: "form-error-message", style: { marginBottom: "14px" } }, error) : null,
+
+          // Form Grid (2 columns)
+          h(
+            "div",
+            {
+              style: {
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: "16px",
+                marginBottom: "16px"
+              }
+            },
+            // Tipo de observación
+            h(
+              "div",
+              { className: "form-field-group" },
+              h("label", { className: "form-field-label" }, "Tipo de observación:", h("span", { className: "required-star" }, " *")),
               h(
                 "select",
                 {
-                  className: "form-control",
+                  className: "form-field-select",
+                  value: tipo,
+                  onChange: (e) => {
+                    setTipo(e.target.value);
+                    if (error) setError("");
+                  }
+                },
+                h("option", { value: "Académica" }, "Académica"),
+                h("option", { value: "Pedagógica" }, "Pedagógica"),
+                h("option", { value: "Convivencia" }, "Convivencia"),
+                h("option", { value: "Asistencia" }, "Asistencia"),
+                h("option", { value: "Salud" }, "Salud / Médica"),
+                h("option", { value: "Administrativa" }, "Administrativa"),
+                h("option", { value: "General" }, "General")
+              )
+            ),
+
+            // Sector emisor
+            h(
+              "div",
+              { className: "form-field-group" },
+              h("label", { className: "form-field-label" }, "Sector emisor:", h("span", { className: "required-star" }, " *")),
+              h(
+                "select",
+                {
+                  className: "form-field-select",
                   value: sector,
-                  onChange: (e) => setSector(e.target.value)
+                  onChange: (e) => {
+                    setSector(e.target.value);
+                    if (error) setError("");
+                  }
                 },
                 h("option", { value: "Preceptoría" }, "Preceptoría"),
                 h("option", { value: "Secretaría" }, "Secretaría"),
                 h("option", { value: "Dirección" }, "Dirección / Vicedirección"),
                 h("option", { value: "Equipo de Orientación (EOE)" }, "Equipo de Orientación (EOE)"),
-                h("option", { value: "Jefatura de Taller" }, "Jefatura de Taller")
+                h("option", { value: "Jefatura de Taller" }, "Jefatura de Taller"),
+                h("option", { value: "Coordinación" }, "Coordinación"),
+                h("option", { value: "Tutoría" }, "Tutoría"),
+                h("option", { value: "Biblioteca" }, "Biblioteca")
               )
+            ),
+
+            // Fecha
+            h(
+              "div",
+              { className: "form-field-group" },
+              h("label", { className: "form-field-label" }, "Fecha:", h("span", { className: "required-star" }, " *")),
+              h("input", {
+                type: "date",
+                className: "form-field-input",
+                value: fecha,
+                onChange: (e) => {
+                  setFecha(e.target.value);
+                  if (error) setError("");
+                },
+                required: true
+              })
+            ),
+
+            // Estado
+            h(
+              "div",
+              { className: "form-field-group" },
+              h("label", { className: "form-field-label" }, "Estado:"),
+              h(
+                "select",
+                {
+                  className: "form-field-select",
+                  value: estado,
+                  onChange: (e) => setEstado(e.target.value)
+                },
+                h("option", { value: "Activa" }, "Activa"),
+                h("option", { value: "Modificada" }, "Modificada"),
+                h("option", { value: "Histórica" }, "Histórica")
+              )
+            ),
+
+            // Responsable (Full Width)
+            h(
+              "div",
+              { className: "form-field-group", style: { gridColumn: "1 / -1" } },
+              h("label", { className: "form-field-label" }, "Responsable / Usuario emisor:"),
+              h("input", {
+                type: "text",
+                className: "form-field-input",
+                placeholder: "Nombre o cargo del responsable (ej: Preceptor Turno Mañana)...",
+                value: responsable,
+                onInput: (e) => setResponsable(e.target.value)
+              })
             )
           ),
+
+          // Textarea Descripción
           h(
             "div",
-            { className: "form-group mt-3" },
-            h("label", { className: "form-label" }, "Descripción detallada *"),
+            { className: "form-field-group", style: { marginBottom: "4px" } },
+            h("label", { className: "form-field-label" }, "Descripción detallada:", h("span", { className: "required-star" }, " *")),
             h("textarea", {
-              className: "form-control",
-              rows: 4,
-              placeholder: "Describa el hecho, acuerdo pedagógico o situación a registrar...",
+              className: "form-field-textarea",
+              style: { minHeight: "100px", resize: "vertical" },
               value: descripcion,
-              onInput: (e) => setDescripcion(e.target.value),
+              maxLength: 500,
+              placeholder: "Describí la situación observada, acuerdos pedagógicos o novedades institucionales...",
+              onInput: (e) => {
+                setDescripcion(e.target.value);
+                if (error) setError("");
+              },
               required: true
-            })
+            }),
+            h(
+              "div",
+              { style: { display: "flex", justifyContent: "flex-end", marginTop: "4px" } },
+              h("small", { style: { color: "#64748b", fontSize: "11.5px", fontWeight: "500" } }, `${descripcion.length}/500 caracteres`)
+            )
           )
         ),
+
+        // Pinned Footer
         h(
           "div",
-          { className: "modal-footer" },
+          { className: "modal-footer", style: { flexShrink: 0 } },
           h(
             "button",
-            { type: "button", className: "btn-secondary", onClick: onClose, disabled: isSubmitting },
-            "Cancelar"
+            {
+              type: "button",
+              className: "btn-secondary",
+              onClick: onClose,
+              disabled: isSubmitting
+            },
+            h(
+              "svg",
+              { className: "btn-icon", viewBox: "0 0 20 20", fill: "currentColor" },
+              h("path", { fillRule: "evenodd", d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z", clipRule: "evenodd" })
+            ),
+            h("span", null, "Cancelar y volver")
           ),
           h(
             "button",
-            { type: "submit", className: "btn-primary", disabled: isSubmitting },
-            isSubmitting ? "Registrando..." : "Guardar Observación"
+            {
+              type: "submit",
+              className: "btn-primary",
+              disabled: isSubmitting
+            },
+            isSubmitting
+              ? "Guardando observación..."
+              : [
+                  h(
+                    "svg",
+                    { key: "icon", className: "btn-icon", viewBox: "0 0 20 20", fill: "currentColor" },
+                    h("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" })
+                  ),
+                  h("span", { key: "text" }, "Guardar observación")
+                ]
           )
         )
       )
     )
   );
 }
+

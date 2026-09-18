@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { h } from "../../layouts/site-layout.js";
 import { StudentsService } from "./students-service.js";
 import { StudentProfileHero } from "./components/profile/student-profile-hero.js";
@@ -7,6 +7,7 @@ import { StudentAcademicTab } from "./components/profile/student-academic-tab.js
 import { StudentAttendanceTab } from "./components/profile/student-attendance-tab.js";
 import { StudentObservationsTab } from "./components/profile/student-observations-tab.js";
 import { StudentGradeBookTab } from "./components/profile/student-gradebook-tab.js";
+import { StudentDocumentationTab } from "./components/profile/student-documentation-tab.js";
 import { StudentHistoryTab } from "./components/profile/student-history-tab.js";
 import { StudentActionsBar } from "./components/profile/student-actions-bar.js";
 import {
@@ -15,6 +16,13 @@ import {
   StudentEditModal,
   StudentObservationModal
 } from "./components/profile/student-modals.js";
+import { AlumnoMatrizModal } from "./alumno-matriz-wiew.js";
+import { AlumnoRegularModal } from "./components/constancia-alumno-regular-modal.js";
+import { TramitePaseModal } from "./components/certificado-pase-modal.js";
+import { SolicitudPaseModal } from "./components/solicitud-pase-modal.js";
+import { SituacionAcademicaModal } from "./components/constancia-situacion-academica-modal.js";
+import { RiteModal } from "../documents/rite-modal.js";
+import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
 
 /**
  * AlumnoPerfilView: Vista completa y centralizada del Perfil del Alumno.
@@ -41,12 +49,20 @@ export default function AlumnoPerfilView({ id, ruta }) {
   const [activeTab, setActiveTab] = useState("general");
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
-  // Estados para Modales
+  // Estados para Modales Oficiales de Documentación y Acciones
+  const [alumnoRegularOpen, setAlumnoRegularOpen] = useState(false);
+  const [tramitePaseOpen, setTramitePaseOpen] = useState(false);
+  const [solicitudPaseOpen, setSolicitudPaseOpen] = useState(false);
+  const [situacionAcademicaOpen, setSituacionAcademicaOpen] = useState(false);
+  const [riteOpen, setRiteOpen] = useState(false);
+  const [planillaCalificacionesOpen, setPlanillaCalificacionesOpen] = useState(false);
+
   const [certificateModalOpen, setCertificateModalOpen] = useState(false);
   const [certificateData, setCertificateData] = useState(null);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [observationModalOpen, setObservationModalOpen] = useState(false);
+  const [matrizModalOpen, setMatrizModalOpen] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const fetchProfile = async (isSilentRefresh = false) => {
@@ -257,6 +273,20 @@ export default function AlumnoPerfilView({ id, ruta }) {
     permisosAcciones = {}
   } = profileData;
 
+  const alumnoCompleto = {
+    ...datosPersonales,
+    ...situacionAcademica,
+    id: datosPersonales.id || studentId || 1,
+    apellido: datosPersonales.apellido || "",
+    nombre: datosPersonales.nombre || "",
+    dni: datosPersonales.dni || "",
+    curso: situacionAcademica.curso || datosPersonales.curso || "1°",
+    division: String(situacionAcademica.division || datosPersonales.division || "1"),
+    turno: situacionAcademica.turno || datosPersonales.turno || "Mañana",
+    orientacion: situacionAcademica.orientacion || datosPersonales.orientacion || "Ciclo Básico",
+    legajo: datosPersonales.legajo || situacionAcademica.legajo || "S/N"
+  };
+
   return h(
     "div",
     { className: "student-profile-page-wrapper" },
@@ -344,14 +374,15 @@ export default function AlumnoPerfilView({ id, ruta }) {
       observacionesCount: observaciones.length
     }),
 
-    // Barra de Acciones Principales (Constancia, Pase, Edición, Observación)
+    // Barra de Acciones Principales (Constancia, Pase, Edición, Observación, Libro Matriz)
     h(StudentActionsBar, {
       alumno: datosPersonales,
       permisos: permisosAcciones,
-      onOpenCertificateModal: handleOpenCertificate,
-      onOpenTransferModal: () => setTransferModalOpen(true),
+      onOpenCertificateModal: () => setAlumnoRegularOpen(true),
+      onOpenTransferModal: () => setSolicitudPaseOpen(true),
       onOpenEditModal: () => setEditModalOpen(true),
-      onOpenObservationModal: () => setObservationModalOpen(true)
+      onOpenObservationModal: () => setObservationModalOpen(true),
+      onOpenMatrizModal: () => setMatrizModalOpen(true)
     }),
 
     // Renderizado condicional del contenido según la Pestaña Activa
@@ -388,13 +419,20 @@ export default function AlumnoPerfilView({ id, ruta }) {
           })
         : null,
 
-      activeTab === "libroMatriz"
-        ? h(StudentGradeBookTab, {
-            libroMatriz,
-            datosPersonales,
-            situacionAcademica
+      activeTab === "documentacion"
+        ? h(StudentDocumentationTab, {
+            alumno: alumnoCompleto,
+            escolar: situacionAcademica,
+            onOpenAlumnoRegular: () => setAlumnoRegularOpen(true),
+            onOpenTramitePase: () => setTramitePaseOpen(true),
+            onOpenSolicitudPase: () => setSolicitudPaseOpen(true),
+            onOpenSituacionAcademica: () => setSituacionAcademicaOpen(true),
+            onOpenRite: () => setRiteOpen(true),
+            onOpenPlanillaCalificaciones: () => setPlanillaCalificacionesOpen(true),
+            onOpenMatriz: () => setMatrizModalOpen(true)
           })
         : null,
+
 
       activeTab === "historial"
         ? h(StudentHistoryTab, {
@@ -402,6 +440,43 @@ export default function AlumnoPerfilView({ id, ruta }) {
           })
         : null
     ),
+
+    // Modales Oficiales Digitalizados
+    h(AlumnoRegularModal, {
+      abierto: alumnoRegularOpen,
+      onCerrar: () => setAlumnoRegularOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(TramitePaseModal, {
+      abierto: tramitePaseOpen,
+      onCerrar: () => setTramitePaseOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(SolicitudPaseModal, {
+      abierto: solicitudPaseOpen,
+      onCerrar: () => setSolicitudPaseOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(SituacionAcademicaModal, {
+      abierto: situacionAcademicaOpen,
+      onCerrar: () => setSituacionAcademicaOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(RiteModal, {
+      abierto: riteOpen,
+      onCerrar: () => setRiteOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(PlanillaCalificacionesModal, {
+      abierto: planillaCalificacionesOpen,
+      onCerrar: () => setPlanillaCalificacionesOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
 
     // Modales de Acciones
     h(StudentCertificateModal, {
@@ -427,10 +502,17 @@ export default function AlumnoPerfilView({ id, ruta }) {
     }),
 
     h(StudentObservationModal, {
+      alumno: datosPersonales,
       isOpen: observationModalOpen,
       onClose: () => setObservationModalOpen(false),
       onSubmit: handleObservationSubmit,
       isSubmitting: actionSubmitting
+    }),
+
+    h(AlumnoMatrizModal, {
+      abierto: matrizModalOpen,
+      onCerrar: () => setMatrizModalOpen(false),
+      alumnoInicial: alumnoCompleto
     })
   );
 }
