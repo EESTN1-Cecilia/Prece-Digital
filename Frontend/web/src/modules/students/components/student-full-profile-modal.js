@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { h, IconoFigma } from "../../../layouts/site-layout.js";
 import { StatusBadge, ConditionBadge } from "./student-badges.js";
 import { AlumnoMatrizModal } from "../alumno-matriz-wiew.js";
+import { StudentDocumentationTab } from "./profile/student-documentation-tab.js";
+import { AlumnoRegularModal } from "./constancia-alumno-regular-modal.js";
+import { TramitePaseModal } from "./certificado-pase-modal.js";
+import { SolicitudPaseModal } from "./solicitud-pase-modal.js";
+import { SituacionAcademicaModal } from "./constancia-situacion-academica-modal.js";
+import { RiteModal } from "../../documents/rite-modal.js";
+import { PlanillaCalificacionesModal } from "../../documents/planilla-calificaciones-modal.js";
 
 const SECCIONES = [
   { id: "personales", label: "Datos Personales", icon: "people" },
@@ -12,7 +19,6 @@ const SECCIONES = [
   { id: "asistencia", label: "Asistencia Detallada", icon: "calendar" },
   { id: "observaciones", label: "Observaciones", icon: "support" },
   { id: "documentacion", label: "Documentación y Legajo", icon: "clipboard" },
-  { id: "libro_matriz", label: "Libro Matriz", icon: "filter" },
   { id: "promocion", label: "Promoción e Historial", icon: "check" }
 ];
 
@@ -23,12 +29,37 @@ export function StudentFullProfileModal({ alumno, resumen, onClose }) {
   const [activeTab, setActiveTab] = useState("personales");
   const [matrizModalOpen, setMatrizModalOpen] = useState(false);
 
+  // Modales de Documentos Oficiales
+  const [alumnoRegularOpen, setAlumnoRegularOpen] = useState(false);
+  const [tramitePaseOpen, setTramitePaseOpen] = useState(false);
+  const [solicitudPaseOpen, setSolicitudPaseOpen] = useState(false);
+  const [situacionAcademicaOpen, setSituacionAcademicaOpen] = useState(false);
+  const [riteOpen, setRiteOpen] = useState(false);
+  const [planillaCalificacionesOpen, setPlanillaCalificacionesOpen] = useState(false);
+
   if (!resumen && !alumno) return null;
 
   const datos = resumen?.datosPersonales || alumno || {};
   const escolar = resumen?.informacionEscolar || {};
   const academico = resumen?.estadoAcademico || {};
   const inasistencias = resumen?.inasistencias || {};
+
+  const alumnoCompleto = useMemo(() => {
+    return {
+      ...alumno,
+      ...datos,
+      ...escolar,
+      id: datos.id || alumno?.id || 1,
+      apellido: datos.apellido || alumno?.apellido || "",
+      nombre: datos.nombre || alumno?.nombre || "",
+      dni: datos.dni || alumno?.dni || "",
+      curso: escolar.curso || datos.curso || alumno?.curso || "1°",
+      division: String(escolar.division || datos.division || alumno?.division || "1"),
+      turno: escolar.turno || datos.turno || alumno?.turno || "Mañana",
+      orientacion: escolar.orientacion || datos.orientacion || alumno?.orientacion || "Ciclo Básico",
+      legajo: datos.legajo || alumno?.legajo || escolar.legajo || "S/N"
+    };
+  }, [datos, escolar, alumno]);
 
   const nombreCompleto = datos.nombreCompleto || `${datos.apellido}, ${datos.nombre}`;
 
@@ -275,42 +306,21 @@ export function StudentFullProfileModal({ alumno, resumen, onClose }) {
         activeTab === "documentacion"
           ? h(
               "div",
-              { className: "tab-pane-content" },
-              h("h3", { className: "tab-section-title" }, "Documentación y Legajo Digital"),
-              h(
-                "div",
-                { className: "doc-list" },
-                h("p", null, "✓ Fotocopia DNI Alumno (Presentado)"),
-                h("p", null, "✓ Fotocopia DNI Tutores (Presentado)"),
-                h("p", null, "✓ Certificado de Vacunación y Ficha Médica (Presentado)"),
-                h("p", null, "✓ Certificado de Estudios Primarios / Pase Legalizado (Presentado)")
-              )
+              { className: "tab-pane-content tab-pane-content--full" },
+              h(StudentDocumentationTab, {
+                alumno: alumnoCompleto,
+                escolar,
+                onOpenAlumnoRegular: () => setAlumnoRegularOpen(true),
+                onOpenTramitePase: () => setTramitePaseOpen(true),
+                onOpenSolicitudPase: () => setSolicitudPaseOpen(true),
+                onOpenSituacionAcademica: () => setSituacionAcademicaOpen(true),
+                onOpenRite: () => setRiteOpen(true),
+                onOpenPlanillaCalificaciones: () => setPlanillaCalificacionesOpen(true),
+                onOpenMatriz: () => setMatrizModalOpen(true)
+              })
             )
           : null,
 
-        activeTab === "libro_matriz"
-          ? h(
-              "div",
-              { className: "tab-pane-content" },
-              h("h3", { className: "tab-section-title" }, "Libro Matriz y Registro Oficial"),
-              h("p", null, `Folio Matriz: ${datos.id ? `LM-2026-${datos.id}` : "LM-2026-001"}`),
-              h("p", null, "Tomo: IV · Folio: 88 · Acta N° 124"),
-              h(
-                "div",
-                { style: { marginTop: "16px" } },
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    className: "action-button action-button--primary",
-                    onClick: () => setMatrizModalOpen(true)
-                  },
-                  h(IconoFigma, { className: "action-button__icon", nombre: "filter" }),
-                  h("span", null, "Abrir Libro Matriz Oficial Completo (7 Años)")
-                )
-              )
-            )
-          : null,
 
         activeTab === "promocion"
           ? h(
@@ -338,10 +348,48 @@ export function StudentFullProfileModal({ alumno, resumen, onClose }) {
         )
       )
     ),
+
+    // Modales Oficiales
+    h(AlumnoRegularModal, {
+      abierto: alumnoRegularOpen,
+      onCerrar: () => setAlumnoRegularOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(TramitePaseModal, {
+      abierto: tramitePaseOpen,
+      onCerrar: () => setTramitePaseOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(SolicitudPaseModal, {
+      abierto: solicitudPaseOpen,
+      onCerrar: () => setSolicitudPaseOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(SituacionAcademicaModal, {
+      abierto: situacionAcademicaOpen,
+      onCerrar: () => setSituacionAcademicaOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(RiteModal, {
+      abierto: riteOpen,
+      onCerrar: () => setRiteOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
+    h(PlanillaCalificacionesModal, {
+      abierto: planillaCalificacionesOpen,
+      onCerrar: () => setPlanillaCalificacionesOpen(false),
+      alumnoInicial: alumnoCompleto
+    }),
+
     h(AlumnoMatrizModal, {
       abierto: matrizModalOpen,
       onCerrar: () => setMatrizModalOpen(false),
-      alumnoInicial: datos
+      alumnoInicial: alumnoCompleto
     })
   );
 }

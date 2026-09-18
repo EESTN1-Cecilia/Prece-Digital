@@ -3,38 +3,125 @@ import { httpClient } from "../../services/http-client.js";
 /**
  * Catálogo de respaldo completo con las 27 divisiones institucionales de la E.E.S.T N°1 Monte Grande.
  */
-const BACKUP_ALUMNOS = [
-  { id: 1, legajo: "LEG-2026-001", apellido: "González", nombre: "Lucas Agustín", dni: "46.123.456", curso: "1°", division: "1", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "l.gonzalez@eest1.edu.ar", telefono: "11-4290-1122" },
-  { id: 2, legajo: "LEG-2026-002", apellido: "Rodríguez", nombre: "Martina Sol", dni: "46.234.567", curso: "1°", division: "1", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "m.rodriguez@eest1.edu.ar", telefono: "11-4290-3344" },
-  { id: 3, legajo: "LEG-2026-003", apellido: "Pérez", nombre: "Camila Belén", dni: "46.345.678", curso: "1°", division: "2", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "c.perez@eest1.edu.ar", telefono: "11-4290-5566" },
-  { id: 4, legajo: "LEG-2026-004", apellido: "Fernández", nombre: "Tomás Ignacio", dni: "46.456.789", curso: "1°", division: "2", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Pase pendiente", email: "t.fernandez@eest1.edu.ar", telefono: "11-4290-7788" },
-  { id: 5, legajo: "LEG-2026-005", apellido: "López", nombre: "Julieta Nair", dni: "46.567.890", curso: "1°", division: "3", turno: "Tarde", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "j.lopez@eest1.edu.ar", telefono: "11-4290-9900" },
-  { id: 6, legajo: "LEG-2026-006", apellido: "Martínez", nombre: "Mateo Ezequiel", dni: "46.678.901", curso: "1°", division: "3", turno: "Tarde", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Inactivo", email: "m.martinez@eest1.edu.ar", telefono: "11-4290-1234" },
-  { id: 7, legajo: "LEG-2026-007", apellido: "Gómez", nombre: "Valentina Lucía", dni: "46.789.012", curso: "1°", division: "4", turno: "Tarde", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "v.gomez@eest1.edu.ar", telefono: "11-4290-2345" },
-  { id: 8, legajo: "LEG-2026-008", apellido: "Díaz", nombre: "Joaquín Lautaro", dni: "46.890.123", curso: "1°", division: "6", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "j.diaz@eest1.edu.ar", telefono: "11-4290-3456" },
-  { id: 9, legajo: "LEG-2025-009", apellido: "Alvarez", nombre: "Nicolás Daniel", dni: "45.112.233", curso: "2°", division: "1", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "n.alvarez@eest1.edu.ar", telefono: "11-4290-4567" },
-  { id: 10, legajo: "LEG-2025-010", apellido: "Romero", nombre: "Agustín Gabriel", dni: "45.223.344", curso: "2°", division: "2", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "a.romero@eest1.edu.ar", telefono: "11-4290-5678" },
-  { id: 11, legajo: "LEG-2025-011", apellido: "Benítez", nombre: "Sofía Valentina", dni: "45.334.455", curso: "2°", division: "3", turno: "Tarde", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "s.benitez@eest1.edu.ar", telefono: "11-4290-6789" },
-  { id: 12, legajo: "LEG-2025-012", apellido: "Sosa", nombre: "Franco Damián", dni: "45.445.566", curso: "2°", division: "4", turno: "Tarde", orientacion: "Ciclo Básico", condicion: "Libre", estado: "Inactivo", email: "f.sosa@eest1.edu.ar", telefono: "11-4290-7890" },
-  { id: 13, legajo: "LEG-2025-013", apellido: "Torres", nombre: "Milagros Micaela", dni: "45.556.677", curso: "2°", division: "6", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "m.torres@eest1.edu.ar", telefono: "11-4290-8901" },
-  { id: 14, legajo: "LEG-2024-014", apellido: "Ruiz", nombre: "Santiago Joel", dni: "44.123.987", curso: "3°", division: "1", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "s.ruiz@eest1.edu.ar", telefono: "11-4290-9012" },
-  { id: 15, legajo: "LEG-2024-015", apellido: "Ramírez", nombre: "Florencia Aylén", dni: "44.234.876", curso: "3°", division: "2", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "f.ramirez@eest1.edu.ar", telefono: "11-4290-0123" },
-  { id: 16, legajo: "LEG-2024-016", apellido: "Flores", nombre: "Facundo Iván", dni: "44.345.765", curso: "3°", division: "3", turno: "Tarde", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Pase pendiente", email: "f.flores@eest1.edu.ar", telefono: "11-4290-1357" },
-  { id: 17, legajo: "LEG-2024-017", apellido: "Acosta", nombre: "Candela Rocío", dni: "44.456.654", curso: "3°", division: "4", turno: "Tarde", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "c.acosta@eest1.edu.ar", telefono: "11-4290-2468" },
-  { id: 18, legajo: "LEG-2024-018", apellido: "Silva", nombre: "Benjamín Elías", dni: "44.567.543", curso: "3°", division: "6", turno: "Mañana", orientacion: "Ciclo Básico", condicion: "Regular", estado: "Activo", email: "b.silva@eest1.edu.ar", telefono: "11-4290-3579" },
-  { id: 19, legajo: "LEG-2023-019", apellido: "Medina", nombre: "Lautaro Nahuel", dni: "43.111.222", curso: "4°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", condicion: "Regular", estado: "Activo", email: "l.medina@eest1.edu.ar", telefono: "11-4290-4680" },
-  { id: 20, legajo: "LEG-2023-020", apellido: "Herrera", nombre: "Zoe Abigail", dni: "43.222.333", curso: "4°", division: "2", turno: "Tarde", orientacion: "Técnico en Informática", condicion: "Regular", estado: "Activo", email: "z.herrera@eest1.edu.ar", telefono: "11-4290-5791" },
-  { id: 21, legajo: "LEG-2023-021", apellido: "Aguirre", nombre: "Thiago Valentín", dni: "43.333.444", curso: "4°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", condicion: "Regular", estado: "Activo", email: "t.aguirre@eest1.edu.ar", telefono: "11-4290-6802" },
-  { id: 22, legajo: "LEG-2023-022", apellido: "Castro", nombre: "Brisa Morena", dni: "43.444.555", curso: "4°", division: "4", turno: "Tarde", orientacion: "Técnico en Programación", condicion: "Regular", estado: "Activo", email: "b.castro@eest1.edu.ar", telefono: "11-4290-7913" },
-  { id: 23, legajo: "LEG-2022-023", apellido: "Gutiérrez", nombre: "Matías Alejandro", dni: "42.555.666", curso: "5°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", condicion: "Regular", estado: "Activo", email: "m.gutierrez@eest1.edu.ar", telefono: "11-4290-8024" },
-  { id: 24, legajo: "LEG-2022-024", apellido: "Molina", nombre: "Kiara Denise", dni: "42.666.777", curso: "5°", division: "2", turno: "Tarde", orientacion: "Técnico en Informática", condicion: "Regular", estado: "Activo", email: "k.molina@eest1.edu.ar", telefono: "11-4290-9135" },
-  { id: 25, legajo: "LEG-2022-025", apellido: "Navarro", nombre: "Ignacio David", dni: "42.777.888", curso: "5°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", condicion: "Regular", estado: "Activo", email: "i.navarro@eest1.edu.ar", telefono: "11-4290-0246" },
-  { id: 26, legajo: "LEG-2022-026", apellido: "Ríos", nombre: "Luciana Paula", dni: "42.888.999", curso: "5°", division: "4", turno: "Tarde", orientacion: "Técnico en Programación", condicion: "Regular", estado: "Activo", email: "l.rios@eest1.edu.ar", telefono: "11-4290-1358" },
-  { id: 27, legajo: "LEG-2021-027", apellido: "Peralta", nombre: "Brian Emanuel", dni: "41.123.456", curso: "6°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", condicion: "Regular", estado: "Activo", email: "b.peralta@eest1.edu.ar", telefono: "11-4290-2469" },
-  { id: 28, legajo: "LEG-2021-028", apellido: "Ortiz", nombre: "Constanza Guadalupe", dni: "41.234.567", curso: "6°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", condicion: "Regular", estado: "Activo", email: "c.ortiz@eest1.edu.ar", telefono: "11-4290-3580" },
-  { id: 29, legajo: "LEG-2020-029", apellido: "Vargas", nombre: "Maximiliano Gastón", dni: "40.345.678", curso: "7°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", condicion: "Regular", estado: "Activo", email: "m.vargas@eest1.edu.ar", telefono: "11-4290-4691" },
-  { id: 30, legajo: "LEG-2020-030", apellido: "Cabrera", nombre: "Antonella Solange", dni: "40.456.789", curso: "7°", division: "2", turno: "Tarde", orientacion: "Técnico en Programación", condicion: "Regular", estado: "Activo", email: "a.cabrera@eest1.edu.ar", telefono: "11-4290-5802" }
+const DIVISIONES_DISTRIBUCION = [
+  // 1° Año
+  { curso: "1°", division: "1", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 31 },
+  { curso: "1°", division: "2", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 30 },
+  { curso: "1°", division: "3", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Tarde", cantidad: 29 },
+  { curso: "1°", division: "4", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Tarde", cantidad: 32 },
+  { curso: "1°", division: "6", anio: 1, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 28 },
+
+  // 2° Año
+  { curso: "2°", division: "1", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 30 },
+  { curso: "2°", division: "2", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 31 },
+  { curso: "2°", division: "3", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Tarde", cantidad: 28 },
+  { curso: "2°", division: "4", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Tarde", cantidad: 29 },
+  { curso: "2°", division: "6", anio: 2, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 27 },
+
+  // 3° Año
+  { curso: "3°", division: "1", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 33 },
+  { curso: "3°", division: "2", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 30 },
+  { curso: "3°", division: "3", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Tarde", cantidad: 29 },
+  { curso: "3°", division: "4", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Tarde", cantidad: 31 },
+  { curso: "3°", division: "6", anio: 3, orientacion: "Ciclo Básico", turnoAula: "Mañana", cantidad: 28 },
+
+  // 4° Año
+  { curso: "4°", division: "1", anio: 4, orientacion: "Técnico en Informática", turnoAula: "Mañana", cantidad: 32 },
+  { curso: "4°", division: "2", anio: 4, orientacion: "Técnico en Informática", turnoAula: "Tarde", cantidad: 30 },
+  { curso: "4°", division: "3", anio: 4, orientacion: "Técnico en Programación", turnoAula: "Mañana", cantidad: 31 },
+  { curso: "4°", division: "4", anio: 4, orientacion: "Técnico en Programación", turnoAula: "Tarde", cantidad: 30 },
+
+  // 5° Año
+  { curso: "5°", division: "1", anio: 5, orientacion: "Técnico en Informática", turnoAula: "Mañana", cantidad: 28 },
+  { curso: "5°", division: "2", anio: 5, orientacion: "Técnico en Informática", turnoAula: "Tarde", cantidad: 29 },
+  { curso: "5°", division: "3", anio: 5, orientacion: "Técnico en Programación", turnoAula: "Mañana", cantidad: 29 },
+  { curso: "5°", division: "4", anio: 5, orientacion: "Técnico en Programación", turnoAula: "Tarde", cantidad: 27 },
+
+  // 6° Año
+  { curso: "6°", division: "1", anio: 6, orientacion: "Técnico en Informática", turnoAula: "Mañana", cantidad: 26 },
+  { curso: "6°", division: "3", anio: 6, orientacion: "Técnico en Programación", turnoAula: "Mañana", cantidad: 26 },
+
+  // 7° Año
+  { curso: "7°", division: "1", anio: 7, orientacion: "Técnico en Informática", turnoAula: "Mañana", cantidad: 24 },
+  { curso: "7°", division: "2", anio: 7, orientacion: "Técnico en Programación", turnoAula: "Tarde", cantidad: 23 }
 ];
+
+const APELLIDOS_POOL = [
+  "González", "Rodríguez", "Gómez", "Fernández", "López", "Díaz", "Martínez", "Pérez",
+  "Romero", "Sánchez", "García", "Sosa", "Benítez", "Ramírez", "Torres", "Flores",
+  "Alvarez", "Acosta", "Rojas", "Medina", "Silva", "Castro", "Vargas", "Ríos",
+  "Morales", "Ortiz", "Gutiérrez", "Cabrera", "Navarro", "Domínguez", "Blanco", "Castillo",
+  "Ibarra", "Ferrari", "Cáceres", "Santillán", "Paz", "Méndez", "Vázquez", "Suárez",
+  "Herrera", "Molina", "Peralta", "Aguirre", "Giménez", "Luna", "Cardozo", "Mansilla",
+  "Villalba", "Bogado", "Galarza", "Montenegro", "Vera", "Correa", "Roldán", "Salinas"
+];
+
+const NOMBRES_POOL = [
+  "Lucas Agustín", "Martina Sol", "Camila Belén", "Tomás Ignacio", "Julieta Nair", "Mateo Ezequiel",
+  "Valentina Lucía", "Joaquín Lautaro", "Facundo Damián", "Abril Morena", "Nicolás Daniel", "Agustín Gabriel",
+  "Sofía Valentina", "Franco Damián", "Milagros Micaela", "Juan Pablo", "Victoria Inés", "Santiago Joel",
+  "Florencia Aylén", "Facundo Iván", "Candela Rocío", "Benjamín Elías", "Rocío Luján", "Lautaro Nahuel",
+  "Zoe Abigail", "Thiago Valentín", "Brisa Morena", "Esteban Rodrigo", "Lucía Mailén", "Matías Alejandro",
+  "Kiara Denise", "Ignacio David", "Luciana Paula", "Enzo Gabriel", "Brian Emanuel", "Constanza Guadalupe",
+  "Marcos Antonio", "Melina Soledad", "Maximiliano Gastón", "Antonella Solange", "Dante Federico", "Yamila Belén",
+  "Alan Gabriel", "Micaela Soledad", "Bruno Tomás", "Brenda Denise", "Luciano Ezequiel", "Priscila Nair",
+  "Ramiro Iván", "Morena Jazmín", "Ignacio Tomás", "Lucila Belén", "Axel Valentín", "Daniela Abigail"
+];
+
+function generateInstitutionalStudents() {
+  const allStudents = [];
+  let globalId = 1;
+
+  DIVISIONES_DISTRIBUCION.forEach((divInfo, divIdx) => {
+    const anioNum = divInfo.anio;
+    const dniBase = 47000000 - (anioNum * 1000000); // 1°: ~46M, 2°: ~45M, 3°: ~44M, ...
+
+    for (let i = 0; i < divInfo.cantidad; i++) {
+      const apIdx = (divIdx * 7 + i * 3) % APELLIDOS_POOL.length;
+      const nomIdx = (divIdx * 5 + i * 2) % NOMBRES_POOL.length;
+      const apellido = APELLIDOS_POOL[apIdx];
+      const nombre = NOMBRES_POOL[nomIdx];
+      const dniNum = dniBase + (divIdx * 1000) + (i * 23) + 123;
+      const dniStr = String(dniNum);
+      const dniFormatted = `${dniStr.slice(0, 2)}.${dniStr.slice(2, 5)}.${dniStr.slice(5)}`;
+
+      // Estados: la gran mayoría "Activo", con algunos casos de "Pase pendiente" o "Inactivo"
+      let estado = "Activo";
+      if (i === 3 && divInfo.cantidad > 25) estado = "Pase pendiente";
+      if (i === 11 && divInfo.cantidad > 28) estado = "Inactivo";
+
+      const condicion = estado === "Inactivo" ? "Libre" : "Regular";
+      const legajoYear = 2027 - anioNum;
+      const legajoNum = String(globalId).padStart(3, "0");
+      const legajo = `LEG-${legajoYear}-${legajoNum}`;
+
+      const email = `${nombre.split(" ")[0].toLowerCase()}.${apellido.toLowerCase()}@eest1.edu.ar`
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      allStudents.push({
+        id: globalId,
+        legajo,
+        apellido,
+        nombre,
+        dni: dniFormatted,
+        curso: divInfo.curso,
+        division: String(divInfo.division),
+        turno: divInfo.turnoAula,
+        orientacion: divInfo.orientacion,
+        condicion,
+        estado,
+        email,
+        telefono: `11-4290-${String(1000 + (globalId % 9000))}`
+      });
+
+      globalId++;
+    }
+  });
+
+  return allStudents;
+}
+
+const BACKUP_ALUMNOS = generateInstitutionalStudents();
 
 function formatDni(dni) {
   const str = String(dni || "").replace(/\D/g, "");

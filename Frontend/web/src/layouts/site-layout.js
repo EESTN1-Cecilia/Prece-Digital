@@ -177,19 +177,13 @@ function Footer({ onOpenDocumento }) {
             ["Inicio", "#/inicio"],
             ["Alumnos", "#/alumnos"],
             ["Observaciones", "#/preceptoria/observaciones"],
-            ["Sobre Nosotros", "#nosotros"],
-            ["Constancia Situación Académica", () => onOpenDocumento("situacion_academica")],
-            ["RITE (Trayectorias Educativas)", () => onOpenDocumento("rite")],
-            ["Planilla de Calificaciones 2026", () => onOpenDocumento("planilla_calificaciones")],
-            ["Constancia de Alumno Regular", () => onOpenDocumento("alumno_regular")],
-            ["Certificado de Estudio en Trámite / Pase", () => onOpenDocumento("tramite_pase")]
+            ["Sobre Nosotros", "#nosotros"]
           ]
         }),
         h(FooterLinks, {
           title: "Ayuda",
           links: [
             ["Soporte", "#soporte"],
-            ["Documentos", "#documentos"],
             ["Privacidad", "#privacidad"],
             ["Contacto", "#contacto"]
           ]

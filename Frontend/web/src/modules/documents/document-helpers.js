@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { h } from "../../layouts/site-layout.js";
 
 // Datos de Alumnos institucionales de muestra
@@ -22,6 +22,89 @@ export function getFechaActual() {
     mes: MESES[d.getMonth()],
     mesNumero: String(d.getMonth() + 1).padStart(2, "0"),
     anio: String(d.getFullYear())
+  };
+}
+
+// Hook compartido para resolver el alumno activo y opciones de búsqueda en todos los modales de documentos
+export function useDocumentStudent(alumnoInicial, defaultFallbackId = 1) {
+  const getEffectiveId = (al) => {
+    if (!al) return defaultFallbackId;
+    if (al.id !== undefined && al.id !== null) return al.id;
+    if (al.dni) return al.dni;
+    return "current_student";
+  };
+
+  const [alumnoId, setAlumnoId] = useState(() => getEffectiveId(alumnoInicial));
+  const [busqueda, setBusqueda] = useState("");
+
+  useEffect(() => {
+    if (alumnoInicial) {
+      setAlumnoId(getEffectiveId(alumnoInicial));
+    }
+  }, [alumnoInicial]);
+
+  // Lista combinada de opciones con el alumno actual garantizado al inicio
+  const opcionesAlumnos = useMemo(() => {
+    let list = [...ALUMNOS_DEMO];
+    if (alumnoInicial) {
+      const currentObj = {
+        ...alumnoInicial,
+        id: getEffectiveId(alumnoInicial)
+      };
+      const idx = list.findIndex((a) => String(a.id) === String(currentObj.id));
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...currentObj };
+      } else {
+        list = [currentObj, ...list];
+      }
+    }
+
+    const q = busqueda.toLowerCase().trim();
+    return list
+      .filter((a) => {
+        if (!q) return true;
+        const nom = `${a.apellido || ""} ${a.nombre || ""}`.toLowerCase();
+        const dni = String(a.dni || "").toLowerCase();
+        return nom.includes(q) || dni.includes(q);
+      })
+      .map((a) => ({
+        value: a.id,
+        label: `${a.apellido || ""}, ${a.nombre || ""} (${a.curso || "1°"} ${a.division || "1"} - DNI: ${a.dni || "S/D"})`
+      }));
+  }, [busqueda, alumnoInicial]);
+
+  // Alumno resuelto: si coincide con alumnoInicial, devolver alumnoInicial con datos normalizados
+  const alumno = useMemo(() => {
+    const curEffId = getEffectiveId(alumnoInicial);
+    if (alumnoInicial && (String(curEffId) === String(alumnoId) || !alumnoId)) {
+      return {
+        ...ALUMNOS_DEMO[0],
+        ...alumnoInicial,
+        id: curEffId,
+        apellido: alumnoInicial.apellido || alumnoInicial.nombreCompleto?.split(",")[0]?.trim() || "ALUMNO",
+        nombre: alumnoInicial.nombre || alumnoInicial.nombreCompleto?.split(",")[1]?.trim() || "ESTUDIANTE",
+        dni: alumnoInicial.dni || "S/D",
+        curso: alumnoInicial.curso || alumnoInicial.anio || "1°",
+        division: String(alumnoInicial.division || "1"),
+        turno: alumnoInicial.turno || "Mañana",
+        orientacion:
+          alumnoInicial.orientacion ||
+          (parseInt(String(alumnoInicial.curso || "1"), 10) <= 3 ? "Ciclo Básico" : "Técnico en Informática")
+      };
+    }
+    const found = ALUMNOS_DEMO.find((a) => String(a.id) === String(alumnoId));
+    if (found) return found;
+    if (alumnoInicial) return alumnoInicial;
+    return ALUMNOS_DEMO[0];
+  }, [alumnoId, alumnoInicial]);
+
+  return {
+    alumnoId,
+    setAlumnoId,
+    busqueda,
+    setBusqueda,
+    opcionesAlumnos,
+    alumno
   };
 }
 

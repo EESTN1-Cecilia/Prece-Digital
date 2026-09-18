@@ -262,7 +262,7 @@ export default function SecretariaDashboardView() {
             })
           ),
 
-          // 2. Grilla de 2 Columnas Verticales con flujo dinámico
+          // 3. Grilla de 2 Columnas Verticales
           h(
             "div",
             { className: "secretaria-grid-2col" },
@@ -272,7 +272,7 @@ export default function SecretariaDashboardView() {
               "div",
               { className: "secretaria-grid-column" },
 
-              // 2.1 Tarjeta de Distribución de Cursos y Divisiones
+              // 3.1 Tarjeta de Distribución de Cursos y Divisiones
               h(
                 DashboardCard,
                 {
@@ -304,61 +304,97 @@ export default function SecretariaDashboardView() {
                   ? h(EmptyState, { mensaje: "No hay cursos registrados para los filtros seleccionados." })
                   : h(
                       "div",
-                      { className: "table-responsive" },
+                      { className: "table-responsive secretaria-cursos-table-wrap" },
                       h(
                         "table",
-                        { className: "custom-table" },
+                        { className: "custom-table secretaria-cursos-table" },
                         h(
                           "thead",
                           null,
                           h(
                             "tr",
                             null,
-                            h("th", null, "Curso / Div"),
-                            h("th", null, "Orientación"),
-                            h("th", null, "Turno Aula / Taller"),
-                            h("th", null, "Alumnos"),
-                            h("th", null, "Estado"),
-                            h("th", null, "Acción")
+                            h("th", { className: "col-curso" }, "Curso"),
+                            h("th", { className: "col-orientacion" }, "Orientación"),
+                            h("th", { className: "col-turnos" }, "Turnos"),
+                            h("th", { className: "col-alumnos text-center" }, "Alumnos"),
+                            h("th", { className: "col-estado text-center" }, "Estado"),
+                            h("th", { className: "col-accion text-center" }, "Acción")
                           )
                         ),
                         h(
                           "tbody",
                           null,
-                          cursosFiltrados.map((item) =>
-                            h(
+                          cursosFiltrados.map((item) => {
+                            const orientacionLimpia = (item.orientacion || "").replace(/^Técnico en\s+/i, "");
+                            return h(
                               "tr",
                               { key: item.id },
-                              h("td", null, h("strong", null, `${item.curso} ${item.division}`)),
-                              h("td", null, h("span", { className: "orientation-tag" }, item.orientacion)),
-                              h("td", null, `${item.turnoAula} / ${item.turnoTaller}`),
-                              h("td", null, `${item.cantidad} (${item.porcentaje}%)`),
-                              h("td", null, h(StatusBadge, { status: item.estado })),
                               h(
                                 "td",
-                                null,
+                                { className: "col-curso" },
+                                h("strong", { className: "curso-nombre-bold" }, `${item.curso} ${item.division}`)
+                              ),
+                              h(
+                                "td",
+                                { className: "col-orientacion" },
+                                h(
+                                  "span",
+                                  { className: "orientation-tag", title: item.orientacion },
+                                  orientacionLimpia
+                                )
+                              ),
+                              h(
+                                "td",
+                                { className: "col-turnos" },
+                                h(
+                                  "div",
+                                  { className: "turno-compact-text" },
+                                  h("span", { className: "turno-aula-line" }, item.turnoAula),
+                                  h("span", { className: "turno-taller-line" }, ` / ${item.turnoTaller}`)
+                                )
+                              ),
+                              h(
+                                "td",
+                                { className: "col-alumnos text-center" },
+                                h(
+                                  "span",
+                                  { className: "alumnos-badge-count" },
+                                  h("strong", null, item.cantidad),
+                                  h("span", { className: "alumnos-sub-pct" }, ` (${item.porcentaje}%)`)
+                                )
+                              ),
+                              h(
+                                "td",
+                                { className: "col-estado text-center" },
+                                h(StatusBadge, { status: item.estado })
+                              ),
+                              h(
+                                "td",
+                                { className: "col-accion text-center" },
                                 h(
                                   "a",
                                   {
                                     href: `#/alumnos?curso=${encodeURIComponent(item.curso)}&div=${encodeURIComponent(item.division)}`,
-                                    className: "table-action-link"
+                                    className: "btn-table-action-link",
+                                    title: `Ver alumnos de ${item.curso} ${item.division}`
                                   },
                                   "Ver Alumnos"
                                 )
                               )
-                            )
-                          )
+                            );
+                          })
                         )
                       )
                     )
               ),
 
-              // 2.2 Tarjeta de Alertas de Secretaría
+              // 3.2 Tarjeta de Alertas de Secretaría
               h(
                 DashboardCard,
                 {
                   title: "Alertas de Secretaría",
-                  icon: "filter",
+                  icon: "alert",
                   badge: `${data.alertas?.length || 0} pendientes`
                 },
                 data.alertas?.length === 0
@@ -382,12 +418,12 @@ export default function SecretariaDashboardView() {
               "div",
               { className: "secretaria-grid-column" },
 
-              // 2.3 Tarjeta de Inasistencias Institucionales
+              // 3.3 Tarjeta de Inasistencias Institucionales
               h(
                 DashboardCard,
                 {
                   title: "Resumen de Inasistencias Institucionales",
-                  icon: "clipboard",
+                  icon: "attendance",
                   actions: h(
                     "a",
                     { href: "#/asistencias", className: "attendance-module-link" },
@@ -451,12 +487,12 @@ export default function SecretariaDashboardView() {
                     )
               ),
 
-              // 2.4 Tarjeta de Situaciones Académicas Relevantes
+              // 3.4 Tarjeta de Situaciones Académicas Relevantes
               h(
                 DashboardCard,
                 {
                   title: "Situaciones Académicas Relevantes",
-                  icon: "clipboard"
+                  icon: "academic"
                 },
                 h(
                   "div",
@@ -504,7 +540,7 @@ export default function SecretariaDashboardView() {
             DashboardCard,
             {
               title: "Registro de Actividad y Auditoría Reciente",
-              icon: "clipboard",
+              icon: "activity",
               className: "dashboard-card--full"
             },
             data.actividadReciente?.length === 0

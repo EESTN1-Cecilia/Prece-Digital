@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import {
-  ALUMNOS_DEMO,
   getFechaActual,
+  useDocumentStudent,
   DarkCustomDropdown,
   SelloInstitucionalCircular,
   BotonCerrarBarra
@@ -13,8 +13,14 @@ import {
 // 1. MODAL: CONSTANCIA SITUACIÓN ACADÉMICA
 // ============================================================================
 export function SituacionAcademicaModal({ abierto, onCerrar, alumnoInicial = null }) {
-  const [alumnoId, setAlumnoId] = useState(alumnoInicial?.id || ALUMNOS_DEMO[0].id);
-  const [busqueda, setBusqueda] = useState("");
+  const {
+    alumnoId,
+    setAlumnoId,
+    busqueda,
+    setBusqueda,
+    opcionesAlumnos,
+    alumno
+  } = useDocumentStudent(alumnoInicial);
   const [materiasAdeudadas, setMateriasAdeudadas] = useState([
     "MATEMÁTICA",
     "FÍSICO QUÍMICA",
@@ -22,26 +28,6 @@ export function SituacionAcademicaModal({ abierto, onCerrar, alumnoInicial = nul
   ]);
   const [nuevaMateria, setNuevaMateria] = useState("");
   const fecha = useMemo(() => getFechaActual(), []);
-
-  useEffect(() => {
-    if (alumnoInicial?.id) setAlumnoId(alumnoInicial.id);
-  }, [alumnoInicial]);
-
-  const alumno = useMemo(() => {
-    return ALUMNOS_DEMO.find((a) => a.id === Number(alumnoId)) || ALUMNOS_DEMO[0];
-  }, [alumnoId]);
-
-  const opcionesAlumnos = useMemo(() => {
-    const q = busqueda.toLowerCase().trim();
-    return ALUMNOS_DEMO.filter((a) => {
-      if (!q) return true;
-      const nom = `${a.apellido} ${a.nombre}`.toLowerCase();
-      return nom.includes(q) || a.dni.includes(q);
-    }).map((a) => ({
-      value: a.id,
-      label: `${a.apellido}, ${a.nombre} (${a.curso} ${a.division} - DNI: ${a.dni})`
-    }));
-  }, [busqueda]);
 
   const handleAgregarMateria = (e) => {
     e.preventDefault();

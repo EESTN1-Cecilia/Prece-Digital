@@ -9,25 +9,48 @@ import {
 // ============================================================================
 // 3. MODAL: PLANILLA DE CALIFICACIONES 2026
 // ============================================================================
-export function PlanillaCalificacionesModal({ abierto, onCerrar }) {
+export function PlanillaCalificacionesModal({ abierto, onCerrar, alumnoInicial = null }) {
   const [ordenCampo, setOrdenCampo] = useState("numero");
   const [ordenDir, setOrdenDir] = useState("asc");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("INGLÉS");
-  const [cursoSeleccionado, setCursoSeleccionado] = useState("4° 1°");
+  const [cursoSeleccionado, setCursoSeleccionado] = useState(
+    alumnoInicial ? `${alumnoInicial.curso || "1°"} ${alumnoInicial.division || "1"}°` : "1° 1°"
+  );
   const fecha = useMemo(() => getFechaActual(), []);
 
-  const [estudiantes, setEstudiantes] = useState([
-    { num: 1, apellido: "Alvarez", nombre: "Nicolás Daniel", p1: "7", p2: "8", v1: "TEA", c1: "7.50", f1: 0, p3: "8", p4: "10", v2: "TEA", c2: "9.00", f2: 1, dic: "-", feb: "-", final: "8.25" },
-    { num: 2, apellido: "Benítez", nombre: "Sofía Valentina", p1: "6", p2: "7", v1: "TEA", c1: "6.50", f1: 1, p3: "7", p4: "8", v2: "TEA", c2: "7.50", f2: 0, dic: "-", feb: "-", final: "7.00" },
-    { num: 3, apellido: "Cabrera", nombre: "Antonella Solange", p1: "9", p2: "9", v1: "TEA", c1: "9.00", f1: 0, p3: "10", p4: "10", v2: "TEA", c2: "10.00", f2: 0, dic: "-", feb: "-", final: "9.50" },
-    { num: 4, apellido: "Castro", nombre: "Brisa Morena", p1: "5", p2: "6", v1: "TEP", c1: "5.50", f1: 3, p3: "7", p4: "7", v2: "TEA", c2: "7.00", f2: 2, dic: "7.00", feb: "-", final: "7.00" },
-    { num: 5, apellido: "Díaz", nombre: "Joaquín Lautaro", p1: "8", p2: "8", v1: "TEA", c1: "8.00", f1: 0, p3: "8", p4: "9", v2: "TEA", c2: "8.50", f2: 0, dic: "-", feb: "-", final: "8.25" },
-    { num: 6, apellido: "Fernández", nombre: "Tomás Ignacio", p1: "7", p2: "7", v1: "TEA", c1: "7.00", f1: 2, p3: "7", p4: "8", v2: "TEA", c2: "7.50", f2: 1, dic: "-", feb: "-", final: "7.25" },
-    { num: 7, apellido: "Giménez", nombre: "Martina Belén", p1: "10", p2: "10", v1: "TEA", c1: "10.00", f1: 0, p3: "9", p4: "10", v2: "TEA", c2: "9.50", f2: 0, dic: "-", feb: "-", final: "9.75" },
-    { num: 8, apellido: "González", nombre: "Lucas Agustín", p1: "8", p2: "9", v1: "TEA", c1: "8.50", f1: 1, p3: "9", p4: "9", v2: "TEA", c2: "9.00", f2: 1, dic: "-", feb: "-", final: "8.75" },
-    { num: 9, apellido: "López", nombre: "Camila Denise", p1: "4", p2: "5", v1: "TED", c1: "4.50", f1: 4, p3: "6", p4: "7", v2: "TEP", c2: "6.50", f2: 3, dic: "6.00", feb: "7.00", final: "7.00" },
-    { num: 10, apellido: "Medina", nombre: "Lautaro Nahuel", p1: "8", p2: "8", v1: "TEA", c1: "8.00", f1: 0, p3: "8", p4: "8", v2: "TEA", c2: "8.00", f2: 0, dic: "-", feb: "-", final: "8.00" }
-  ]);
+  const [estudiantes, setEstudiantes] = useState(() => {
+    const list = [
+      { num: 1, apellido: "Alvarez", nombre: "Nicolás Daniel", p1: "7", p2: "8", v1: "TEA", c1: "7.50", f1: 0, p3: "8", p4: "10", v2: "TEA", c2: "9.00", f2: 1, dic: "-", feb: "-", final: "8.25" },
+      { num: 2, apellido: "Benítez", nombre: "Sofía Valentina", p1: "6", p2: "7", v1: "TEA", c1: "6.50", f1: 1, p3: "7", p4: "8", v2: "TEA", c2: "7.50", f2: 0, dic: "-", feb: "-", final: "7.00" },
+      { num: 3, apellido: "Cabrera", nombre: "Antonella Solange", p1: "9", p2: "9", v1: "TEA", c1: "9.00", f1: 0, p3: "10", p4: "10", v2: "TEA", c2: "10.00", f2: 0, dic: "-", feb: "-", final: "9.50" },
+      { num: 4, apellido: "Castro", nombre: "Brisa Morena", p1: "5", p2: "6", v1: "TEP", c1: "5.50", f1: 3, p3: "7", p4: "7", v2: "TEA", c2: "7.00", f2: 2, dic: "7.00", feb: "-", final: "7.00" },
+      { num: 5, apellido: "Díaz", nombre: "Joaquín Lautaro", p1: "8", p2: "8", v1: "TEA", c1: "8.00", f1: 0, p3: "8", p4: "9", v2: "TEA", c2: "8.50", f2: 0, dic: "-", feb: "-", final: "8.25" }
+    ];
+    if (alumnoInicial && alumnoInicial.apellido) {
+      return [
+        {
+          num: 1,
+          apellido: alumnoInicial.apellido,
+          nombre: alumnoInicial.nombre,
+          p1: "8",
+          p2: "9",
+          v1: "TEA",
+          c1: "8.50",
+          f1: 0,
+          p3: "9",
+          p4: "10",
+          v2: "TEA",
+          c2: "9.50",
+          f2: 0,
+          dic: "-",
+          feb: "-",
+          final: "9.00"
+        },
+        ...list.map((it, idx) => ({ ...it, num: idx + 2 }))
+      ];
+    }
+    return list;
+  });
 
   const estudiantesOrdenados = useMemo(() => {
     return [...estudiantes].sort((a, b) => {
