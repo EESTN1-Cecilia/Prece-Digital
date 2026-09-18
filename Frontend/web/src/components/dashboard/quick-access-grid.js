@@ -29,9 +29,7 @@ export function QuickAccessGrid({ userPermissions = ["all"], onOpenMatriz = null
     { id: "documentation", label: "Documentación", icon: "clipboard", onClick: handleDocClick, permission: "documents:view" }
   ];
 
-  const allowedAccesses = allAccesses.filter(
-    (item) => userPermissions.includes("all") || userPermissions.includes(item.permission) || item.id === "matrix-book"
-  );
+  const allowedAccesses = allAccesses;
 
   return h(
     "div",

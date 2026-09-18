@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { h, SiteLayout } from "../layouts/site-layout.js";
-import { AppLayout } from "../layouts/app-layout.js";
 import { CargandoPantalla, ErrorGlobal } from "../components/ui/index.js";
 import { PaginaNoEncontrada } from "./pagina-no-encontrada.js";
 import { AccesoDenegado } from "./acceso-denegado.js";
@@ -68,13 +67,8 @@ function App() {
     return () => window.removeEventListener("hashchange", alCambiar);
   }, []);
 
-  /* Las rutas publicas (login, activar cuenta) usan el layout del sitio; el resto,
-     el layout de la aplicacion con menu segun permisos, notificaciones y cuenta. */
-  const resultado = resolverRuta(ruta, RUTAS);
-  const Layout = resultado?.ruta?.publica ? SiteLayout : AppLayout;
-
   return h(
-    Layout,
+    SiteLayout,
     { ruta },
     errorGlobal ? h(ErrorGlobal, { error: errorGlobal, onCerrar: limpiar }) : null,
     inicializando ? h(CargandoPantalla, { texto: "Iniciando Prece Digital..." }) : h(Guardia, { ruta })
