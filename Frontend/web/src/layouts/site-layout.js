@@ -378,12 +378,19 @@ export function ModalDocumentosGlobal() {
 /* Layout de las rutas publicas (login, activar cuenta). Las pantallas internas
    usan AppLayout (layouts/app-layout.js). */
 export function SiteLayout({ ruta, children }) {
+  const esLogin =
+    ruta === "#/login" ||
+    ruta === "#/activar" ||
+    ruta?.startsWith("#/login") ||
+    ruta?.startsWith("#/activar");
+
   return h(
     React.Fragment,
     null,
     h(Header, { ruta }),
-    h("main", { className: "page", id: "inicio" }, children),
-    h(Footer),
+    h("main", { className: `page ${esLogin ? "page--login" : ""}`, id: "inicio" }, children),
+    esLogin ? null : h(Footer),
     h(ModalDocumentosGlobal)
   );
 }
+
