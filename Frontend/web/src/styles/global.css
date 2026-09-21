@@ -868,7 +868,7 @@ a {
   }
 }
 /* ==========================================================================
-   PANTALLA DE LOGIN (Rediseño institucional con estética Secretaría)
+   PANTALLA DE LOGIN
    ========================================================================== */
 
 .page--login {
@@ -2505,9 +2505,9 @@ a {
 
 .orientation-tag {
   font-size: 10.5px;
-  color: #1e3a8a;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
+  color: #0369a1;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
   padding: 2px 6px;
   border-radius: 6px;
   font-weight: 600;
@@ -2518,6 +2518,25 @@ a {
   white-space: nowrap;
   vertical-align: middle;
 }
+
+.orientation-tag--basico {
+  color: #0369a1;
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+}
+
+.orientation-tag--informatica {
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.orientation-tag--programacion {
+  color: #be185d;
+  background: #fdf2f8;
+  border: 1px solid #fbcfe8;
+}
+
 
 .turno-compact-text {
   font-size: 11px;
@@ -3302,9 +3321,9 @@ a {
 }
 
 .tag--informatica {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .tag--programacion {
