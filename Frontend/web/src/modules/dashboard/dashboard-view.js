@@ -308,7 +308,16 @@ export default function DashboardView() {
                                 { className: "col-orientacion" },
                                 h(
                                   "span",
-                                  { className: "orientation-tag", title: item.orientacion },
+                                  {
+                                    className: `orientation-tag ${
+                                      item.orientacion === "Ciclo Básico"
+                                        ? "orientation-tag--basico"
+                                        : item.orientacion?.includes("Informática")
+                                        ? "orientation-tag--informatica"
+                                        : "orientation-tag--programacion"
+                                    }`,
+                                    title: item.orientacion
+                                  },
                                   orientacionLimpia
                                 )
                               ),
