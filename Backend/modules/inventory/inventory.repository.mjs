@@ -34,7 +34,8 @@ const inventoryRepository = {
       updatedBy: item.createdBy,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      isActive: item.isActive ?? true
+      isActive: item.isActive ?? true,
+      allowReservation: item.allowReservation ?? true
     };
     getStore().inventoryItems.set(record.id, record);
     return cloneItem(record);

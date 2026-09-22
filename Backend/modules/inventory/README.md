@@ -18,6 +18,9 @@ datos del material se auditan en un historial independiente.
 Catálogo de estados: `disponible`, `agotado`, `danado`, `en_reparacion`, `inactivo`.
 Categorías: `mobiliario`, `equipamiento`, `material`, `herramienta`, `tecnologia`, `otro`.
 
+`allowReservation` (booleano, por defecto `true`) habilita o deshabilita un material para el
+módulo de reservas de materiales. Se controla en el alta y con `PATCH /api/v1/inventory/:itemId`.
+
 ## Stock
 
 - `GET /api/v1/inventory/:itemId/stock` → stock vigente + nivel (`normal`, `bajo`, `agotado`)

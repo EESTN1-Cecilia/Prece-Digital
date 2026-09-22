@@ -60,6 +60,14 @@ function validarCantidadNoNegativa(value, campo) {
   return numero;
 }
 
+function validarBooleano(value, campo) {
+  if (value == null) return true;
+  if (typeof value !== "boolean") {
+    throw errorDeCampo(campo, `El campo ${campo} debe ser un booleano.`);
+  }
+  return value;
+}
+
 function validarEnteroMayorACero(value) {
   const numero = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
   if (typeof numero !== "number" || !Number.isInteger(numero) || numero <= 0) {
@@ -106,6 +114,7 @@ const inventoryService = {
       status,
       location: validarTextoOpcional(data.location, "location", 200),
       observations: validarTextoOpcional(data.observations, "observations", 2000),
+      allowReservation: validarBooleano(data.allowReservation, "allowReservation"),
       schoolId,
       createdBy: user.id
     });
@@ -175,6 +184,7 @@ const inventoryService = {
     if (Object.hasOwn(data, "status")) cambios.status = validarEstado(data.status);
     if (Object.hasOwn(data, "location")) cambios.location = validarTextoOpcional(data.location, "location", 200);
     if (Object.hasOwn(data, "observations")) cambios.observations = validarTextoOpcional(data.observations, "observations", 2000);
+    if (Object.hasOwn(data, "allowReservation")) cambios.allowReservation = validarBooleano(data.allowReservation, "allowReservation");
 
     if (Object.hasOwn(data, "name") && cambios.name) {
       const duplicado = inventoryRepository.findByDuplicate({

@@ -4,8 +4,8 @@ export function createNotification({ body, user }) {
   return notificationsService.create(body, user);
 }
 
-export function getNotification({ params }) {
-  return notificationsService.getById(params.notificationId);
+export function getNotification({ params, user }) {
+  return notificationsService.getById(params.notificationId, user);
 }
 
 export function listNotifications({ url, user }) {
@@ -17,8 +17,16 @@ export function markAsRead({ params, user }) {
   return notificationsService.markAsRead(params.notificationId, user);
 }
 
+export function markManyRead({ body, user }) {
+  return notificationsService.markManyRead(body, user);
+}
+
 export function markAllRead({ user }) {
   return notificationsService.markAllRead(user);
+}
+
+export function archiveNotification({ params, user }) {
+  return notificationsService.archive(params.notificationId, user);
 }
 
 export function getUnreadCount({ user }) {

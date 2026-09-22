@@ -1,0 +1,71 @@
+USE prece_digital;
+
+CREATE TABLE IF NOT EXISTS reservas_materiales (
+  id               VARCHAR(40)  NOT NULL PRIMARY KEY COMMENT 'Prefijo mres_ (coincide con el modulo en memoria)',
+  responsable_id   INT UNSIGNED NOT NULL COMMENT 'FK a usuarios: quien reserva (siempre de la sesion)',
+  escuela_id       INT UNSIGNED NOT NULL COMMENT 'Escuela a la que pertenece la reserva',
+  fecha_inicio     DATE         NOT NULL COMMENT 'Fecha de inicio del periodo reservado',
+  hora_inicio      TIME         NOT NULL COMMENT 'Hora de inicio del periodo reservado',
+  fecha_fin        DATE         NOT NULL COMMENT 'Fecha de finalizacion del periodo reservado',
+  hora_fin         TIME         NOT NULL COMMENT 'Hora de finalizacion del periodo reservado',
+  inicio           DATETIME     NOT NULL COMMENT 'Inicio combinado para comparaciones de superposicion',
+  fin              DATETIME     NOT NULL COMMENT 'Fin combinado para comparaciones de superposicion',
+  motivo           VARCHAR(500) NOT NULL COMMENT 'Motivo o finalidad de la reserva',
+  observaciones    VARCHAR(1000) NULL,
+  estado           ENUM('pendiente','aprobada','rechazada','cancelada','activa','finalizada') NOT NULL DEFAULT 'pendiente',
+  decidido_por     INT UNSIGNED NULL COMMENT 'Quien resolvio aprobacion, rechazo, cancelacion o finalizacion',
+  aprobado_por     INT UNSIGNED NULL COMMENT 'Quien aprobo la reserva',
+  aprobado_en      DATETIME     NULL,
+  rechazado_por    INT UNSIGNED NULL COMMENT 'Quien rechazo la reserva',
+  rechazado_en     DATETIME     NULL,
+  motivo_rechazo   VARCHAR(500) NULL COMMENT 'Motivo del rechazo, obligatorio al rechazar',
+  cancelado_por    INT UNSIGNED NULL COMMENT 'Quien cancelo la reserva',
+  cancelado_en     DATETIME     NULL,
+  motivo_cancelacion VARCHAR(500) NULL,
+  activada_por     INT UNSIGNED NULL COMMENT 'Quien confirmo la entrega/activacion de la reserva',
+  activada_en      DATETIME     NULL,
+  movimientos      JSON         NULL COMMENT 'IDs de movimientos de inventario (baja) generados en la entrega',
+  finalizada_por   INT UNSIGNED NULL COMMENT 'Quien finalizo la reserva',
+  finalizada_en    DATETIME     NULL,
+  creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY ix_rm_escuela      (escuela_id),
+  KEY ix_rm_responsable  (responsable_id),
+  KEY ix_rm_estado       (estado),
+  KEY ix_rm_periodo      (inicio, fin),
+  KEY ix_rm_creado       (creado_en),
+  CONSTRAINT fk_rm_responsable FOREIGN KEY (responsable_id) REFERENCES usuarios(id),
+  CONSTRAINT fk_rm_escuela     FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_rm_decidido    FOREIGN KEY (decidido_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_rm_aprobado    FOREIGN KEY (aprobado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_rm_rechazado   FOREIGN KEY (rechazado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_rm_cancelado   FOREIGN KEY (cancelado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_rm_activada    FOREIGN KEY (activada_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_rm_finalizada  FOREIGN KEY (finalizada_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS reservas_materiales_items (
+  id             VARCHAR(40) NOT NULL PRIMARY KEY COMMENT 'Prefijo mri_',
+  reserva_id     VARCHAR(40) NOT NULL COMMENT 'FK a reservas_materiales',
+  material_id    VARCHAR(40) NOT NULL COMMENT 'FK a inventario_materiales',
+  cantidad       INT         NOT NULL COMMENT 'Cantidad reservada, mayor a cero',
+  KEY ix_rmi_reserva  (reserva_id),
+  KEY ix_rmi_material (material_id),
+  CONSTRAINT fk_rmi_reserva  FOREIGN KEY (reserva_id) REFERENCES reservas_materiales(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rmi_material FOREIGN KEY (material_id) REFERENCES inventario_materiales(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS historial_reservas_materiales (
+  id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  reserva_id     VARCHAR(40) NOT NULL COMMENT 'FK a reservas_materiales',
+  estado_anterior VARCHAR(30) NULL,
+  estado_nuevo   VARCHAR(30) NOT NULL,
+  usuario_id     INT UNSIGNED NULL COMMENT 'Quien realizo la transicion o modificacion',
+  detalle        JSON        NULL COMMENT 'Datos de la accion (motivo, cantidades, movimientos generados, cambios)',
+  cambiado_en    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY ix_hrm_reserva  (reserva_id),
+  KEY ix_hrm_estado   (estado_nuevo),
+  KEY ix_hrm_usuario  (usuario_id),
+  CONSTRAINT fk_hrm_reserva  FOREIGN KEY (reserva_id) REFERENCES reservas_materiales(id) ON DELETE CASCADE,
+  CONSTRAINT fk_hrm_usuario  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;

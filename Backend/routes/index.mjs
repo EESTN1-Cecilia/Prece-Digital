@@ -14,6 +14,8 @@ import * as absencesController from "../modules/absences/absences.controller.mjs
 import * as workshopsController from "../modules/workshops/workshops.controller.mjs";
 import * as inventoryController from "../modules/inventory/inventory.controller.mjs";
 import * as requestsController from "../modules/requests/requests.controller.mjs";
+import * as materialRequestsController from "../modules/material-requests/material-requests.controller.mjs";
+import * as materialReservationsController from "../modules/material-reservations/material-reservations.controller.mjs";
 import * as reservationsController from "../modules/reservations/reservations.controller.mjs";
 import * as notificationsController from "../modules/notifications/notifications.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
@@ -177,6 +179,30 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/requests/:requestId/comments", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: requestsController.addComment },
   { method: "GET", path: "/api/v1/requests/:requestId/comments", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: requestsController.listComments },
 
+  { method: "POST", path: "/api/v1/material-requests", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: materialRequestsController.createRequest },
+  { method: "GET", path: "/api/v1/material-requests", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: materialRequestsController.listRequests },
+  { method: "GET", path: "/api/v1/material-requests/:requestId", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: materialRequestsController.getRequest },
+  { method: "PATCH", path: "/api/v1/material-requests/:requestId", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: materialRequestsController.updateRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/status", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.changeStatus },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/approve", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.approveRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/reject", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.rejectRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/cancel", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: materialRequestsController.cancelRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/deliver", middlewares: [verifyToken, required(P.REQUESTS_MANAGE), required(P.INVENTORY_WRITE)], handler: materialRequestsController.deliverRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/close", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.closeRequest },
+  { method: "GET", path: "/api/v1/material-requests/:requestId/history", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: materialRequestsController.getRequestHistory },
+
+  { method: "POST", path: "/api/v1/material-reservations", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: materialReservationsController.createReservation },
+  { method: "GET", path: "/api/v1/material-reservations", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.listReservations },
+  { method: "GET", path: "/api/v1/material-reservations/availability", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.getAvailability },
+  { method: "GET", path: "/api/v1/material-reservations/:reservationId", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.getReservation },
+  { method: "PATCH", path: "/api/v1/material-reservations/:reservationId", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: materialReservationsController.updateReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/approve", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE)], handler: materialReservationsController.approveReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/reject", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE)], handler: materialReservationsController.rejectReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/cancel", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: materialReservationsController.cancelReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/deliver", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE), required(P.INVENTORY_WRITE)], handler: materialReservationsController.deliverReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/finish", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE)], handler: materialReservationsController.finishReservation },
+  { method: "GET", path: "/api/v1/material-reservations/:reservationId/history", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.getReservationHistory },
+
   { method: "POST", path: "/api/v1/reservations", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: reservationsController.createReservation },
   { method: "GET", path: "/api/v1/reservations", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: reservationsController.listReservations },
   { method: "GET", path: "/api/v1/reservations/:reservationId", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: reservationsController.getReservation },
@@ -188,9 +214,11 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/notifications", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.createNotification },
   { method: "GET", path: "/api/v1/notifications", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.listNotifications },
   { method: "GET", path: "/api/v1/notifications/unread-count", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getUnreadCount },
+  { method: "POST", path: "/api/v1/notifications/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markManyRead },
+  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAllRead },
   { method: "GET", path: "/api/v1/notifications/:notificationId", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getNotification },
   { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAsRead },
-  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAllRead },
+  { method: "POST", path: "/api/v1/notifications/:notificationId/archive", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.archiveNotification },
 
   { method: "POST", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.createArea },
   { method: "GET", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.listAreas },
