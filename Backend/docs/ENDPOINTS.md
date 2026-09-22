@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 190 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -281,6 +281,20 @@ Total: 190 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/absences/:absenceId` | `absences.read` |
 | PATCH | `/api/v1/absences/:absenceId` | `absences.write` |
 | DELETE | `/api/v1/absences/:absenceId` | `absences.manage` |
+
+## inasistencias
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/inasistencias/motivos` | `attendance.read` |
+| POST | `/api/v1/inasistencias` | `attendance.write` |
+| GET | `/api/v1/inasistencias` | `attendance.read` |
+| GET | `/api/v1/inasistencias/estadisticas` | `attendance.read` |
+| GET | `/api/v1/inasistencias/alumno/:alumnoId/totales` | `attendance.read` |
+| GET | `/api/v1/inasistencias/:inasistenciaId/historial` | `attendance.read` |
+| GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
+| POST | `/api/v1/inasistencias/:inasistenciaId/justify` | `attendance.write` |
+| PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
 
 ## incidents
 
