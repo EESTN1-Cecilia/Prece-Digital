@@ -4,11 +4,85 @@ import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { SummaryCard } from "../../components/dashboard/summary-card.js";
 import { AlertCard } from "../../components/dashboard/alert-card.js";
 import { QuickAccessGrid } from "../../components/dashboard/quick-access-grid.js";
-import { RoleSwitch } from "../../components/common/role-switch.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../components/common/state-handlers.js";
 import { SecretariaService } from "../secretaria/secretaria-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { AlumnoMatrizModal } from "../students/alumno-matriz-wiew.js";
+
+// Helper icons para las tarjetas de métricas
+function IconGroupUsers({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("path", { d: "M22 21v-2a4 4 0 0 0-3-3.87" }),
+    h("path", { d: "M16 3.13a4 4 0 0 1 0 7.75" })
+  );
+}
+
+function IconUserVerified({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("polyline", { points: "16 11 18 13 22 9" })
+  );
+}
+
+function IconUserAdd({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("line", { x1: "19", y1: "8", x2: "19", y2: "14" }),
+    h("line", { x1: "16", y1: "11", x2: "22", y2: "11" })
+  );
+}
+
+function IconUserRemove({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("line", { x1: "22", y1: "11", x2: "16", y2: "11" })
+  );
+}
 
 export default function DashboardView() {
   const user = useUsuarioActual();
@@ -68,6 +142,13 @@ export default function DashboardView() {
     }).format(new Date(date));
   };
 
+  const formatFechaBanner = (date) => {
+    const d = date ? new Date(date) : new Date();
+    const options = { weekday: "long", day: "numeric", month: "long", year: "numeric" };
+    const raw = new Intl.DateTimeFormat("es-AR", options).format(d);
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  };
+
   // Filtrado de cursos por turno y orientación
   const cursosFiltrados = (data?.alumnosPorCurso || []).filter((c) => {
     const coincideTurno =
@@ -82,20 +163,24 @@ export default function DashboardView() {
     return coincideTurno && coincideOrientacion;
   });
 
+  const totalAlumnos = data?.resumenAlumnos?.total ?? 0;
+  const activosAlumnos = data?.resumenAlumnos?.activos ?? 0;
+  const inactivosAlumnos = data?.resumenAlumnos?.inactivos ?? 0;
+  const nuevasInscripciones = data?.resumenAlumnos?.nuevasInscripciones ?? totalAlumnos;
+
   return h(
     "section",
     { className: "secretaria-dashboard preceptoria-dashboard" },
 
-    // 1. Barra superior con Switch de Rol y datos institucionales
+    // 1. Barra superior con datos institucionales (sin switch de roles)
     h(
       "div",
       { className: "secretaria-top-bar" },
       h(
         "div",
         { className: "secretaria-eyebrow" },
-        `${data?.institucion?.nombre || user.escuela || "E.E.S.T N°1 Monte Grande"} · CICLO ${data?.institucion?.cicloLectivo || user.cicloLectivo || 2026}`
-      ),
-      h(RoleSwitch, { activeRole: "preceptor" })
+        `${data?.institucion?.nombre || user.escuela || "E.E.S.T N° 1 MONTE GRANDE"}`
+      )
     ),
 
     // 2. Título institucional y botón "Actualizar datos"
@@ -108,7 +193,7 @@ export default function DashboardView() {
         h("h1", { className: "secretaria-title" }, "Tablero de Preceptoría"),
         lastUpdated
           ? h("p", { className: "secretaria-last-updated" }, `Última actualización: ${formatFechaHora(lastUpdated)}`)
-          : h("p", { className: "secretaria-last-updated" }, `Bienvenido/a, ${user.nombre ? `"${user.nombre}"` : "Preceptor/a"} · Gestión y control escolar`)
+          : h("p", { className: "secretaria-last-updated" }, `Bienvenido/a · Seguimiento de cursos y alumnos`)
       ),
       h(
         "div",
@@ -138,50 +223,133 @@ export default function DashboardView() {
           Fragment,
           null,
 
-          // 1. Resumen General de Alumnos y Cursos
+          // 1. Banner Principal con Fecha y Escudo Institucional Notorio
+          h(
+            "div",
+            { className: "dashboard-hero-banner" },
+            h(
+              "div",
+              { className: "dashboard-hero-banner__left" },
+              h("h2", { className: "dashboard-hero-banner__date" }, formatFechaBanner(new Date())),
+              h(
+                "p",
+                { className: "dashboard-hero-banner__text" },
+                "Aquí tenés un resumen del control y seguimiento de cursos y alumnos."
+              )
+            ),
+            h(
+              "div",
+              { className: "dashboard-hero-badge" },
+              h(
+                "div",
+                { className: "school-crest-avatar" },
+                h("img", {
+                  src: "/assets/tecnica-n1-monte-grande.png",
+                  alt: "Escudo E.E.S.T N°1",
+                  className: "school-crest-img",
+                  onError: (e) => {
+                    e.currentTarget.src = "/assets/Técnica_N°1_Monte_Grande.png";
+                  }
+                })
+              ),
+              h(
+                "div",
+                { className: "school-crest-text" },
+                h("strong", { className: "school-crest-title" }, "E.E.S.T N°1"),
+                h("span", { className: "school-crest-subtitle" }, "Monte Grande")
+              )
+            )
+          ),
+
+          // 2. Resumen General de Alumnos y Cursos
           h(
             "div",
             { className: "secretaria-summary-layout" },
 
-            // Columna Izquierda: 3 tarjetas de métricas + Banner
+            // Columna Izquierda: Grilla 2x2 de métricas con cajas de colores y hover temático
             h(
               "div",
-              { className: "summary-main-col" },
+              { className: "kpi-summary-grid" },
+
+              // Card 1: Total de Alumnos (Azul)
               h(
                 "div",
-                { className: "summary-cards-row" },
+                { className: "kpi-metric-card kpi-metric-card--blue" },
                 h(
                   "div",
-                  { className: "metric-box-card" },
-                  h("span", { className: "metric-box-card__label" }, "TOTAL DE ALUMNOS"),
-                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.total ?? 0),
-                  h("span", { className: "metric-box-card__subtext" }, `Ciclo ${data?.institucion?.cicloLectivo || 2026}`)
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--blue" },
+                  h(IconGroupUsers, null)
                 ),
                 h(
                   "div",
-                  { className: "metric-box-card" },
-                  h("span", { className: "metric-box-card__label" }, "ACTIVOS"),
-                  h("div", { className: "metric-box-card__value" }, data.resumenAlumnos?.activos ?? 0),
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Total de Alumnos"),
+                  h("div", { className: "kpi-metric-card__value" }, totalAlumnos),
                   h(
-                    "span",
-                    { className: "metric-box-card__subtext" },
-                    `${data.resumenAlumnos?.total ? ((data.resumenAlumnos.activos / data.resumenAlumnos.total) * 100).toFixed(1).replace(".", ",") : "0"}% del padrón`
+                    "div",
+                    { className: "kpi-metric-card__subrow" },
+                    h("span", { className: "kpi-metric-card__period" }, `Ciclo ${data?.institucion?.cicloLectivo || 2026}`),
+                    h("span", { className: "kpi-metric-card__trend" }, `↗ +${totalAlumnos} este mes`)
                   )
-                ),
-                h(
-                  "div",
-                  { className: "metric-box-card" },
-                  h("span", { className: "metric-box-card__label" }, "ALERTAS ACTIVAS"),
-                  h("div", { className: "metric-box-card__value" }, data.alertas?.length ?? 0),
-                  h("span", { className: "metric-box-card__subtext" }, "Requieren atención")
                 )
               ),
-              // Banner inferior
+
+              // Card 2: Alumnos Activos (Violeta)
               h(
                 "div",
-                { className: "summary-banner-card" },
-                h("h3", { className: "summary-banner-card__title" }, "Control diario de cursos y asistencias"),
-                h("p", { className: "summary-banner-card__text" }, "Vista consolidada para preceptoría con seguimiento de presentismo, novedades pedagógicas y altas/bajas de matrícula por turno.")
+                { className: "kpi-metric-card kpi-metric-card--purple" },
+                h(
+                  "div",
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--purple" },
+                  h(IconUserVerified, null)
+                ),
+                h(
+                  "div",
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Alumnos Activos"),
+                  h("div", { className: "kpi-metric-card__value" }, activosAlumnos),
+                  h(
+                    "span",
+                    { className: "kpi-metric-card__subtext" },
+                    `${totalAlumnos ? ((activosAlumnos / totalAlumnos) * 100).toFixed(1).replace(".", ",") : "0"}% del padrón`
+                  )
+                )
+              ),
+
+              // Card 3: Nuevas Inscripciones (Verde)
+              h(
+                "div",
+                { className: "kpi-metric-card kpi-metric-card--green" },
+                h(
+                  "div",
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--green" },
+                  h(IconUserAdd, null)
+                ),
+                h(
+                  "div",
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Nuevas Inscripciones"),
+                  h("div", { className: "kpi-metric-card__value" }, nuevasInscripciones),
+                  h("span", { className: "kpi-metric-card__subtext" }, "En proceso")
+                )
+              ),
+
+              // Card 4: Bajas / Requieren atención (Ámbar)
+              h(
+                "div",
+                { className: "kpi-metric-card kpi-metric-card--amber" },
+                h(
+                  "div",
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--amber" },
+                  h(IconUserRemove, null)
+                ),
+                h(
+                  "div",
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Bajas / Egresos"),
+                  h("div", { className: "kpi-metric-card__value" }, inactivosAlumnos),
+                  h("span", { className: "kpi-metric-card__subtext" }, "Requieren revisión")
+                )
               )
             ),
 
@@ -190,9 +358,12 @@ export default function DashboardView() {
               "div",
               { className: "turnos-side-card" },
               h("span", { className: "turnos-side-card__label" }, "DISTRIBUCIÓN POR TURNOS"),
-              h("div", { className: "turnos-side-card__value" }, `${data.resumenAlumnos?.porTurno?.length ?? 0} turnos`),
+              h(
+                "div",
+                { className: "turnos-side-card__value" },
+                `${data.resumenAlumnos?.porTurno?.length ?? 2} turnos`
+              ),
               (data.resumenAlumnos?.porTurno ?? []).map((t) => {
-                const totalAlumnos = data.resumenAlumnos?.total ?? 0;
                 const pct = t.porcentaje || (totalAlumnos > 0 ? (t.cantidad / totalAlumnos) * 100 : 50);
                 return h(
                   "div",
@@ -208,7 +379,7 @@ export default function DashboardView() {
                     { className: "turno-progress-bar-bg" },
                     h("div", {
                       className: "turno-progress-bar-fill",
-                      style: { width: `${Math.min(100, Math.max(8, pct))}%` }
+                      style: { width: `${Math.min(100, Math.max(6, pct))}%` }
                     })
                   )
                 );
