@@ -181,7 +181,7 @@ function UserAvatarMenu() {
   );
 }
 
-function Header({ ruta }) {
+function Header({ ruta, esLogin }) {
   const enlaces = [
     ["Inicio", "#/inicio"],
     ["Sobre Nosotros", "#nosotros"],
@@ -210,33 +210,35 @@ function Header({ ruta }) {
       h(
         "div",
         { className: "site-header__center" },
-        h(
-          "nav",
-          { className: "main-nav", "aria-label": "Navegación principal" },
-          enlaces.map(([label, href]) => {
-            const activo =
-              href === ruta ||
-              (href === "#/inicio" &&
-                (!ruta ||
-                  ruta === "#/inicio" ||
-                  ruta === "#/secretaria" ||
-                  ruta === "#/preceptoria" ||
-                  ruta === "#/alumnos" ||
-                  ruta === "#/alumnos/cargar" ||
-                  ruta === "#/alumnos/nuevo"));
+        !esLogin
+          ? h(
+              "nav",
+              { className: "main-nav", "aria-label": "Navegación principal" },
+              enlaces.map(([label, href]) => {
+                const activo =
+                  href === ruta ||
+                  (href === "#/inicio" &&
+                    (!ruta ||
+                      ruta === "#/inicio" ||
+                      ruta === "#/secretaria" ||
+                      ruta === "#/preceptoria" ||
+                      ruta === "#/alumnos" ||
+                      ruta === "#/alumnos/cargar" ||
+                      ruta === "#/alumnos/nuevo"));
 
-            return h(
-              "a",
-              {
-                key: href,
-                className: `nav-pill-btn ${activo ? "active" : ""}`,
-                href,
-                "aria-current": activo ? "page" : undefined
-              },
-              label
-            );
-          })
-        )
+                return h(
+                  "a",
+                  {
+                    key: href,
+                    className: `nav-pill-btn ${activo ? "active" : ""}`,
+                    href,
+                    "aria-current": activo ? "page" : undefined
+                  },
+                  label
+                );
+              })
+            )
+          : null
       ),
       h(
         "div",
@@ -282,7 +284,19 @@ function FooterLinks({ title, links }) {
   );
 }
 
-function Footer({ onOpenDocumento }) {
+function Footer({ esLogin, onOpenDocumento }) {
+  const linksNavegacion = esLogin
+    ? [
+        ["Inicio", "#/inicio"],
+        ["Sobre Nosotros", "#nosotros"]
+      ]
+    : [
+        ["Inicio", "#/inicio"],
+        ["Alumnos", "#/alumnos"],
+        ["Observaciones", "#/preceptoria/observaciones"],
+        ["Sobre Nosotros", "#nosotros"]
+      ];
+
   return h(
     "footer",
     { className: "site-footer" },
@@ -334,12 +348,7 @@ function Footer({ onOpenDocumento }) {
         { className: "footer-nav" },
         h(FooterLinks, {
           title: "Links",
-          links: [
-            ["Inicio", "#/inicio"],
-            ["Alumnos", "#/alumnos"],
-            ["Observaciones", "#/preceptoria/observaciones"],
-            ["Sobre Nosotros", "#nosotros"]
-          ]
+          links: linksNavegacion
         }),
         h(FooterLinks, {
           title: "Ayuda",
@@ -387,9 +396,9 @@ export function SiteLayout({ ruta, children }) {
   return h(
     React.Fragment,
     null,
-    h(Header, { ruta }),
+    h(Header, { ruta, esLogin }),
     h("main", { className: `page ${esLogin ? "page--login" : ""}`, id: "inicio" }, children),
-    esLogin ? null : h(Footer),
+    h(Footer, { esLogin }),
     h(ModalDocumentosGlobal)
   );
 }
