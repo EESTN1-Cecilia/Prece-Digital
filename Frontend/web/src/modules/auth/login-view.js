@@ -77,13 +77,13 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
         h(
           "div",
           { className: "secretaria-eyebrow login-card__eyebrow" },
-          "E.E.S.T. Nº 1 · CICLO LECTIVO 2026"
+          "E.E.S.T. Nº 1 · CECILIA BERDICHEVSKI"
         ),
         h(
           "div",
           { className: "login-official-badge" },
           h("span", { className: "login-official-dot", "aria-hidden": "true" }),
-          h("span", null, "Acceso Oficial")
+          h("span", null, "ACCESO OFICIAL")
         )
       ),
 
@@ -182,7 +182,7 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
               className: "login-input",
               value: datos.email,
               onChange: actualizar("email"),
-              placeholder: "ejemplo@abc.gob.ar",
+              placeholder: "secretaria@prece.local",
               autoComplete: "username",
               required: true,
               disabled: enviando
@@ -232,7 +232,7 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
               className: "login-input login-input--password",
               value: datos.password,
               onChange: actualizar("password"),
-              placeholder: "Ingresá tu contraseña...",
+              placeholder: "••••••••••••",
               autoComplete: "current-password",
               required: true,
               disabled: enviando
@@ -267,8 +267,7 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
               href: "mailto:Prece.Digital.Soporte@gmail.com",
               className: "login-action-link login-action-link--support"
             },
-            h(IconoFigma, { nombre: "support", className: "login-support-icon" }),
-            h("span", null, "Soporte")
+            "Soporte"
           )
         ),
 
