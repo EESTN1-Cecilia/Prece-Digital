@@ -4,6 +4,7 @@ import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { SummaryCard } from "../../components/dashboard/summary-card.js";
 import { AlertCard } from "../../components/dashboard/alert-card.js";
 import { QuickAccessGrid } from "../../components/dashboard/quick-access-grid.js";
+import { CursoDistribucionGrafico } from "../../components/dashboard/curso-distribucion-grafico.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge} from "../../components/common/state-handlers.js";
 import { SecretariaService } from "./secretaria-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
@@ -152,10 +153,10 @@ export default function SecretariaDashboardView() {
 
   // Filtrado de cursos por turno y orientación
   const cursosFiltrados = (data?.alumnosPorCurso || []).filter((c) => {
+    const turnoCurso = String(c.turnoAula || c.turno || "").toLowerCase();
     const coincideTurno =
       selectedTurnoFilter === "todos" ||
-      String(c.turnoAula ?? "").toLowerCase().includes(selectedTurnoFilter.toLowerCase()) ||
-      String(c.turnoTaller ?? "").toLowerCase().includes(selectedTurnoFilter.toLowerCase());
+      turnoCurso.includes(selectedTurnoFilter.toLowerCase());
 
     const coincideOrientacion =
       selectedOrientacionFilter === "todas" ||
@@ -442,122 +443,46 @@ export default function SecretariaDashboardView() {
                 },
                 cursosFiltrados.length === 0
                   ? h(EmptyState, { mensaje: "No hay cursos registrados para los filtros seleccionados." })
-                  : h(
-                      "div",
-                      { className: "table-responsive secretaria-cursos-table-wrap" },
-                      h(
-                        "table",
-                        { className: "custom-table secretaria-cursos-table" },
-                        h(
-                          "thead",
-                          null,
-                          h(
-                            "tr",
-                            null,
-                            h("th", { className: "col-curso" }, "Curso"),
-                            h("th", { className: "col-orientacion" }, "Orientación"),
-                            h("th", { className: "col-turnos" }, "Turnos"),
-                            h("th", { className: "col-alumnos text-center" }, "Alumnos"),
-                            h("th", { className: "col-estado text-center" }, "Estado"),
-                            h("th", { className: "col-accion text-center" }, "Acción")
-                          )
-                        ),
-                        h(
-                          "tbody",
-                          null,
-                          cursosFiltrados.map((item) => {
-                            const orientacionLimpia = (item.orientacion || "").replace(/^Técnico en\s+/i, "");
-                            return h(
-                              "tr",
-                              { key: item.id },
-                              h(
-                                "td",
-                                { className: "col-curso" },
-                                h("strong", { className: "curso-nombre-bold" }, `${item.curso} ${item.division}`)
-                              ),
-                              h(
-                                "td",
-                                { className: "col-orientacion" },
-                                h(
-                                  "span",
-                                  {
-                                    className: `orientation-tag ${
-                                      item.orientacion === "Ciclo Básico"
-                                        ? "orientation-tag--basico"
-                                        : item.orientacion?.includes("Informática")
-                                        ? "orientation-tag--informatica"
-                                        : "orientation-tag--programacion"
-                                    }`,
-                                    title: item.orientacion
-                                  },
-                                  orientacionLimpia
-                                )
-                              ),
-                              h(
-                                "td",
-                                { className: "col-turnos" },
-                                h(
-                                  "div",
-                                  { className: "turno-compact-text" },
-                                  h("span", { className: "turno-aula-line" }, item.turnoAula),
-                                  h("span", { className: "turno-taller-line" }, ` / ${item.turnoTaller}`)
-                                )
-                              ),
-                              h(
-                                "td",
-                                { className: "col-alumnos text-center" },
-                                h(
-                                  "span",
-                                  { className: "alumnos-badge-count" },
-                                  h("strong", null, item.cantidad),
-                                  h("span", { className: "alumnos-sub-pct" }, ` (${item.porcentaje}%)`)
-                                )
-                              ),
-                              h(
-                                "td",
-                                { className: "col-estado text-center" },
-                                h(StatusBadge, { status: item.estado })
-                              ),
-                              h(
-                                "td",
-                                { className: "col-accion text-center" },
-                                h(
-                                  "a",
-                                  {
-                                    href: `#/alumnos?curso=${encodeURIComponent(item.curso)}&div=${encodeURIComponent(item.division)}`,
-                                    className: "btn-table-action-link",
-                                    title: `Ver alumnos de ${item.curso} ${item.division}`
-                                  },
-                                  "Ver Alumnos"
-                                )
-                              )
-                            );
-                          })
-                        )
-                      )
-                    )
+                  : h(CursoDistribucionGrafico, {
+                      cursos: cursosFiltrados,
+                      turnoFiltro: selectedTurnoFilter,
+                      totalDivisiones: data?.alumnosPorCurso?.length || 19
+                    })
               ),
 
-              // 3.2 Tarjeta de Alertas de Secretaría
+              // 3.2 Tarjeta de Registro de Actividad y Auditoría Reciente
               h(
                 DashboardCard,
                 {
-                  title: "Alertas de Secretaría",
-                  icon: "alert",
-                  badge: `${data.alertas?.length || 0} pendientes`
+                  title: "Registro de Actividad y Auditoría Reciente",
+                  icon: "activity",
+                  badge: `${data.actividadReciente?.length || 0} eventos`,
+                  collapsible: true
                 },
-                data.alertas?.length === 0
-                  ? h(EmptyState, { mensaje: "No hay alertas pendientes." })
+                data.actividadReciente?.length === 0
+                  ? h(EmptyState, { mensaje: "No hay actividades registradas recientemente." })
                   : h(
                       "div",
-                      { className: "alerts-container" },
-                      data.alertas?.map((alerta) =>
-                        h(AlertCard, {
-                          key: alerta.id,
-                          alert: alerta,
-                          onDismiss: handleDismissAlert
-                        })
-                      )
+                      { className: "activity-timeline-list" },
+                      data.actividadReciente?.map((item, idx) => {
+                        const initials = ["GB", "MP", "GB", "AR"][idx % 4] || "GB";
+                        return h(
+                          "div",
+                          { key: item.id, className: "activity-item-row" },
+                          h(
+                            "div",
+                            { className: "activity-item-left" },
+                            h("div", { className: "activity-avatar" }, initials),
+                            h(
+                              "div",
+                              { className: "activity-info" },
+                              h("strong", { className: "activity-title" }, item.descripcion),
+                              h("span", { className: "activity-subtitle" }, item.recurso || `Por: ${item.usuario}`)
+                            )
+                          ),
+                          h("time", { className: "activity-time" }, item.fecha)
+                        );
+                      })
                     )
               )
             ),
@@ -682,41 +607,6 @@ export default function SecretariaDashboardView() {
                     )
               )
             )
-          ),
-
-          // 7. Información Reciente / Auditoría
-          h(
-            DashboardCard,
-            {
-              title: "Registro de Actividad y Auditoría Reciente",
-              icon: "activity",
-              className: "dashboard-card--full"
-            },
-            data.actividadReciente?.length === 0
-              ? h(EmptyState, { mensaje: "No hay actividades registradas recientemente." })
-              : h(
-                  "div",
-                  { className: "activity-timeline-list" },
-                  data.actividadReciente?.map((item, idx) => {
-                    const initials = ["GB", "MP", "GB", "AR"][idx % 4] || "GB";
-                    return h(
-                      "div",
-                      { key: item.id, className: "activity-item-row" },
-                      h(
-                        "div",
-                        { className: "activity-item-left" },
-                        h("div", { className: "activity-avatar" }, initials),
-                        h(
-                          "div",
-                          { className: "activity-info" },
-                          h("strong", { className: "activity-title" }, item.descripcion),
-                          h("span", { className: "activity-subtitle" }, item.recurso || `Por: ${item.usuario}`)
-                        )
-                      ),
-                      h("time", { className: "activity-time" }, item.fecha)
-                    );
-                  })
-                )
           )
         )
       : null,

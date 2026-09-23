@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { DocumentosManagerModal } from "../modules/documents/document-modals.js";
-import { useSesion } from "../estado/hooks.js";
+import { useSesion, useNotificaciones } from "../estado/hooks.js";
+import { fecha } from "../utils/formato.js";
 
 export const h = React.createElement;
 
@@ -181,6 +182,197 @@ function UserAvatarMenu() {
   );
 }
 
+function IconBell({ className = "header-notification-icon" }) {
+  return h(
+    "svg",
+    {
+      className,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      "aria-hidden": "true"
+    },
+    h("path", { d: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" }),
+    h("path", { d: "M13.73 21a2 2 0 0 1-3.46 0" })
+  );
+}
+
+function HeaderNotificationsMenu() {
+  const [abierto, setAbierto] = useState(false);
+  const containerRef = useRef(null);
+  const { items, noLeidas, alternarLeida, marcarTodasLeidas, descartar } = useNotificaciones();
+
+  const ultimasTres = items.slice(0, 3);
+
+  useEffect(() => {
+    if (!abierto) return;
+
+    const handleClickFuera = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setAbierto(false);
+      }
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === "Escape") {
+        setAbierto(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickFuera);
+    document.addEventListener("keydown", handleKeydown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickFuera);
+      document.removeEventListener("keydown", handleKeydown);
+    };
+  }, [abierto]);
+
+  return h(
+    "div",
+    { className: "header-notifications-container", ref: containerRef },
+    h(
+      "button",
+      {
+        className: `header-notification-btn ${abierto ? "header-notification-btn--active" : ""}`,
+        type: "button",
+        "aria-label": noLeidas ? `Ver ${noLeidas} notificaciones pendientes` : "Ver notificaciones",
+        "aria-expanded": abierto,
+        onClick: () => setAbierto((prev) => !prev)
+      },
+      h(IconBell, null),
+      noLeidas > 0
+        ? h(
+            "span",
+            { className: "header-notification-badge" },
+            noLeidas > 99 ? "99+" : noLeidas
+          )
+        : null
+    ),
+    abierto
+      ? h(
+          "div",
+          { className: "header-notifications-dropdown", role: "dialog", "aria-label": "Notificaciones recientes" },
+          h(
+            "div",
+            { className: "header-notif-dropdown__header" },
+            h(
+              "div",
+              { className: "header-notif-dropdown__title-wrap" },
+              h("strong", { className: "header-notif-dropdown__title" }, "Notificaciones"),
+              noLeidas > 0
+                ? h("span", { className: "header-notif-dropdown__count" }, `${noLeidas} nuevas`)
+                : null
+            ),
+            noLeidas > 0
+              ? h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "header-notif-dropdown__mark-all",
+                    onClick: marcarTodasLeidas
+                  },
+                  "Marcar todas"
+                )
+              : null
+          ),
+          h(
+            "div",
+            { className: "header-notif-dropdown__body" },
+            ultimasTres.length === 0
+              ? h(
+                  "div",
+                  { className: "header-notif-dropdown__empty" },
+                  h(IconBell, { className: "header-notif-empty-icon" }),
+                  h("p", null, "No tenés notificaciones pendientes.")
+                )
+              : ultimasTres.map((notif) => {
+                  const esUrgente =
+                    String(notif.tipo).toLowerCase().includes("urgente") ||
+                    String(notif.tipo).toLowerCase().includes("crítico") ||
+                    String(notif.tipo).toLowerCase().includes("alerta");
+
+                  return h(
+                    "div",
+                    {
+                      key: notif.id,
+                      className: `header-notif-item ${notif.leida ? "header-notif-item--read" : "header-notif-item--unread"} ${esUrgente ? "header-notif-item--urgent" : ""}`,
+                      onClick: () => {
+                        if (!notif.leida) alternarLeida(notif.id, true);
+                        if (notif.destino) {
+                          window.location.hash = notif.destino;
+                          setAbierto(false);
+                        }
+                      }
+                    },
+                    h(
+                      "div",
+                      { className: "header-notif-item__main" },
+                      h(
+                        "div",
+                        { className: "header-notif-item__title-row" },
+                        h("strong", { className: "header-notif-item__title" }, notif.titulo),
+                        !notif.leida
+                          ? h("span", { className: "header-notif-dot" })
+                          : null
+                      ),
+                      h("p", { className: "header-notif-item__desc" }, notif.detalle),
+                      h(
+                        "div",
+                        { className: "header-notif-item__footer-row" },
+                        h("time", { className: "header-notif-item__time" }, fecha(notif.creadaEn)),
+                        h(
+                          "div",
+                          { className: "header-notif-item__quick-actions", onClick: (e) => e.stopPropagation() },
+                          h(
+                            "button",
+                            {
+                              type: "button",
+                              className: "header-notif-quick-btn",
+                              onClick: () => alternarLeida(notif.id, !notif.leida),
+                              title: notif.leida ? "Marcar no leída" : "Marcar leída"
+                            },
+                            notif.leida ? "No leída" : "Leída"
+                          ),
+                          h(
+                            "button",
+                            {
+                              type: "button",
+                              className: "header-notif-quick-btn header-notif-quick-btn--dismiss",
+                              onClick: () => descartar(notif.id),
+                              title: "Descartar"
+                            },
+                            "✕"
+                          )
+                        )
+                      )
+                    )
+                  );
+                })
+          ),
+          h(
+            "div",
+            { className: "header-notif-dropdown__footer" },
+            h(
+              "button",
+              {
+                type: "button",
+                className: "header-notif-dropdown__see-all-btn",
+                onClick: () => {
+                  setAbierto(false);
+                  window.location.hash = "#/notificaciones";
+                }
+              },
+              "Ver más notificaciones ➔"
+            )
+          )
+        )
+      : null
+  );
+}
+
 function Header({ ruta, esLogin }) {
   const enlaces = [
     ["Inicio", "#/inicio"],
@@ -243,6 +435,7 @@ function Header({ ruta, esLogin }) {
       h(
         "div",
         { className: "site-header__right" },
+        h(HeaderNotificationsMenu),
         h(UserAvatarMenu)
       )
     )

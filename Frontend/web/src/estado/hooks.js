@@ -76,7 +76,9 @@ export function useNotificaciones() {
     origen,
     refrescar: acciones.refrescarNotificaciones,
     marcarLeida: acciones.marcarNotificacionLeida,
-    marcarTodasLeidas: acciones.marcarTodasLeidas
+    alternarLeida: acciones.alternarLeida,
+    marcarTodasLeidas: acciones.marcarTodasLeidas,
+    descartar: acciones.descartarNotificacion
   };
 }
 
