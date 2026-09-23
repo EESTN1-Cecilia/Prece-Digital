@@ -22,6 +22,7 @@ export function QuickAccessGrid({ userPermissions = ["all"], onOpenMatriz = null
 
   const allAccesses = [
     { id: "students", label: "Alumnos", icon: "people", href: "#/alumnos", permission: "students:view" },
+    { id: "courses", label: "Cursos", icon: "academic", href: "#/cursos", permission: "courses:view" },
     { id: "attendance", label: "Inasistencias", icon: "clipboard", href: "#/asistencias", permission: "attendance:view" },
     { id: "observations", label: "Observaciones", icon: "clipboard", href: "#/preceptoria/observaciones", permission: "observations:view" },
     { id: "grades", label: "Calificaciones", icon: "clipboard", href: "#/calificaciones", permission: "grades:view" },

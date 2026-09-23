@@ -24,11 +24,13 @@
 
 import DashboardView from "../modules/dashboard/dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
+import CursosListView from "../modules/schools/cursos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
 import AlumnosListView from "../modules/students/alumnos-list-view.js";
 import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
 import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
 import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
+import NotificacionesView from "../modules/notifications/notificaciones-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
@@ -98,6 +100,14 @@ export const RUTAS = [
     enMenu: true
   },
   {
+    patron: "#/notificaciones",
+    titulo: "Notificaciones y Alertas",
+    vista: NotificacionesView,
+    seccion: "General",
+    icono: "alert",
+    padre: "#/inicio"
+  },
+  {
     patron: "#/alumnos/cargar",
     titulo: "Cargar alumno",
     vista: CargarAlumnoView,
@@ -144,10 +154,20 @@ export const RUTAS = [
   },
   {
     patron: "#/alumnos",
-    titulo: "Listado de Alumnos",
+    titulo: "Alumnos",
     vista: AlumnosListView,
     seccion: "General",
     icono: "people",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/cursos",
+    titulo: "Cursos",
+    vista: CursosListView,
+    seccion: "General",
+    icono: "academic",
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true

@@ -22,7 +22,7 @@ import React, { createContext, useCallback, useEffect, useMemo, useReducer, useR
 const h = React.createElement;
 import { EVENTO_SESION_EXPIRADA, reiniciarSesionExpirada } from "../services/http.js";
 import { cerrarSesionRemota, iniciarSesion as iniciarSesionApi, obtenerSesion } from "../services/identity-api.js";
-import { listarNotificaciones, marcarNotificacionLeida, marcarTodasLasNotificacionesLeidas } from "../services/notificaciones-api.js";
+import { descartarNotificacionApi, listarNotificaciones, marcarNotificacionLeida, marcarTodasLasNotificacionesLeidas } from "../services/notificaciones-api.js";
 
 export const ContextoEstado = createContext(null);
 
@@ -126,16 +126,21 @@ export function reducir(estado, accion) {
         notificaciones: { ...estado.notificaciones, cargando: true, error: null }
       };
 
-    case "notificaciones/listas":
+    case "notificaciones/listas": {
+      const items = Array.isArray(accion.items)
+        ? [...accion.items.filter((i) => !i.leida), ...accion.items.filter((i) => i.leida)]
+        : [];
+
       return {
         ...estado,
         notificaciones: {
-          items: accion.items,
+          items,
           cargando: false,
           error: null,
           origen: accion.origen
         }
       };
+    }
 
     case "notificaciones/error":
       return {
@@ -143,14 +148,43 @@ export function reducir(estado, accion) {
         notificaciones: { ...estado.notificaciones, cargando: false, error: accion.error }
       };
 
-    case "notificaciones/leida":
+    case "notificaciones/leida": {
+      const nuevaLeida = accion.leida !== undefined ? Boolean(accion.leida) : true;
+      const itemObjetivo = estado.notificaciones.items.find((item) => item.id === accion.id);
+      if (!itemObjetivo) return estado;
+
+      const itemActualizado = { ...itemObjetivo, leida: nuevaLeida };
+      const otrosItems = estado.notificaciones.items.filter((item) => item.id !== accion.id);
+
+      let nuevosItems;
+      if (nuevaLeida) {
+        // Al marcar como leída: las no leídas quedan arriba, las leídas anteriores en su orden,
+        // y la recién marcada se envía al fondo del todo.
+        const noLeidas = otrosItems.filter((item) => !item.leida);
+        const leidas = otrosItems.filter((item) => item.leida);
+        nuevosItems = [...noLeidas, ...leidas, itemActualizado];
+      } else {
+        // Al desmarcar como no leída: vuelve al bloque de no leídas
+        const noLeidas = otrosItems.filter((item) => !item.leida);
+        const leidas = otrosItems.filter((item) => item.leida);
+        nuevosItems = [itemActualizado, ...noLeidas, ...leidas];
+      }
+
       return {
         ...estado,
         notificaciones: {
           ...estado.notificaciones,
-          items: estado.notificaciones.items.map((item) =>
-            item.id === accion.id ? { ...item, leida: true } : item
-          )
+          items: nuevosItems
+        }
+      };
+    }
+
+    case "notificaciones/descartar":
+      return {
+        ...estado,
+        notificaciones: {
+          ...estado.notificaciones,
+          items: estado.notificaciones.items.filter((item) => item.id !== accion.id)
         }
       };
 
@@ -325,6 +359,26 @@ export function ProveedorEstado({ children }) {
           await marcarTodasLasNotificacionesLeidas();
         } catch (error) {
           despachar({ tipo: "notificaciones/error", error });
+        }
+      },
+
+      async alternarLeida(id, valor) {
+        despachar({ tipo: "notificaciones/leida", id, leida: valor });
+        try {
+          if (valor) {
+            await marcarNotificacionLeida(id);
+          }
+        } catch (error) {
+          despachar({ tipo: "notificaciones/error", error });
+        }
+      },
+
+      async descartarNotificacion(id) {
+        despachar({ tipo: "notificaciones/descartar", id });
+        try {
+          await descartarNotificacionApi(id);
+        } catch {
+          // Descartado localmente
         }
       },
 
