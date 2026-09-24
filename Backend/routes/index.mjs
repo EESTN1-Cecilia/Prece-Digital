@@ -21,6 +21,7 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
+import * as inasistenciasController from "../modules/inasistencias/inasistencias.controller.mjs";
 import * as workshopsController from "../modules/workshops/workshops.controller.mjs";
 import * as inventoryController from "../modules/inventory/inventory.controller.mjs";
 import * as requestsController from "../modules/requests/requests.controller.mjs";
@@ -190,6 +191,20 @@ export const apiRoutes = [
   { method: "DELETE", path: "/api/v1/teacher-subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeSubjectFromTeacher },
 
   { method: "POST", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createAbsence },
+
+  /* Inasistencias de alumnos: rutas mas especificas primero por como matchea
+     matchRoute (quien haga coincidir antes gana).
+     Permisos: attendance.read para consultas y attendance.write para el resto. */
+  { method: "GET", path: "/api/v1/inasistencias/motivos", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.listarMotivos },
+  { method: "POST", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.crearInasistencia },
+  { method: "GET", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.listarInasistencias },
+  { method: "GET", path: "/api/v1/inasistencias/estadisticas", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.estadisticas },
+  { method: "GET", path: "/api/v1/inasistencias/alumno/:alumnoId/totales", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.totalesDeAlumno },
+  { method: "GET", path: "/api/v1/inasistencias/:inasistenciaId/historial", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.historialInasistencia },
+  { method: "GET", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.obtenerInasistencia },
+  { method: "POST", path: "/api/v1/inasistencias/:inasistenciaId/justify", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.justificarInasistencia },
+  { method: "PATCH", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.modificarInasistencia },
+
   { method: "GET", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAbsences },
   { method: "GET", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsence },
   { method: "PATCH", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateAbsence },
