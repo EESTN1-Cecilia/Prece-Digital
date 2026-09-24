@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { h } from "../../../../layouts/site-layout.js";
 
 /**
@@ -266,6 +266,25 @@ export function StudentEditModal({
   });
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (isOpen && alumno) {
+      setFormData({
+        nombre: alumno.nombre || "",
+        apellido: alumno.apellido || "",
+        dni: alumno.dni || "",
+        email: alumno.email || "",
+        telefono: alumno.telefono || "",
+        telefonoAlternativo: alumno.telefonoAlternativo || "",
+        domicilio: alumno.domicilio || "",
+        localidad: alumno.localidad || "",
+        codigoPostal: alumno.codigoPostal || "",
+        genero: alumno.genero || "No especificado",
+        estado: alumno.estado || "Activo"
+      });
+      setError("");
+    }
+  }, [isOpen, alumno]);
+
   if (!isOpen) return null;
 
   const handleChange = (field, val) => {
@@ -287,167 +306,189 @@ export function StudentEditModal({
     { className: "modal-overlay" },
     h(
       "div",
-      { className: "modal-container modal-lg" },
+      { className: "modal-container student-edit-modal-container" },
+      // Header con título y subtítulo
       h(
         "div",
-        { className: "modal-header" },
+        { className: "student-edit-modal-header" },
         h(
           "div",
-          { className: "modal-title-wrap" },
-          h("h2", { className: "modal-title" }, "Modificar Información del Alumno")
+          { className: "student-edit-modal-header__content" },
+          h("h2", { className: "student-edit-modal-header__title" }, "Modificar Información del Alumno"),
+          h("p", { className: "student-edit-modal-header__desc" }, "Actualizá los datos personales y de contacto del legajo institucional.")
         ),
         h(
           "button",
-          { type: "button", className: "modal-close-btn", onClick: onClose },
+          {
+            type: "button",
+            className: "modal-close-btn",
+            onClick: onClose,
+            "aria-label": "Cerrar ventana"
+          },
           "✕"
         )
       ),
+
+      // Formulario estilizado en tarjetas
       h(
         "form",
         { onSubmit: handleSubmit },
+        error
+          ? h("div", { className: "error-alert-box", style: { margin: "0 28px 12px" } }, error)
+          : null,
         h(
           "div",
-          { className: "modal-body" },
-          error
-            ? h("div", { className: "error-alert-box mb-3" }, error)
-            : null,
+          { className: "student-edit-form-grid" },
+
+          // Fila 1: Nombre * y Apellido *
           h(
             "div",
-            { className: "form-row-2" },
-            h(
-              "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Nombre *"),
-              h("input", {
-                type: "text",
-                className: "form-control",
-                value: formData.nombre,
-                onInput: (e) => handleChange("nombre", e.target.value),
-                required: true
-              })
-            ),
-            h(
-              "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Apellido *"),
-              h("input", {
-                type: "text",
-                className: "form-control",
-                value: formData.apellido,
-                onInput: (e) => handleChange("apellido", e.target.value),
-                required: true
-              })
-            )
-          ),
-          h(
-            "div",
-            { className: "form-row-2" },
-            h(
-              "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "DNI *"),
-              h("input", {
-                type: "text",
-                className: "form-control",
-                value: formData.dni,
-                onInput: (e) => handleChange("dni", e.target.value),
-                required: true
-              })
-            ),
-            h(
-              "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Estado Institucional"),
-              h(
-                "select",
-                {
-                  className: "form-control",
-                  value: formData.estado,
-                  onChange: (e) => handleChange("estado", e.target.value)
-                },
-                h("option", { value: "Activo" }, "Activo"),
-                h("option", { value: "Inactivo" }, "Inactivo"),
-                h("option", { value: "Pase pendiente" }, "Pase pendiente"),
-                h("option", { value: "Egresado" }, "Egresado")
-              )
-            )
-          ),
-          h(
-            "div",
-            { className: "form-row-2" },
-            h(
-              "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Teléfono"),
-              h("input", {
-                type: "text",
-                className: "form-control",
-                value: formData.telefono,
-                onInput: (e) => handleChange("telefono", e.target.value)
-              })
-            ),
-            h(
-              "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Teléfono Alternativo"),
-              h("input", {
-                type: "text",
-                className: "form-control",
-                value: formData.telefonoAlternativo,
-                onInput: (e) => handleChange("telefonoAlternativo", e.target.value)
-              })
-            )
-          ),
-          h(
-            "div",
-            { className: "form-group" },
-            h("label", { className: "form-label" }, "Correo Electrónico"),
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "Nombre *"),
             h("input", {
-              type: "email",
-              className: "form-control",
-              value: formData.email,
-              onInput: (e) => handleChange("email", e.target.value)
+              type: "text",
+              className: "student-edit-field-input",
+              placeholder: "Ej: Iara",
+              value: formData.nombre,
+              onInput: (e) => handleChange("nombre", e.target.value),
+              required: true
             })
           ),
           h(
             "div",
-            { className: "form-row-3" },
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "Apellido *"),
+            h("input", {
+              type: "text",
+              className: "student-edit-field-input",
+              placeholder: "Ej: Campos",
+              value: formData.apellido,
+              onInput: (e) => handleChange("apellido", e.target.value),
+              required: true
+            })
+          ),
+
+          // Fila 2: DNI * y Estado Institucional
+          h(
+            "div",
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "DNI *"),
+            h("input", {
+              type: "text",
+              className: "student-edit-field-input",
+              placeholder: "Ej: 40987765",
+              value: formData.dni,
+              onInput: (e) => handleChange("dni", e.target.value),
+              required: true
+            })
+          ),
+          h(
+            "div",
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "Estado Institucional"),
             h(
-              "div",
-              { className: "form-group col-span-2" },
-              h("label", { className: "form-label" }, "Domicilio"),
-              h("input", {
-                type: "text",
-                className: "form-control",
-                value: formData.domicilio,
-                onInput: (e) => handleChange("domicilio", e.target.value)
-              })
-            ),
-            h(
-              "div",
-              { className: "form-group" },
-              h("label", { className: "form-label" }, "Localidad"),
-              h("input", {
-                type: "text",
-                className: "form-control",
-                value: formData.localidad,
-                onInput: (e) => handleChange("localidad", e.target.value)
-              })
+              "select",
+              {
+                className: "student-edit-field-select",
+                value: formData.estado,
+                onChange: (e) => handleChange("estado", e.target.value)
+              },
+              h("option", { value: "Activo" }, "Activo"),
+              h("option", { value: "Inactivo" }, "Inactivo"),
+              h("option", { value: "Pase pendiente" }, "Pase pendiente"),
+              h("option", { value: "Egresado" }, "Egresado")
             )
+          ),
+
+          // Fila 3: Teléfono y Teléfono Alternativo
+          h(
+            "div",
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "Teléfono"),
+            h("input", {
+              type: "text",
+              className: "student-edit-field-input",
+              placeholder: "Ej: 11 2345-6789",
+              value: formData.telefono,
+              onInput: (e) => handleChange("telefono", e.target.value)
+            })
+          ),
+          h(
+            "div",
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "Teléfono Alternativo"),
+            h("input", {
+              type: "text",
+              className: "student-edit-field-input",
+              placeholder: "Ej: 11 9876-5432",
+              value: formData.telefonoAlternativo,
+              onInput: (e) => handleChange("telefonoAlternativo", e.target.value)
+            })
+          ),
+
+          // Fila 4: Correo Electrónico (Full width)
+          h(
+            "div",
+            { className: "student-edit-field-box full-width" },
+            h("label", { className: "student-edit-field-label" }, "Correo Electrónico"),
+            h("input", {
+              type: "email",
+              className: "student-edit-field-input",
+              placeholder: "alumno@correo.com",
+              value: formData.email,
+              onInput: (e) => handleChange("email", e.target.value)
+            })
+          ),
+
+          // Fila 5: Domicilio y Localidad
+          h(
+            "div",
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "Domicilio"),
+            h("input", {
+              type: "text",
+              className: "student-edit-field-input",
+              placeholder: "Calle y número",
+              value: formData.domicilio,
+              onInput: (e) => handleChange("domicilio", e.target.value)
+            })
+          ),
+          h(
+            "div",
+            { className: "student-edit-field-box" },
+            h("label", { className: "student-edit-field-label" }, "Localidad"),
+            h("input", {
+              type: "text",
+              className: "student-edit-field-input",
+              placeholder: "Localidad / Barrio",
+              value: formData.localidad,
+              onInput: (e) => handleChange("localidad", e.target.value)
+            })
           )
         ),
+
+        // Footer con botones Cancelar y Guardar Modificaciones
         h(
           "div",
-          { className: "modal-footer" },
+          { className: "student-edit-modal-footer" },
           h(
             "button",
-            { type: "button", className: "btn-secondary", onClick: onClose, disabled: isSubmitting },
+            {
+              type: "button",
+              className: "btn-student-modal-cancel",
+              onClick: onClose,
+              disabled: isSubmitting
+            },
             "Cancelar"
           ),
           h(
             "button",
-            { type: "submit", className: "btn-primary", disabled: isSubmitting },
-            isSubmitting ? "Guardando cambios..." : "Guardar Modificaciones"
+            {
+              type: "submit",
+              className: "btn-student-modal-submit",
+              disabled: isSubmitting
+            },
+            isSubmitting ? "Guardando..." : "Guardar Modificaciones"
           )
         )
       )
