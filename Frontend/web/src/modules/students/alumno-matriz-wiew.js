@@ -527,7 +527,7 @@ export function AlumnoMatrizModal({
 
   // Inicializar o sincronizar datos de la matriz según orientación
   useEffect(() => {
-    const infoOrientacion = MATERIAS_ORIENTACION[orientacion];
+    const infoOrientacion = MATERIAS_ORIENTACION[orientacion] || MATERIAS_ORIENTACION.programacion;
     const anioActual = new Date().getFullYear();
     const anio7 = anioActual - 1;
 
@@ -576,6 +576,40 @@ export function AlumnoMatrizModal({
     });
   }, [orientacion]);
 
+  // Formateadores seguros para datos de estudiante
+  const formatearLugar = (lugar) => {
+    if (!lugar) return "EZEIZA (ARGENTINA)";
+    if (typeof lugar === "object") {
+      const loc = (lugar.localidad || "").trim();
+      const prov = (lugar.provincia || "").trim();
+      const pais = (lugar.pais || "").trim();
+      const partes = [loc, prov].filter(Boolean).join(", ");
+      return pais ? `${partes ? `${partes} ` : ""}(${pais})`.toUpperCase() : (partes || "EZEIZA (ARGENTINA)").toUpperCase();
+    }
+    return String(lugar).toUpperCase();
+  };
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "15 DE OCTUBRE DE 2005";
+    if (typeof fecha === "object") {
+      return String(fecha.formatted || fecha.fecha || "15 DE OCTUBRE DE 2005").toUpperCase();
+    }
+    if (typeof fecha === "string" && fecha.includes("-")) {
+      const partes = fecha.split("-");
+      if (partes.length === 3) {
+        const y = partes[0];
+        const m = partes[1];
+        const d = partes[2];
+        const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+        const mesIdx = parseInt(m, 10) - 1;
+        if (mesIdx >= 0 && mesIdx < 12) {
+          return `${parseInt(d, 10)} DE ${meses[mesIdx]} DE ${y}`;
+        }
+      }
+    }
+    return String(fecha).toUpperCase();
+  };
+
   // Selección automática de alumno y orientación
   const handleSeleccionarAlumno = (alumnoId, alumnoObj = null) => {
     setAlumnoSeleccionadoId(alumnoId);
@@ -593,9 +627,9 @@ export function AlumnoMatrizModal({
         ...prev,
         apellido: (alumno.apellido || alumno.nombreCompleto?.split(",")?.[0] || "").trim().toUpperCase(),
         nombre: (alumno.nombre || alumno.nombreCompleto?.split(",")?.[1] || "").trim().toUpperCase(),
-        dni: alumno.dni || "",
-        lugarNacimiento: alumno.lugarNacimiento || "EZEIZA (ARGENTINA)",
-        fechaNacimiento: alumno.fechaNacimiento || "15 DE OCTUBRE DE 2005",
+        dni: typeof alumno.dni === "object" ? String(alumno.dni.numero || alumno.dni.dni || "") : String(alumno.dni || ""),
+        lugarNacimiento: formatearLugar(alumno.lugarNacimiento),
+        fechaNacimiento: formatearFecha(alumno.fechaNacimiento),
         libroMatriz: String(alumno.libroMatriz || Math.floor(Math.random() * 50) + 50),
         folio: String(alumno.folio || Math.floor(Math.random() * 30) + 1)
       }));
@@ -719,7 +753,7 @@ export function AlumnoMatrizModal({
     ? anios
     : anios.filter((_, idx) => String(idx + 1) === anioActivo);
 
-  const infoOrientacionActiva = MATERIAS_ORIENTACION[orientacion];
+  const infoOrientacionActiva = MATERIAS_ORIENTACION[orientacion] || MATERIAS_ORIENTACION.programacion;
 
   const modalContent = h(
     "div",

@@ -91,17 +91,22 @@ export function AlumnoRegularModal({ abierto, onCerrar, alumnoInicial = null }) 
               { className: "doc-regular-brand" },
               h(
                 "div",
-                { style: { display: "flex", alignItems: "center", gap: "10px" } },
-                h("img", { src: "/assets/Logo Tec.png", alt: "Logo", style: { width: "36px", height: "36px", objectFit: "contain" } }),
+                { style: { display: "flex", alignItems: "center", gap: "14px" } },
+                h("img", {
+                  src: "/assets/tecnica-n1-monte-grande.png",
+                  alt: "Escudo E.E.S.T N°1",
+                  style: { width: "64px", height: "64px", objectFit: "contain", flexShrink: 0 },
+                  onError: (e) => { e.currentTarget.src = "/assets/Logo Tec.png"; }
+                }),
                 h(
                   "div",
-                  null,
-                  h("span", { className: "doc-regular-escuela" }, "Gráfica Escolar · E.E.S.T. Nº 1"),
-                  h("span", { className: "doc-regular-tel", style: { display: "block" } }, "Tel: 3345-2217")
+                  { style: { display: "flex", flexDirection: "column", justifyContent: "center" } },
+                  h("span", { className: "doc-regular-escuela", style: { whiteSpace: "nowrap" } }, "Gráfica Escolar · E.E.S.T. Nº 1"),
+                  h("span", { className: "doc-regular-tel", style: { display: "block", marginTop: "2px" } }, "Tel: 3345-2217")
                 )
               )
             ),
-            h("div", { className: "doc-regular-badge" }, "CONST. DE ALUMNO REGULAR")
+            h("div", { className: "doc-regular-badge", style: { whiteSpace: "nowrap" } }, "CONST. DE ALUMNO REGULAR")
           ),
 
           // Establecimiento

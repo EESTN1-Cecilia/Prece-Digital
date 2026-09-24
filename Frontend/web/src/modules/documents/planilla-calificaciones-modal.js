@@ -150,8 +150,13 @@ export function PlanillaCalificacionesModal({ abierto, onCerrar, alumnoInicial =
               h("div", { className: "doc-provincia-tag" }, "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN · PROVINCIA DE BUENOS AIRES"),
               h(
                 "div",
-                { style: { display: "flex", alignItems: "center", gap: "8px" } },
-                h("img", { src: "/assets/Logo Tec.png", alt: "Logo", style: { width: "24px", height: "24px", objectFit: "contain" } }),
+                { style: { display: "flex", alignItems: "center", gap: "10px" } },
+                h("img", {
+                  src: "/assets/tecnica-n1-monte-grande.png",
+                  alt: "Escudo",
+                  style: { width: "44px", height: "44px", objectFit: "contain", flexShrink: 0 },
+                  onError: (e) => { e.currentTarget.src = "/assets/Logo Tec.png"; }
+                }),
                 h("span", { className: "doc-escuela-title" }, "ESCUELA DE EDUCACIÓN SECUNDARIA TÉCNICA 1")
               )
             ),

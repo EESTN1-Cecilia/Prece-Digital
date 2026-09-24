@@ -124,7 +124,13 @@ export function SituacionAcademicaModal({ abierto, onCerrar, alumnoInicial = nul
             h(
               "div",
               { className: "doc-paper-logo-badge" },
-              h("img", { src: "/assets/Logo Tec.png", alt: "Escudo EEST Nº1", className: "doc-paper-logo-img" }),
+              h("img", {
+                src: "/assets/tecnica-n1-monte-grande.png",
+                alt: "Escudo EEST Nº1",
+                className: "doc-paper-logo-img",
+                style: { width: "60px", height: "60px", objectFit: "contain", flexShrink: 0 },
+                onError: (e) => { e.currentTarget.src = "/assets/Logo Tec.png"; }
+              }),
               h("span", { className: "doc-paper-logo-text" }, "E.E.S. TÉCNICA Nº 1\nESTEBAN ECHEVERRÍA")
             )
           ),

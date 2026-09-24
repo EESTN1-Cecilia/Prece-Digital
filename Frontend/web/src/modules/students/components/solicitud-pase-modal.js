@@ -113,9 +113,19 @@ export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) 
           // Header Gráfica Escolar y Título Azul
           h(
             "div",
-            { className: "doc-pase-top-row" },
-            h("div", { className: "doc-pase-publisher" }, "Gráfica Escolar\n3345-2217"),
-            h("div", { className: "doc-pase-blue-banner" }, "SOLICITUD DE PASES")
+            { className: "doc-pase-top-row", style: { alignItems: "center" } },
+            h(
+              "div",
+              { className: "doc-pase-publisher", style: { display: "flex", alignItems: "center", gap: "12px" } },
+              h("img", {
+                src: "/assets/tecnica-n1-monte-grande.png",
+                alt: "Escudo",
+                style: { width: "56px", height: "56px", objectFit: "contain", flexShrink: 0 },
+                onError: (e) => { e.currentTarget.src = "/assets/Logo Tec.png"; }
+              }),
+              h("div", { style: { whiteSpace: "pre-line", fontWeight: "700" } }, "Gráfica Escolar\n3345-2217")
+            ),
+            h("div", { className: "doc-pase-blue-banner", style: { whiteSpace: "nowrap" } }, "SOLICITUD DE PASES")
           ),
 
           // Fila: Establecimiento y Distrito

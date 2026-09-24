@@ -103,7 +103,13 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
             h(
               "div",
               { className: "doc-rite-logo-col" },
-              h("img", { src: "/assets/Logo Tec.png", alt: "Logo EEST Nº1", className: "doc-rite-logo-img" })
+              h("img", {
+                src: "/assets/tecnica-n1-monte-grande.png",
+                alt: "Logo EEST Nº1",
+                className: "doc-rite-logo-img",
+                style: { width: "64px", height: "64px", objectFit: "contain", flexShrink: 0 },
+                onError: (e) => { e.currentTarget.src = "/assets/Logo Tec.png"; }
+              })
             ),
             h(
               "div",

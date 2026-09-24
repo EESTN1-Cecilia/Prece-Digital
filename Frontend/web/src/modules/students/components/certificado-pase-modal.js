@@ -87,7 +87,12 @@ export function TramitePaseModal({ abierto, onCerrar, alumnoInicial = null }) {
           h(
             "div",
             { className: "doc-tramite-header" },
-            h("img", { src: "/assets/Logo Tec.png", alt: "Escudo", style: { width: "42px", height: "42px", objectFit: "contain", marginBottom: "6px" } }),
+            h("img", {
+              src: "/assets/tecnica-n1-monte-grande.png",
+              alt: "Escudo E.E.S.T N°1",
+              style: { width: "64px", height: "64px", objectFit: "contain", marginBottom: "10px" },
+              onError: (e) => { e.currentTarget.src = "/assets/Logo Tec.png"; }
+            }),
             h("span", { className: "doc-tramite-provincia" }, "PROVINCIA DE BUENOS AIRES"),
             h("span", { className: "doc-tramite-sub" }, "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN"),
             h("span", { className: "doc-tramite-sub" }, "Dirección de Educación Media, Técnica y Agraria"),
