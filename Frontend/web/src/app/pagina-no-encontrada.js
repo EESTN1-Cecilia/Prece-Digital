@@ -1,17 +1,34 @@
-/* Ruta inexistente del frontend: se muestra una pantalla, no una redireccion
-   silenciosa, para que el error quede visible. */
+/* Ruta inexistente del frontend: se muestra la pantalla 404 con notfound.jpg,
+   sin redirección silenciosa, para que el usuario sepa que la dirección no existe
+   y pueda volver al inicio con facilidad. */
 
 import { h } from "../layouts/site-layout.js";
-import { BotonEnlace, SinDatos } from "../components/ui/index.js";
+import { RUTA_INICIO } from "./rutas.js";
 
 export function PaginaNoEncontrada() {
   return h(
-    "section",
-    { className: "data-panel data-panel--centrado" },
-    h(SinDatos, {
-      titulo: "Pagina no encontrada",
-      descripcion: "La pagina que estas buscando no existe.",
-      accion: h(BotonEnlace, { variante: "primario", href: "#/inicio" }, "Volver al inicio")
-    })
+    "div",
+    { className: "not-found-page-wrapper" },
+    h(
+      "section",
+      { className: "not-found-card", "aria-labelledby": "not-found-title" },
+      h("img", {
+        className: "not-found-card__image",
+        src: "/assets/notfound.jpg",
+        alt: "Ilustración de página no encontrada"
+      }),
+      h("h1", { id: "not-found-title", className: "not-found-card__title" }, "Página no encontrada"),
+      h("p", { className: "not-found-card__text" }, "La pagina que estas buscando no existe."),
+      h(
+        "a",
+        {
+          className: "not-found-card__btn",
+          href: RUTA_INICIO
+        },
+        "Volver al Inicio"
+      )
+    )
   );
 }
+
+
