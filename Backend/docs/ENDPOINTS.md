@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 190 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 207 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -188,6 +188,9 @@ Total: 190 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
 
 ## buildings
 
@@ -290,6 +293,35 @@ Total: 190 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/incidents` | `absences.read` |
 | GET | `/api/v1/incidents/:incidentId` | `absences.read` |
 | PATCH | `/api/v1/incidents/:incidentId` | `absences.write` |
+
+## inasistencias
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/inasistencias` | `attendance.write` |
+| GET | `/api/v1/inasistencias` | `attendance.read` |
+| GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
+| PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
+| DELETE | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
+
+## alertas
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/alertas/evaluar` | `attendance-alerts.write` |
+| GET | `/api/v1/alertas/evaluaciones` | `attendance-alerts.read` |
+| GET | `/api/v1/alertas/catalogos` | `attendance-alerts.read` |
+| GET | `/api/v1/alertas` | `attendance-alerts.read` |
+| GET | `/api/v1/alertas/:alertaId` | `attendance-alerts.read` |
+| PATCH | `/api/v1/alertas/:alertaId` | `attendance-alerts.write` |
+| POST | `/api/v1/alertas/:alertaId/reenviar` | `attendance-alerts.write` |
+
+## configuracion-alertas
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/configuracion-alertas` | `attendance-alerts.read` |
+| PUT | `/api/v1/configuracion-alertas` | `attendance-alerts.configure` |
 
 ## workshops
 
