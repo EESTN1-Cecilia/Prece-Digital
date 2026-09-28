@@ -21,6 +21,7 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
+import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
 import * as workshopsController from "../modules/workshops/workshops.controller.mjs";
 import * as inventoryController from "../modules/inventory/inventory.controller.mjs";
 import * as requestsController from "../modules/requests/requests.controller.mjs";
@@ -199,6 +200,18 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listIncidents },
   { method: "GET", path: "/api/v1/incidents/:incidentId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getIncident },
   { method: "PATCH", path: "/api/v1/incidents/:incidentId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateIncident },
+
+  /* Seguimiento de inasistencias: los literales van antes que :seguimientoId
+     porque el router gana con la primera coincidencia. */
+  { method: "POST", path: "/api/v1/seguimientos-inasistencia", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_WRITE)], handler: attendanceFollowupsController.createSeguimiento },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.listSeguimientos },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia/catalogos", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getCatalogos },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia/alumnos", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.listAlumnosConSeguimientos },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia/:seguimientoId", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getSeguimiento },
+  { method: "PATCH", path: "/api/v1/seguimientos-inasistencia/:seguimientoId", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_WRITE)], handler: attendanceFollowupsController.updateSeguimiento },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/seguimiento-inasistencia", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getHistorialDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getUltimoDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getResumenDeAlumno },
 
   { method: "POST", path: "/api/v1/workshops", middlewares: [verifyToken, required(P.WORKSHOPS_WRITE)], handler: workshopsController.createWorkshop },
   { method: "GET", path: "/api/v1/workshops", middlewares: [verifyToken, required(P.WORKSHOPS_READ)], handler: workshopsController.listWorkshops },
