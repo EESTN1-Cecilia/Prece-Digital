@@ -435,7 +435,7 @@ function Header({ ruta, esLogin }) {
       h(
         "div",
         { className: "site-header__right" },
-        h(HeaderNotificationsMenu),
+        !esLogin ? h(HeaderNotificationsMenu) : null,
         h(UserAvatarMenu)
       )
     )

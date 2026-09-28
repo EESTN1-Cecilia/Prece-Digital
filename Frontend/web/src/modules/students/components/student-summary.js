@@ -124,13 +124,7 @@ export function StudentSummary({
               ),
               h("span", null, refreshing ? "Actualizando..." : "Actualizar")
             )
-          : null,
-        // Acción de perfil completo estilizada
-        h(StudentProfileLink, {
-          alumnoId: datosPersonales.id,
-          url: resumen.perfilCompletoUrl,
-          label: "Ver Perfil Completo"
-        })
+          : null
       )
     ),
 
@@ -143,47 +137,60 @@ export function StudentSummary({
         { className: "student-hero-content" },
         h(
           "div",
-          { className: "student-hero-avatar-wrap" },
-          h(IconoFigma, {
-            className: "student-hero-avatar-icon",
-            nombre: "avatar"
-          })
-        ),
-        h(
-          "div",
-          { className: "student-hero-info" },
+          { className: "student-hero-left" },
           h(
             "div",
-            { className: "student-hero-title-row" },
-            h("h1", { className: "student-hero-name" }, displayNombreCompleto),
-            h(StatusBadge, {
-              status: informacionEscolar.estado,
-              label: informacionEscolar.estado
-            }),
-            h(ConditionBadge, { condicion: informacionEscolar.condicion })
+            { className: "student-hero-avatar-wrap" },
+            h(IconoFigma, {
+              className: "student-hero-avatar-icon",
+              nombre: "avatar"
+            })
           ),
           h(
             "div",
-            { className: "student-hero-meta" },
-            h("span", { className: "hero-pill" }, `DNI: ${datosPersonales.dni || "S/D"}`),
+            { className: "student-hero-info" },
             h(
-              "span",
-              { className: "hero-pill highlight" },
-              `${informacionEscolar.curso || "1°"} Div. ${informacionEscolar.division || "1"} (${informacionEscolar.turno || "Mañana"})`
+              "div",
+              { className: "student-hero-title-row" },
+              h("h1", { className: "student-hero-name" }, displayNombreCompleto),
+              h(StatusBadge, {
+                status: informacionEscolar.estado,
+                label: informacionEscolar.estado
+              }),
+              h(ConditionBadge, { condicion: informacionEscolar.condicion })
             ),
             h(
-              "span",
-              { className: "hero-pill" },
-              `Legajo: ${datosPersonales.legajo || (datosPersonales.id ? `ID: ${datosPersonales.id}` : "S/N")}`
-            ),
-            informacionEscolar.orientacion
-              ? h(
-                  "span",
-                  { className: "hero-pill orientation" },
-                  informacionEscolar.orientacion
-                )
-              : null
+              "div",
+              { className: "student-hero-meta" },
+              h("span", { className: "hero-pill" }, `DNI: ${datosPersonales.dni || "S/D"}`),
+              h(
+                "span",
+                { className: "hero-pill highlight" },
+                `${informacionEscolar.curso || "1°"} Div. ${informacionEscolar.division || "1"} (${informacionEscolar.turno || "Mañana"})`
+              ),
+              h(
+                "span",
+                { className: "hero-pill" },
+                `Legajo: ${datosPersonales.legajo || (datosPersonales.id ? `ID: ${datosPersonales.id}` : "S/N")}`
+              ),
+              informacionEscolar.orientacion
+                ? h(
+                    "span",
+                    { className: "hero-pill orientation" },
+                    informacionEscolar.orientacion
+                  )
+                : null
+            )
           )
+        ),
+        h(
+          "div",
+          { className: "student-hero-right" },
+          h(StudentProfileLink, {
+            alumnoId: datosPersonales.id,
+            url: resumen.perfilCompletoUrl,
+            label: "Ver Perfil Completo"
+          })
         )
       )
     ),

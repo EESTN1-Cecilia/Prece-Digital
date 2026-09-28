@@ -318,7 +318,7 @@ export default function AlumnoPerfilView({ id, ruta }) {
           "button",
           {
             type: "button",
-            className: "btn-link-crumb",
+            className: "btn-listado-general",
             onClick: () => { window.location.hash = "#/alumnos"; }
           },
           "Listado General"
