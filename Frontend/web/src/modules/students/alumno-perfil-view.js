@@ -153,6 +153,42 @@ export default function AlumnoPerfilView({ id, ruta }) {
     }
   };
 
+  // Manejo de Edición de Campo Individual
+  const handleEditSingleField = async (fieldKey, value) => {
+    setActionSubmitting(true);
+    try {
+      const payload = {
+        nombre: datosPersonales.nombre,
+        apellido: datosPersonales.apellido,
+        dni: datosPersonales.dni,
+        email: contacto.email,
+        telefono: contacto.telefono,
+        domicilio: datosPersonales.domicilio,
+        localidad: datosPersonales.localidad,
+        codigoPostal: datosPersonales.codigoPostal,
+        estado: datosPersonales.estado,
+        [fieldKey]: value
+      };
+
+      if (fieldKey === "domicilio") {
+        payload.direccion = value;
+      }
+
+      const res = await StudentsService.updateAlumno(studentId, payload);
+      setFeedbackMessage({
+        type: "success",
+        text: res.message || "Campo actualizado correctamente."
+      });
+      await fetchProfile(true);
+      return res;
+    } catch (err) {
+      setFeedbackMessage({ type: "error", text: err.message || "Error al actualizar el campo." });
+      throw err;
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
+
   // Manejo de Acción: Registrar Observación
   const handleObservationSubmit = async (obsData) => {
     setActionSubmitting(true);
@@ -393,7 +429,8 @@ export default function AlumnoPerfilView({ id, ruta }) {
         ? h(StudentPersonalTab, {
             datosPersonales,
             contacto,
-            tutores
+            tutores,
+            onUpdateField: handleEditSingleField
           })
         : null,
 
