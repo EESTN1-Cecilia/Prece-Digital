@@ -188,6 +188,9 @@ Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## buildings
 
@@ -304,6 +307,17 @@ Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/incidents` | `absences.read` |
 | GET | `/api/v1/incidents/:incidentId` | `absences.read` |
 | PATCH | `/api/v1/incidents/:incidentId` | `absences.write` |
+
+## seguimientos-inasistencia
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/seguimientos-inasistencia` | `attendance-followups.write` |
+| GET | `/api/v1/seguimientos-inasistencia` | `attendance-followups.read` |
+| GET | `/api/v1/seguimientos-inasistencia/catalogos` | `attendance-followups.read` |
+| GET | `/api/v1/seguimientos-inasistencia/alumnos` | `attendance-followups.read` |
+| GET | `/api/v1/seguimientos-inasistencia/:seguimientoId` | `attendance-followups.read` |
+| PATCH | `/api/v1/seguimientos-inasistencia/:seguimientoId` | `attendance-followups.write` |
 
 ## workshops
 
