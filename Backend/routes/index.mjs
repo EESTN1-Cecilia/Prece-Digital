@@ -21,6 +21,9 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
+import * as attendanceAlertsController from "../modules/attendance-alerts/attendance-alerts.controller.mjs";
+import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
+import * as inasistenciasController from "../modules/inasistencias/inasistencias.controller.mjs";
 import * as workshopsController from "../modules/workshops/workshops.controller.mjs";
 import * as inventoryController from "../modules/inventory/inventory.controller.mjs";
 import * as requestsController from "../modules/requests/requests.controller.mjs";
@@ -191,6 +194,20 @@ export const apiRoutes = [
   { method: "DELETE", path: "/api/v1/teacher-subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeSubjectFromTeacher },
 
   { method: "POST", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createAbsence },
+
+  /* Inasistencias de alumnos: rutas mas especificas primero por como matchea
+     matchRoute (quien haga coincidir antes gana).
+     Permisos: attendance.read para consultas y attendance.write para el resto. */
+  { method: "GET", path: "/api/v1/inasistencias/motivos", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.listarMotivos },
+  { method: "POST", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.crearInasistencia },
+  { method: "GET", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.listarInasistencias },
+  { method: "GET", path: "/api/v1/inasistencias/estadisticas", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.estadisticas },
+  { method: "GET", path: "/api/v1/inasistencias/alumno/:alumnoId/totales", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.totalesDeAlumno },
+  { method: "GET", path: "/api/v1/inasistencias/:inasistenciaId/historial", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.historialInasistencia },
+  { method: "GET", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: inasistenciasController.obtenerInasistencia },
+  { method: "POST", path: "/api/v1/inasistencias/:inasistenciaId/justify", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.justificarInasistencia },
+  { method: "PATCH", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.modificarInasistencia },
+
   { method: "GET", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAbsences },
   { method: "GET", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsence },
   { method: "PATCH", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateAbsence },
@@ -200,6 +217,47 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listIncidents },
   { method: "GET", path: "/api/v1/incidents/:incidentId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getIncident },
   { method: "PATCH", path: "/api/v1/incidents/:incidentId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateIncident },
+
+  /* Alertas por inasistencias consecutivas.
+
+     El registro de inasistencias usa los permisos de asistencia (attendance.read /
+     attendance.write); las alertas y la configuracion de la regla tienen permisos
+     propios porque una es la lectura de la situacion y la otra la regla
+     institucional. Configurar el umbral es potestad de la direccion, no de quien
+     carga la inasistencia.
+
+     Los literales (catalogos, evaluar, evaluaciones) van antes que los parametros
+     porque el router gana con la primera coincidencia. */
+  { method: "POST", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.createInasistencia },
+  { method: "GET", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.listInasistencias },
+  { method: "GET", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.getInasistencia },
+  { method: "PATCH", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.updateInasistencia },
+  { method: "DELETE", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.deactivateInasistencia },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.getInasistenciasDeAlumno },
+
+  { method: "POST", path: "/api/v1/alertas/evaluar", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_WRITE)], handler: attendanceAlertsController.evaluarAlertas },
+  { method: "GET", path: "/api/v1/alertas/evaluaciones", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.listEvaluaciones },
+  { method: "GET", path: "/api/v1/alertas/catalogos", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getCatalogos },
+  { method: "GET", path: "/api/v1/alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.listAlertas },
+  { method: "GET", path: "/api/v1/alertas/:alertaId", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getAlerta },
+  { method: "PATCH", path: "/api/v1/alertas/:alertaId", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_WRITE)], handler: attendanceAlertsController.updateAlerta },
+  { method: "POST", path: "/api/v1/alertas/:alertaId/reenviar", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_WRITE)], handler: attendanceAlertsController.reenviarNotificacion },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getAlertasDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/alertas/resumen", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getResumenDeAlumno },
+
+  { method: "GET", path: "/api/v1/configuracion-alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getConfiguracion },
+  { method: "PUT", path: "/api/v1/configuracion-alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_CONFIGURE)], handler: attendanceAlertsController.updateConfiguracion },
+  /* Seguimiento de inasistencias: los literales van antes que :seguimientoId
+     porque el router gana con la primera coincidencia. */
+  { method: "POST", path: "/api/v1/seguimientos-inasistencia", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_WRITE)], handler: attendanceFollowupsController.createSeguimiento },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.listSeguimientos },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia/catalogos", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getCatalogos },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia/alumnos", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.listAlumnosConSeguimientos },
+  { method: "GET", path: "/api/v1/seguimientos-inasistencia/:seguimientoId", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getSeguimiento },
+  { method: "PATCH", path: "/api/v1/seguimientos-inasistencia/:seguimientoId", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_WRITE)], handler: attendanceFollowupsController.updateSeguimiento },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/seguimiento-inasistencia", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getHistorialDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getUltimoDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_READ)], handler: attendanceFollowupsController.getResumenDeAlumno },
 
   { method: "POST", path: "/api/v1/workshops", middlewares: [verifyToken, required(P.WORKSHOPS_WRITE)], handler: workshopsController.createWorkshop },
   { method: "GET", path: "/api/v1/workshops", middlewares: [verifyToken, required(P.WORKSHOPS_READ)], handler: workshopsController.listWorkshops },
