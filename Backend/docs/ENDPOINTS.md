@@ -94,6 +94,7 @@ Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
 | GET | `/api/v1/dashboard/secretaria` | `students.read` |
+| GET | `/api/v1/dashboard/server` | `inventory.read` |
 
 ## alerts
 

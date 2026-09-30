@@ -22,4 +22,10 @@ export function resetStore() {
   store.auditLogs.clear();
   store.errorLogs.clear();
   store.rolePermissions.clear();
+  if (store.inventoryItems) store.inventoryItems.clear();
+  if (store.inventoryMovements) store.inventoryMovements.clear();
+  if (store.requests) store.requests.clear();
+  if (store.requestComments) store.requestComments.clear();
+  if (store.reservations) store.reservations.clear();
 }
+
