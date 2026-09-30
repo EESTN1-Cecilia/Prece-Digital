@@ -4,6 +4,7 @@ import { seedAcademic } from "./academic.seed.mjs";
 import { seedAcademicRecords } from "./academic-records.seed.mjs";
 import { seedAttendanceFollowups } from "./attendance-followups.seed.mjs";
 import { seedTutores } from "./tutores.seed.mjs";
+import { seedInasistencias } from "./inasistencias.seed.mjs";
 
 /* Carga los datos de desarrollo de todos los modulos sobre el store en memoria.
    Todos comparten los mismos alumnos (students.seed.mjs). El seed de seguimiento
@@ -13,6 +14,7 @@ export async function seedDesarrollo() {
   seedStudents();
   seedAcademic();
   seedAcademicRecords();
+  seedInasistencias();
   seedTutores();
   seedAttendanceFollowups();
 }
