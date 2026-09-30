@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { h } from "../../../../layouts/site-layout.js";
+import { CustomSelect } from "../../../../components/common/custom-select.js";
+import { CustomDatePicker } from "../../../../components/common/custom-datepicker.js";
+import { useUsuarioActual } from "../../../../estado/index.js";
 
 /**
  * Modal 1: Constancia de Alumno Regular (con vista previa oficial y opción de imprimir)
@@ -9,6 +13,17 @@ export function StudentCertificateModal({
   isOpen,
   onClose
 }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const data = certificado.data || certificado || {};
@@ -17,12 +32,19 @@ export function StudentCertificateModal({
     window.print();
   };
 
-  return h(
+  const modalContent = h(
     "div",
-    { className: "modal-overlay" },
+    {
+      className: "modal-overlay",
+      onClick: (e) => {
+        if (e.target === e.currentTarget && onClose) {
+          onClose();
+        }
+      }
+    },
     h(
       "div",
-      { className: "modal-container modal-lg certificate-modal" },
+      { className: "modal-container modal-lg certificate-modal", role: "dialog", "aria-modal": "true" },
       // Header
       h(
         "div",
@@ -128,6 +150,11 @@ export function StudentCertificateModal({
       )
     )
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }
 
 /**
@@ -143,6 +170,17 @@ export function StudentTransferModal({
   const [colegioDestino, setColegioDestino] = useState("");
   const [motivo, setMotivo] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && !isSubmitting && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isSubmitting, onClose]);
 
   if (!isOpen) return null;
 
@@ -160,12 +198,19 @@ export function StudentTransferModal({
     onSubmit({ colegioDestino: colegioDestino.trim(), motivo: motivo.trim() });
   };
 
-  return h(
+  const modalContent = h(
     "div",
-    { className: "modal-overlay" },
+    {
+      className: "modal-overlay",
+      onClick: (e) => {
+        if (e.target === e.currentTarget && !isSubmitting && onClose) {
+          onClose();
+        }
+      }
+    },
     h(
       "div",
-      { className: "modal-container modal-md" },
+      { className: "modal-container modal-md", role: "dialog", "aria-modal": "true" },
       h(
         "div",
         { className: "modal-header" },
@@ -239,6 +284,11 @@ export function StudentTransferModal({
       )
     )
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }
 
 /**
@@ -265,6 +315,17 @@ export function StudentEditModal({
     estado: alumno.estado || "Activo"
   });
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && !isSubmitting && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isSubmitting, onClose]);
 
   useEffect(() => {
     if (isOpen && alumno) {
@@ -301,12 +362,19 @@ export function StudentEditModal({
     onSubmit(formData);
   };
 
-  return h(
+  const modalContent = h(
     "div",
-    { className: "modal-overlay" },
+    {
+      className: "modal-overlay",
+      onClick: (e) => {
+        if (e.target === e.currentTarget && !isSubmitting && onClose) {
+          onClose();
+        }
+      }
+    },
     h(
       "div",
-      { className: "modal-container student-edit-modal-container" },
+      { className: "modal-container student-edit-modal-container", role: "dialog", "aria-modal": "true" },
       // Header con título y subtítulo
       h(
         "div",
@@ -386,18 +454,12 @@ export function StudentEditModal({
             "div",
             { className: "student-edit-field-box" },
             h("label", { className: "student-edit-field-label" }, "Estado Institucional"),
-            h(
-              "select",
-              {
-                className: "student-edit-field-select",
-                value: formData.estado,
-                onChange: (e) => handleChange("estado", e.target.value)
-              },
-              h("option", { value: "Activo" }, "Activo"),
-              h("option", { value: "Inactivo" }, "Inactivo"),
-              h("option", { value: "Pase pendiente" }, "Pase pendiente"),
-              h("option", { value: "Egresado" }, "Egresado")
-            )
+            h(CustomSelect, {
+              value: formData.estado,
+              options: ["Activo", "Inactivo", "Pase pendiente", "Egresado"],
+              onChange: (val) => handleChange("estado", val),
+              placeholder: "Seleccionar estado..."
+            })
           ),
 
           // Fila 3: Teléfono y Teléfono Alternativo
@@ -494,9 +556,12 @@ export function StudentEditModal({
       )
     )
   );
-}
 
-import { useUsuarioActual } from "../../../../estado/index.js";
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
+}
 
 /**
  * Modal 4: Registrar / Cargar Observación Institucional
@@ -518,6 +583,17 @@ export function StudentObservationModal({
   const [responsable, setResponsable] = useState(defaultResponsable);
   const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && !isSubmitting && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isSubmitting, onClose]);
 
   if (!isOpen) return null;
 
@@ -551,12 +627,19 @@ export function StudentObservationModal({
     });
   };
 
-  return h(
+  const modalContent = h(
     "div",
-    { className: "modal-overlay" },
+    {
+      className: "modal-overlay",
+      onClick: (e) => {
+        if (e.target === e.currentTarget && !isSubmitting && onClose) {
+          onClose();
+        }
+      }
+    },
     h(
       "div",
-      { className: "modal-container modal-lg observation-modal-dialog" },
+      { className: "modal-container modal-lg observation-modal-dialog", role: "dialog", "aria-modal": "true" },
       // Header
       h(
         "div",
@@ -665,24 +748,23 @@ export function StudentObservationModal({
               "div",
               { className: "form-field-group" },
               h("label", { className: "form-field-label" }, "Tipo de observación:", h("span", { className: "required-star" }, " *")),
-              h(
-                "select",
-                {
-                  className: "form-field-select",
-                  value: tipo,
-                  onChange: (e) => {
-                    setTipo(e.target.value);
-                    if (error) setError("");
-                  }
+              h(CustomSelect, {
+                value: tipo,
+                options: [
+                  "Académica",
+                  "Pedagógica",
+                  "Convivencia",
+                  "Asistencia",
+                  { value: "Salud", label: "Salud / Médica" },
+                  "Administrativa",
+                  "General"
+                ],
+                onChange: (val) => {
+                  setTipo(val);
+                  if (error) setError("");
                 },
-                h("option", { value: "Académica" }, "Académica"),
-                h("option", { value: "Pedagógica" }, "Pedagógica"),
-                h("option", { value: "Convivencia" }, "Convivencia"),
-                h("option", { value: "Asistencia" }, "Asistencia"),
-                h("option", { value: "Salud" }, "Salud / Médica"),
-                h("option", { value: "Administrativa" }, "Administrativa"),
-                h("option", { value: "General" }, "General")
-              )
+                placeholder: "Seleccionar tipo..."
+              })
             ),
 
             // Sector emisor
@@ -690,25 +772,24 @@ export function StudentObservationModal({
               "div",
               { className: "form-field-group" },
               h("label", { className: "form-field-label" }, "Sector emisor:", h("span", { className: "required-star" }, " *")),
-              h(
-                "select",
-                {
-                  className: "form-field-select",
-                  value: sector,
-                  onChange: (e) => {
-                    setSector(e.target.value);
-                    if (error) setError("");
-                  }
+              h(CustomSelect, {
+                value: sector,
+                options: [
+                  "Preceptoría",
+                  "Secretaría",
+                  { value: "Dirección", label: "Dirección / Vicedirección" },
+                  "Equipo de Orientación (EOE)",
+                  "Jefatura de Taller",
+                  "Coordinación",
+                  "Tutoría",
+                  "Biblioteca"
+                ],
+                onChange: (val) => {
+                  setSector(val);
+                  if (error) setError("");
                 },
-                h("option", { value: "Preceptoría" }, "Preceptoría"),
-                h("option", { value: "Secretaría" }, "Secretaría"),
-                h("option", { value: "Dirección" }, "Dirección / Vicedirección"),
-                h("option", { value: "Equipo de Orientación (EOE)" }, "Equipo de Orientación (EOE)"),
-                h("option", { value: "Jefatura de Taller" }, "Jefatura de Taller"),
-                h("option", { value: "Coordinación" }, "Coordinación"),
-                h("option", { value: "Tutoría" }, "Tutoría"),
-                h("option", { value: "Biblioteca" }, "Biblioteca")
-              )
+                placeholder: "Seleccionar sector..."
+              })
             ),
 
             // Fecha
@@ -716,12 +797,10 @@ export function StudentObservationModal({
               "div",
               { className: "form-field-group" },
               h("label", { className: "form-field-label" }, "Fecha:", h("span", { className: "required-star" }, " *")),
-              h("input", {
-                type: "date",
-                className: "form-field-input",
+              h(CustomDatePicker, {
                 value: fecha,
-                onChange: (e) => {
-                  setFecha(e.target.value);
+                onChange: (val) => {
+                  setFecha(val);
                   if (error) setError("");
                 },
                 required: true
@@ -733,17 +812,12 @@ export function StudentObservationModal({
               "div",
               { className: "form-field-group" },
               h("label", { className: "form-field-label" }, "Estado:"),
-              h(
-                "select",
-                {
-                  className: "form-field-select",
-                  value: estado,
-                  onChange: (e) => setEstado(e.target.value)
-                },
-                h("option", { value: "Activa" }, "Activa"),
-                h("option", { value: "Modificada" }, "Modificada"),
-                h("option", { value: "Histórica" }, "Histórica")
-              )
+              h(CustomSelect, {
+                value: estado,
+                options: ["Activa", "Modificada", "Histórica"],
+                onChange: (val) => setEstado(val),
+                placeholder: "Seleccionar estado..."
+              })
             ),
 
             // Responsable (Full Width)
@@ -827,5 +901,10 @@ export function StudentObservationModal({
       )
     )
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }
 

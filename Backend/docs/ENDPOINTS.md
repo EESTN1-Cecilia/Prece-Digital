@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 207 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -191,6 +191,9 @@ Total: 207 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
 | GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
 | GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## buildings
 
@@ -285,6 +288,20 @@ Total: 207 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | PATCH | `/api/v1/absences/:absenceId` | `absences.write` |
 | DELETE | `/api/v1/absences/:absenceId` | `absences.manage` |
 
+## inasistencias
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/inasistencias/motivos` | `attendance.read` |
+| POST | `/api/v1/inasistencias` | `attendance.write` |
+| GET | `/api/v1/inasistencias` | `attendance.read` |
+| GET | `/api/v1/inasistencias/estadisticas` | `attendance.read` |
+| GET | `/api/v1/inasistencias/alumno/:alumnoId/totales` | `attendance.read` |
+| GET | `/api/v1/inasistencias/:inasistenciaId/historial` | `attendance.read` |
+| GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
+| POST | `/api/v1/inasistencias/:inasistenciaId/justify` | `attendance.write` |
+| PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
+
 ## incidents
 
 | Metodo | Ruta | Permiso |
@@ -322,6 +339,16 @@ Total: 207 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/configuracion-alertas` | `attendance-alerts.read` |
 | PUT | `/api/v1/configuracion-alertas` | `attendance-alerts.configure` |
+## seguimientos-inasistencia
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/seguimientos-inasistencia` | `attendance-followups.write` |
+| GET | `/api/v1/seguimientos-inasistencia` | `attendance-followups.read` |
+| GET | `/api/v1/seguimientos-inasistencia/catalogos` | `attendance-followups.read` |
+| GET | `/api/v1/seguimientos-inasistencia/alumnos` | `attendance-followups.read` |
+| GET | `/api/v1/seguimientos-inasistencia/:seguimientoId` | `attendance-followups.read` |
+| PATCH | `/api/v1/seguimientos-inasistencia/:seguimientoId` | `attendance-followups.write` |
 
 ## workshops
 

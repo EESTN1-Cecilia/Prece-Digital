@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
+import { CustomSelect } from "../../components/common/custom-select.js";
 import { StudentsService } from "../students/students-service.js";
 
 function IconAula({ className = "card-info-icon" }) {
@@ -93,6 +95,17 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
     }
   }, [curso]);
 
+  useEffect(() => {
+    if (!abierto) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && !guardando && onCerrar) {
+        onCerrar();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [abierto, guardando, onCerrar]);
+
   if (!abierto) return null;
 
   const handleSubmit = (e) => {
@@ -122,7 +135,7 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
     }, 400);
   };
 
-  return h(
+  const modalContent = h(
     "div",
     {
       className: "modal-backdrop",
@@ -181,116 +194,97 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
               h(
                 "div",
                 { className: "form-group" },
-                h("label", { className: "form-label", htmlFor: "curso-anio" }, "Año / Nivel *"),
-                h(
-                  "select",
-                  {
-                    id: "curso-anio",
-                    className: "form-control custom-select-input",
-                    value: curso,
-                    onChange: (e) => setCurso(e.target.value),
-                    required: true
-                  },
-                  ["1°", "2°", "3°", "4°", "5°", "6°", "7°"].map((a) =>
-                    h("option", { key: a, value: a }, `${a} Año`)
-                  )
-                )
+                h("label", { className: "form-label", htmlFor: "curso-anio" }, "Año / Nivel:", h("span", { className: "required-star" }, " *")),
+                h(CustomSelect, {
+                  id: "curso-anio",
+                  value: curso,
+                  options: ["1°", "2°", "3°", "4°", "5°", "6°", "7°"].map((a) => ({
+                    value: a,
+                    label: `${a} Año`
+                  })),
+                  onChange: (val) => setCurso(val),
+                  placeholder: "Seleccionar año..."
+                })
               ),
 
               // Campo División
               h(
                 "div",
                 { className: "form-group" },
-                h("label", { className: "form-label", htmlFor: "curso-division" }, "División *"),
-                h(
-                  "select",
-                  {
-                    id: "curso-division",
-                    className: "form-control custom-select-input",
-                    value: division,
-                    onChange: (e) => setDivision(e.target.value),
-                    required: true
-                  },
-                  ["1", "2", "3", "4", "5", "6", "7", "8"].map((d) =>
-                    h("option", { key: d, value: d }, `División ${d}`)
-                  )
-                )
+                h("label", { className: "form-label", htmlFor: "curso-division" }, "División:", h("span", { className: "required-star" }, " *")),
+                h(CustomSelect, {
+                  id: "curso-division",
+                  value: division,
+                  options: ["1", "2", "3", "4", "5", "6", "7", "8"].map((d) => ({
+                    value: d,
+                    label: `División ${d}`
+                  })),
+                  onChange: (val) => setDivision(val),
+                  placeholder: "Seleccionar división..."
+                })
               ),
 
               // Campo Orientación / Especialidad
               h(
                 "div",
                 { className: "form-group form-group--full" },
-                h("label", { className: "form-label", htmlFor: "curso-orientacion" }, "Orientación / Especialidad *"),
-                h(
-                  "select",
-                  {
-                    id: "curso-orientacion",
-                    className: "form-control custom-select-input",
-                    value: orientacion,
-                    onChange: (e) => setOrientacion(e.target.value),
-                    required: true
-                  },
-                  h("option", { value: "Ciclo Básico" }, "Ciclo Básico"),
-                  h("option", { value: "Técnico en Informática" }, "Técnico en Informática"),
-                  h("option", { value: "Técnico en Programación" }, "Técnico en Programación"),
-                  h("option", { value: "Técnico Electromecánico" }, "Técnico Electromecánico"),
-                  h("option", { value: "Técnico en Electrónica" }, "Técnico en Electrónica"),
-                  h("option", { value: "Técnico Químico" }, "Técnico Químico")
-                )
+                h("label", { className: "form-label", htmlFor: "curso-orientacion" }, "Orientación / Especialidad:", h("span", { className: "required-star" }, " *")),
+                h(CustomSelect, {
+                  id: "curso-orientacion",
+                  value: orientacion,
+                  options: [
+                    "Ciclo Básico",
+                    "Técnico en Informática",
+                    "Técnico en Programación",
+                    "Técnico Electromecánico",
+                    "Técnico en Electrónica",
+                    "Técnico Químico"
+                  ],
+                  onChange: (val) => setOrientacion(val),
+                  placeholder: "Seleccionar orientación..."
+                })
               ),
 
               // Campo Turno Aula
               h(
                 "div",
                 { className: "form-group" },
-                h("label", { className: "form-label", htmlFor: "curso-turno-aula" }, "Turno Aula *"),
-                h(
-                  "select",
-                  {
-                    id: "curso-turno-aula",
-                    className: "form-control custom-select-input",
-                    value: turnoAula,
-                    onChange: (e) => setTurnoAula(e.target.value),
-                    required: true
-                  },
-                  h("option", { value: "Mañana" }, "Mañana"),
-                  h("option", { value: "Tarde" }, "Tarde"),
-                  h("option", { value: "Vespertino" }, "Vespertino")
-                )
+                h("label", { className: "form-label", htmlFor: "curso-turno-aula" }, "Turno Aula:", h("span", { className: "required-star" }, " *")),
+                h(CustomSelect, {
+                  id: "curso-turno-aula",
+                  value: turnoAula,
+                  options: ["Mañana", "Tarde", "Vespertino"],
+                  onChange: (val) => setTurnoAula(val),
+                  placeholder: "Seleccionar turno..."
+                })
               ),
 
               // Campo Turno Taller
               h(
                 "div",
                 { className: "form-group" },
-                h("label", { className: "form-label", htmlFor: "curso-turno-taller" }, "Turno Taller"),
-                h(
-                  "select",
-                  {
-                    id: "curso-turno-taller",
-                    className: "form-control custom-select-input",
-                    value: turnoTaller,
-                    onChange: (e) => setTurnoTaller(e.target.value)
-                  },
-                  h("option", { value: "Mañana" }, "Mañana"),
-                  h("option", { value: "Tarde" }, "Tarde"),
-                  h("option", { value: "Vespertino" }, "Vespertino"),
-                  h("option", { value: "Sin Taller" }, "Sin Taller")
-                )
+                h("label", { className: "form-label", htmlFor: "curso-turno-taller" }, "Turno Taller:"),
+                h(CustomSelect, {
+                  id: "curso-turno-taller",
+                  value: turnoTaller,
+                  options: ["Mañana", "Tarde", "Vespertino", "Sin Taller"],
+                  onChange: (val) => setTurnoTaller(val),
+                  placeholder: "Seleccionar turno taller..."
+                })
               ),
 
               // Capacidad de Alumnos
               h(
                 "div",
                 { className: "form-group" },
-                h("label", { className: "form-label", htmlFor: "curso-capacidad" }, "Capacidad (Cupo Máximo)"),
+                h("label", { className: "form-label", htmlFor: "curso-capacidad" }, "Capacidad (Cupo Máximo):"),
                 h("input", {
                   id: "curso-capacidad",
                   type: "number",
                   className: "form-control",
                   min: 5,
                   max: 50,
+                  placeholder: "Ej: 30",
                   value: capacidad,
                   onChange: (e) => setCapacidad(e.target.value)
                 })
@@ -300,7 +294,7 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
               h(
                 "div",
                 { className: "form-group" },
-                h("label", { className: "form-label", htmlFor: "curso-preceptor" }, "Preceptor/a a Cargo"),
+                h("label", { className: "form-label", htmlFor: "curso-preceptor" }, "Preceptor/a a Cargo:"),
                 h("input", {
                   id: "curso-preceptor",
                   type: "text",
@@ -320,7 +314,7 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
                 "button",
                 {
                   type: "button",
-                  className: "action-button action-button--secondary",
+                  className: "modal-actions-btn modal-actions-btn--secondary",
                   onClick: onCerrar,
                   disabled: guardando
                 },
@@ -330,15 +324,29 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
                 "button",
                 {
                   type: "submit",
-                  className: "action-button action-button--primary",
+                  className: "modal-actions-btn modal-actions-btn--primary",
                   disabled: guardando
                 },
-                guardando ? "Guardando..." : "Guardar Curso"
+                h(
+                  "svg",
+                  { viewBox: "0 0 20 20", fill: "currentColor", width: "16", height: "16", "aria-hidden": "true" },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z",
+                    clipRule: "evenodd"
+                  })
+                ),
+                h("span", null, guardando ? "Guardando..." : "Guardar Curso")
               )
             )
           )
     )
   );
+
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }
 
 export default function CursosListView() {
