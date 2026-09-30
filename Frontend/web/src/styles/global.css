@@ -7496,9 +7496,17 @@ input[type="date"].form-input:focus {
   box-shadow: 0 0 0 3px rgba(34, 42, 76, 0.12);
 }
 
-.form-field-input.input-error {
-  border-color: #ef4444;
-  background: #fffafa;
+.form-field-input.input-error,
+.custom-select-wrapper.input-error .custom-select__trigger,
+.observation-date-picker.input-error .observation-date-picker__trigger {
+  border-color: #ef4444 !important;
+  background: #fffafa !important;
+}
+
+.form-field-group .custom-select__trigger,
+.form-field-group .observation-date-picker__trigger {
+  height: 44px;
+  border-radius: 12px;
 }
 
 .field-error-msg {
@@ -7674,6 +7682,16 @@ input[type="date"].form-input:focus {
   font-weight: 700;
   color: #334155;
   margin: 0;
+}
+
+.documentos-empty-state {
+  font-size: 13px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
 }
 
 .documentos-cards-grid {
@@ -16582,6 +16600,798 @@ input[type="date"].form-input:focus {
   .not-found-card__btn {
     width: 100%;
     padding: 11px 20px;
+  }
+}
+
+/* ==========================================================================
+   MÓDULO: PLANILLA DE REGISTRO DE ASISTENCIA DIARIA (DIGITALIZACIÓN OFICIAL)
+   ========================================================================== */
+
+.asistencias-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 40px;
+}
+
+.asistencia-badge-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-curso-activo {
+  background: var(--navy, #222a4c);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgba(34, 42, 76, 0.2);
+}
+
+.badge-turno-activo {
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Panel de Controles y Selector de Cursos */
+.asistencias-controls-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+}
+
+.asistencias-cursos-tabs-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.asistencias-section-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.asistencias-cursos-carousel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  position: relative;
+}
+
+.btn-tab-scroll {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 160ms ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.btn-tab-scroll:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--navy, #222a4c);
+  transform: scale(1.04);
+}
+
+.btn-tab-scroll:active {
+  transform: scale(0.95);
+}
+
+.asistencias-cursos-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  padding: 4px 0;
+  flex: 1;
+}
+
+.asistencias-cursos-tabs::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.asistencia-curso-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 160ms ease;
+}
+
+.asistencia-curso-pill:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.asistencia-curso-pill.active {
+  background: var(--navy, #222a4c);
+  border-color: var(--navy, #222a4c);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(34, 42, 76, 0.2);
+}
+
+.asistencia-curso-pill .pill-turno {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.asistencia-curso-pill.active .pill-turno {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Barra de Acciones de Asistencia */
+.asistencias-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.asistencias-mes-selector-group {
+  min-width: 200px;
+}
+
+.asistencias-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-pill-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  animation: fadeInBadge 0.2s ease;
+}
+
+@keyframes fadeInBadge {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.btn-asistencias-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+  border: 1.5px solid transparent;
+}
+
+.btn-imprimir-planilla {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.btn-imprimir-planilla:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.btn-guardar-planilla {
+  background: var(--navy, #222a4c);
+  color: #ffffff;
+}
+
+.btn-guardar-planilla:hover:not(:disabled) {
+  background: #192038;
+  box-shadow: 0 4px 14px rgba(34, 42, 76, 0.25);
+}
+
+.btn-guardar-planilla:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   TARJETA Y TABLA DEL REGISTRO DE ASISTENCIA DIARIA
+   ========================================================================== */
+
+.planilla-asistencia-card {
+  background: #ffffff;
+  border: 1.5px solid #d9e2ec;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.registro-diario-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.registro-escuela-name {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.registro-main-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 2px 0 0 0;
+  letter-spacing: -0.01em;
+}
+
+.registro-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.registro-header-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.registro-header-box span {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.registro-header-box strong {
+  color: var(--navy, #222a4c);
+  font-weight: 800;
+}
+
+/* Contenedor de Scroll Horizontal */
+.planilla-table-scroll-container {
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: thin;
+}
+
+.planilla-table-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.planilla-table-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Tabla Registro */
+.tabla-registro-asistencias {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+  background: #ffffff;
+  user-select: none;
+}
+
+.tabla-registro-asistencias th,
+.tabla-registro-asistencias td {
+  border: 1px solid #d1d9e6;
+  padding: 4px 2px;
+  box-sizing: border-box;
+}
+
+/* Columnas fijas (Sticky) a la izquierda */
+.sticky-col {
+  position: sticky;
+  z-index: 5;
+  background: inherit;
+}
+
+.col-1 {
+  left: 0;
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
+}
+
+.col-2 {
+  left: 34px;
+  min-width: 175px;
+  max-width: 220px;
+  text-align: left !important;
+  padding-left: 8px !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.04);
+}
+
+.tabla-registro-asistencias thead th.sticky-col {
+  z-index: 10;
+  background: #eef3f8 !important;
+}
+
+.tabla-registro-asistencias thead th {
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 800;
+  font-size: 11.5px;
+}
+
+.th-dia-num {
+  min-width: 28px;
+  width: 28px;
+  padding: 4px 0 !important;
+  font-size: 11px;
+}
+
+.th-dia-letra {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 700;
+  padding: 2px 0 !important;
+}
+
+.th-dia-weekend {
+  background: #e2e8f0 !important;
+  color: #64748b;
+}
+
+.th-dia-jornada {
+  background: #fed7aa !important;
+  color: #9a3412;
+}
+
+.th-col-asistencia,
+.th-col-total-inasist {
+  min-width: 55px;
+  background: #e6edf8 !important;
+  color: #1e3a8a;
+  font-size: 10.5px;
+}
+
+.th-col-inasistencia-group {
+  background: #fef2f2 !important;
+  color: #991b1b;
+  font-size: 10.5px;
+}
+
+.th-sub-in {
+  font-size: 9.5px;
+  background: #fff1f2 !important;
+  color: #9f1239;
+  min-width: 34px;
+}
+
+.th-col-observaciones {
+  min-width: 130px;
+}
+
+/* Filas divisorias de sección (VARONES / MUJERES) */
+.tr-section-divider td {
+  background: #334155 !important;
+  color: #ffffff !important;
+  padding: 0 !important;
+  text-align: left;
+  border-top: 2px solid #1e293b;
+  border-bottom: 2px solid #1e293b;
+}
+
+.sticky-section-title {
+  position: sticky;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  white-space: nowrap;
+  z-index: 6;
+}
+
+/* Filas de Alumnos */
+.tr-alumno-fila {
+  background: #ffffff;
+  transition: background 100ms ease;
+}
+
+.tr-alumno-fila:hover {
+  background: #f8fafc;
+}
+
+.td-orden {
+  font-weight: 700;
+  color: #64748b;
+  background: #ffffff;
+}
+
+.td-nombre {
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: #ffffff;
+}
+
+.tr-alumno-fila:hover .sticky-col {
+  background: #f8fafc;
+}
+
+/* Celdas Interactivas de Asistencia */
+.td-celda-asistencia {
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0 !important;
+}
+
+.td-celda-asistencia:hover:not(.is-inactive-cell) {
+  filter: brightness(0.92);
+  transform: scale(1.06);
+}
+
+.cell-presente {
+  background: #ecfdf5 !important;
+  color: #15803d !important;
+}
+
+.cell-ausente {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  font-weight: 900;
+}
+
+.cell-justificada {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+.cell-tarde {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+}
+
+.is-inactive-cell {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  cursor: default !important;
+  font-weight: 400;
+}
+
+/* Totales laterales por fila */
+.td-total {
+  font-weight: 800;
+  font-size: 11.5px;
+}
+
+.td-presentes {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.td-just {
+  color: #1d4ed8;
+}
+
+.td-injust {
+  color: #b91c1c;
+}
+
+.td-inasist-total {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.td-observaciones-input {
+  padding: 2px 4px !important;
+}
+
+.input-obs-alumno {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+}
+
+.input-obs-alumno:focus {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #3b82f6;
+}
+
+/* Filas de Totales Diarios al pie de la tabla */
+.tr-total-balance {
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.tr-total-varones {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.tr-total-mujeres {
+  background: #fdf2f8;
+  color: #831843;
+}
+
+.tr-total-general {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-top: 2px solid #cbd5e1;
+}
+
+.td-tot-col {
+  padding: 4px 0 !important;
+  font-size: 11.5px;
+}
+
+.td-tot-highlight {
+  font-weight: 900;
+  color: var(--navy, #222a4c);
+}
+
+.td-empty-spacer {
+  background: #f8fafc;
+}
+
+/* ==========================================================================
+   CUADROS INFERIORES DE BALANCE, EFEMÉRIDES Y FIRMAS (FORMATO OFICIAL)
+   ========================================================================== */
+
+.asistencia-footer-balances-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr 1.1fr;
+  gap: 16px;
+}
+
+.balance-box-card {
+  background: #ffffff;
+  border: 1.5px solid #d9e2ec;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.balance-box-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--navy, #222a4c);
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.balance-mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.balance-mini-table td {
+  padding: 5px 4px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+}
+
+.balance-mini-table .val {
+  text-align: right;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.balance-mini-table .tr-resaltada {
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.balance-mini-table .tr-resaltada td {
+  color: #0f172a;
+  border-top: 1.5px solid #cbd5e1;
+}
+
+/* Efemérides */
+.efemerides-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.efemeride-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.efemeride-dia {
+  font-weight: 800;
+  color: #c2410c;
+  background: #ffedd5;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.efemeride-desc {
+  color: #334155;
+  font-weight: 600;
+}
+
+/* Firmas */
+.balance-box-firmas {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.firma-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.firma-line {
+  width: 80%;
+  height: 1.5px;
+  background: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.firma-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #334155;
+  letter-spacing: 0.05em;
+}
+
+.firma-subtext {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   OPTIMIZACIÓN DE IMPRESIÓN OFICIAL (@media print)
+   ========================================================================== */
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 8mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    font-size: 10px;
+  }
+
+  .site-header,
+  .site-sidebar,
+  .no-print,
+  .app-toast-container {
+    display: none !important;
+  }
+
+  .asistencias-page {
+    padding: 0 !important;
+    gap: 10px !important;
+  }
+
+  .planilla-asistencia-card {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+  }
+
+  .registro-diario-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #000000 !important;
+    padding: 8px 12px !important;
+  }
+
+  .tabla-registro-asistencias th,
+  .tabla-registro-asistencias td {
+    border: 1px solid #000000 !important;
+    font-size: 9px !important;
+    padding: 2px 1px !important;
+  }
+
+  .asistencia-footer-balances-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    page-break-inside: avoid;
+  }
+
+  .balance-box-card {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    padding: 8px !important;
+  }
+}
+
+/* Responsividad en Pantallas Medianas / Pequeñas */
+@media (max-width: 1024px) {
+  .asistencia-footer-balances-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .asistencia-footer-balances-grid {
+    grid-template-columns: 1fr;
   }
 }
 

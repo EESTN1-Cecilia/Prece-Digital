@@ -1,45 +1,43 @@
-import React, { useState, useEffect } from "react";
-import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
+import React, { useState } from "react";
+import { h } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
+import { CustomSelect } from "../../components/common/custom-select.js";
+import { CustomDatePicker } from "../../components/common/custom-datepicker.js";
 import { StudentsService } from "./students-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
 
-export default function CargarAlumnoView() {
-  const user = useUsuarioActual();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(null);
-  const [errors, setErrors] = useState({});
+function soloDigitos(val) {
+  return String(val ?? "").replace(/\D/g, "");
+}
 
-
-  // Estado unificado del formulario
-  const [formData, setFormData] = useState({
+function getEmptyFormData() {
+  return {
     // Paso 1: Datos del Estudiante
     nombre: "",
     apellido: "",
     dni: "",
     cuil: "",
-    genero: "Masculino",
+    genero: "",
     fechaNacimiento: "",
-    curso: "1°",
-    division: "1",
-    turno: "Mañana",
-    estado: "Activo",
-    fechaIngreso: new Date().toISOString().split("T")[0],
-    pais: "Argentina",
-    provincia: "Buenos Aires",
-    distrito: "Esteban Echeverría",
-    localidad: "Monte Grande",
-    codigoPostal: "1842",
+    curso: "",
+    division: "",
+    turno: "",
+    estado: "",
+    fechaIngreso: "",
+    pais: "",
+    provincia: "",
+    distrito: "",
+    localidad: "",
+    codigoPostal: "",
 
     // Paso 2: Datos del Tutor
     tutorNombre: "",
     tutorApellido: "",
     tutorDni: "",
     tutorCuil: "",
-    tutorGenero: "Femenino",
+    tutorGenero: "",
     tutorFechaNacimiento: "",
-    tutorParentesco: "Madre",
+    tutorParentesco: "",
     tutorTelefono: "",
     tutorEmail: "",
     // Domicilio del Tutor
@@ -50,14 +48,14 @@ export default function CargarAlumnoView() {
     tutorDepto: "",
     tutorEntreCalle1: "",
     tutorEntreCalle2: "",
-    tutorProvincia: "Buenos Aires",
-    tutorDistrito: "Esteban Echeverría",
-    tutorLocalidad: "Monte Grande",
+    tutorProvincia: "",
+    tutorDistrito: "",
+    tutorLocalidad: "",
     tieneSegundoTutor: false,
     tutor2Nombre: "",
     tutor2Apellido: "",
     tutor2Dni: "",
-    tutor2Parentesco: "Padre",
+    tutor2Parentesco: "",
     tutor2Telefono: "",
 
     // Paso 3: Otros Datos
@@ -69,25 +67,33 @@ export default function CargarAlumnoView() {
     alumnoDepto: "",
     alumnoEntreCalle1: "",
     alumnoEntreCalle2: "",
-    alumnoProvincia: "Buenos Aires",
-    alumnoDistrito: "Esteban Echeverría",
-    alumnoLocalidad: "Monte Grande",
+    alumnoProvincia: "",
+    alumnoDistrito: "",
+    alumnoLocalidad: "",
     telefonoParticular: "",
     emailParticular: "",
     telefonoEmergencia: "",
     contactoEmergenciaNombre: "",
     obraSocial: "",
     numeroAfiliado: "",
-    grupoSanguineo: "0+",
+    grupoSanguineo: "",
     observacionesSalud: "",
 
     // Paso 4: Documentos
-    documentoTipo: "DNI del Estudiante (Frente y Dorso)",
-    documentos: [
-      { id: 1, tipo: "DNI del Estudiante (Frente y Dorso)", nombre: "dni_estudiante_frente_dorso.pdf", tamano: "1.4 MB", fecha: "Hoy" },
-      { id: 2, tipo: "Partida de Nacimiento", nombre: "partida_nacimiento_legalizada.pdf", tamano: "2.1 MB", fecha: "Hoy" }
-    ]
-  });
+    documentoTipo: "",
+    documentos: []
+  };
+}
+
+export default function CargarAlumnoView() {
+  const user = useUsuarioActual();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(null);
+  const [errors, setErrors] = useState({});
+
+  // Formulario totalmente limpio sin datos autocompletados
+  const [formData, setFormData] = useState(getEmptyFormData);
 
   const handleChange = (campo, valor) => {
     setFormData((prev) => ({
@@ -103,18 +109,239 @@ export default function CargarAlumnoView() {
     }
   };
 
-  // Validaciones por paso
+  // Validaciones estrictas: TODOS los campos son obligatorios y deben ser completados por el usuario
   const validarPaso = (paso) => {
     const errs = {};
+
     if (paso === 1) {
-      if (!formData.nombre.trim()) errs.nombre = "El nombre es obligatorio.";
-      if (!formData.apellido.trim()) errs.apellido = "El apellido es obligatorio.";
-      if (!formData.dni.trim()) errs.dni = "El DNI es obligatorio.";
+      // Nombre
+      if (!formData.nombre.trim()) {
+        errs.nombre = "El nombre es obligatorio.";
+      } else if (formData.nombre.trim().length < 2) {
+        errs.nombre = "El nombre debe tener al menos 2 letras.";
+      }
+
+      // Apellido
+      if (!formData.apellido.trim()) {
+        errs.apellido = "El apellido es obligatorio.";
+      } else if (formData.apellido.trim().length < 2) {
+        errs.apellido = "El apellido debe tener al menos 2 letras.";
+      }
+
+      // DNI
+      const dniDigits = soloDigitos(formData.dni);
+      if (!dniDigits) {
+        errs.dni = "El DNI es obligatorio.";
+      } else if (dniDigits.length < 7 || dniDigits.length > 8) {
+        errs.dni = "El DNI debe tener entre 7 y 8 dígitos numéricos.";
+      }
+
+      // CUIL (Obligatorio)
+      const cuilDigits = soloDigitos(formData.cuil);
+      if (!cuilDigits) {
+        errs.cuil = "El CUIL es obligatorio.";
+      } else if (cuilDigits.length !== 11) {
+        errs.cuil = "El CUIL debe contener exactamente 11 dígitos.";
+      }
+
+      // Género
+      if (!formData.genero) {
+        errs.genero = "Debe seleccionar el género.";
+      }
+
+      // Fecha de Nacimiento
+      if (!formData.fechaNacimiento) {
+        errs.fechaNacimiento = "La fecha de nacimiento es obligatoria.";
+      } else {
+        const fn = new Date(formData.fechaNacimiento + "T00:00:00");
+        const hoy = new Date();
+        if (isNaN(fn.getTime())) {
+          errs.fechaNacimiento = "Fecha inválida.";
+        } else if (fn > hoy) {
+          errs.fechaNacimiento = "La fecha no puede ser futura.";
+        } else {
+          const edad = hoy.getFullYear() - fn.getFullYear();
+          if (edad < 5 || edad > 35) {
+            errs.fechaNacimiento = "Verifique la fecha (edad fuera de rango escolar).";
+          }
+        }
+      }
+
+      // Curso, División, Turno, Estado, Fecha de Ingreso
+      if (!formData.curso) errs.curso = "Debe seleccionar el curso.";
+      if (!formData.division) errs.division = "Debe seleccionar la división.";
+      if (!formData.turno) errs.turno = "Debe seleccionar el turno.";
+      if (!formData.estado) errs.estado = "Debe seleccionar el estado.";
+      if (!formData.fechaIngreso) errs.fechaIngreso = "La fecha de ingreso es obligatoria.";
+
+      // Geografía
+      if (!formData.pais) errs.pais = "Debe seleccionar el país.";
+      if (!formData.provincia) errs.provincia = "Debe seleccionar la provincia.";
+      if (!formData.distrito) errs.distrito = "Debe seleccionar el distrito / partido.";
+      if (!formData.localidad) errs.localidad = "Debe seleccionar la localidad.";
+      if (!formData.codigoPostal || !formData.codigoPostal.trim()) {
+        errs.codigoPostal = "El código postal es obligatorio.";
+      } else if (formData.codigoPostal.trim().length < 4) {
+        errs.codigoPostal = "Ingrese un código postal válido.";
+      }
     } else if (paso === 2) {
-      if (!formData.tutorNombre.trim()) errs.tutorNombre = "El nombre del tutor es obligatorio.";
-      if (!formData.tutorApellido.trim()) errs.tutorApellido = "El apellido del tutor es obligatorio.";
-      if (!formData.tutorTelefono.trim()) errs.tutorTelefono = "El teléfono de contacto es obligatorio.";
+      // Tutor Nombre
+      if (!formData.tutorNombre.trim()) {
+        errs.tutorNombre = "El nombre del tutor es obligatorio.";
+      } else if (formData.tutorNombre.trim().length < 2) {
+        errs.tutorNombre = "Ingrese al menos 2 letras.";
+      }
+
+      // Tutor Apellido
+      if (!formData.tutorApellido.trim()) {
+        errs.tutorApellido = "El apellido del tutor es obligatorio.";
+      } else if (formData.tutorApellido.trim().length < 2) {
+        errs.tutorApellido = "Ingrese al menos 2 letras.";
+      }
+
+      // Tutor DNI
+      const tutorDniDigits = soloDigitos(formData.tutorDni);
+      if (!tutorDniDigits) {
+        errs.tutorDni = "El DNI del tutor es obligatorio.";
+      } else if (tutorDniDigits.length < 7 || tutorDniDigits.length > 8) {
+        errs.tutorDni = "El DNI debe tener entre 7 y 8 dígitos numéricos.";
+      }
+
+      // Tutor CUIL (Obligatorio)
+      const tutorCuilDigits = soloDigitos(formData.tutorCuil);
+      if (!tutorCuilDigits) {
+        errs.tutorCuil = "El CUIL del tutor es obligatorio.";
+      } else if (tutorCuilDigits.length !== 11) {
+        errs.tutorCuil = "El CUIL debe contener exactamente 11 dígitos.";
+      }
+
+      // Tutor Género y Fecha Nacimiento
+      if (!formData.tutorGenero) {
+        errs.tutorGenero = "Debe seleccionar el género del tutor.";
+      }
+      if (!formData.tutorFechaNacimiento) {
+        errs.tutorFechaNacimiento = "La fecha de nacimiento del tutor es obligatoria.";
+      }
+
+      // Tutor Parentesco
+      if (!formData.tutorParentesco) {
+        errs.tutorParentesco = "Debe seleccionar el parentesco.";
+      }
+
+      // Tutor Teléfono
+      const telDigits = soloDigitos(formData.tutorTelefono);
+      if (!telDigits) {
+        errs.tutorTelefono = "El teléfono de contacto es obligatorio.";
+      } else if (telDigits.length < 8) {
+        errs.tutorTelefono = "Ingrese un teléfono válido (mínimo 8 dígitos).";
+      }
+
+      // Tutor Email (Obligatorio)
+      if (!formData.tutorEmail.trim()) {
+        errs.tutorEmail = "El correo electrónico es obligatorio.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.tutorEmail.trim())) {
+        errs.tutorEmail = "Ingrese un correo electrónico válido (ej: nombre@dominio.com).";
+      }
+
+      // Domicilio del Tutor (Todos obligatorios)
+      if (!formData.tutorCalle.trim()) {
+        errs.tutorCalle = "La calle del domicilio es obligatoria.";
+      }
+      if (!formData.tutorAltura.trim()) {
+        errs.tutorAltura = "La altura / número es obligatoria.";
+      }
+      if (!formData.tutorEntreCalle1.trim()) {
+        errs.tutorEntreCalle1 = "La entre calle 1 es obligatoria.";
+      }
+      if (!formData.tutorEntreCalle2.trim()) {
+        errs.tutorEntreCalle2 = "La entre calle 2 es obligatoria.";
+      }
+      if (!formData.tutorLocalidad) {
+        errs.tutorLocalidad = "Debe seleccionar la localidad.";
+      }
+
+      // Segundo Tutor (si está activo, todos sus campos son obligatorios)
+      if (formData.tieneSegundoTutor) {
+        if (!formData.tutor2Nombre.trim()) {
+          errs.tutor2Nombre = "El nombre del segundo tutor es obligatorio.";
+        }
+        if (!formData.tutor2Apellido.trim()) {
+          errs.tutor2Apellido = "El apellido del segundo tutor es obligatorio.";
+        }
+        const d2 = soloDigitos(formData.tutor2Dni);
+        if (!d2) {
+          errs.tutor2Dni = "El DNI del segundo tutor es obligatorio.";
+        } else if (d2.length < 7 || d2.length > 8) {
+          errs.tutor2Dni = "El DNI debe tener entre 7 y 8 dígitos.";
+        }
+        if (!formData.tutor2Parentesco) {
+          errs.tutor2Parentesco = "Debe seleccionar el parentesco del segundo tutor.";
+        }
+        const t2 = soloDigitos(formData.tutor2Telefono);
+        if (!t2) {
+          errs.tutor2Telefono = "El teléfono del segundo tutor es obligatorio.";
+        } else if (t2.length < 8) {
+          errs.tutor2Telefono = "Ingrese un teléfono válido (mínimo 8 dígitos).";
+        }
+      }
+    } else if (paso === 3) {
+      // Domicilio del alumno si difiere del tutor
+      if (!formData.mismoDomicilioQueTutor) {
+        if (!formData.alumnoCalle.trim()) {
+          errs.alumnoCalle = "La calle del domicilio es obligatoria.";
+        }
+        if (!formData.alumnoAltura.trim()) {
+          errs.alumnoAltura = "La altura / número es obligatoria.";
+        }
+        if (!formData.alumnoEntreCalle1.trim()) {
+          errs.alumnoEntreCalle1 = "La entre calle 1 es obligatoria.";
+        }
+        if (!formData.alumnoEntreCalle2.trim()) {
+          errs.alumnoEntreCalle2 = "La entre calle 2 es obligatoria.";
+        }
+        if (!formData.alumnoLocalidad) {
+          errs.alumnoLocalidad = "Debe seleccionar la localidad.";
+        }
+      }
+
+      // Contacto y Emergencias (Todos obligatorios)
+      if (!formData.telefonoParticular.trim()) {
+        errs.telefonoParticular = "El teléfono particular del alumno es obligatorio.";
+      } else if (soloDigitos(formData.telefonoParticular).length < 8) {
+        errs.telefonoParticular = "Ingrese un teléfono válido (mínimo 8 dígitos).";
+      }
+
+      if (!formData.emailParticular.trim()) {
+        errs.emailParticular = "El email de contacto es obligatorio.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailParticular.trim())) {
+        errs.emailParticular = "Ingrese un correo electrónico válido.";
+      }
+
+      if (!formData.telefonoEmergencia.trim()) {
+        errs.telefonoEmergencia = "El teléfono de emergencia es obligatorio.";
+      } else if (soloDigitos(formData.telefonoEmergencia).length < 8) {
+        errs.telefonoEmergencia = "Ingrese un teléfono válido (mínimo 8 dígitos).";
+      }
+
+      // Datos de Salud (Todos obligatorios)
+      if (!formData.obraSocial.trim()) {
+        errs.obraSocial = "La obra social / prepaga es obligatoria (indique 'Ninguna' si no posee).";
+      }
+      if (!formData.numeroAfiliado.trim()) {
+        errs.numeroAfiliado = "El número de afiliado o credencial es obligatorio (indique 'S/N' si no posee).";
+      }
+      if (!formData.grupoSanguineo) {
+        errs.grupoSanguineo = "Debe seleccionar el grupo sanguíneo.";
+      }
+      if (!formData.observacionesSalud.trim()) {
+        errs.observacionesSalud = "Las observaciones médicas o alergias son obligatorias (indique 'Ninguna' si no posee).";
+      }
+    } else if (paso === 4) {
+      if (!formData.documentos || formData.documentos.length === 0) {
+        errs.documentos = "Debe adjuntar al menos un documento para el legajo digital.";
+      }
     }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -139,8 +366,33 @@ export default function CargarAlumnoView() {
 
   const handleGuardar = async (e) => {
     if (e) e.preventDefault();
-    if (!validarPaso(1) || !validarPaso(2)) {
-      alert("Por favor complete los campos obligatorios antes de registrar al alumno.");
+
+    // Validar rigurosamente todos los pasos antes de enviar
+    const okPaso1 = validarPaso(1);
+    if (!okPaso1) {
+      setCurrentStep(1);
+      window.scrollTo({ top: 180, behavior: "smooth" });
+      return;
+    }
+
+    const okPaso2 = validarPaso(2);
+    if (!okPaso2) {
+      setCurrentStep(2);
+      window.scrollTo({ top: 180, behavior: "smooth" });
+      return;
+    }
+
+    const okPaso3 = validarPaso(3);
+    if (!okPaso3) {
+      setCurrentStep(3);
+      window.scrollTo({ top: 180, behavior: "smooth" });
+      return;
+    }
+
+    const okPaso4 = validarPaso(4);
+    if (!okPaso4) {
+      setCurrentStep(4);
+      window.scrollTo({ top: 180, behavior: "smooth" });
       return;
     }
 
@@ -150,8 +402,8 @@ export default function CargarAlumnoView() {
       const calleFinal = formData.mismoDomicilioQueTutor ? formData.tutorCalle : formData.alumnoCalle;
       const alturaFinal = formData.mismoDomicilioQueTutor ? formData.tutorAltura : formData.alumnoAltura;
       const entreCallesFinal = formData.mismoDomicilioQueTutor
-        ? `${formData.tutorEntreCalle1} y ${formData.tutorEntreCalle2}`
-        : `${formData.alumnoEntreCalle1} y ${formData.alumnoEntreCalle2}`;
+        ? `${formData.tutorEntreCalle1} y ${formData.tutorEntreCalle2}`.replace(/^ y | y $/g, "").trim()
+        : `${formData.alumnoEntreCalle1} y ${formData.alumnoEntreCalle2}`.replace(/^ y | y $/g, "").trim();
 
       const res = await StudentsService.createAlumno({
         ...formData,
@@ -172,6 +424,14 @@ export default function CargarAlumnoView() {
   };
 
   const handleAddDocumentoMock = () => {
+    if (!formData.documentoTipo) {
+      setErrors((prev) => ({
+        ...prev,
+        documentoTipo: "Seleccione un tipo de documento antes de subir el archivo."
+      }));
+      return;
+    }
+
     const nuevoDoc = {
       id: Date.now(),
       tipo: formData.documentoTipo,
@@ -183,6 +443,14 @@ export default function CargarAlumnoView() {
       ...prev,
       documentos: [...prev.documentos, nuevoDoc]
     }));
+    if (errors.documentos || errors.documentoTipo) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.documentos;
+        delete next.documentoTipo;
+        return next;
+      });
+    }
   };
 
   const handleRemoveDocumento = (docId) => {
@@ -305,17 +573,7 @@ export default function CargarAlumnoView() {
                 onClick: () => {
                   setSaveSuccess(null);
                   setCurrentStep(1);
-                  setFormData((prev) => ({
-                    ...prev,
-                    nombre: "",
-                    apellido: "",
-                    dni: "",
-                    cuil: "",
-                    tutorNombre: "",
-                    tutorApellido: "",
-                    tutorDni: "",
-                    tutorTelefono: ""
-                  }));
+                  setFormData(getEmptyFormData());
                 }
               },
               "+ Cargar Otro Alumno"
@@ -345,7 +603,9 @@ export default function CargarAlumnoView() {
             "aria-selected": isActive,
             className: `wizard-tab-btn ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`,
             onClick: () => {
-              if (tab.step < currentStep || validarPaso(currentStep)) {
+              if (tab.step < currentStep) {
+                setCurrentStep(tab.step);
+              } else if (validarPaso(currentStep)) {
                 setCurrentStep(tab.step);
               }
             }
@@ -445,9 +705,13 @@ export default function CargarAlumnoView() {
                     id: "dni",
                     className: `form-field-input ${errors.dni ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "Ingrese DNI....",
+                    placeholder: "Ingrese DNI (7 u 8 dígitos)....",
+                    maxLength: 8,
                     value: formData.dni,
-                    onChange: (e) => handleChange("dni", e.target.value)
+                    onChange: (e) => {
+                      const digits = soloDigitos(e.target.value).slice(0, 8);
+                      handleChange("dni", digits);
+                    }
                   }),
                   errors.dni ? h("span", { className: "field-error-msg" }, errors.dni) : null
                 ),
@@ -456,140 +720,141 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "cuil" }, "CUIL:"),
+                  h("label", { className: "form-field-label", htmlFor: "cuil" }, "CUIL:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "cuil",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.cuil ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "Ingrese CUIL....",
+                    placeholder: "Ingrese CUIL (11 dígitos)....",
+                    maxLength: 13,
                     value: formData.cuil,
-                    onChange: (e) => handleChange("cuil", e.target.value)
-                  })
+                    onChange: (e) => {
+                      const val = e.target.value.replace(/[^\d-]/g, "").slice(0, 13);
+                      handleChange("cuil", val);
+                    }
+                  }),
+                  errors.cuil ? h("span", { className: "field-error-msg" }, errors.cuil) : null
                 ),
 
                 // Género
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "genero" }, "Género:"),
-                  h(
-                    "select",
-                    {
-                      id: "genero",
-                      className: "form-field-select",
-                      value: formData.genero,
-                      onChange: (e) => handleChange("genero", e.target.value)
-                    },
-                    h("option", { value: "Masculino" }, "Masculino"),
-                    h("option", { value: "Femenino" }, "Femenino"),
-                    h("option", { value: "No binario" }, "No binario"),
-                    h("option", { value: "Otro" }, "Otro")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "genero" }, "Género:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "genero",
+                    className: errors.genero ? "input-error" : "",
+                    placeholder: "Seleccione género...",
+                    value: formData.genero,
+                    options: ["Masculino", "Femenino", "No binario", "Otro"],
+                    onChange: (val) => handleChange("genero", val)
+                  }),
+                  errors.genero ? h("span", { className: "field-error-msg" }, errors.genero) : null
                 ),
 
                 // Fecha de Nacimiento
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "fechaNacimiento" }, "Fecha de Nacimiento:"),
-                  h("input", {
+                  h("label", { className: "form-field-label", htmlFor: "fechaNacimiento" }, "Fecha de Nacimiento:", h("span", { className: "required-star" }, " *")),
+                  h(CustomDatePicker, {
                     id: "fechaNacimiento",
-                    className: "form-field-input",
-                    type: "date",
+                    className: errors.fechaNacimiento ? "input-error" : "",
                     value: formData.fechaNacimiento,
-                    onChange: (e) => handleChange("fechaNacimiento", e.target.value)
-                  })
+                    placeholder: "dd/mm/aaaa",
+                    minYear: 1990,
+                    maxYear: new Date().getFullYear(),
+                    onChange: (val) => handleChange("fechaNacimiento", val)
+                  }),
+                  errors.fechaNacimiento ? h("span", { className: "field-error-msg" }, errors.fechaNacimiento) : null
                 ),
 
                 // Curso
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "curso" }, "Curso:"),
-                  h(
-                    "select",
-                    {
-                      id: "curso",
-                      className: "form-field-select",
-                      value: formData.curso,
-                      onChange: (e) => handleChange("curso", e.target.value)
-                    },
-                    ["1°", "2°", "3°", "4°", "5°", "6°", "7°"].map((c) =>
-                      h("option", { key: c, value: c }, c)
-                    )
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "curso" }, "Curso:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "curso",
+                    className: errors.curso ? "input-error" : "",
+                    placeholder: "Seleccione curso...",
+                    value: formData.curso,
+                    options: ["1°", "2°", "3°", "4°", "5°", "6°", "7°"],
+                    onChange: (val) => handleChange("curso", val)
+                  }),
+                  errors.curso ? h("span", { className: "field-error-msg" }, errors.curso) : null
                 ),
 
                 // División
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "division" }, "División:"),
-                  h(
-                    "select",
-                    {
-                      id: "division",
-                      className: "form-field-select",
-                      value: formData.division,
-                      onChange: (e) => handleChange("division", e.target.value)
-                    },
-                    ["1", "2", "3", "4", "5", "6"].map((d) =>
-                      h("option", { key: d, value: d }, `${d}° División`)
-                    )
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "division" }, "División:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "division",
+                    className: errors.division ? "input-error" : "",
+                    placeholder: "Seleccione división...",
+                    value: formData.division,
+                    options: [
+                      { value: "1", label: "1° División" },
+                      { value: "2", label: "2° División" },
+                      { value: "3", label: "3° División" },
+                      { value: "4", label: "4° División" },
+                      { value: "5", label: "5° División" },
+                      { value: "6", label: "6° División" }
+                    ],
+                    onChange: (val) => handleChange("division", val)
+                  }),
+                  errors.division ? h("span", { className: "field-error-msg" }, errors.division) : null
                 ),
 
                 // Turno
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "turno" }, "Turno:"),
-                  h(
-                    "select",
-                    {
-                      id: "turno",
-                      className: "form-field-select",
-                      value: formData.turno,
-                      onChange: (e) => handleChange("turno", e.target.value)
-                    },
-                    h("option", { value: "Mañana" }, "Mañana"),
-                    h("option", { value: "Tarde" }, "Tarde"),
-                    h("option", { value: "Vespertino" }, "Vespertino"),
-                    h("option", { value: "Doble Escolaridad" }, "Doble Escolaridad")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "turno" }, "Turno:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "turno",
+                    className: errors.turno ? "input-error" : "",
+                    placeholder: "Seleccione turno...",
+                    value: formData.turno,
+                    options: ["Mañana", "Tarde"],
+                    onChange: (val) => handleChange("turno", val)
+                  }),
+                  errors.turno ? h("span", { className: "field-error-msg" }, errors.turno) : null
                 ),
 
                 // Estado
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "estado" }, "Estado:"),
-                  h(
-                    "select",
-                    {
-                      id: "estado",
-                      className: "form-field-select",
-                      value: formData.estado,
-                      onChange: (e) => handleChange("estado", e.target.value)
-                    },
-                    h("option", { value: "Activo" }, "Activo"),
-                    h("option", { value: "Inactivo" }, "Inactivo"),
-                    h("option", { value: "Pase pendiente" }, "Pase pendiente")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "estado" }, "Estado:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "estado",
+                    className: errors.estado ? "input-error" : "",
+                    placeholder: "Seleccione estado...",
+                    value: formData.estado,
+                    options: ["Activo", "Inactivo", "Pase pendiente"],
+                    onChange: (val) => handleChange("estado", val)
+                  }),
+                  errors.estado ? h("span", { className: "field-error-msg" }, errors.estado) : null
                 ),
 
                 // Fecha de Ingreso
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "fechaIngreso" }, "Fecha de Ingreso:"),
-                  h("input", {
+                  h("label", { className: "form-field-label", htmlFor: "fechaIngreso" }, "Fecha de Ingreso:", h("span", { className: "required-star" }, " *")),
+                  h(CustomDatePicker, {
                     id: "fechaIngreso",
-                    className: "form-field-input",
-                    type: "date",
+                    className: errors.fechaIngreso ? "input-error" : "",
                     value: formData.fechaIngreso,
-                    onChange: (e) => handleChange("fechaIngreso", e.target.value)
-                  })
+                    placeholder: "dd/mm/aaaa",
+                    minYear: 2010,
+                    maxYear: new Date().getFullYear() + 1,
+                    onChange: (val) => handleChange("fechaIngreso", val)
+                  }),
+                  errors.fechaIngreso ? h("span", { className: "field-error-msg" }, errors.fechaIngreso) : null
                 )
               ),
 
@@ -611,104 +876,88 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "pais" }, "País:"),
-                  h(
-                    "select",
-                    {
-                      id: "pais",
-                      className: "form-field-select",
-                      value: formData.pais,
-                      onChange: (e) => handleChange("pais", e.target.value)
-                    },
-                    h("option", { value: "Argentina" }, "Argentina"),
-                    h("option", { value: "Bolivia" }, "Bolivia"),
-                    h("option", { value: "Brasil" }, "Brasil"),
-                    h("option", { value: "Chile" }, "Chile"),
-                    h("option", { value: "Paraguay" }, "Paraguay"),
-                    h("option", { value: "Uruguay" }, "Uruguay"),
-                    h("option", { value: "Otro" }, "Otro")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "pais" }, "País:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "pais",
+                    className: errors.pais ? "input-error" : "",
+                    placeholder: "Seleccione país...",
+                    value: formData.pais,
+                    options: ["Argentina", "Bolivia", "Brasil", "Chile", "Paraguay", "Uruguay", "Otro"],
+                    onChange: (val) => handleChange("pais", val)
+                  }),
+                  errors.pais ? h("span", { className: "field-error-msg" }, errors.pais) : null
                 ),
 
                 // Provincia
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "provincia" }, "Provincia:"),
-                  h(
-                    "select",
-                    {
-                      id: "provincia",
-                      className: "form-field-select",
-                      value: formData.provincia,
-                      onChange: (e) => handleChange("provincia", e.target.value)
-                    },
-                    h("option", { value: "Buenos Aires" }, "Buenos Aires"),
-                    h("option", { value: "CABA" }, "Ciudad Autónoma de Buenos Aires"),
-                    h("option", { value: "Córdoba" }, "Córdoba"),
-                    h("option", { value: "Santa Fe" }, "Santa Fe"),
-                    h("option", { value: "Mendoza" }, "Mendoza"),
-                    h("option", { value: "Otra" }, "Otra")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "provincia" }, "Provincia:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "provincia",
+                    className: errors.provincia ? "input-error" : "",
+                    placeholder: "Seleccione provincia...",
+                    value: formData.provincia,
+                    options: [
+                      { value: "Buenos Aires", label: "Buenos Aires" },
+                      { value: "CABA", label: "Ciudad Autónoma de Buenos Aires" },
+                      { value: "Córdoba", label: "Córdoba" },
+                      { value: "Santa Fe", label: "Santa Fe" },
+                      { value: "Mendoza", label: "Mendoza" },
+                      { value: "Otra", label: "Otra" }
+                    ],
+                    onChange: (val) => handleChange("provincia", val)
+                  }),
+                  errors.provincia ? h("span", { className: "field-error-msg" }, errors.provincia) : null
                 ),
 
                 // Distrito
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "distrito" }, "Distrito / Partido:"),
-                  h(
-                    "select",
-                    {
-                      id: "distrito",
-                      className: "form-field-select",
-                      value: formData.distrito,
-                      onChange: (e) => handleChange("distrito", e.target.value)
-                    },
-                    h("option", { value: "Esteban Echeverría" }, "Esteban Echeverría"),
-                    h("option", { value: "Ezeiza" }, "Ezeiza"),
-                    h("option", { value: "Almirante Brown" }, "Almirante Brown"),
-                    h("option", { value: "Lomas de Zamora" }, "Lomas de Zamora"),
-                    h("option", { value: "Lanús" }, "Lanús"),
-                    h("option", { value: "Otro" }, "Otro")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "distrito" }, "Distrito / Partido:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "distrito",
+                    className: errors.distrito ? "input-error" : "",
+                    placeholder: "Seleccione distrito / partido...",
+                    value: formData.distrito,
+                    options: ["Esteban Echeverría", "Ezeiza", "Almirante Brown", "Lomas de Zamora", "Lanús", "Otro"],
+                    onChange: (val) => handleChange("distrito", val)
+                  }),
+                  errors.distrito ? h("span", { className: "field-error-msg" }, errors.distrito) : null
                 ),
 
                 // Localidad
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "localidad" }, "Localidad:"),
-                  h(
-                    "select",
-                    {
-                      id: "localidad",
-                      className: "form-field-select",
-                      value: formData.localidad,
-                      onChange: (e) => handleChange("localidad", e.target.value)
-                    },
-                    h("option", { value: "Monte Grande" }, "Monte Grande"),
-                    h("option", { value: "El Jagüel" }, "El Jagüel"),
-                    h("option", { value: "Luis Guillón" }, "Luis Guillón"),
-                    h("option", { value: "Canning" }, "Canning"),
-                    h("option", { value: "9 de Julio" }, "9 de Julio"),
-                    h("option", { value: "Otra" }, "Otra")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "localidad" }, "Localidad:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "localidad",
+                    className: errors.localidad ? "input-error" : "",
+                    placeholder: "Seleccione localidad...",
+                    value: formData.localidad,
+                    options: ["Monte Grande", "El Jagüel", "Luis Guillón", "Canning", "9 de Julio", "Otra"],
+                    onChange: (val) => handleChange("localidad", val)
+                  }),
+                  errors.localidad ? h("span", { className: "field-error-msg" }, errors.localidad) : null
                 ),
 
                 // Código Postal
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "codigoPostal" }, "Código Postal:"),
+                  h("label", { className: "form-field-label", htmlFor: "codigoPostal" }, "Código Postal:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "codigoPostal",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.codigoPostal ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "Ingrese Código Postal....",
+                    placeholder: "Ingrese Código Postal (ej: 1842)....",
+                    maxLength: 8,
                     value: formData.codigoPostal,
                     onChange: (e) => handleChange("codigoPostal", e.target.value)
-                  })
+                  }),
+                  errors.codigoPostal ? h("span", { className: "field-error-msg" }, errors.codigoPostal) : null
                 )
               )
             )
@@ -769,86 +1018,89 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorDni" }, "DNI:"),
+                  h("label", { className: "form-field-label", htmlFor: "tutorDni" }, "DNI:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "tutorDni",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.tutorDni ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "Ingrese DNI....",
+                    placeholder: "Ingrese DNI (7 u 8 dígitos)....",
+                    maxLength: 8,
                     value: formData.tutorDni,
-                    onChange: (e) => handleChange("tutorDni", e.target.value)
-                  })
+                    onChange: (e) => {
+                      const digits = soloDigitos(e.target.value).slice(0, 8);
+                      handleChange("tutorDni", digits);
+                    }
+                  }),
+                  errors.tutorDni ? h("span", { className: "field-error-msg" }, errors.tutorDni) : null
                 ),
 
                 // CUIL
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorCuil" }, "CUIL:"),
+                  h("label", { className: "form-field-label", htmlFor: "tutorCuil" }, "CUIL:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "tutorCuil",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.tutorCuil ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "Ingrese CUIL....",
+                    placeholder: "Ingrese CUIL (11 dígitos)....",
+                    maxLength: 13,
                     value: formData.tutorCuil,
-                    onChange: (e) => handleChange("tutorCuil", e.target.value)
-                  })
+                    onChange: (e) => {
+                      const val = e.target.value.replace(/[^\d-]/g, "").slice(0, 13);
+                      handleChange("tutorCuil", val);
+                    }
+                  }),
+                  errors.tutorCuil ? h("span", { className: "field-error-msg" }, errors.tutorCuil) : null
                 ),
 
                 // Género
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorGenero" }, "Género:"),
-                  h(
-                    "select",
-                    {
-                      id: "tutorGenero",
-                      className: "form-field-select",
-                      value: formData.tutorGenero,
-                      onChange: (e) => handleChange("tutorGenero", e.target.value)
-                    },
-                    h("option", { value: "Femenino" }, "Femenino"),
-                    h("option", { value: "Masculino" }, "Masculino"),
-                    h("option", { value: "No binario" }, "No binario"),
-                    h("option", { value: "Otro" }, "Otro")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "tutorGenero" }, "Género:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "tutorGenero",
+                    className: errors.tutorGenero ? "input-error" : "",
+                    placeholder: "Seleccione género...",
+                    value: formData.tutorGenero,
+                    options: ["Femenino", "Masculino", "No binario", "Otro"],
+                    onChange: (val) => handleChange("tutorGenero", val)
+                  }),
+                  errors.tutorGenero ? h("span", { className: "field-error-msg" }, errors.tutorGenero) : null
                 ),
 
                 // Fecha de Nacimiento
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorFechaNacimiento" }, "Fecha de Nacimiento:"),
-                  h("input", {
+                  h("label", { className: "form-field-label", htmlFor: "tutorFechaNacimiento" }, "Fecha de Nacimiento:", h("span", { className: "required-star" }, " *")),
+                  h(CustomDatePicker, {
                     id: "tutorFechaNacimiento",
-                    className: "form-field-input",
-                    type: "date",
+                    className: errors.tutorFechaNacimiento ? "input-error" : "",
                     value: formData.tutorFechaNacimiento,
-                    onChange: (e) => handleChange("tutorFechaNacimiento", e.target.value)
-                  })
+                    placeholder: "dd/mm/aaaa",
+                    minYear: 1940,
+                    maxYear: new Date().getFullYear() - 15,
+                    onChange: (val) => handleChange("tutorFechaNacimiento", val)
+                  }),
+                  errors.tutorFechaNacimiento ? h("span", { className: "field-error-msg" }, errors.tutorFechaNacimiento) : null
                 ),
 
                 // Parentesco
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorParentesco" }, "Parentesco:"),
-                  h(
-                    "select",
-                    {
-                      id: "tutorParentesco",
-                      className: "form-field-select",
-                      value: formData.tutorParentesco,
-                      onChange: (e) => handleChange("tutorParentesco", e.target.value)
-                    },
-                    h("option", { value: "Madre" }, "Madre"),
-                    h("option", { value: "Padre" }, "Padre"),
-                    h("option", { value: "Tutor/a Legal" }, "Tutor/a Legal"),
-                    h("option", { value: "Abuelo/a" }, "Abuelo/a"),
-                    h("option", { value: "Hermano/a Mayor" }, "Hermano/a Mayor"),
-                    h("option", { value: "Otro" }, "Otro")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "tutorParentesco" }, "Parentesco:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "tutorParentesco",
+                    className: errors.tutorParentesco ? "input-error" : "",
+                    placeholder: "Seleccione parentesco...",
+                    value: formData.tutorParentesco,
+                    options: ["Madre", "Padre", "Tutor/a Legal", "Abuelo/a", "Hermano/a Mayor", "Otro"],
+                    onChange: (val) => handleChange("tutorParentesco", val)
+                  }),
+                  errors.tutorParentesco ? h("span", { className: "field-error-msg" }, errors.tutorParentesco) : null
                 ),
 
                 // Teléfono
@@ -860,7 +1112,7 @@ export default function CargarAlumnoView() {
                     id: "tutorTelefono",
                     className: `form-field-input ${errors.tutorTelefono ? "input-error" : ""}`,
                     type: "tel",
-                    placeholder: "Ingrese Teléfono....",
+                    placeholder: "Ej: 1142901234....",
                     value: formData.tutorTelefono,
                     onChange: (e) => handleChange("tutorTelefono", e.target.value)
                   }),
@@ -871,15 +1123,16 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorEmail" }, "Correo Electrónico:"),
+                  h("label", { className: "form-field-label", htmlFor: "tutorEmail" }, "Correo Electrónico:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "tutorEmail",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.tutorEmail ? "input-error" : ""}`,
                     type: "email",
                     placeholder: "correo@ejemplo.com....",
                     value: formData.tutorEmail,
                     onChange: (e) => handleChange("tutorEmail", e.target.value)
-                  })
+                  }),
+                  errors.tutorEmail ? h("span", { className: "field-error-msg" }, errors.tutorEmail) : null
                 )
               ),
 
@@ -890,7 +1143,7 @@ export default function CargarAlumnoView() {
               h(
                 "div",
                 { className: "form-section-header" },
-                h("h3", { className: "form-section-title" }, "Domicilio"),
+                h("h3", { className: "form-section-title" }, "Domicilio del Tutor"),
                 h("span", { className: "form-section-desc" }, "Dirección de residencia del tutor")
               ),
               h(
@@ -901,30 +1154,32 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorCalle" }, "Calle:"),
+                  h("label", { className: "form-field-label", htmlFor: "tutorCalle" }, "Calle:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "tutorCalle",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.tutorCalle ? "input-error" : ""}`,
                     type: "text",
                     placeholder: "Calle....",
                     value: formData.tutorCalle,
                     onChange: (e) => handleChange("tutorCalle", e.target.value)
-                  })
+                  }),
+                  errors.tutorCalle ? h("span", { className: "field-error-msg" }, errors.tutorCalle) : null
                 ),
 
                 // Altura
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorAltura" }, "Altura / Número:"),
+                  h("label", { className: "form-field-label", htmlFor: "tutorAltura" }, "Altura / Número:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "tutorAltura",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.tutorAltura ? "input-error" : ""}`,
                     type: "text",
                     placeholder: "Altura....",
                     value: formData.tutorAltura,
                     onChange: (e) => handleChange("tutorAltura", e.target.value)
-                  })
+                  }),
+                  errors.tutorAltura ? h("span", { className: "field-error-msg" }, errors.tutorAltura) : null
                 ),
 
                 // Piso / Torre / Depto
@@ -976,49 +1231,46 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorEntreCalle1" }, "Entre calle 1:"),
+                  h("label", { className: "form-field-label", htmlFor: "tutorEntreCalle1" }, "Entre calle 1:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "tutorEntreCalle1",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.tutorEntreCalle1 ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "Entre calle....",
+                    placeholder: "Entre calle 1....",
                     value: formData.tutorEntreCalle1,
                     onChange: (e) => handleChange("tutorEntreCalle1", e.target.value)
-                  })
+                  }),
+                  errors.tutorEntreCalle1 ? h("span", { className: "field-error-msg" }, errors.tutorEntreCalle1) : null
                 ),
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorEntreCalle2" }, "Entre calle 2:"),
+                  h("label", { className: "form-field-label", htmlFor: "tutorEntreCalle2" }, "Entre calle 2:", h("span", { className: "required-star" }, " *")),
                   h("input", {
                     id: "tutorEntreCalle2",
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.tutorEntreCalle2 ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "Entre calle....",
+                    placeholder: "Entre calle 2....",
                     value: formData.tutorEntreCalle2,
                     onChange: (e) => handleChange("tutorEntreCalle2", e.target.value)
-                  })
+                  }),
+                  errors.tutorEntreCalle2 ? h("span", { className: "field-error-msg" }, errors.tutorEntreCalle2) : null
                 ),
 
                 // Localidad
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label", htmlFor: "tutorLocalidad" }, "Localidad:"),
-                  h(
-                    "select",
-                    {
-                      id: "tutorLocalidad",
-                      className: "form-field-select",
-                      value: formData.tutorLocalidad,
-                      onChange: (e) => handleChange("tutorLocalidad", e.target.value)
-                    },
-                    h("option", { value: "Monte Grande" }, "Monte Grande"),
-                    h("option", { value: "El Jagüel" }, "El Jagüel"),
-                    h("option", { value: "Luis Guillón" }, "Luis Guillón"),
-                    h("option", { value: "Canning" }, "Canning"),
-                    h("option", { value: "Otra" }, "Otra")
-                  )
+                  h("label", { className: "form-field-label", htmlFor: "tutorLocalidad" }, "Localidad:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    id: "tutorLocalidad",
+                    className: errors.tutorLocalidad ? "input-error" : "",
+                    placeholder: "Seleccione localidad...",
+                    value: formData.tutorLocalidad,
+                    options: ["Monte Grande", "El Jagüel", "Luis Guillón", "Canning", "Otra"],
+                    onChange: (val) => handleChange("tutorLocalidad", val)
+                  }),
+                  errors.tutorLocalidad ? h("span", { className: "field-error-msg" }, errors.tutorLocalidad) : null
                 )
               ),
 
@@ -1059,38 +1311,71 @@ export default function CargarAlumnoView() {
                         h(
                           "div",
                           { className: "form-field-group" },
-                          h("label", { className: "form-field-label" }, "Nombre:"),
+                          h("label", { className: "form-field-label" }, "Nombre:", h("span", { className: "required-star" }, " *")),
                           h("input", {
-                            className: "form-field-input",
+                            className: `form-field-input ${errors.tutor2Nombre ? "input-error" : ""}`,
                             type: "text",
                             placeholder: "Nombre....",
                             value: formData.tutor2Nombre,
                             onChange: (e) => handleChange("tutor2Nombre", e.target.value)
-                          })
+                          }),
+                          errors.tutor2Nombre ? h("span", { className: "field-error-msg" }, errors.tutor2Nombre) : null
                         ),
                         h(
                           "div",
                           { className: "form-field-group" },
-                          h("label", { className: "form-field-label" }, "Apellido:"),
+                          h("label", { className: "form-field-label" }, "Apellido:", h("span", { className: "required-star" }, " *")),
                           h("input", {
-                            className: "form-field-input",
+                            className: `form-field-input ${errors.tutor2Apellido ? "input-error" : ""}`,
                             type: "text",
                             placeholder: "Apellido....",
                             value: formData.tutor2Apellido,
                             onChange: (e) => handleChange("tutor2Apellido", e.target.value)
-                          })
+                          }),
+                          errors.tutor2Apellido ? h("span", { className: "field-error-msg" }, errors.tutor2Apellido) : null
                         ),
                         h(
                           "div",
                           { className: "form-field-group" },
-                          h("label", { className: "form-field-label" }, "Teléfono:"),
+                          h("label", { className: "form-field-label" }, "DNI:", h("span", { className: "required-star" }, " *")),
                           h("input", {
-                            className: "form-field-input",
+                            className: `form-field-input ${errors.tutor2Dni ? "input-error" : ""}`,
+                            type: "text",
+                            placeholder: "DNI (7 u 8 dígitos)....",
+                            maxLength: 8,
+                            value: formData.tutor2Dni,
+                            onChange: (e) => {
+                              const digits = soloDigitos(e.target.value).slice(0, 8);
+                              handleChange("tutor2Dni", digits);
+                            }
+                          }),
+                          errors.tutor2Dni ? h("span", { className: "field-error-msg" }, errors.tutor2Dni) : null
+                        ),
+                        h(
+                          "div",
+                          { className: "form-field-group" },
+                          h("label", { className: "form-field-label" }, "Parentesco:", h("span", { className: "required-star" }, " *")),
+                          h(CustomSelect, {
+                            placeholder: "Seleccione parentesco...",
+                            className: errors.tutor2Parentesco ? "input-error" : "",
+                            value: formData.tutor2Parentesco,
+                            options: ["Padre", "Madre", "Tutor/a Legal", "Abuelo/a", "Hermano/a Mayor", "Otro"],
+                            onChange: (val) => handleChange("tutor2Parentesco", val)
+                          }),
+                          errors.tutor2Parentesco ? h("span", { className: "field-error-msg" }, errors.tutor2Parentesco) : null
+                        ),
+                        h(
+                          "div",
+                          { className: "form-field-group" },
+                          h("label", { className: "form-field-label" }, "Teléfono:", h("span", { className: "required-star" }, " *")),
+                          h("input", {
+                            className: `form-field-input ${errors.tutor2Telefono ? "input-error" : ""}`,
                             type: "tel",
                             placeholder: "Teléfono....",
                             value: formData.tutor2Telefono,
                             onChange: (e) => handleChange("tutor2Telefono", e.target.value)
-                          })
+                          }),
+                          errors.tutor2Telefono ? h("span", { className: "field-error-msg" }, errors.tutor2Telefono) : null
                         )
                       )
                     )
@@ -1130,43 +1415,67 @@ export default function CargarAlumnoView() {
                     h(
                       "div",
                       { className: "form-field-group" },
-                      h("label", { className: "form-field-label" }, "Calle:"),
+                      h("label", { className: "form-field-label" }, "Calle:", h("span", { className: "required-star" }, " *")),
                       h("input", {
-                        className: "form-field-input",
+                        className: `form-field-input ${errors.alumnoCalle ? "input-error" : ""}`,
                         type: "text",
                         placeholder: "Calle....",
                         value: formData.alumnoCalle,
                         onChange: (e) => handleChange("alumnoCalle", e.target.value)
-                      })
+                      }),
+                      errors.alumnoCalle ? h("span", { className: "field-error-msg" }, errors.alumnoCalle) : null
                     ),
                     h(
                       "div",
                       { className: "form-field-group" },
-                      h("label", { className: "form-field-label" }, "Altura:"),
+                      h("label", { className: "form-field-label" }, "Altura:", h("span", { className: "required-star" }, " *")),
                       h("input", {
-                        className: "form-field-input",
+                        className: `form-field-input ${errors.alumnoAltura ? "input-error" : ""}`,
                         type: "text",
                         placeholder: "Altura....",
                         value: formData.alumnoAltura,
                         onChange: (e) => handleChange("alumnoAltura", e.target.value)
-                      })
+                      }),
+                      errors.alumnoAltura ? h("span", { className: "field-error-msg" }, errors.alumnoAltura) : null
                     ),
                     h(
                       "div",
                       { className: "form-field-group" },
-                      h("label", { className: "form-field-label" }, "Localidad:"),
-                      h(
-                        "select",
-                        {
-                          className: "form-field-select",
-                          value: formData.alumnoLocalidad,
-                          onChange: (e) => handleChange("alumnoLocalidad", e.target.value)
-                        },
-                        h("option", { value: "Monte Grande" }, "Monte Grande"),
-                        h("option", { value: "El Jagüel" }, "El Jagüel"),
-                        h("option", { value: "Luis Guillón" }, "Luis Guillón"),
-                        h("option", { value: "Canning" }, "Canning")
-                      )
+                      h("label", { className: "form-field-label" }, "Entre calle 1:", h("span", { className: "required-star" }, " *")),
+                      h("input", {
+                        className: `form-field-input ${errors.alumnoEntreCalle1 ? "input-error" : ""}`,
+                        type: "text",
+                        placeholder: "Entre calle 1....",
+                        value: formData.alumnoEntreCalle1,
+                        onChange: (e) => handleChange("alumnoEntreCalle1", e.target.value)
+                      }),
+                      errors.alumnoEntreCalle1 ? h("span", { className: "field-error-msg" }, errors.alumnoEntreCalle1) : null
+                    ),
+                    h(
+                      "div",
+                      { className: "form-field-group" },
+                      h("label", { className: "form-field-label" }, "Entre calle 2:", h("span", { className: "required-star" }, " *")),
+                      h("input", {
+                        className: `form-field-input ${errors.alumnoEntreCalle2 ? "input-error" : ""}`,
+                        type: "text",
+                        placeholder: "Entre calle 2....",
+                        value: formData.alumnoEntreCalle2,
+                        onChange: (e) => handleChange("alumnoEntreCalle2", e.target.value)
+                      }),
+                      errors.alumnoEntreCalle2 ? h("span", { className: "field-error-msg" }, errors.alumnoEntreCalle2) : null
+                    ),
+                    h(
+                      "div",
+                      { className: "form-field-group" },
+                      h("label", { className: "form-field-label" }, "Localidad:", h("span", { className: "required-star" }, " *")),
+                      h(CustomSelect, {
+                        className: errors.alumnoLocalidad ? "input-error" : "",
+                        placeholder: "Seleccione localidad...",
+                        value: formData.alumnoLocalidad,
+                        options: ["Monte Grande", "El Jagüel", "Luis Guillón", "Canning"],
+                        onChange: (val) => handleChange("alumnoLocalidad", val)
+                      }),
+                      errors.alumnoLocalidad ? h("span", { className: "field-error-msg" }, errors.alumnoLocalidad) : null
                     )
                   )
                 : h(
@@ -1191,38 +1500,41 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Teléfono particular del alumno:"),
+                  h("label", { className: "form-field-label" }, "Teléfono particular del alumno:", h("span", { className: "required-star" }, " *")),
                   h("input", {
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.telefonoParticular ? "input-error" : ""}`,
                     type: "tel",
                     placeholder: "Ej: 11-4290-0000....",
                     value: formData.telefonoParticular,
                     onChange: (e) => handleChange("telefonoParticular", e.target.value)
-                  })
+                  }),
+                  errors.telefonoParticular ? h("span", { className: "field-error-msg" }, errors.telefonoParticular) : null
                 ),
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Email de contacto:"),
+                  h("label", { className: "form-field-label" }, "Email de contacto:", h("span", { className: "required-star" }, " *")),
                   h("input", {
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.emailParticular ? "input-error" : ""}`,
                     type: "email",
                     placeholder: "alumno@correo.com....",
                     value: formData.emailParticular,
                     onChange: (e) => handleChange("emailParticular", e.target.value)
-                  })
+                  }),
+                  errors.emailParticular ? h("span", { className: "field-error-msg" }, errors.emailParticular) : null
                 ),
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Teléfono de emergencia adicional:"),
+                  h("label", { className: "form-field-label" }, "Teléfono de emergencia adicional:", h("span", { className: "required-star" }, " *")),
                   h("input", {
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.telefonoEmergencia ? "input-error" : ""}`,
                     type: "tel",
                     placeholder: "Teléfono de urgencias....",
                     value: formData.telefonoEmergencia,
                     onChange: (e) => handleChange("telefonoEmergencia", e.target.value)
-                  })
+                  }),
+                  errors.telefonoEmergencia ? h("span", { className: "field-error-msg" }, errors.telefonoEmergencia) : null
                 )
               ),
 
@@ -1241,55 +1553,55 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Obra Social / Prepaga:"),
+                  h("label", { className: "form-field-label" }, "Obra Social / Prepaga:", h("span", { className: "required-star" }, " *")),
                   h("input", {
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.obraSocial ? "input-error" : ""}`,
                     type: "text",
                     placeholder: "IOMA, OSECAC, OSDE, Ninguna....",
                     value: formData.obraSocial,
                     onChange: (e) => handleChange("obraSocial", e.target.value)
-                  })
+                  }),
+                  errors.obraSocial ? h("span", { className: "field-error-msg" }, errors.obraSocial) : null
                 ),
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Número de Afiliado:"),
+                  h("label", { className: "form-field-label" }, "Número de Afiliado:", h("span", { className: "required-star" }, " *")),
                   h("input", {
-                    className: "form-field-input",
+                    className: `form-field-input ${errors.numeroAfiliado ? "input-error" : ""}`,
                     type: "text",
-                    placeholder: "N° carnet / credencial....",
+                    placeholder: "N° carnet / credencial / S/N....",
                     value: formData.numeroAfiliado,
                     onChange: (e) => handleChange("numeroAfiliado", e.target.value)
-                  })
+                  }),
+                  errors.numeroAfiliado ? h("span", { className: "field-error-msg" }, errors.numeroAfiliado) : null
                 ),
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Grupo Sanguíneo:"),
-                  h(
-                    "select",
-                    {
-                      className: "form-field-select",
-                      value: formData.grupoSanguineo,
-                      onChange: (e) => handleChange("grupoSanguineo", e.target.value)
-                    },
-                    ["0+", "0-", "A+", "A-", "B+", "B-", "AB+", "AB-", "No especificado"].map((gs) =>
-                      h("option", { key: gs, value: gs }, gs)
-                    )
-                  )
+                  h("label", { className: "form-field-label" }, "Grupo Sanguíneo:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    className: errors.grupoSanguineo ? "input-error" : "",
+                    placeholder: "Seleccione grupo sanguíneo...",
+                    value: formData.grupoSanguineo,
+                    options: ["0+", "0-", "A+", "A-", "B+", "B-", "AB+", "AB-", "No especificado"],
+                    onChange: (val) => handleChange("grupoSanguineo", val)
+                  }),
+                  errors.grupoSanguineo ? h("span", { className: "field-error-msg" }, errors.grupoSanguineo) : null
                 )
               ),
               h(
                 "div",
                 { className: "form-field-group", style: { marginTop: "14px" } },
-                h("label", { className: "form-field-label" }, "Alergias / Medicación / Observaciones Médicas:"),
+                h("label", { className: "form-field-label" }, "Alergias / Medicación / Observaciones Médicas:", h("span", { className: "required-star" }, " *")),
                 h("textarea", {
-                  className: "form-field-textarea",
+                  className: `form-field-textarea ${errors.observacionesSalud ? "input-error" : ""}`,
                   rows: 3,
-                  placeholder: "Detalle alergias alimentarias o medicamentosas, patologías preexistentes o requerimientos específicos....",
+                  placeholder: "Detalle alergias alimentarias o medicamentosas, patologías preexistentes (o indique 'Ninguna')....",
                   value: formData.observacionesSalud,
                   onChange: (e) => handleChange("observacionesSalud", e.target.value)
-                })
+                }),
+                errors.observacionesSalud ? h("span", { className: "field-error-msg" }, errors.observacionesSalud) : null
               )
             )
           : null,
@@ -1316,30 +1628,31 @@ export default function CargarAlumnoView() {
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Tipo de Documento:"),
-                  h(
-                    "select",
-                    {
-                      className: "form-field-select",
-                      value: formData.documentoTipo,
-                      onChange: (e) => handleChange("documentoTipo", e.target.value)
-                    },
-                    h("option", { value: "DNI del Estudiante (Frente y Dorso)" }, "DNI del Estudiante (Frente y Dorso)"),
-                    h("option", { value: "DNI del Tutor" }, "DNI del Tutor"),
-                    h("option", { value: "Partida de Nacimiento" }, "Partida de Nacimiento"),
-                    h("option", { value: "Ficha de Salud y Vacunación" }, "Ficha de Salud y Vacunación"),
-                    h("option", { value: "Certificado de Estudios / Pase" }, "Certificado de Estudios / Pase"),
-                    h("option", { value: "Constancia de CUIL" }, "Constancia de CUIL")
-                  )
+                  h("label", { className: "form-field-label" }, "Tipo de Documento:", h("span", { className: "required-star" }, " *")),
+                  h(CustomSelect, {
+                    placeholder: "Seleccione tipo de documento...",
+                    className: errors.documentoTipo ? "input-error" : "",
+                    value: formData.documentoTipo,
+                    options: [
+                      "DNI del Estudiante (Frente y Dorso)",
+                      "DNI del Tutor",
+                      "Partida de Nacimiento",
+                      "Ficha de Salud y Vacunación",
+                      "Certificado de Estudios / Pase",
+                      "Constancia de CUIL"
+                    ],
+                    onChange: (val) => handleChange("documentoTipo", val)
+                  }),
+                  errors.documentoTipo ? h("span", { className: "field-error-msg" }, errors.documentoTipo) : null
                 ),
                 h(
                   "div",
                   { className: "form-field-group" },
-                  h("label", { className: "form-field-label" }, "Subir archivo:"),
+                  h("label", { className: "form-field-label" }, "Subir archivo:", h("span", { className: "required-star" }, " *")),
                   h(
                     "div",
                     {
-                      className: "file-upload-dropzone",
+                      className: `file-upload-dropzone ${errors.documentos ? "input-error" : ""}`,
                       onClick: handleAddDocumentoMock
                     },
                     h(
@@ -1349,7 +1662,8 @@ export default function CargarAlumnoView() {
                     ),
                     h("span", { className: "dropzone-title" }, "Hacer clic para Cargar Documentos"),
                     h("span", { className: "dropzone-hint" }, "Formatos admitidos: PDF, JPG, PNG (máx. 5 MB)")
-                  )
+                  ),
+                  errors.documentos ? h("span", { className: "field-error-msg" }, errors.documentos) : null
                 )
               ),
 
@@ -1358,37 +1672,39 @@ export default function CargarAlumnoView() {
                 "div",
                 { className: "documentos-list-container" },
                 h("h4", { className: "documentos-list-title" }, `Documentos adjuntados (${formData.documentos.length}):`),
-                h(
-                  "div",
-                  { className: "documentos-cards-grid" },
-                  formData.documentos.map((doc) =>
-                    h(
+                formData.documentos.length === 0
+                  ? h("div", { className: "documentos-empty-state" }, "No hay documentos adjuntos. Seleccione un tipo de documento y suba el archivo.")
+                  : h(
                       "div",
-                      { key: doc.id, className: "documento-card-item" },
-                      h(
-                        "div",
-                        { className: "documento-card-left" },
-                        h("span", { className: "doc-icon-badge" }, "PDF"),
+                      { className: "documentos-cards-grid" },
+                      formData.documentos.map((doc) =>
                         h(
                           "div",
-                          { className: "doc-info" },
-                          h("span", { className: "doc-tipo" }, doc.tipo),
-                          h("span", { className: "doc-filename" }, `${doc.nombre} · ${doc.tamano}`)
+                          { key: doc.id, className: "documento-card-item" },
+                          h(
+                            "div",
+                            { className: "documento-card-left" },
+                            h("span", { className: "doc-icon-badge" }, "PDF"),
+                            h(
+                              "div",
+                              { className: "doc-info" },
+                              h("span", { className: "doc-tipo" }, doc.tipo),
+                              h("span", { className: "doc-filename" }, `${doc.nombre} · ${doc.tamano}`)
+                            )
+                          ),
+                          h(
+                            "button",
+                            {
+                              type: "button",
+                              className: "btn-delete-doc",
+                              onClick: () => handleRemoveDocumento(doc.id),
+                              title: "Eliminar archivo"
+                            },
+                            "✕"
+                          )
                         )
-                      ),
-                      h(
-                        "button",
-                        {
-                          type: "button",
-                          className: "btn-delete-doc",
-                          onClick: () => handleRemoveDocumento(doc.id),
-                          title: "Eliminar archivo"
-                        },
-                        "✕"
                       )
-                    )
-                  )
-                ),
+                    ),
                 h(
                   "button",
                   {
@@ -1426,13 +1742,13 @@ export default function CargarAlumnoView() {
                     "div",
                     { className: "resumen-col" },
                     h("span", { className: "resumen-lbl" }, "Curso y División:"),
-                    h("span", { className: "resumen-val" }, `${formData.curso} ${formData.division}° (${formData.turno})`)
+                    h("span", { className: "resumen-val" }, `${formData.curso || "—"} ${formData.division ? `${formData.division}°` : ""} ${formData.turno ? `(${formData.turno})` : ""}`)
                   ),
                   h(
                     "div",
                     { className: "resumen-col" },
                     h("span", { className: "resumen-lbl" }, "Tutor Responsable:"),
-                    h("span", { className: "resumen-val" }, `${formData.tutorApellido || "—"}, ${formData.tutorNombre || "—"} (${formData.tutorParentesco})`)
+                    h("span", { className: "resumen-val" }, `${formData.tutorApellido || "—"}, ${formData.tutorNombre || "—"} ${formData.tutorParentesco ? `(${formData.tutorParentesco})` : ""}`)
                   )
                 )
               )
