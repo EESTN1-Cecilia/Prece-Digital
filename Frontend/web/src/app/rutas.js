@@ -24,6 +24,7 @@
 
 import DashboardView from "../modules/dashboard/dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
+import ServerDashboardView from "../modules/server/server-dashboard-view.js";
 import CursosListView from "../modules/schools/cursos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
 import AlumnosListView from "../modules/students/alumnos-list-view.js";
@@ -37,6 +38,9 @@ import UsuariosView from "../modules/identity/usuarios-view.js";
 import UsuarioDetalleView from "../modules/identity/usuario-detalle-view.js";
 import UsuarioFormularioView from "../modules/identity/usuario-formulario-view.js";
 import RolesView from "../modules/identity/roles-view.js";
+import InventarioListView from "../modules/server/inventario/inventario-list-view.js";
+import MaterialFormView from "../modules/server/inventario/material-form-view.js";
+import MaterialDetalleView from "../modules/server/inventario/material-detalle-view.js";
 import { PERMISOS } from "../utils/permisos.js";
 import InicioView from "./inicio.js";
 
@@ -88,6 +92,54 @@ export const RUTAS = [
     vista: SecretariaDashboardView,
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosEditar]
+  },
+  {
+    patron: "#/server",
+    titulo: "Tablero de Server",
+    vista: ServerDashboardView,
+    seccion: "Server",
+    icono: "filter",
+    padre: "#/inicio",
+    permisos: [PERMISOS.inventoryLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/inicio-server",
+    titulo: "Tablero de Server",
+    vista: ServerDashboardView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.inventoryLeer]
+  },
+  {
+    patron: "#/inventario/nuevo",
+    titulo: "Registrar material",
+    vista: MaterialFormView,
+    padre: "#/inventario",
+    permisos: [PERMISOS.inventoryCrear]
+  },
+  {
+    patron: "#/inventario/:id/editar",
+    titulo: "Modificar material",
+    vista: MaterialFormView,
+    padre: "#/inventario/:id",
+    permisos: [PERMISOS.inventoryEditar]
+  },
+  {
+    patron: "#/inventario/:id",
+    titulo: "Detalle del material",
+    vista: MaterialDetalleView,
+    padre: "#/inventario",
+    permisos: [PERMISOS.inventoryLeer]
+  },
+  {
+    patron: "#/inventario",
+    titulo: "Inventario",
+    vista: InventarioListView,
+    seccion: "Server",
+    icono: "clipboard",
+    padre: "#/server",
+    permisos: [PERMISOS.inventoryLeer],
+    enMenu: true
   },
   {
     patron: "#/preceptoria/observaciones",

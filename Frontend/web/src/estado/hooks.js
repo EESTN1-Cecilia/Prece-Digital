@@ -127,7 +127,7 @@ export function useUsuarioActual() {
       email: usuario?.email ?? null,
       roles: codigos,
       /* Rol que decide el tablero de inicio. */
-      rol: codigos.includes("secretario") ? "secretaria" : codigos.includes("preceptor") ? "preceptor" : codigos[0] ?? null,
+      rol: codigos.includes("server") ? "server" : codigos.includes("secretario") ? "secretaria" : codigos.includes("preceptor") ? "preceptor" : codigos[0] ?? null,
       rolNombre: roles[0]?.nombre ?? null,
       escuela: ESCUELA,
       cicloLectivo: new Date().getFullYear(),
