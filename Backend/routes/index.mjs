@@ -91,6 +91,7 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/dashboard/secretaria", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.tableroSecretaria },
   { method: "GET", path: "/api/v1/jefatura/cursos-grupos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: jefaturaController.listCursosGrupos },
   { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
+  { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
 
   { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },

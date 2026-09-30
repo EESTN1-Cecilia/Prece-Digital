@@ -22,8 +22,21 @@ export const PERMISOS = {
   observacionesLeer: permiso("observations", "read"),
   observacionesCrear: permiso("observations", "write"),
   academicosLeer: permiso("academics", "read"),
-  horariosLeer: permiso("schedules", "read")
+  horariosLeer: permiso("schedules", "read"),
+  inventoryLeer: permiso("inventory", "read"),
+  inventoryCrear: permiso("inventory", "write"),
+  inventoryEditar: permiso("inventory", "write"),
+  inventoryGestionar: permiso("inventory", "manage"),
+  requestsLeer: permiso("requests", "read"),
+  requestsCrear: permiso("requests", "write"),
+  requestsGestionar: permiso("requests", "manage"),
+  reservationsLeer: permiso("reservations", "read"),
+  reservationsCrear: permiso("reservations", "write"),
+  reservationsGestionar: permiso("reservations", "manage"),
+  notificationsLeer: permiso("notifications", "read"),
+  auditLeer: permiso("audit", "read")
 };
+
 
 export function puede(sesion, permisoBuscado) {
   const permisos = sesion?.permisos;
