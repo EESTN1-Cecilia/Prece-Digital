@@ -20,7 +20,9 @@ export const PERMISOS = {
   alumnosCrear: permiso("students", "write"),
   alumnosEditar: permiso("students", "write"),
   observacionesLeer: permiso("observations", "read"),
-  observacionesCrear: permiso("observations", "write")
+  observacionesCrear: permiso("observations", "write"),
+  academicosLeer: permiso("academics", "read"),
+  horariosLeer: permiso("schedules", "read")
 };
 
 export function puede(sesion, permisoBuscado) {

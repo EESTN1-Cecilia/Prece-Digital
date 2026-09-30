@@ -34,6 +34,7 @@ import * as academicController from "../modules/academic/academic.controller.mjs
 import * as academicRecordsController from "../modules/academic-records/academic-records.controller.mjs";
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
+import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
 
 /* Exige un permiso existente: un typo en P.ALGO rompe el arranque en lugar de
@@ -88,6 +89,8 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/students/:studentId/certificate", middlewares: [verifyToken, required(P.DOCUMENTS_WRITE)], handler: studentsController.emitirConstancia },
   { method: "GET", path: "/api/v1/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservaciones },
   { method: "GET", path: "/api/v1/dashboard/secretaria", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.tableroSecretaria },
+  { method: "GET", path: "/api/v1/jefatura/cursos-grupos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: jefaturaController.listCursosGrupos },
+  { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
 
   { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },
