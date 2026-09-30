@@ -1,6 +1,7 @@
 import React from "react";
 import DashboardView from "../modules/dashboard/dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
+import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
 import { useUsuarioActual } from "../estado/index.js";
 
@@ -12,6 +13,7 @@ export default function InicioView() {
   if (rol === "server") {
     return h(ServerDashboardView);
   }
-  return h(rol === "secretaria" || rol === "secretario" ? SecretariaDashboardView : DashboardView);
+  if (rol === "secretaria" || rol === "secretario") return h(SecretariaDashboardView);
+  if (rol === "jefe_area") return h(JefaturaDashboardView);
+  return h(DashboardView);
 }
-

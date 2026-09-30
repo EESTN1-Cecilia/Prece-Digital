@@ -24,6 +24,7 @@
 
 import DashboardView from "../modules/dashboard/dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
+import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
 import CursosListView from "../modules/schools/cursos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
@@ -84,6 +85,17 @@ export const RUTAS = [
     icono: "students",
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosEditar],
+    enMenu: true
+  },
+  {
+    patron: "#/jefatura",
+    titulo: "Grilla de jefatura",
+    vista: JefaturaDashboardView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    permisos: [PERMISOS.academicosLeer, PERMISOS.horariosLeer],
+    todosLosPermisos: true,
     enMenu: true
   },
   {

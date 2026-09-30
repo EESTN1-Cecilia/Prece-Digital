@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -95,6 +95,13 @@ Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/dashboard/secretaria` | `students.read` |
 | GET | `/api/v1/dashboard/server` | `inventory.read` |
+
+## jefatura
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/jefatura/cursos-grupos` | `academics.read` |
+| GET | `/api/v1/jefatura/grilla` | `schedules.read` |
 
 ## alerts
 
@@ -302,6 +309,11 @@ Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
 | POST | `/api/v1/inasistencias/:inasistenciaId/justify` | `attendance.write` |
 | PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
+| POST | `/api/v1/inasistencias` | `attendance.write` |
+| GET | `/api/v1/inasistencias` | `attendance.read` |
+| GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
+| PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
+| DELETE | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
 
 ## incidents
 
@@ -311,16 +323,6 @@ Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/incidents` | `absences.read` |
 | GET | `/api/v1/incidents/:incidentId` | `absences.read` |
 | PATCH | `/api/v1/incidents/:incidentId` | `absences.write` |
-
-## inasistencias
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| POST | `/api/v1/inasistencias` | `attendance.write` |
-| GET | `/api/v1/inasistencias` | `attendance.read` |
-| GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
-| PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
-| DELETE | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
 
 ## alertas
 
@@ -340,6 +342,7 @@ Total: 199 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/configuracion-alertas` | `attendance-alerts.read` |
 | PUT | `/api/v1/configuracion-alertas` | `attendance-alerts.configure` |
+
 ## seguimientos-inasistencia
 
 | Metodo | Ruta | Permiso |
