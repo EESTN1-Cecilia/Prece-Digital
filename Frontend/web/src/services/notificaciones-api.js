@@ -58,6 +58,32 @@ export async function listarNotificaciones() {
     // Si no está disponible el endpoint de notificaciones, consultar alertas
   }
 
+  // Incorporar alertas de Server / Pañol (stock bajo, sin stock, solicitudes pendientes)
+  try {
+    const dashServer = await pedir("/api/v1/dashboard/server");
+    if (Array.isArray(dashServer?.alertas) && dashServer.alertas.length > 0) {
+      const serverAlerts = dashServer.alertas.map((alerta) => ({
+        id: alerta.id,
+        tipo: alerta.tipo === "sin_stock" ? "urgente" : alerta.tipo === "stock_bajo" ? "advertencia" : "sistema",
+        titulo: alerta.titulo || "Alerta de Inventario y Server",
+        detalle: alerta.descripcion || alerta.mensaje || "",
+        destino: alerta.recursoTipo === "material" && alerta.recursoId ? `#/inventario/${alerta.recursoId}` : "#/inventario",
+        creadaEn: alerta.fecha || new Date().toISOString(),
+        leida: false
+      }));
+
+      const existingIds = new Set(items.map((i) => i.id));
+      for (const sa of serverAlerts) {
+        if (!existingIds.has(sa.id)) {
+          items.push(sa);
+          existingIds.add(sa.id);
+        }
+      }
+    }
+  } catch {
+    // Si no tiene permisos de server o falla la ruta, se ignora
+  }
+
   if (items.length === 0) {
     try {
       const dash = await pedir("/api/v1/dashboard/secretaria");

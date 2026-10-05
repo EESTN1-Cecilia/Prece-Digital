@@ -4,6 +4,8 @@ import { seedAcademic } from "./academic.seed.mjs";
 import { seedAcademicRecords } from "./academic-records.seed.mjs";
 import { seedAttendanceFollowups } from "./attendance-followups.seed.mjs";
 import { seedTutores } from "./tutores.seed.mjs";
+import { seedInventory } from "./inventory.seed.mjs";
+import { seedAttendanceAlerts } from "./attendance-alerts.seed.mjs";
 import { seedInasistencias } from "./inasistencias.seed.mjs";
 
 /* Carga los datos de desarrollo de todos los modulos sobre el store en memoria.
@@ -16,5 +18,8 @@ export async function seedDesarrollo() {
   seedAcademicRecords();
   seedInasistencias();
   seedTutores();
+  seedInventory();
+  seedAttendanceAlerts();
   seedAttendanceFollowups();
 }
+

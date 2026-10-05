@@ -21,6 +21,7 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
+import * as attendanceAlertsController from "../modules/attendance-alerts/attendance-alerts.controller.mjs";
 import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
 import * as inasistenciasController from "../modules/inasistencias/inasistencias.controller.mjs";
 import * as workshopsController from "../modules/workshops/workshops.controller.mjs";
@@ -33,6 +34,7 @@ import * as academicController from "../modules/academic/academic.controller.mjs
 import * as academicRecordsController from "../modules/academic-records/academic-records.controller.mjs";
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
+import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
 
 /* Exige un permiso existente: un typo en P.ALGO rompe el arranque en lugar de
@@ -87,6 +89,9 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/students/:studentId/certificate", middlewares: [verifyToken, required(P.DOCUMENTS_WRITE)], handler: studentsController.emitirConstancia },
   { method: "GET", path: "/api/v1/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservaciones },
   { method: "GET", path: "/api/v1/dashboard/secretaria", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.tableroSecretaria },
+  { method: "GET", path: "/api/v1/jefatura/cursos-grupos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: jefaturaController.listCursosGrupos },
+  { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
+  { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
 
   { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },
@@ -216,6 +221,35 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/incidents/:incidentId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getIncident },
   { method: "PATCH", path: "/api/v1/incidents/:incidentId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateIncident },
 
+  /* Alertas por inasistencias consecutivas.
+
+     El registro de inasistencias usa los permisos de asistencia (attendance.read /
+     attendance.write); las alertas y la configuracion de la regla tienen permisos
+     propios porque una es la lectura de la situacion y la otra la regla
+     institucional. Configurar el umbral es potestad de la direccion, no de quien
+     carga la inasistencia.
+
+     Los literales (catalogos, evaluar, evaluaciones) van antes que los parametros
+     porque el router gana con la primera coincidencia. */
+  { method: "POST", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.createInasistencia },
+  { method: "GET", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.listInasistencias },
+  { method: "GET", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.getInasistencia },
+  { method: "PATCH", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.updateInasistencia },
+  { method: "DELETE", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.deactivateInasistencia },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.getInasistenciasDeAlumno },
+
+  { method: "POST", path: "/api/v1/alertas/evaluar", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_WRITE)], handler: attendanceAlertsController.evaluarAlertas },
+  { method: "GET", path: "/api/v1/alertas/evaluaciones", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.listEvaluaciones },
+  { method: "GET", path: "/api/v1/alertas/catalogos", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getCatalogos },
+  { method: "GET", path: "/api/v1/alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.listAlertas },
+  { method: "GET", path: "/api/v1/alertas/:alertaId", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getAlerta },
+  { method: "PATCH", path: "/api/v1/alertas/:alertaId", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_WRITE)], handler: attendanceAlertsController.updateAlerta },
+  { method: "POST", path: "/api/v1/alertas/:alertaId/reenviar", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_WRITE)], handler: attendanceAlertsController.reenviarNotificacion },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getAlertasDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/alertas/resumen", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getResumenDeAlumno },
+
+  { method: "GET", path: "/api/v1/configuracion-alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_READ)], handler: attendanceAlertsController.getConfiguracion },
+  { method: "PUT", path: "/api/v1/configuracion-alertas", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_CONFIGURE)], handler: attendanceAlertsController.updateConfiguracion },
   /* Seguimiento de inasistencias: los literales van antes que :seguimientoId
      porque el router gana con la primera coincidencia. */
   { method: "POST", path: "/api/v1/seguimientos-inasistencia", middlewares: [verifyToken, required(P.ATTENDANCE_FOLLOWUPS_WRITE)], handler: attendanceFollowupsController.createSeguimiento },

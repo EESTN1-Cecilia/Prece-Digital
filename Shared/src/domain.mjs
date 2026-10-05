@@ -15,6 +15,7 @@ export const modules = [
   { id: "students", name: "Estudiantes", description: "Legajo, datos personales, observaciones, pases y constancias." },
   { id: "observations", name: "Observaciones", description: "Observaciones de preceptoria, secretaria y equipo docente sobre alumnos." },
   { id: "attendance", name: "Asistencia", description: "Registro y consulta de asistencias." },
+  { id: "attendance-alerts", name: "Alertas por inasistencia", description: "Deteccion de inasistencias consecutivas y avisos a las familias." },
   { id: "attendance-followups", name: "Seguimiento de inasistencias", description: "Intervenciones de la institucion ante inasistencias de alumnos." },
   { id: "grades", name: "Calificaciones", description: "Notas y evaluaciones." },
   { id: "schools", name: "Escuelas", description: "Instituciones educativas." },

@@ -29,3 +29,7 @@ export function listMovements({ url, user }) {
   const query = Object.fromEntries(url.searchParams.entries());
   return inventoryService.listMovements(query, user);
 }
+
+export function tableroServer({ user }) {
+  return inventoryService.tableroServer(user);
+}
