@@ -1,0 +1,180 @@
+/* ---- Modulo Identidad: usuarios, roles y permisos ---- */
+
+.data-panel {
+  width: min(1360px, 100%);
+  margin: 0 auto;
+  border: 1px solid rgba(118, 123, 132, 0.32);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 22px 24px 26px;
+  box-shadow: 0 12px 34px rgba(42, 51, 76, 0.05);
+  backdrop-filter: blur(1.5px);
+}
+
+.data-panel__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 2px solid #c4c7cb;
+  padding-bottom: 10px;
+}
+
+.data-panel__top h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--navy);
+  font-size: 26px;
+}
+
+.data-bloque {
+  margin: 22px 0 0;
+}
+
+.data-bloque h2 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 18px;
+}
+
+.data-roles {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 20px;
+  margin: 16px 0 0;
+}
+
+.data-roles__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-rol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.data-rol small {
+  color: #8f949b;
+  font-size: 11px;
+}
+
+.data-rol:hover {
+  border-color: var(--indigo);
+}
+
+.data-rol--activo {
+  border-color: var(--indigo);
+  background: var(--sky-light);
+}
+
+.data-roles__detalle h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--navy);
+  font-size: 20px;
+}
+
+.data-nota {
+  margin: 4px 0 0;
+  color: #6d727a;
+  font-size: 13px;
+}
+
+.data-roles__detalle .ui-boton {
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .data-roles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .data-panel {
+    border-radius: 16px;
+    padding: 16px 14px 20px;
+  }
+
+  .data-panel__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .data-panel__top h1 {
+    font-size: 21px;
+  }
+}
+
+.data-panel--centrado {
+  padding: 42px 24px 48px;
+  text-align: center;
+}
+
+.data-panel--centrado h1 {
+  margin: 0 0 8px;
+  color: var(--navy);
+  font-size: 26px;
+}
+
+.data-panel--centrado .ui-boton {
+  margin-top: 16px;
+}
+
+.data-formulario {
+  margin: 16px 0 0;
+}
+
+.data-formulario__campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0 20px;
+}
+
+.data-formulario .ui-campo {
+  margin-bottom: 14px;
+}
+
+.data-formulario fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.data-formulario legend {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.data-formulario .ui-acciones {
+  margin-top: 18px;
+}
+
+.data-celda-vacia {
+  color: #b3b7bd;
+  text-align: center;
+}
+
+.data-nota--centrada {
+  margin-top: 12px;
+  text-align: center;
+}

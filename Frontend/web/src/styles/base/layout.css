@@ -1,0 +1,580 @@
+/* ==========================================================================
+   BARRA SUPERIOR Y SWITCH DE ROLES INTERACTIVO (SIN EMOJIS)
+   ========================================================================== */
+
+.dashboard-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 10px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(10, 30, 60, 0.04);
+}
+
+.dashboard-top-bar__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.institution-tag {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  background: rgba(10, 30, 60, 0.06);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.cycle-tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a5894;
+  background: rgba(43, 114, 186, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+/* Toggle Switch Control */
+.role-switch-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 4px 8px;
+  border-radius: 30px;
+}
+
+.role-switch-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.role-switch-option.is-active {
+  color: var(--navy);
+  font-weight: 700;
+}
+
+.role-switch-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.role-switch-option.is-active .role-switch-icon {
+  opacity: 1;
+}
+
+.role-switch-toggle-pill {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #cbd5e1;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  transition: background-color 200ms ease;
+}
+
+.role-switch-toggle-pill.is-secretaria {
+  background: #1a5894;
+}
+
+.role-switch-toggle-pill.is-preceptor {
+  background: #0f2441;
+}
+
+.role-switch-thumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.role-switch-toggle-pill.is-secretaria .role-switch-thumb {
+  transform: translateX(20px);
+}
+
+.role-switch-toggle-pill.is-preceptor .role-switch-thumb {
+  transform: translateX(0px);
+}
+
+/* ==== Layout de la aplicacion: menu lateral, encabezado y contenido ==== */
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #eef0f4;
+}
+
+.app-layout__cuerpo {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.app-layout__contenido {
+  flex: 1;
+  padding: 18px 22px 40px;
+}
+
+/* ---- Menu lateral ---- */
+
+/* Solo movil: en escritorio las secciones viven en la barra del encabezado y
+   este panel no se dibuja. La media query de abajo lo enciende. */
+.sidebar {
+  display: none;
+  width: 236px;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 6px;
+  background: var(--navy);
+  padding: 14px 10px 24px;
+  color: #ffffff;
+}
+
+.sidebar__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0 6px 10px;
+}
+
+.sidebar__titulo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.sidebar__cerrar {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  padding: 0 8px;
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.sidebar__cerrar:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sidebar__seccion {
+  margin-top: 12px;
+}
+
+.sidebar__seccion-titulo {
+  margin: 0 0 5px;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.sidebar ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar__enlace {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 9px 8px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.sidebar__enlace:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* La seccion actual se distingue por el fondo y por la barra lateral, no solo
+   por el color del texto. */
+.sidebar__enlace--activo {
+  position: relative;
+  background: rgba(141, 197, 220, 0.24);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.sidebar__enlace--activo::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--sky);
+  content: "";
+}
+
+.sidebar__icono {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  filter: brightness(0) invert(1);
+}
+
+.sidebar__icono--vacio {
+  display: inline-block;
+}
+
+.sidebar__vacio {
+  margin: 14px 8px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+}
+
+/* ---- Encabezado de la aplicacion ----
+
+   Es el mismo encabezado del diseno (.site-header): logo, acciones de cuenta y
+   la barra de secciones debajo. Solo suma el boton del panel de movil. */
+
+.site-header__marca {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.encabezado-app__menu {
+  display: none;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: transparent;
+  padding: 2px 10px;
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.encabezado-app__menu:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Las secciones de la sesion son una cantidad variable, no las tres fijas del
+   diseno original: se reparten centradas en lugar de en tres columnas. */
+.main-nav--app {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 40px;
+  width: min(1360px, calc(100% - 64px));
+}
+
+/* ---- Migas ---- */
+
+.migas {
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.migas ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.migas li + li::before {
+  margin-right: 6px;
+  color: #a7adb6;
+  content: "/";
+}
+
+.migas a {
+  color: var(--indigo);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  text-decoration: underline;
+}
+
+.migas [aria-current="page"] {
+  color: var(--navy);
+  font-weight: 700;
+}
+
+/* ---- Paneles desplegables del encabezado ---- */
+
+.notificaciones,
+.menu-usuario {
+  position: relative;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: min(330px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid #d8dce3;
+  border-radius: 12px;
+  background: #ffffff;
+  /* Cuelga del encabezado azul, que pinta su texto de blanco: sin esto los
+     titulos del panel quedan blancos sobre blanco. */
+  color: var(--ink);
+  box-shadow: 0 14px 34px rgba(23, 25, 31, 0.18);
+}
+
+.panel--angosto {
+  width: min(260px, calc(100vw - 28px));
+}
+
+.panel__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid #e7eaef;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.panel__lista {
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel__item,
+.panel__item--nueva {
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.panel__item--nueva {
+  background: rgba(141, 197, 220, 0.12);
+}
+
+.panel__accion {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.panel__accion:hover {
+  background: rgba(141, 197, 220, 0.2);
+}
+
+.panel__titulo {
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.panel__detalle {
+  color: #6d757f;
+  font-size: 12px;
+}
+
+.panel__pie {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8f949b;
+  font-size: 11px;
+}
+
+.panel__vacio {
+  margin: 0;
+  padding: 14px 12px;
+  color: #6d757f;
+  font-size: 13px;
+}
+
+.panel__cuenta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.panel__cuenta span {
+  color: #6d757f;
+  font-size: 12px;
+}
+
+.panel__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.panel__pie-acciones {
+  border-top: 1px solid #e7eaef;
+  padding: 10px 12px;
+}
+
+/* ---- Responsive ---- */
+
+/* Movil: la barra de secciones no entra en el ancho, asi que se reemplaza por
+   el panel lateral, que se corre fuera de la vista y se abre desde el boton del
+   encabezado. */
+@media (max-width: 760px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: flex;
+    width: 232px;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .sidebar--abierto {
+    transform: translateX(0);
+  }
+
+  .app-layout__velo {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: rgba(23, 25, 31, 0.45);
+  }
+
+  .encabezado-app__menu {
+    display: block;
+  }
+
+  .main-nav--app {
+    display: none;
+  }
+
+  /* Con poco ancho las migas compiten con el resto del encabezado. */
+  .migas {
+    display: none;
+  }
+
+  .app-layout__contenido {
+    padding: 14px 12px 32px;
+  }
+
+  /* Colgados del boton, los paneles se salen por la izquierda: el boton esta
+     pegado al borde derecho y el panel es mas ancho que lo que queda. Con poco
+     ancho se cuelgan de la fila del encabezado y ocupan todo el ancho util. */
+  .notificaciones,
+  .menu-usuario {
+    position: static;
+  }
+
+  .site-header__top {
+    position: relative;
+  }
+
+  .panel,
+  .panel--angosto {
+    right: 0;
+    left: 0;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}
+
+/* ---- Indicador de notificaciones del encabezado ---- */
+
+.site-header__acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notificaciones-boton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  text-decoration: none;
+}
+
+.notificaciones-boton:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.notificaciones-boton__icono {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(1);
+}
+
+.notificaciones-boton__marca {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 17px;
+  border-radius: 999px;
+  background: #b3261e;
+  padding: 1px 4px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
