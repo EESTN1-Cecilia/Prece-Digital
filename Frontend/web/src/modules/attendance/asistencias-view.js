@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
@@ -57,6 +58,7 @@ export default function AsistenciasView() {
 
   // Datos de la planilla
   const [planilla, setPlanilla] = useState(null);
+  const [planillaOriginal, setPlanillaOriginal] = useState(null);
 
   // Obtener curso actual
   const cursoActual = useMemo(() => {
@@ -84,6 +86,7 @@ export default function AsistenciasView() {
         selectedAnio
       );
       setPlanilla(data);
+      setPlanillaOriginal(JSON.parse(JSON.stringify(data)));
     } catch (err) {
       console.error("Error al cargar la planilla:", err);
     } finally {
@@ -94,6 +97,43 @@ export default function AsistenciasView() {
   useEffect(() => {
     cargarPlanilla();
   }, [cargarPlanilla]);
+
+  // Calcular cantidad de cambios no guardados
+  const cambiosCount = useMemo(() => {
+    if (!planilla || !planillaOriginal) return 0;
+    let count = 0;
+
+    // Comparar celdas de registros de asistencia
+    const origReg = planillaOriginal.registros || {};
+    const currReg = planilla.registros || {};
+    const allOrdenes = new Set([...Object.keys(origReg), ...Object.keys(currReg)]);
+
+    allOrdenes.forEach((orden) => {
+      const origDias = origReg[orden] || {};
+      const currDias = currReg[orden] || {};
+      const allDias = new Set([...Object.keys(origDias), ...Object.keys(currDias)]);
+      allDias.forEach((dia) => {
+        const valOrig = origDias[dia] != null ? origDias[dia] : "P";
+        const valCurr = currDias[dia] != null ? currDias[dia] : "P";
+        if (valOrig !== valCurr) {
+          count++;
+        }
+      });
+    });
+
+    // Comparar observaciones por alumno
+    const origObs = planillaOriginal.observacionesPorAlumno || {};
+    const currObs = planilla.observacionesPorAlumno || {};
+    const allObsOrdenes = new Set([...Object.keys(origObs), ...Object.keys(currObs)]);
+
+    allObsOrdenes.forEach((orden) => {
+      if ((origObs[orden] || "").trim() !== (currObs[orden] || "").trim()) {
+        count++;
+      }
+    });
+
+    return count;
+  }, [planilla, planillaOriginal]);
 
   // Días del mes actual
   const diasMes = useMemo(() => {
@@ -154,12 +194,20 @@ export default function AsistenciasView() {
     });
   };
 
+  // Descartar/cancelar cambios y volver al estado original
+  const handleCancelarCambios = () => {
+    if (planillaOriginal) {
+      setPlanilla(JSON.parse(JSON.stringify(planillaOriginal)));
+    }
+  };
+
   // Guardar planilla
   const handleGuardarPlanilla = async () => {
     if (!planilla) return;
     setSaving(true);
     try {
       await AsistenciasService.guardarPlanilla(planilla);
+      setPlanillaOriginal(JSON.parse(JSON.stringify(planilla)));
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3500);
     } catch (e) {
@@ -364,11 +412,6 @@ export default function AsistenciasView() {
         "div",
         null,
         h("h1", { className: "secretaria-title" }, "Planilla de Registro de Asistencias"),
-        h(
-          "p",
-          { className: "secretaria-subtitle" },
-          "Registro diario oficial de asistencia y seguimiento de alumnos por curso y división."
-        )
       ),
       h(
         "div",
@@ -474,7 +517,7 @@ export default function AsistenciasView() {
           "div",
           { className: "asistencias-buttons-group" },
           saveSuccess
-            ? h("span", { className: "save-pill-badge" }, "✓ Registro guardado")
+            ? h("span", { className: "save-pill-badge" }, "✓ Registro guardado correctamente")
             : null,
 
           h(
@@ -492,24 +535,6 @@ export default function AsistenciasView() {
               h("path", { d: "M6 14h12v8H6z" })
             ),
             h("span", null, "Imprimir Planilla")
-          ),
-
-          h(
-            "button",
-            {
-              type: "button",
-              className: "btn-asistencias-accion btn-guardar-planilla",
-              disabled: saving,
-              onClick: handleGuardarPlanilla
-            },
-            h(
-              "svg",
-              { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", width: 16, height: 16 },
-              h("path", { d: "M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" }),
-              h("polyline", { points: "17 21 17 13 7 13 7 21" }),
-              h("polyline", { points: "7 3 7 8 15 8" })
-            ),
-            h("span", null, saving ? "Guardando..." : "Guardar Asistencias")
           )
         )
       )
@@ -533,7 +558,7 @@ export default function AsistenciasView() {
           h(
             "h2",
             { className: "registro-main-title" },
-            `REGISTRO DE ASISTENCIA DIARIA CORRESPONDIENTE AL: ${cursoActual.curso} ${cursoActual.division}° DIVISIÓN (${cursoActual.turno.toUpperCase()})`
+            `REGISTRO DE ASISTENCIA: ${cursoActual.curso} ${cursoActual.division}° DIVISIÓN (${cursoActual.turno.toUpperCase()})`
           )
         ),
         h(
@@ -923,6 +948,68 @@ export default function AsistenciasView() {
           h("span", { className: "firma-subtext" }, "Secretaría / Dirección")
         )
       )
-    )
+    ),
+
+    // =========================================================================
+    // MODAL / BARRA FLOTANTE FIJA AL VIEWPORT DE PANTALLA (PORTAL EN BODY)
+    // =========================================================================
+    cambiosCount > 0 && typeof document !== "undefined"
+      ? createPortal(
+          h(
+            "div",
+            { className: "asistencias-floating-bar no-print" },
+            h(
+              "div",
+              { className: "floating-bar-info" },
+              h("span", { className: "floating-bar-badge" }, String(cambiosCount)),
+              h(
+                "span",
+                { className: "floating-bar-text" },
+                cambiosCount === 1
+                  ? "Tienes 1 cambio sin guardar en el registro"
+                  : `Tienes ${cambiosCount} cambios sin guardar en el registro`
+              )
+            ),
+            h(
+              "div",
+              { className: "floating-bar-actions" },
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-floating-cancel",
+                  onClick: handleCancelarCambios,
+                  disabled: saving,
+                  title: "Descartar todos los cambios no guardados"
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", width: 15, height: 15 },
+                  h("line", { x1: "18", y1: "6", x2: "6", y2: "18" }),
+                  h("line", { x1: "6", y1: "6", x2: "18", y2: "18" })
+                ),
+                h("span", null, "Cancelar")
+              ),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-floating-save",
+                  onClick: handleGuardarPlanilla,
+                  disabled: saving,
+                  title: "Guardar todos los cambios realizados"
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", width: 15, height: 15 },
+                  h("polyline", { points: "20 6 9 17 4 12" })
+                ),
+                h("span", null, saving ? "Guardando..." : "Guardar cambios")
+              )
+            )
+          ),
+          document.body
+        )
+      : null
   );
 }

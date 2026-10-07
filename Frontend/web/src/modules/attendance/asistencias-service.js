@@ -41,14 +41,15 @@ export const AsistenciasService = {
       const divisionesApi = await StudentsService.getDivisiones();
       if (divisionesApi && divisionesApi.length > 0) {
         return divisionesApi.map((d) => {
-          const cursoStr = d.curso ? `${d.curso}°` : "1°";
-          const divStr = String(d.division || "1");
+          const anioLimpio = String(d.anio || d.curso || "1").replace(/°/g, "").trim();
+          const divLimpia = String(d.division || "1").replace(/°/g, "").trim();
+          const cursoStr = `${anioLimpio}°`;
           return {
-            id: `${d.curso || 1}-${divStr}`,
+            id: `${anioLimpio}-${divLimpia}`,
             curso: cursoStr,
-            division: divStr,
+            division: divLimpia,
             turno: d.turnoAula || "Mañana",
-            orientacion: d.orientacion || (Number(d.curso) <= 3 ? "Ciclo Básico" : "Técnico en Informática"),
+            orientacion: d.orientacion || (Number(anioLimpio) <= 3 ? "Ciclo Básico" : "Técnico en Informática"),
             preceptor: d.preceptor || `Preceptor Turno ${d.turnoAula || "Mañana"}`
           };
         });
@@ -66,7 +67,9 @@ export const AsistenciasService = {
     const key = `${STORAGE_KEY_PREFIX}${cursoId}_${anio}_${mes}`;
     const guardado = localStorage.getItem(key);
 
-    const [cursoNum, divNum] = cursoId.split("-");
+    const [cursoNumRaw, divNumRaw] = (cursoId || "1-1").split("-");
+    const cursoNum = String(cursoNumRaw || "1").replace(/°/g, "").trim();
+    const divNum = String(divNumRaw || "1").replace(/°/g, "").trim();
 
     // 1. Obtener los alumnos reales matriculados en ese curso y división desde la base de datos
     let alumnos = [];

@@ -301,6 +301,9 @@ export function StudentEditModal({
   onSubmit,
   isSubmitting = false
 }) {
+  const currentUser = useUsuarioActual();
+  const esPreceptor = currentUser?.rol === "preceptor" || (Array.isArray(currentUser?.roles) && currentUser.roles.includes("preceptor") && !currentUser.roles.includes("admin") && !currentUser.roles.includes("secretario") && !currentUser.roles.includes("director"));
+
   const [formData, setFormData] = useState({
     nombre: alumno.nombre || "",
     apellido: alumno.apellido || "",
@@ -346,7 +349,7 @@ export function StudentEditModal({
     }
   }, [isOpen, alumno]);
 
-  if (!isOpen) return null;
+  if (!isOpen || esPreceptor) return null;
 
   const handleChange = (field, val) => {
     setFormData((prev) => ({ ...prev, [field]: val }));
