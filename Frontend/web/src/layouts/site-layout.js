@@ -95,6 +95,7 @@ function UserAvatarMenu() {
                 className: "header-user-modal__item",
                 onClick: () => {
                   setAbierto(false);
+                  window.location.hash = "#/perfil";
                 }
               },
               h(
@@ -120,6 +121,7 @@ function UserAvatarMenu() {
                 className: "header-user-modal__item",
                 onClick: () => {
                   setAbierto(false);
+                  window.location.hash = "#/perfil";
                 }
               },
               h(
@@ -578,13 +580,28 @@ export function ModalDocumentosGlobal() {
 }
 
 /* Layout de las rutas publicas (login, activar cuenta). Las pantallas internas
-   usan AppLayout (layouts/app-layout.js). */
+   usan AppLayout o su layout propio (perfil). */
 export function SiteLayout({ ruta, children }) {
   const esLogin =
     ruta === "#/login" ||
     ruta === "#/activar" ||
     ruta?.startsWith("#/login") ||
     ruta?.startsWith("#/activar");
+
+  const esPerfil =
+    ruta === "#/perfil" ||
+    ruta === "#/configuracion" ||
+    ruta?.startsWith("#/perfil") ||
+    ruta?.startsWith("#/configuracion");
+
+  if (esPerfil) {
+    return h(
+      React.Fragment,
+      null,
+      h("main", { className: "page page--perfil", id: "inicio" }, children),
+      h(ModalDocumentosGlobal)
+    );
+  }
 
   return h(
     React.Fragment,

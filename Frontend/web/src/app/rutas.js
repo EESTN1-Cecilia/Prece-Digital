@@ -39,6 +39,7 @@ import UsuariosView from "../modules/identity/usuarios-view.js";
 import UsuarioDetalleView from "../modules/identity/usuario-detalle-view.js";
 import UsuarioFormularioView from "../modules/identity/usuario-formulario-view.js";
 import RolesView from "../modules/identity/roles-view.js";
+import PerfilView from "../modules/identity/perfil-view.js";
 import InventarioListView from "../modules/server/inventario/inventario-list-view.js";
 import MaterialFormView from "../modules/server/inventario/material-form-view.js";
 import MaterialDetalleView from "../modules/server/inventario/material-detalle-view.js";
@@ -283,6 +284,18 @@ export const RUTAS = [
     padre: "#/inicio",
     permisos: [PERMISOS.rolesLeer],
     enMenu: true
+  },
+  {
+    patron: "#/perfil",
+    titulo: "Mi Perfil",
+    vista: PerfilView,
+    padre: "#/inicio"
+  },
+  {
+    patron: "#/configuracion",
+    titulo: "Configuración de perfil",
+    vista: PerfilView,
+    padre: "#/inicio"
   }
 ];
 

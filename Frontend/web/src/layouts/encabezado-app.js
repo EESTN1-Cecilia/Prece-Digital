@@ -228,7 +228,20 @@ function MenuUsuario() {
           ),
           h(
             "div",
-            { className: "panel__pie-acciones" },
+            { className: "panel__pie-acciones", style: { display: "flex", flexDirection: "column", gap: "6px" } },
+            h(
+              Boton,
+              {
+                variante: "primario",
+                tamano: "chico",
+                ancho: true,
+                onClick: () => {
+                  setAbierto(false);
+                  window.location.hash = "#/perfil";
+                }
+              },
+              "Mi Perfil"
+            ),
             h(Boton, { variante: "contorno", tamano: "chico", ancho: true, onClick: cerrarSesion }, "Cerrar sesion")
           )
         )
