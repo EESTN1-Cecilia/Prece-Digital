@@ -328,7 +328,7 @@ test("el resumen de racha indica cuanto falta para que salte la alerta", () => {
 /* ========================================================================== */
 
 test("no se puede registrar una inasistencia sin token", async () => {
-  const { status } = await pedir("POST", "/api/v1/inasistencias", null, {
+  const { status } = await pedir("POST", "/api/v1/alertas/inasistencias", null, {
     alumnoId: "alu-7",
     fecha: "2026-04-06",
     tipo: "ausente",
@@ -339,7 +339,7 @@ test("no se puede registrar una inasistencia sin token", async () => {
 });
 
 test("el registro de inasistencias exige permiso de escritura", async () => {
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", secretario, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", secretario, {
     alumnoId: "alu-7",
     fecha: "2026-04-06",
     tipo: "ausente",
@@ -351,7 +351,7 @@ test("el registro de inasistencias exige permiso de escritura", async () => {
 });
 
 test("se registra una inasistencia y queda disponible para consulta", async () => {
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-7",
     fecha: "2026-04-06",
     tipo: "ausente",
@@ -367,14 +367,14 @@ test("se registra una inasistencia y queda disponible para consulta", async () =
   assert.equal(cuerpo.data.escuelaId, "esc-1");
   assert.equal(cuerpo.evaluacion.disparador, "registro_inasistencia");
 
-  const detalle = await pedir("GET", `/api/v1/inasistencias/${cuerpo.data.id}`, preceptor);
+  const detalle = await pedir("GET", `/api/v1/alertas/inasistencias/${cuerpo.data.id}`, preceptor);
 
   assert.equal(detalle.status, 200);
   assert.equal(detalle.cuerpo.data.id, cuerpo.data.id);
 });
 
 test("rechaza un alumno inexistente", async () => {
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-9999",
     fecha: "2026-04-06",
     tipo: "ausente",
@@ -386,7 +386,7 @@ test("rechaza un alumno inexistente", async () => {
 });
 
 test("rechaza una fecha con formato invalido", async () => {
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-7",
     fecha: "2026-02-30",
     tipo: "ausente",
@@ -398,7 +398,7 @@ test("rechaza una fecha con formato invalido", async () => {
 });
 
 test("rechaza una fecha futura", async () => {
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-7",
     fecha: "2099-01-01",
     tipo: "ausente",
@@ -410,7 +410,7 @@ test("rechaza una fecha futura", async () => {
 });
 
 test("rechaza un tipo de inasistencia fuera del catalogo", async () => {
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-7",
     fecha: "2026-04-06",
     tipo: "inventada",
@@ -422,7 +422,7 @@ test("rechaza un tipo de inasistencia fuera del catalogo", async () => {
 });
 
 test("una inasistencia justificada exige motivo", async () => {
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-7",
     fecha: "2026-04-07",
     tipo: "ausente",
@@ -434,14 +434,14 @@ test("una inasistencia justificada exige motivo", async () => {
 });
 
 test("no se puede registrar dos inasistencias para el mismo alumno y dia", async () => {
-  const primera = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const primera = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-7",
     fecha: "2026-04-08",
     tipo: "ausente",
     justificada: false
   });
 
-  const segunda = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const segunda = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-7",
     fecha: "2026-04-08",
     tipo: "ausente",
@@ -456,7 +456,7 @@ test("no se puede registrar dos inasistencias para el mismo alumno y dia", async
 test("las inasistencias se pueden filtrar por alumno, tipo y rango", async () => {
   const { status, cuerpo } = await pedir(
     "GET",
-    "/api/v1/inasistencias?alumnoId=alu-1&tipo=ausente&desde=2026-03-01&hasta=2026-03-31",
+    "/api/v1/alertas/inasistencias?alumnoId=alu-1&tipo=ausente&desde=2026-03-01&hasta=2026-03-31",
     preceptor
   );
 
@@ -468,7 +468,7 @@ test("las inasistencias se pueden filtrar por alumno, tipo y rango", async () =>
 });
 
 test("un filtro de fecha invalido devuelve 422", async () => {
-  const { status, cuerpo } = await pedir("GET", "/api/v1/inasistencias?desde=ayer", preceptor);
+  const { status, cuerpo } = await pedir("GET", "/api/v1/alertas/inasistencias?desde=ayer", preceptor);
 
   assert.equal(status, 422);
   assert.equal(cuerpo.error.details[0].field, "desde");
@@ -477,7 +477,7 @@ test("un filtro de fecha invalido devuelve 422", async () => {
 test("un rango invertido devuelve 422", async () => {
   const { status, cuerpo } = await pedir(
     "GET",
-    "/api/v1/inasistencias?desde=2026-03-31&hasta=2026-03-01",
+    "/api/v1/alertas/inasistencias?desde=2026-03-31&hasta=2026-03-01",
     preceptor
   );
 
@@ -486,8 +486,8 @@ test("un rango invertido devuelve 422", async () => {
 });
 
 test("las inasistencias dadas de baja no aparecen salvo que se pidan", async () => {
-  const sinBajas = await pedir("GET", "/api/v1/inasistencias?alumnoId=alu-6", preceptor);
-  const conBajas = await pedir("GET", "/api/v1/inasistencias?alumnoId=alu-6&incluirBajas=true", preceptor);
+  const sinBajas = await pedir("GET", "/api/v1/alertas/inasistencias?alumnoId=alu-6", preceptor);
+  const conBajas = await pedir("GET", "/api/v1/alertas/inasistencias?alumnoId=alu-6&incluirBajas=true", preceptor);
 
   assert.equal(sinBajas.cuerpo.data.length, 1);
   assert.equal(conBajas.cuerpo.data.length, 2);
@@ -495,23 +495,23 @@ test("las inasistencias dadas de baja no aparecen salvo que se pidan", async () 
 });
 
 test("una baja logica exige motivo y no borra el registro", async () => {
-  const alta = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const alta = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-8",
     fecha: "2026-04-09",
     tipo: "ausente",
     justificada: false
   });
 
-  const sinMotivo = await pedir("DELETE", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, preceptor, { motivo: "x" });
+  const sinMotivo = await pedir("DELETE", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, preceptor, { motivo: "x" });
 
   const conMotivo = await pedir(
     "DELETE",
-    `/api/v1/inasistencias/${alta.cuerpo.data.id}`,
+    `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`,
     preceptor,
     { motivo: "Registro duplicado por error de carga." }
   );
 
-  const detalle = await pedir("GET", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, preceptor);
+  const detalle = await pedir("GET", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, preceptor);
 
   assert.equal(sinMotivo.status, 422);
   assert.equal(conMotivo.status, 200);
@@ -521,18 +521,18 @@ test("una baja logica exige motivo y no borra el registro", async () => {
 });
 
 test("dar de baja dos veces la misma inasistencia devuelve 404", async () => {
-  const alta = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const alta = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-8",
     fecha: "2026-04-10",
     tipo: "ausente",
     justificada: false
   });
 
-  await pedir("DELETE", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, preceptor, {
+  await pedir("DELETE", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, preceptor, {
     motivo: "Correccion del registro."
   });
 
-  const segunda = await pedir("DELETE", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, preceptor, {
+  const segunda = await pedir("DELETE", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, preceptor, {
     motivo: "Correccion del registro."
   });
 
@@ -550,7 +550,7 @@ test("registrar la tercera inasistencia consecutiva genera la alerta y la notifi
 
   for (const fecha of fechas) {
     respuestas.push(
-      await pedir("POST", "/api/v1/inasistencias", preceptor, {
+      await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
         alumnoId: alumno,
         fecha,
         tipo: "ausente",
@@ -617,7 +617,7 @@ test("repetir la evaluacion no genera una segunda alerta para la misma situacion
   const alumno = "alu-20";
 
   for (const fecha of ["2026-05-11", "2026-05-12", "2026-05-13"]) {
-    await pedir("POST", "/api/v1/inasistencias", preceptor, {
+    await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
       alumnoId: alumno,
       fecha,
       tipo: "ausente",
@@ -688,7 +688,7 @@ test("modificar una inasistencia no genera alertas duplicadas", async () => {
   const altas = [];
 
   for (const fecha of ["2026-05-18", "2026-05-19", "2026-05-20"]) {
-    const respuesta = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+    const respuesta = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
       alumnoId: alumno,
       fecha,
       tipo: "ausente",
@@ -703,7 +703,7 @@ test("modificar una inasistencia no genera alertas duplicadas", async () => {
 
   /* Justificar la segunda inasistencia corta la racha. La alerta ya registrada no
      se borra, pero tampoco se duplica ninguna. */
-  const modificacion = await pedir("PATCH", `/api/v1/inasistencias/${altas[1].id}`, preceptor, {
+  const modificacion = await pedir("PATCH", `/api/v1/alertas/inasistencias/${altas[1].id}`, preceptor, {
     justificada: true,
     motivo: "Turno medico con presentacion previa."
   });
@@ -719,14 +719,14 @@ test("modificar una inasistencia no genera alertas duplicadas", async () => {
 });
 
 test("un PATCH sin cambios reales no escribe nada", async () => {
-  const alta = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const alta = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-22",
     fecha: "2026-05-21",
     tipo: "ausente",
     justificada: false
   });
 
-  const { status, cuerpo } = await pedir("PATCH", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, preceptor, {
+  const { status, cuerpo } = await pedir("PATCH", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, preceptor, {
     fecha: "2026-05-21",
     tipo: "ausente"
   });
@@ -740,7 +740,7 @@ test("dar de baja una inasistencia no borra la alerta ya generada", async () => 
   const altas = [];
 
   for (const fecha of ["2026-05-25", "2026-05-26", "2026-05-27"]) {
-    const respuesta = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+    const respuesta = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
       alumnoId: alumno,
       fecha,
       tipo: "ausente",
@@ -749,7 +749,7 @@ test("dar de baja una inasistencia no borra la alerta ya generada", async () => 
     altas.push(respuesta.cuerpo.data);
   }
 
-  const baja = await pedir("DELETE", `/api/v1/inasistencias/${altas[2].id}`, preceptor, {
+  const baja = await pedir("DELETE", `/api/v1/alertas/inasistencias/${altas[2].id}`, preceptor, {
     motivo: "El alumno estaba en la institucion equivocada."
   });
 
@@ -765,7 +765,7 @@ test("un nuevo periodo completo si puede generar una alerta nueva", async () => 
   const alumno = "alu-24";
 
   for (const fecha of ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-08"]) {
-    await pedir("POST", "/api/v1/inasistencias", preceptor, {
+    await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
       alumnoId: alumno,
       fecha,
       tipo: "ausente",
@@ -787,7 +787,7 @@ test("descartar una alerta libera el periodo y permite volver a generarla", asyn
   const alumno = "alu-25";
 
   for (const fecha of ["2026-06-15", "2026-06-16", "2026-06-17"]) {
-    await pedir("POST", "/api/v1/inasistencias", preceptor, {
+    await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
       alumnoId: alumno,
       fecha,
       tipo: "ausente",
@@ -909,7 +909,7 @@ test("una alerta activa se puede pasar a revision y a resuelta", async () => {
   const alumno = "alu-26";
 
   for (const fecha of ["2026-07-06", "2026-07-07", "2026-07-08"]) {
-    await pedir("POST", "/api/v1/inasistencias", preceptor, {
+    await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
       alumnoId: alumno,
       fecha,
       tipo: "ausente",
@@ -1023,7 +1023,7 @@ test("cambiar el umbral cambia la deteccion en el acto", async () => {
 
   for (const fecha of fechas) {
     respuestas.push(
-      await pedir("POST", "/api/v1/inasistencias", preceptor, {
+      await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
         alumnoId: alumno,
         fecha,
         tipo: "ausente",
@@ -1059,7 +1059,7 @@ test("un dia no habil declarado evita generar la alerta de ese periodo", async (
   const alumno = "alu-28";
 
   for (const fecha of ["2026-08-04", "2026-08-05", "2026-08-06"]) {
-    await pedir("POST", "/api/v1/inasistencias", preceptor, {
+    await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
       alumnoId: alumno,
       fecha,
       tipo: "ausente",
@@ -1153,7 +1153,7 @@ test("deshabilitar la deteccion detiene la generacion de alertas", async () => {
 
   for (const fecha of ["2026-08-10", "2026-08-11", "2026-08-12"]) {
     respuestas.push(
-      await pedir("POST", "/api/v1/inasistencias", preceptor, {
+      await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
         alumnoId: alumno,
         fecha,
         tipo: "ausente",
@@ -1198,7 +1198,7 @@ async function prepararSegundaEscuela() {
 
 test("un usuario de otra escuela no puede registrar inasistencias de un alumno ajeno", async () => {
   const otro = await prepararSegundaEscuela();
-  const { status, cuerpo } = await pedir("POST", "/api/v1/inasistencias", otro, {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/alertas/inasistencias", otro, {
     alumnoId: "alu-19",
     fecha: "2026-04-20",
     tipo: "ausente",
@@ -1210,7 +1210,7 @@ test("un usuario de otra escuela no puede registrar inasistencias de un alumno a
 
   const registrados = await pedir(
     "GET",
-    "/api/v1/inasistencias?alumnoId=alu-19&desde=2026-04-20&hasta=2026-04-20",
+    "/api/v1/alertas/inasistencias?alumnoId=alu-19&desde=2026-04-20&hasta=2026-04-20",
     preceptor
   );
 
@@ -1235,23 +1235,23 @@ test("un usuario de otra escuela no ve alertas ni inasistencias ajenas", async (
 
 test("un usuario de otra escuela no puede modificar ni dar de baja una inasistencia ajena", async () => {
   const otro = await prepararSegundaEscuela();
-  const alta = await pedir("POST", "/api/v1/inasistencias", preceptor, {
+  const alta = await pedir("POST", "/api/v1/alertas/inasistencias", preceptor, {
     alumnoId: "alu-19",
     fecha: "2026-04-21",
     tipo: "ausente",
     justificada: false
   });
 
-  const modificacion = await pedir("PATCH", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, otro, {
+  const modificacion = await pedir("PATCH", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, otro, {
     justificada: true,
     motivo: "Intento fuera de la escuela."
   });
 
-  const baja = await pedir("DELETE", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, otro, {
+  const baja = await pedir("DELETE", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, otro, {
     motivo: "Intento fuera de la escuela."
   });
 
-  const detalle = await pedir("GET", `/api/v1/inasistencias/${alta.cuerpo.data.id}`, preceptor);
+  const detalle = await pedir("GET", `/api/v1/alertas/inasistencias/${alta.cuerpo.data.id}`, preceptor);
 
   assert.equal(modificacion.status, 404);
   assert.equal(baja.status, 404);
