@@ -23,6 +23,7 @@
                       (encabezado y pie) en lugar del layout de la aplicacion */
 
 import DashboardView from "../modules/dashboard/dashboard-view.js";
+import DirectorDashboardView from "../modules/director/director-dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
@@ -66,6 +67,23 @@ export const RUTAS = [
     seccion: "General",
     icono: "clipboard",
     enMenu: true
+  },
+  {
+    patron: "#/director",
+    titulo: "Tablero de Dirección",
+    vista: DirectorDashboardView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    permisos: [PERMISOS.usuariosLeer, PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/inicio-director",
+    titulo: "Tablero de Dirección",
+    vista: DirectorDashboardView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.usuariosLeer]
   },
   {
     patron: "#/preceptoria",
