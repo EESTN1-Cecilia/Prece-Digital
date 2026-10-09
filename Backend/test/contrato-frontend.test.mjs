@@ -52,8 +52,8 @@ function llamadas() {
 
       encontradas.push({
         archivo: archivo.slice(RAIZ_FRONTEND.length + 1),
-        /* ${expresion} -> segmento de ejemplo */
-        ruta: ruta.replace(/\$\{[^}]+\}/g, "x"),
+        /* ${expresion} tras / -> segmento de ejemplo; pegada al path (consulta) -> se recorta */
+        ruta: ruta.replace(/\/\$\{[^}]+\}/g, "/x").replace(/\$\{[^}]+\}/g, ""),
         metodo: /method:\s*"([A-Z]+)"/.exec(texto)?.[1] ?? "GET"
       });
     }

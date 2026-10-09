@@ -83,12 +83,16 @@ auditoria del modulo.
 
 | Metodo | Ruta | Que hace |
 | --- | --- | --- |
-| POST | `/api/v1/inasistencias` | Registra una inasistencia y devuelve la evaluacion que produjo. |
-| GET | `/api/v1/inasistencias` | Lista con filtros por alumno, tipo, justificada y rango de fechas. |
-| GET | `/api/v1/inasistencias/:inasistenciaId` | Detalle de una inasistencia. |
-| PATCH | `/api/v1/inasistencias/:inasistenciaId` | Corrige o justifica. Vuelve a evaluar sin duplicar. |
-| DELETE | `/api/v1/inasistencias/:inasistenciaId` | Baja logica con motivo. Nunca se borra fisico. |
+| POST | `/api/v1/alertas/inasistencias` | Registra una inasistencia y devuelve la evaluacion que produjo. |
+| GET | `/api/v1/alertas/inasistencias` | Lista con filtros por alumno, tipo, justificada y rango de fechas. |
+| GET | `/api/v1/alertas/inasistencias/:inasistenciaId` | Detalle de una inasistencia. |
+| PATCH | `/api/v1/alertas/inasistencias/:inasistenciaId` | Corrige o justifica. Vuelve a evaluar sin duplicar. |
+| DELETE | `/api/v1/alertas/inasistencias/:inasistenciaId` | Baja logica con motivo. Nunca se borra fisico. |
 | GET | `/api/v1/alumnos/:alumnoId/inasistencias` | Inasistencias del alumno, ordenadas por fecha. |
+
+El registro propio vive bajo `/api/v1/alertas/inasistencias` porque
+`/api/v1/inasistencias` pertenece al modulo `inasistencias` (listado general,
+motivos, estadisticas e historial).
 
 Una inasistencia por alumno y dia: registrar dos veces la misma fecha responde 409.
 
