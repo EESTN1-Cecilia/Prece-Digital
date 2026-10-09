@@ -223,19 +223,21 @@ export const apiRoutes = [
 
   /* Alertas por inasistencias consecutivas.
 
-     El registro de inasistencias usa los permisos de asistencia (attendance.read /
-     attendance.write); las alertas y la configuracion de la regla tienen permisos
-     propios porque una es la lectura de la situacion y la otra la regla
-     institucional. Configurar el umbral es potestad de la direccion, no de quien
-     carga la inasistencia.
+     El registro propio de inasistencias vive bajo el namespace de alertas:
+     /api/v1/inasistencias es del modulo inasistencias (listado, motivos,
+     estadisticas, historial y justificacion). El registro de este modulo usa los
+     permisos de asistencia (attendance.read / attendance.write); las alertas y la
+     configuracion de la regla tienen permisos propios porque una es la lectura de
+     la situacion y la otra la regla institucional. Configurar el umbral es
+     potestad de la direccion, no de quien carga la inasistencia.
 
-     Los literales (catalogos, evaluar, evaluaciones) van antes que los parametros
-     porque el router gana con la primera coincidencia. */
-  { method: "POST", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.createInasistencia },
-  { method: "GET", path: "/api/v1/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.listInasistencias },
-  { method: "GET", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.getInasistencia },
-  { method: "PATCH", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.updateInasistencia },
-  { method: "DELETE", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.deactivateInasistencia },
+     Los literales (inasistencias, catalogos, evaluar, evaluaciones) van antes que
+     los parametros porque el router gana con la primera coincidencia. */
+  { method: "POST", path: "/api/v1/alertas/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.createInasistencia },
+  { method: "GET", path: "/api/v1/alertas/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.listInasistencias },
+  { method: "GET", path: "/api/v1/alertas/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.getInasistencia },
+  { method: "PATCH", path: "/api/v1/alertas/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.updateInasistencia },
+  { method: "DELETE", path: "/api/v1/alertas/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: attendanceAlertsController.deactivateInasistencia },
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/inasistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: attendanceAlertsController.getInasistenciasDeAlumno },
 
   { method: "POST", path: "/api/v1/alertas/evaluar", middlewares: [verifyToken, required(P.ATTENDANCE_ALERTS_WRITE)], handler: attendanceAlertsController.evaluarAlertas },

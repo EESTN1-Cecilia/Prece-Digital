@@ -1,5 +1,6 @@
 import React from "react";
 import DashboardView from "../modules/dashboard/dashboard-view.js";
+import DirectorDashboardView from "../modules/director/director-dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
@@ -10,6 +11,9 @@ const h = React.createElement;
 /* Pantalla de inicio: el tablero depende del rol real de la sesion. */
 export default function InicioView() {
   const { rol } = useUsuarioActual();
+  if (rol === "director" || rol === "admin") {
+    return h(DirectorDashboardView);
+  }
   if (rol === "server") {
     return h(ServerDashboardView);
   }
