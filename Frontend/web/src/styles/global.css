@@ -15,6 +15,7 @@
    ========================================================================== */
 @import "./auth/auth.css";
 @import "./identidad/identidad.css";
+@import "./identidad/perfil.css";
 
 /* ==========================================================================
    3. MÓDULO DE DIRECCIÓN, SECRETARÍA & DASHBOARDS
