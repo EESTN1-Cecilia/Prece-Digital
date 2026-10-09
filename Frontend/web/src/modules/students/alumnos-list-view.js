@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
+import { useUsuarioActual } from "../../estado/index.js";
+import { PERMISOS, puede } from "../../utils/permisos.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../components/common/state-handlers.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { StudentsService } from "./students-service.js";
 
 export default function AlumnosListView() {
+  const user = useUsuarioActual();
+  const esPreceptor = user?.rol === "preceptor" || (Array.isArray(user?.roles) && user.roles.includes("preceptor") && !user.roles.includes("admin") && !user.roles.includes("secretario") && !user.roles.includes("director"));
+  const puedeCargarAlumno = !esPreceptor && (user?.roles?.length ? puede(user, PERMISOS.alumnosCrear) : true);
+
   // Filtros del Listado de Alumnos
   const [viewMode, setViewMode] = useState("table"); // 'table' | 'card'
   const [studentSearch, setStudentSearch] = useState("");
@@ -288,18 +294,20 @@ export default function AlumnosListView() {
             h(IconoFigma, { className: "action-button__icon", nombre: "academic" }),
             h("span", null, "Ver Cursos")
           ),
-          // Botón Cargar Alumno
-          h(
-            ActionButton,
-            {
-              icon: "clipboard",
-              tone: "primary",
-              onClick: () => {
-                window.location.hash = "#/alumnos/cargar";
-              }
-            },
-            "Cargar Alumno"
-          )
+          // Botón Cargar Alumno (Solo visible para roles autorizados, oculto para Preceptor)
+          puedeCargarAlumno
+            ? h(
+                ActionButton,
+                {
+                  icon: "clipboard",
+                  tone: "primary",
+                  onClick: () => {
+                    window.location.hash = "#/alumnos/cargar";
+                  }
+                },
+                "Cargar Alumno"
+              )
+            : null
         )
       },
 

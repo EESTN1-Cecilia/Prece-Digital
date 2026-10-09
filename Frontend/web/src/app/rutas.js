@@ -33,6 +33,7 @@ import AlumnosListView from "../modules/students/alumnos-list-view.js";
 import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
 import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
 import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
+import AsistenciasView from "../modules/attendance/asistencias-view.js";
 import NotificacionesView from "../modules/notifications/notificaciones-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
@@ -122,6 +123,23 @@ export const RUTAS = [
     vista: SecretariaDashboardView,
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosEditar]
+  },
+  {
+    patron: "#/asistencias/:cursoId",
+    titulo: "Planilla de Asistencia",
+    vista: AsistenciasView,
+    padre: "#/asistencias",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/asistencias",
+    titulo: "Planilla de Asistencias",
+    vista: AsistenciasView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
   },
   {
     patron: "#/server",

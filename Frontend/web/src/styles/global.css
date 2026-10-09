@@ -31,20 +31,30 @@
 @import "./alumnos/alumno-perfil.css";
 
 /* ==========================================================================
-   5. MÓDULO DE DOCUMENTACIÓN, MATRIZ & LEGAJOS
+   5. MÓDULO DE ASISTENCIAS & SEGUIMIENTO DIARIO
+   ========================================================================== */
+@import "./asistencias/asistencias.css";
+
+/* ==========================================================================
+   6. MÓDULO DE DOCUMENTACIÓN, MATRIZ & LEGAJOS
    ========================================================================== */
 @import "./documentos/documentos.css";
 @import "./documentos/matriz.css";
 @import "./documentos/legajo.css";
 
 /* ==========================================================================
-   6. MÓDULO DE SERVER, PAÑOL & INVENTARIO
+   7. MÓDULO DE SERVER, PAÑOL & INVENTARIO
    ========================================================================== */
 @import "./server/server.css";
 @import "./server/inventario.css";
 
 /* ==========================================================================
-   7. CENTRO DE NOTIFICACIONES & PÁGINAS ESPECIALES
+   8. MÓDULO DE JEFATURA
+   ========================================================================== */
+@import "./jefatura/jefatura.css";
+
+/* ==========================================================================
+   9. CENTRO DE NOTIFICACIONES & PÁGINAS ESPECIALES
    ========================================================================== */
 @import "./notificaciones/notificaciones.css";
 @import "./not-found/not-found.css";

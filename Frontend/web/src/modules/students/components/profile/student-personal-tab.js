@@ -284,8 +284,11 @@ export function StudentPersonalTab({
   datosPersonales = {},
   contacto = {},
   tutores = [],
-  onUpdateField
+  onUpdateField,
+  puedeModificar = true
 }) {
+  const handlerUpdate = puedeModificar ? onUpdateField : null;
+
   const formatearFecha = (fecha) => {
     if (!fecha) return "No registrado";
     try {
@@ -350,14 +353,16 @@ export function StudentPersonalTab({
           value: datosPersonales.nombre,
           fieldKey: "nombre",
           required: true,
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Apellido",
           value: datosPersonales.apellido,
           fieldKey: "apellido",
           required: true,
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Nombre Completo",
@@ -372,14 +377,16 @@ export function StudentPersonalTab({
           className: "highlight-field",
           valueClassName: "font-bold text-accent",
           required: true,
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "CUIL",
           value: datosPersonales.cuil,
           fieldKey: "cuil",
           valueClassName: "mono",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Fecha de Nacimiento",
@@ -388,20 +395,23 @@ export function StudentPersonalTab({
           fieldKey: "fechaNacimiento",
           type: "date",
           valueClassName: "font-medium",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Lugar de Nacimiento",
           value: typeof datosPersonales.lugarNacimiento === "object" ? datosPersonales.lugarNacimiento.localidad : datosPersonales.lugarNacimiento,
           displayValue: lugarNacimiento,
           fieldKey: "lugarNacimiento",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Nacionalidad",
           value: datosPersonales.nacionalidad || "Argentina",
           fieldKey: "nacionalidad",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Género",
@@ -409,27 +419,31 @@ export function StudentPersonalTab({
           fieldKey: "genero",
           type: "select",
           options: ["Masculino", "Femenino", "No binario", "No especificado", "Otro"],
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Domicilio Real",
           value: datosPersonales.domicilio,
           fieldKey: "domicilio",
           valueClassName: "font-medium",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Localidad",
           value: datosPersonales.localidad || "Monte Grande",
           fieldKey: "localidad",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Código Postal",
           value: datosPersonales.codigoPostal || "1842",
           fieldKey: "codigoPostal",
           valueClassName: "font-mono",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Estado del Alumno",
@@ -438,7 +452,8 @@ export function StudentPersonalTab({
           type: "select",
           options: ["Activo", "Inactivo", "Pase pendiente", "Egresado"],
           valueClassName: "status-indicator font-bold",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Fecha de Ingreso",
@@ -447,14 +462,16 @@ export function StudentPersonalTab({
           fieldKey: "fechaIngreso",
           type: "date",
           valueClassName: "font-medium",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Año Lectivo Actual",
           value: String(datosPersonales.anioLectivoActual || 2026),
           fieldKey: "anioLectivoActual",
           valueClassName: "font-semibold",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         })
       )
     ),
@@ -495,14 +512,16 @@ export function StudentPersonalTab({
           displayValue: contacto.telefono || "No especificado",
           fieldKey: "telefono",
           valueClassName: "font-medium",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Teléfono Alternativo / Emergencias",
           value: contacto.telefonoAlternativo,
           displayValue: contacto.telefonoAlternativo || "No registrado",
           fieldKey: "telefonoAlternativo",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Correo Electrónico Institucional",
@@ -511,21 +530,24 @@ export function StudentPersonalTab({
           fieldKey: "email",
           type: "email",
           valueClassName: "text-link",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Domicilio Actual",
           value: contacto.domicilio,
           displayValue: contacto.domicilio || "No registrado",
           fieldKey: "domicilio",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Localidad",
           value: contacto.localidad,
           displayValue: contacto.localidad || "Monte Grande",
           fieldKey: "localidad",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Información Adicional de Contacto",
@@ -534,7 +556,8 @@ export function StudentPersonalTab({
           fieldKey: "observacionesContacto",
           type: "textarea",
           valueClassName: "text-muted",
-          onSave: onUpdateField
+          editable: puedeModificar,
+          onSave: handlerUpdate
         })
       )
     ),
