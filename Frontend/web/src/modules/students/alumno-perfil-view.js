@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { h } from "../../layouts/site-layout.js";
+import { useUsuarioActual } from "../../estado/index.js";
+import { PERMISOS, puede } from "../../utils/permisos.js";
 import { StudentsService } from "./students-service.js";
 import { StudentProfileHero } from "./components/profile/student-profile-hero.js";
 import { StudentPersonalTab } from "./components/profile/student-personal-tab.js";
@@ -41,6 +43,9 @@ export default function AlumnoPerfilView({ id, ruta }) {
   };
 
   const studentId = getStudentId();
+  const user = useUsuarioActual();
+  const esPreceptor = user?.rol === "preceptor" || (Array.isArray(user?.roles) && user.roles.includes("preceptor") && !user.roles.includes("admin") && !user.roles.includes("secretario") && !user.roles.includes("director"));
+  const puedeModificarAlumno = !esPreceptor && (user?.roles?.length ? puede(user, PERMISOS.alumnosEditar) : true);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -413,7 +418,10 @@ export default function AlumnoPerfilView({ id, ruta }) {
     // Barra de Acciones Principales (Constancia, Pase, Edición, Observación, Libro Matriz)
     h(StudentActionsBar, {
       alumno: datosPersonales,
-      permisos: permisosAcciones,
+      permisos: {
+        ...permisosAcciones,
+        puedeModificar: puedeModificarAlumno
+      },
       onOpenCertificateModal: () => setAlumnoRegularOpen(true),
       onOpenTransferModal: () => setSolicitudPaseOpen(true),
       onOpenEditModal: () => setEditModalOpen(true),
@@ -430,7 +438,8 @@ export default function AlumnoPerfilView({ id, ruta }) {
             datosPersonales,
             contacto,
             tutores,
-            onUpdateField: handleEditSingleField
+            onUpdateField: handleEditSingleField,
+            puedeModificar: puedeModificarAlumno
           })
         : null,
 
@@ -530,13 +539,15 @@ export default function AlumnoPerfilView({ id, ruta }) {
       isSubmitting: actionSubmitting
     }),
 
-    h(StudentEditModal, {
-      alumno: datosPersonales,
-      isOpen: editModalOpen,
-      onClose: () => setEditModalOpen(false),
-      onSubmit: handleEditSubmit,
-      isSubmitting: actionSubmitting
-    }),
+    puedeModificarAlumno
+      ? h(StudentEditModal, {
+          alumno: datosPersonales,
+          isOpen: editModalOpen,
+          onClose: () => setEditModalOpen(false),
+          onSubmit: handleEditSubmit,
+          isSubmitting: actionSubmitting
+        })
+      : null,
 
     h(StudentObservationModal, {
       alumno: datosPersonales,

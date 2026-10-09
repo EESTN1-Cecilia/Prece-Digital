@@ -253,7 +253,7 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
                 h(CustomSelect, {
                   id: "curso-turno-aula",
                   value: turnoAula,
-                  options: ["Mañana", "Tarde", "Vespertino"],
+                  options: ["Mañana", "Tarde"],
                   onChange: (val) => setTurnoAula(val),
                   placeholder: "Seleccionar turno..."
                 })
@@ -267,7 +267,7 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
                 h(CustomSelect, {
                   id: "curso-turno-taller",
                   value: turnoTaller,
-                  options: ["Mañana", "Tarde", "Vespertino", "Sin Taller"],
+                  options: ["Mañana", "Tarde", "Sin Taller"],
                   onChange: (val) => setTurnoTaller(val),
                   placeholder: "Seleccionar turno taller..."
                 })

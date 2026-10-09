@@ -309,11 +309,6 @@ Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
 | POST | `/api/v1/inasistencias/:inasistenciaId/justify` | `attendance.write` |
 | PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
-| POST | `/api/v1/inasistencias` | `attendance.write` |
-| GET | `/api/v1/inasistencias` | `attendance.read` |
-| GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
-| PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
-| DELETE | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
 
 ## incidents
 
@@ -328,6 +323,11 @@ Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| POST | `/api/v1/alertas/inasistencias` | `attendance.write` |
+| GET | `/api/v1/alertas/inasistencias` | `attendance.read` |
+| GET | `/api/v1/alertas/inasistencias/:inasistenciaId` | `attendance.read` |
+| PATCH | `/api/v1/alertas/inasistencias/:inasistenciaId` | `attendance.write` |
+| DELETE | `/api/v1/alertas/inasistencias/:inasistenciaId` | `attendance.write` |
 | POST | `/api/v1/alertas/evaluar` | `attendance-alerts.write` |
 | GET | `/api/v1/alertas/evaluaciones` | `attendance-alerts.read` |
 | GET | `/api/v1/alertas/catalogos` | `attendance-alerts.read` |
