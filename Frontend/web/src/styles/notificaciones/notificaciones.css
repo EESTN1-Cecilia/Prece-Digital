@@ -303,15 +303,10 @@
 @media (max-width: 860px) {
   .site-header__top {
     display: flex;
-    flex-wrap: wrap;
     justify-content: space-between;
+    align-items: center;
     gap: 16px;
-    padding: 14px 0 20px;
-  }
-  .site-header__center {
-    order: 3;
-    width: 100%;
-    margin-top: 6px;
+    padding: 12px 0 8px;
   }
 }
 

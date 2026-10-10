@@ -1,14 +1,102 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { h } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { CustomDatePicker } from "../../components/common/custom-datepicker.js";
 import { StudentsService } from "./students-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
+import * as XLSX from "xlsx";
 
 function soloDigitos(val) {
   return String(val ?? "").replace(/\D/g, "");
 }
+
+function isSummaryRow(text) {
+  const t = String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  if (!t) return true;
+  if (/^(varon|varones|mujer|mujeres)\s*(presentes?|ausentes?|totales?)?$/.test(t)) return true;
+  if (/^(presentes?|ausentes?|totales?|total|just|injust)$/.test(t)) return true;
+  if (t.includes("presentes") || t.includes("ausentes") || t.includes("total varon") || t.includes("total mujer") || t.includes("totales")) return true;
+  if (t.includes("preceptor") || t.includes("apellido y nombre") || t.includes("n de orden")) return true;
+  return false;
+}
+
+function isSwitchToMujeres(text) {
+  const t = String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  return (
+    t.includes("varones presentes") ||
+    t.includes("varones ausentes") ||
+    t.includes("total varon") ||
+    t.includes("varones totales") ||
+    t.includes("mujeres")
+  );
+}
+
+function normalizarTexto(txt) {
+  return String(txt || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
+function checkDuplicateStatus(student, allStudents, existingList) {
+  const normCurrent = normalizarTexto(student?.nombre);
+  if (!normCurrent || normCurrent.length < 3) {
+    return { isDuplicate: false, reason: "" };
+  }
+
+  // 1. Chequear si ya existe en la base de datos
+  if (Array.isArray(existingList) && existingList.length > 0) {
+    const foundInDb = existingList.find((ex) => {
+      const exFull = normalizarTexto(ex.nombreCompleto || `${ex.apellido || ""} ${ex.nombre || ""}`);
+      const exApeNom = normalizarTexto(`${ex.apellido || ""} ${ex.nombre || ""}`);
+      const exNomApe = normalizarTexto(`${ex.nombre || ""} ${ex.apellido || ""}`);
+      return (
+        exFull === normCurrent ||
+        exApeNom === normCurrent ||
+        exNomApe === normCurrent ||
+        (normCurrent.length > 8 && (exFull.includes(normCurrent) || normCurrent.includes(exFull)))
+      );
+    });
+    if (foundInDb) {
+      return { isDuplicate: true, reason: "Ya en BD" };
+    }
+  }
+
+  // 2. Chequear si está duplicado dentro de la misma planilla
+  if (Array.isArray(allStudents)) {
+    const countInList = allStudents.filter((s) => normalizarTexto(s.nombre) === normCurrent).length;
+    if (countInList > 1) {
+      return { isDuplicate: true, reason: "Duplicado" };
+    }
+  }
+
+  return { isDuplicate: false, reason: "" };
+}
+
+const CURSOS_OPTIONS = [
+  "1° 1°", "1° 2°", "1° 3°", "1° 4°",
+  "2° 1°", "2° 2°", "2° 3°", "2° 4°",
+  "3° 1°", "3° 2°", "3° 3°", "3° 4°",
+  "4° 1°", "4° 2°", "4° 3°", "4° 4°",
+  "5° 1°", "5° 2°", "5° 3°", "5° 4°",
+  "6° 1°", "6° 2°", "6° 3°", "6° 4°",
+  "7° 1°", "7° 2°", "7° 3°", "7° 4°"
+];
+const TURNO_OPTIONS = ["Mañana", "Tarde", "Vespertino"];
+const GENERO_OPTIONS = ["Masculino", "Femenino"];
+const CONDICION_OPTIONS = ["REGULAR", "REPITIENTE", "PASE", "INGRESANTE", "PROMOTOR", "LIBRE"];
 
 function getEmptyFormData() {
   return {
@@ -87,10 +175,263 @@ function getEmptyFormData() {
 
 export default function CargarAlumnoView() {
   const user = useUsuarioActual();
+  const [modalidad, setModalidad] = useState("individual"); // "individual" | "masiva"
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // Estados para Carga Masiva (Excel)
+  const [excelFile, setExcelFile] = useState(null);
+  const [parsedStudents, setParsedStudents] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [importSuccess, setImportSuccess] = useState(false);
+  const [editingCell, setEditingCell] = useState(null); // { rowId, field }
+  const [editingValue, setEditingValue] = useState("");
+  const justSavedRef = useRef(false);
+  const [existingStudents, setExistingStudents] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    StudentsService.getAlumnos({ limit: 100 })
+      .then((res) => {
+        if (active && res && Array.isArray(res.data)) {
+          setExistingStudents(res.data);
+        }
+      })
+      .catch((err) => {
+        console.warn("No se pudieron cargar alumnos existentes para cotejo:", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleDeleteRow = (rowId) => {
+    setParsedStudents((prev) => {
+      const updated = prev.filter((item) => item.id !== rowId);
+      const varones = updated.filter((s) => s.genero === "Masculino").length;
+      const mujeres = updated.filter((s) => s.genero === "Femenino").length;
+      setExcelFile((prevEf) =>
+        prevEf
+          ? {
+              ...prevEf,
+              totalAlumnos: updated.length,
+              totalVarones: varones,
+              totalMujeres: mujeres,
+              filasValidas: updated.length
+            }
+          : prevEf
+      );
+      if (floatingInfoRef.current) {
+        floatingInfoRef.current.count = updated.length;
+        floatingInfoRef.current.totalVarones = varones;
+        floatingInfoRef.current.totalMujeres = mujeres;
+      }
+      return updated;
+    });
+  };
+
+  // Control de animación de entrada y salida para el modal flotante
+  const [floatingMounted, setFloatingMounted] = useState(false);
+  const [floatingVisible, setFloatingVisible] = useState(false);
+  const floatingInfoRef = useRef({
+    name: "",
+    curso: "",
+    totalVarones: 0,
+    totalMujeres: 0,
+    count: 0
+  });
+
+  if (excelFile) {
+    floatingInfoRef.current = {
+      name: excelFile.name || "",
+      curso: excelFile.curso || "7° 3°",
+      totalVarones: excelFile.totalVarones ?? 0,
+      totalMujeres: excelFile.totalMujeres ?? 0,
+      count: parsedStudents.length
+    };
+  }
+
+  const shouldShowFloating = Boolean(
+    modalidad === "masiva" &&
+    excelFile &&
+    parsedStudents.length > 0 &&
+    !importSuccess
+  );
+
+  useEffect(() => {
+    if (shouldShowFloating) {
+      setFloatingMounted(true);
+      const timer = setTimeout(() => {
+        setFloatingVisible(true);
+      }, 30);
+      return () => clearTimeout(timer);
+    } else {
+      setFloatingVisible(false);
+      const timer = setTimeout(() => {
+        setFloatingMounted(false);
+      }, 320);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldShowFloating]);
+
+  const handleSaveEdit = (rowId, field, newValue) => {
+    justSavedRef.current = true;
+    setTimeout(() => {
+      justSavedRef.current = false;
+    }, 280);
+
+    setParsedStudents((prev) => {
+      const updated = prev.map((item) => {
+        if (item.id === rowId) {
+          return { ...item, [field]: newValue };
+        }
+        return item;
+      });
+
+      if (field === "genero") {
+        const varones = updated.filter((s) => s.genero === "Masculino").length;
+        const mujeres = updated.filter((s) => s.genero === "Femenino").length;
+        setExcelFile((prevEf) =>
+          prevEf
+            ? {
+                ...prevEf,
+                totalVarones: varones,
+                totalMujeres: mujeres
+              }
+            : prevEf
+        );
+      }
+
+      return updated;
+    });
+    setEditingCell(null);
+    setEditingValue("");
+  };
+
+  const descargarPlantilla = () => {
+    const a = document.createElement("a");
+    a.href = "/assets/plantilla_listas_2026.xlsx";
+    a.download = "Plantilla_Oficial_Listas_2026.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const sheetName = workbook.SheetNames[0] || "Lista";
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+      // Detect curso from filename (ej: 7º3º, 1º1º, 4to 2da) o sheetName
+      let cursoDetectado = sheetName.replace(/lista/i, "").trim();
+      const matchCurso = file.name.match(/(\d+)[º°o\s\.\-_]*(\d+)/);
+      if (matchCurso) {
+        cursoDetectado = `${matchCurso[1]}° ${matchCurso[2]}°`;
+      } else if (!cursoDetectado || cursoDetectado.length > 10) {
+        cursoDetectado = "1° 1°";
+      }
+
+      // Encontrar fila de encabezados
+      let headerRowIdx = -1;
+      let colOrden = 0;
+      let colNombre = 1;
+      let colProviene = 2;
+
+      for (let i = 0; i < Math.min(rows.length, 12); i++) {
+        const row = rows[i] || [];
+        const rowStr = row.map((c) => String(c).toUpperCase()).join(" ");
+        if (rowStr.includes("APELLIDO") || rowStr.includes("NOMBRE")) {
+          headerRowIdx = i;
+          row.forEach((cell, idx) => {
+            const c = String(cell).toUpperCase();
+            if (c.includes("ORDEN") || c.includes("Nº") || c.includes("N°")) colOrden = idx;
+            if (c.includes("APELLIDO") || c.includes("NOMBRE")) colNombre = idx;
+            if (c.includes("PROVIENE") || c.includes("ORIGEN") || c.includes("CONDICION")) colProviene = idx;
+          });
+          break;
+        }
+      }
+
+      let currentGenero = "Masculino";
+      const students = [];
+      const startIdx = headerRowIdx >= 0 ? headerRowIdx + 1 : 1;
+
+      for (let i = startIdx; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row) continue;
+        const nombreRaw = String(row[colNombre] || "").trim();
+        const col0Raw = String(row[colOrden] || "").trim();
+
+        // Si se encuentra fila de resumen/divisor, cambiar de sección si corresponde y no mostrarla
+        if (isSummaryRow(nombreRaw)) {
+          if (isSwitchToMujeres(nombreRaw)) {
+            currentGenero = "Femenino";
+          }
+          continue;
+        }
+
+        if (isSummaryRow(col0Raw)) {
+          if (isSwitchToMujeres(col0Raw)) {
+            currentGenero = "Femenino";
+          }
+          continue;
+        }
+
+        if (nombreRaw.length < 3) continue;
+
+        const rawOrden = row[colOrden];
+        const orden = rawOrden !== "" && rawOrden !== undefined ? String(rawOrden).replace(/\.0$/, "").trim() : String(students.length + 1);
+        const proviene = row[colProviene] ? String(row[colProviene]).trim() : "REGULAR";
+
+        students.push({
+          id: students.length + 1,
+          orden: orden || String(students.length + 1),
+          nombre: nombreRaw,
+          proviene: proviene || "REGULAR",
+          genero: currentGenero,
+          curso: cursoDetectado,
+          turno: cursoDetectado.startsWith("1") || cursoDetectado.startsWith("2") || cursoDetectado.startsWith("7") ? "Mañana" : "Tarde"
+        });
+      }
+
+      const totalVarones = students.filter((s) => s.genero === "Masculino").length;
+      const totalMujeres = students.filter((s) => s.genero === "Femenino").length;
+
+      setParsedStudents(students);
+      setExcelFile({
+        name: file.name,
+        size: `${(file.size / 1024).toFixed(1)} KB`,
+        totalAlumnos: students.length,
+        totalVarones: totalVarones,
+        totalMujeres: totalMujeres,
+        cursosDetectados: 1,
+        filasValidas: students.length,
+        alertas: 0,
+        curso: cursoDetectado
+      });
+      setImportSuccess(false);
+    } catch (err) {
+      console.error("Error al procesar archivo Excel:", err);
+      setExcelFile({
+        name: file.name,
+        size: `${(file.size / 1024).toFixed(1)} KB`,
+        totalAlumnos: 0,
+        totalVarones: 0,
+        totalMujeres: 0,
+        cursosDetectados: 0,
+        filasValidas: 0,
+        alertas: 1,
+        curso: "—"
+      });
+      setParsedStudents([]);
+    }
+  };
 
   // Formulario totalmente limpio sin datos autocompletados
   const [formData, setFormData] = useState(getEmptyFormData);
@@ -460,9 +801,761 @@ export default function CargarAlumnoView() {
     }));
   };
 
+  const renderCargaMasiva = () => {
+    const renderEditableCell = ({ row, field, value, type = "text", options = [], displayContent }) => {
+      const isEditing = editingCell?.rowId === row.id && editingCell?.field === field;
+
+      if (isEditing) {
+        if (type === "select") {
+          const allOptions = options.includes(value) ? options : [value, ...options];
+          return h(
+            "div",
+            { className: "cell-editor-wrap cell-editor-wrap--combobox" },
+            h(CustomSelect, {
+              className: "cell-custom-select",
+              value: editingValue !== undefined && editingValue !== "" ? editingValue : value,
+              options: allOptions,
+              defaultOpen: true,
+              isSearchable: allOptions.length > 8,
+              onChange: (val) => {
+                setEditingValue(val);
+                handleSaveEdit(row.id, field, val);
+              },
+              onClose: () => {
+                setEditingCell(null);
+              }
+            })
+          );
+        }
+
+        return h(
+          "div",
+          { className: "cell-editor-wrap cell-editor-wrap--text" },
+          h("input", {
+            type: "text",
+            autoFocus: true,
+            className: "cell-text-input",
+            value: editingValue !== undefined ? editingValue : value,
+            onChange: (e) => setEditingValue(e.target.value),
+            onKeyDown: (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSaveEdit(row.id, field, editingValue);
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setEditingCell(null);
+              }
+            },
+            onBlur: () => {
+              if (!justSavedRef.current) {
+                handleSaveEdit(row.id, field, editingValue);
+              }
+            }
+          }),
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-cell-save",
+              onMouseDown: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              },
+              onClick: (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSaveEdit(row.id, field, editingValue);
+              },
+              title: "Guardar"
+            },
+            "✓"
+          )
+        );
+      }
+
+      return h(
+        "div",
+        {
+          className: "cell-view-wrap",
+          onClick: (e) => {
+            if (justSavedRef.current) {
+              e.stopPropagation();
+              return;
+            }
+            setEditingCell({ rowId: row.id, field });
+            setEditingValue(value);
+          }
+        },
+        h("div", { className: "cell-view-content" }, displayContent !== undefined ? displayContent : value),
+        h(
+          "button",
+          {
+            type: "button",
+            className: "btn-cell-pencil",
+            title: `Editar ${field}`,
+            onClick: (e) => {
+              e.stopPropagation();
+              if (justSavedRef.current) return;
+              setEditingCell({ rowId: row.id, field });
+              setEditingValue(value);
+            }
+          },
+          h(
+            "svg",
+            { viewBox: "0 0 20 20", fill: "currentColor", width: 12, height: 12 },
+            h("path", {
+              d: "M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"
+            })
+          )
+        )
+      );
+    };
+
+    return h(
+      DashboardCard,
+      {
+        title: "Carga Masiva de Alumnos por Planilla Excel",
+        icon: "user-search",
+        className: "dashboard-card--highlight cargar-alumno-card",
+        collapsible: false
+      },
+      h(
+        "div",
+        { className: `excel-bulk-container ${excelFile && parsedStudents.length > 0 && !importSuccess ? "excel-bulk-container--has-floating" : ""}` },
+
+        // 1. Banner Descarga Plantilla Oficial
+        h(
+          "div",
+          { className: "excel-template-banner" },
+          h(
+            "div",
+            { className: "excel-template-banner__left" },
+            h(
+              "div",
+              { className: "excel-icon-box" },
+              h("img", {
+                src: "/assets/excel.png",
+                alt: "Excel",
+                className: "excel-icon-img"
+              })
+            ),
+            h(
+              "div",
+              { className: "excel-template-banner__info" },
+              h("h3", null, "Descargar Plantilla Oficial Excel (Listas 2026)"),
+              h("p", null, "Modelo institucional oficial por curso y división (E.E.S.T N°1). Compatible con las planillas oficiales de preceptoría.")
+            )
+          ),
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-descargar-plantilla",
+              onClick: descargarPlantilla,
+              title: "Descargar planilla oficial .xlsx"
+            },
+            h(
+              "svg",
+              { viewBox: "0 0 20 20", fill: "currentColor", width: 18, height: 18 },
+              h("path", { fillRule: "evenodd", d: "M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z", clipRule: "evenodd" })
+            ),
+            h("span", null, "Descargar Plantilla Oficial (.xlsx)")
+          )
+        ),
+
+        // 2. Zona Drag & Drop o Ficha de Archivo Cargado
+        !excelFile
+          ? h(
+              "div",
+              {
+                className: `excel-dropzone ${isDragging ? "excel-dropzone--dragover" : ""}`,
+                onDragOver: (e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                },
+                onDragLeave: () => setIsDragging(false),
+                onDrop: (e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleFileUpload(file);
+                },
+                onClick: () => {
+                  const input = document.getElementById("excel-file-input");
+                  if (input) input.click();
+                }
+              },
+              h("input", {
+                id: "excel-file-input",
+                type: "file",
+                accept: ".xlsx, .xls, .csv",
+                style: { display: "none" },
+                onChange: (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                }
+              }),
+              h(
+                "div",
+                { className: "excel-dropzone__icon-circle" },
+                h(
+                  "svg",
+                  { viewBox: "0 0 24 24", fill: "currentColor", width: 32, height: 32 },
+                  h("path", { d: "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" })
+                )
+              ),
+              h("h3", { className: "excel-dropzone__title" }, "Arrastrá tu archivo Excel aquí o haz clic para seleccionarlo"),
+              h("p", { className: "excel-dropzone__desc" }, "Soporta formatos oficiales .xlsx, .xls o .csv (hasta 15 MB)"),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "excel-dropzone__btn",
+                  onClick: (e) => {
+                    e.stopPropagation();
+                    const input = document.getElementById("excel-file-input");
+                    if (input) input.click();
+                  }
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 20 20", fill: "currentColor", width: 16, height: 16 },
+                  h("path", { fillRule: "evenodd", d: "M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z", clipRule: "evenodd" })
+                ),
+                h("span", null, "Examinar archivos")
+              )
+            )
+          : h(
+              "div",
+              { className: "excel-file-card" },
+              h(
+                "div",
+                { className: "excel-file-card__left" },
+                h(
+                  "div",
+                  { className: "excel-file-badge-icon" },
+                  h("img", {
+                    src: "/assets/excel.png",
+                    alt: "Excel",
+                    className: "excel-icon-img",
+                    style: { width: "24px", height: "24px" }
+                  })
+                ),
+                h(
+                  "div",
+                  { className: "excel-file-meta" },
+                  h("h4", null, excelFile.name),
+                  h(
+                    "div",
+                    { className: "excel-file-meta-pills" },
+                    h("span", null, `Tamaño: ${excelFile.size}`),
+                    h("span", null, "•"),
+                    h("span", { className: "excel-file-status-badge" }, "✓ Archivo Validado")
+                  )
+                )
+              ),
+              h(
+                "div",
+                { className: "excel-file-actions" },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "btn-file-action",
+                    onClick: () => {
+                      const input = document.getElementById("excel-file-input-reemplazar");
+                      if (input) input.click();
+                    }
+                  },
+                  "Reemplazar Archivo"
+                ),
+                h("input", {
+                  id: "excel-file-input-reemplazar",
+                  type: "file",
+                  accept: ".xlsx, .xls, .csv",
+                  style: { display: "none" },
+                  onChange: (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file);
+                  }
+                }),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "btn-file-action btn-file-action--remove",
+                    onClick: () => {
+                      setExcelFile(null);
+                      setParsedStudents([]);
+                      setImportSuccess(false);
+                    }
+                  },
+                  "Eliminar"
+                )
+              )
+            ),
+
+        // 3. Grilla de Métricas de Importación
+        excelFile
+          ? h(
+              "div",
+              { className: "excel-metrics-grid" },
+              h(
+                "div",
+                { className: "excel-metric-card" },
+                h("strong", null, excelFile.totalAlumnos),
+                h("span", null, "Total Estudiantes")
+              ),
+              h(
+                "div",
+                { className: "excel-metric-card" },
+                h("strong", { style: { color: "#1d4ed8" } }, excelFile.totalVarones !== undefined ? excelFile.totalVarones : "—"),
+                h("span", null, "Varones (Masculino)")
+              ),
+              h(
+                "div",
+                { className: "excel-metric-card" },
+                h("strong", { style: { color: "#be185d" } }, excelFile.totalMujeres !== undefined ? excelFile.totalMujeres : "—"),
+                h("span", null, "Mujeres (Femenino)")
+              ),
+              h(
+                "div",
+                { className: "excel-metric-card" },
+                h("strong", { style: { color: "#15803d" } }, excelFile.filasValidas),
+                h("span", null, "Registros Válidos")
+              )
+            )
+          : null,
+
+        // 4. Tabla de Previsualización de Datos Detectados
+        excelFile
+          ? h(
+              "div",
+              { className: "excel-preview-block" },
+              h(
+                "div",
+                { className: "excel-preview-header" },
+                h(
+                  "div",
+                  null,
+                  h("h4", { className: "excel-preview-title" }, "Vista Previa de Alumnos Detectados"),
+                  h("span", { className: "excel-preview-subtitle" }, `Mostrando ${parsedStudents.length} alumnos detectados en la planilla:`)
+                ),
+                h("span", { className: "badge-valid-row" }, "✓ Formato Correcto")
+              ),
+              h(
+                "div",
+                { className: "excel-preview-table-container" },
+                h(
+                  "table",
+                  { className: "excel-preview-table" },
+                  h(
+                    "thead",
+                    null,
+                    h(
+                      "tr",
+                      null,
+                      h("th", { style: { width: "7%", textAlign: "center" } }, "N°"),
+                      h("th", { style: { width: "30%" } }, "Apellido y Nombre"),
+                      h("th", { style: { width: "12%" } }, "Género"),
+                      h("th", { style: { width: "12%" } }, "Condición"),
+                      h("th", { style: { width: "9%", textAlign: "center" } }, "Curso"),
+                      h("th", { style: { width: "10%" } }, "Turno"),
+                      h("th", { style: { width: "14%", textAlign: "center" } }, "Estado"),
+                      h("th", { style: { width: "6%", textAlign: "center" }, title: "Acciones" }, "")
+                    )
+                  ),
+                  h(
+                    "tbody",
+                    null,
+                    parsedStudents.length > 0
+                      ? parsedStudents.map((row) => {
+                          const duplicateStatus = checkDuplicateStatus(row, parsedStudents, existingStudents);
+                          const isDuplicate = duplicateStatus.isDuplicate;
+
+                          return h(
+                            "tr",
+                            {
+                              key: row.id,
+                              className: isDuplicate ? "excel-preview-row--duplicate" : ""
+                            },
+                            // 1. N°
+                            h(
+                              "td",
+                              {
+                                style: {
+                                  width: "7%",
+                                  textAlign: "center",
+                                  color: "#64748b",
+                                  fontWeight: 800,
+                                  fontSize: "13px",
+                                  userSelect: "none"
+                                }
+                              },
+                              row.orden
+                            ),
+                            // 2. Apellido y Nombre
+                            h(
+                              "td",
+                              {
+                                className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "nombre" ? "editable-cell--editing" : ""}`,
+                                style: { width: "30%", overflow: "hidden", textOverflow: "ellipsis" }
+                              },
+                              renderEditableCell({
+                                row,
+                                field: "nombre",
+                                value: row.nombre,
+                                type: "text",
+                                displayContent: h("span", { style: { fontWeight: 800, color: "#0f172a" }, title: row.nombre }, row.nombre)
+                              })
+                            ),
+                            // 3. Género
+                            h(
+                              "td",
+                              {
+                                className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "genero" ? "editable-cell--editing" : ""}`,
+                                style: { width: "12%" }
+                              },
+                              renderEditableCell({
+                                row,
+                                field: "genero",
+                                value: row.genero,
+                                type: "select",
+                                options: GENERO_OPTIONS,
+                                displayContent:
+                                  row.genero === "Femenino"
+                                    ? h(
+                                        "span",
+                                        {
+                                          style: {
+                                            background: "#fdf2f8",
+                                            color: "#be185d",
+                                            border: "1px solid #fbcfe8",
+                                            padding: "2px 8px",
+                                            borderRadius: "6px",
+                                            fontWeight: 700,
+                                            fontSize: "11.5px",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "3px"
+                                          }
+                                        },
+                                        "♀ Femenino"
+                                      )
+                                    : h(
+                                        "span",
+                                        {
+                                          style: {
+                                            background: "#eff6ff",
+                                            color: "#1d4ed8",
+                                            border: "1px solid #bfdbfe",
+                                            padding: "2px 8px",
+                                            borderRadius: "6px",
+                                            fontWeight: 700,
+                                            fontSize: "11.5px",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "3px"
+                                          }
+                                        },
+                                        "♂ Masculino"
+                                      )
+                              })
+                            ),
+                            // 4. Condición
+                            h(
+                              "td",
+                              {
+                                className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "proviene" ? "editable-cell--editing" : ""}`,
+                                style: { width: "12%" }
+                              },
+                              renderEditableCell({
+                                row,
+                                field: "proviene",
+                                value: row.proviene,
+                                type: "select",
+                                options: CONDICION_OPTIONS,
+                                displayContent: h(
+                                  "span",
+                                  {
+                                    style: {
+                                      background: "#f8fafc",
+                                      color: "#475569",
+                                      border: "1px solid #e2e8f0",
+                                      padding: "2px 7px",
+                                      borderRadius: "6px",
+                                      fontWeight: 700,
+                                      fontSize: "11.5px"
+                                    }
+                                  },
+                                  row.proviene
+                                )
+                              })
+                            ),
+                            // 5. Curso
+                            h(
+                              "td",
+                              {
+                                className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "curso" ? "editable-cell--editing" : ""}`,
+                                style: { width: "9%", textAlign: "center" }
+                              },
+                              renderEditableCell({
+                                row,
+                                field: "curso",
+                                value: row.curso,
+                                type: "select",
+                                options: CURSOS_OPTIONS,
+                                displayContent: h(
+                                  "span",
+                                  {
+                                    style: {
+                                      background: "#eff6ff",
+                                      color: "#1d4ed8",
+                                      padding: "2px 7px",
+                                      borderRadius: "6px",
+                                      fontWeight: 700,
+                                      fontSize: "11.5px"
+                                    }
+                                  },
+                                  row.curso
+                                )
+                              })
+                            ),
+                            // 6. Turno
+                            h(
+                              "td",
+                              {
+                                className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "turno" ? "editable-cell--editing" : ""}`,
+                                style: { width: "10%" }
+                              },
+                              renderEditableCell({
+                                row,
+                                field: "turno",
+                                value: row.turno,
+                                type: "select",
+                                options: TURNO_OPTIONS,
+                                displayContent: h("span", { style: { fontWeight: 600, color: "#334155", fontSize: "12.5px" } }, row.turno)
+                              })
+                            ),
+                            // 7. Estado
+                            h(
+                              "td",
+                              { style: { width: "14%", textAlign: "center" } },
+                              isDuplicate
+                                ? h(
+                                    "span",
+                                    {
+                                      className: "badge-duplicate-row",
+                                      title: `Registro con conflicto: ${duplicateStatus.reason}`
+                                    },
+                                    `⚠️ ${duplicateStatus.reason}`
+                                  )
+                                : h(
+                                    "span",
+                                    {
+                                      className: "badge-valid-row",
+                                      title: "Listo para alta"
+                                    },
+                                    "✓ Listo para alta"
+                                  )
+                            ),
+                            // 8. Acción (Eliminar fila)
+                            h(
+                              "td",
+                              { style: { width: "6%", textAlign: "center" } },
+                              h(
+                                "button",
+                                {
+                                  type: "button",
+                                  className: `btn-delete-row ${isDuplicate ? "btn-delete-row--highlight" : ""}`,
+                                  onClick: (e) => {
+                                    e.stopPropagation();
+                                    handleDeleteRow(row.id);
+                                  },
+                                  title: isDuplicate
+                                    ? `Eliminar fila con conflicto (${duplicateStatus.reason})`
+                                    : "Eliminar alumno de la lista"
+                                },
+                                h(
+                                  "svg",
+                                  { viewBox: "0 0 20 20", fill: "currentColor", width: 15, height: 15 },
+                                  h("path", {
+                                    fillRule: "evenodd",
+                                    d: "M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z",
+                                    clipRule: "evenodd"
+                                  })
+                                )
+                              )
+                            )
+                          );
+                        })
+                      : h(
+                          "tr",
+                          null,
+                          h("td", { colSpan: 8, style: { textAlign: "center", padding: "24px", color: "#64748b" } }, "No se detectaron filas de alumnos en la planilla.")
+                        )
+                  )
+                )
+              )
+            )
+          : null,
+
+        // 5. Tarjeta de Guía y Requisitos
+        h(
+          "div",
+          { className: "excel-guide-card" },
+          h(
+            "h4",
+            null,
+            h(
+              "svg",
+              { viewBox: "0 0 20 20", fill: "currentColor", width: 18, height: 18, style: { color: "#107c41" } },
+              h("path", { fillRule: "evenodd", d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z", clipRule: "evenodd" })
+            ),
+            h("span", null, "Compatibilidad con Planillas Oficiales (Listas 2026)")
+          ),
+          h(
+            "ul",
+            { className: "excel-guide-list" },
+            h("li", { className: "excel-guide-item" }, h("span", { className: "excel-guide-bullet" }, "•"), h("span", null, "Estructura institucional: El sistema lee las columnas oficiales Nº de Orden y Apellido y Nombre.")),
+            h("li", { className: "excel-guide-item" }, h("span", { className: "excel-guide-bullet" }, "•"), h("span", null, "Hojas por curso: Reconoce divisiones y grupos por pestaña (ej: 1º1º, 1º2º, etc.).")),
+            h("li", { className: "excel-guide-item" }, h("span", { className: "excel-guide-bullet" }, "•"), h("span", null, "Actualización de legajo: Si el alumno ya existe en el sistema, se actualiza su cursada 2026 sin duplicar.")),
+            h("li", { className: "excel-guide-item" }, h("span", { className: "excel-guide-bullet" }, "•"), h("span", null, "Matrícula automática: Al confirmar, todos los estudiantes de la planilla quedan inscriptos en el ciclo lectivo."))
+          )
+        ),
+
+        // Banner de Éxito al Confirmar
+        importSuccess
+          ? h(
+              "div",
+              { className: "save-success-banner", style: { marginTop: "8px", marginBottom: "16px" } },
+              h(
+                "div",
+                { className: "save-success-icon-wrap" },
+                h("svg", { viewBox: "0 0 24 24", fill: "currentColor", width: 28, height: 28 }, h("path", { d: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" }))
+              ),
+              h(
+                "div",
+                { className: "save-success-text" },
+                h("h3", null, "¡Carga Masiva Procesada con Éxito!"),
+                h("p", null, `Se incorporaron exitosamente los ${excelFile ? excelFile.totalAlumnos : 32} alumnos de la planilla en el padrón del ciclo lectivo.`)
+              ),
+              h(
+                "div",
+                { className: "save-success-actions" },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "btn-volver-listado-success",
+                    onClick: () => { window.location.hash = "#/alumnos"; }
+                  },
+                  "Ir al Listado de Alumnos"
+                )
+              )
+            )
+          : null
+      )
+    );
+  };
+
+    const floatingModalPortal =
+    floatingMounted && typeof document !== "undefined"
+      ? createPortal(
+          h(
+            "div",
+            {
+              className: `excel-floating-action-modal ${
+                floatingVisible ? "excel-floating-action-modal--visible" : ""
+              }`
+            },
+            h(
+              "div",
+              { className: "excel-floating-bar__left" },
+              h(
+                "div",
+                { className: "excel-floating-bar__icon-wrap" },
+                h("img", {
+                  src: "/assets/excel.png",
+                  alt: "Excel",
+                  className: "excel-floating-bar__img"
+                })
+              ),
+              h(
+                "div",
+                { className: "excel-floating-bar__text" },
+                h(
+                  "span",
+                  { className: "excel-floating-bar__title" },
+                  `${floatingInfoRef.current.count} Alumnos Listos para Importar`
+                ),
+                h(
+                  "span",
+                  { className: "excel-floating-bar__subtitle" },
+                  `${floatingInfoRef.current.name} • Curso: ${floatingInfoRef.current.curso} • ${floatingInfoRef.current.totalVarones} Varones / ${floatingInfoRef.current.totalMujeres} Mujeres`
+                )
+              )
+            ),
+            h(
+              "div",
+              { className: "excel-floating-bar__actions" },
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-cancelar-masiva",
+                  onClick: () => {
+                    setExcelFile(null);
+                    setParsedStudents([]);
+                    setImportSuccess(false);
+                  },
+                  title: "Cancelar y descartar archivo"
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 20 20", fill: "currentColor", width: 16, height: 16 },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
+                    clipRule: "evenodd"
+                  })
+                ),
+                h("span", null, "Cancelar")
+              ),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-confirmar-masiva",
+                  onClick: () => {
+                    setImportSuccess(true);
+                    window.scrollTo({ top: 120, behavior: "smooth" });
+                  }
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 20 20", fill: "currentColor", width: 18, height: 18 },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z",
+                    clipRule: "evenodd"
+                  })
+                ),
+                h("span", null, `Confirmar e Importar ${floatingInfoRef.current.count} Alumnos`)
+              )
+            )
+          ),
+          document.body
+        )
+      : null;
+
   return h(
-    "section",
-    { className: "cargar-alumno-page secretaria-dashboard" },
+    React.Fragment,
+    null,
+    h(
+      "section",
+      { className: "cargar-alumno-page secretaria-dashboard" },
 
     // Barra superior: Volver al listado e información escolar
     h(
@@ -498,7 +1591,7 @@ export default function CargarAlumnoView() {
       h(
         "div",
         { className: "secretaria-eyebrow" },
-        `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · CICLO ${user.cicloLectivo || 2026}`
+        `${user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"} · CICLO ${user.cicloLectivo || 2026}`
       )
     ),
 
@@ -513,18 +1606,92 @@ export default function CargarAlumnoView() {
         h(
           "p",
           { className: "secretaria-subtitle" },
-          "Formulario oficial de matriculación y alta de estudiantes en el padrón institucional."
+          modalidad === "individual"
+            ? "Formulario oficial de matriculación y alta de estudiantes en el padrón institucional."
+            : "Importación masiva de legajos y matrícula estudiantil mediante planilla Excel (.xlsx)."
         )
       ),
+      modalidad === "individual"
+        ? h(
+            "div",
+            { className: "wizard-badge-step" },
+            `Paso ${currentStep} de 4`
+          )
+        : h(
+            "div",
+            {
+              className: "wizard-badge-step",
+              style: {
+                background: "#dcfce7",
+                color: "#15803d",
+                borderColor: "#bbf7d0",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px"
+              }
+            },
+            h(
+              "svg",
+              { viewBox: "0 0 20 20", fill: "currentColor", width: 14, height: 14 },
+              h("path", { fillRule: "evenodd", d: "M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z", clipRule: "evenodd" })
+            ),
+            h("span", null, "Modo Planilla Excel")
+          )
+    ),
+
+    // Selector de Pestañas de Modalidad (Individual vs Masiva)
+    h(
+      "div",
+      { className: "cargar-modalidad-tabs", role: "tablist", "aria-label": "Modalidad de carga" },
       h(
-        "div",
-        { className: "wizard-badge-step" },
-        `Paso ${currentStep} de 4`
+        "button",
+        {
+          type: "button",
+          role: "tab",
+          "aria-selected": modalidad === "individual",
+          className: `modalidad-tab-btn ${modalidad === "individual" ? "active" : ""}`,
+          onClick: () => setModalidad("individual")
+        },
+        h(
+          "svg",
+          {
+            className: "modalidad-tab-icon",
+            viewBox: "0 0 20 20",
+            fill: "currentColor"
+          },
+          h("path", {
+            d: "M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+          })
+        ),
+        h("span", null, "Carga Individual"),
+        h("span", { className: "modalidad-tab-badge" }, "Ficha manual")
+      ),
+      h(
+        "button",
+        {
+          type: "button",
+          role: "tab",
+          "aria-selected": modalidad === "masiva",
+          className: `modalidad-tab-btn ${modalidad === "masiva" ? "active" : ""}`,
+          onClick: () => setModalidad("masiva")
+        },
+        h("img", {
+          src: "/assets/excel.png",
+          alt: "Excel",
+          className: "modalidad-tab-icon excel-tab-icon"
+        }),
+        h("span", null, "Carga Masiva"),
+        h("span", { className: "modalidad-tab-badge modalidad-tab-badge--excel" }, "Excel .xlsx")
       )
     ),
 
-    // Modal o aviso de confirmación exitosa
-    saveSuccess
+    modalidad === "masiva"
+      ? renderCargaMasiva()
+      : h(
+          React.Fragment,
+          null,
+          // Modal o aviso de confirmación exitosa
+          saveSuccess
       ? h(
           "div",
           { className: "save-success-banner" },
@@ -818,7 +1985,7 @@ export default function CargarAlumnoView() {
                     className: errors.turno ? "input-error" : "",
                     placeholder: "Seleccione turno...",
                     value: formData.turno,
-                    options: ["Mañana", "Tarde"],
+                    options: TURNO_OPTIONS,
                     onChange: (val) => handleChange("turno", val)
                   }),
                   errors.turno ? h("span", { className: "field-error-msg" }, errors.turno) : null
@@ -1815,5 +2982,8 @@ export default function CargarAlumnoView() {
         )
       )
     )
-  );
+  )
+),
+floatingModalPortal
+);
 }
