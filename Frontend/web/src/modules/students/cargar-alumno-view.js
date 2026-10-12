@@ -268,6 +268,8 @@ export default function CargarAlumnoView() {
   const [parsedStudents, setParsedStudents] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importStats, setImportStats] = useState(null);
   const [editingCell, setEditingCell] = useState(null); // { rowId, field }
   const [editingValue, setEditingValue] = useState("");
   const justSavedRef = useRef(false);
@@ -313,6 +315,27 @@ export default function CargarAlumnoView() {
       }
       return updated;
     });
+  };
+
+  const handleConfirmImport = async () => {
+    if (!parsedStudents || parsedStudents.length === 0) return;
+    setImporting(true);
+    try {
+      const res = await StudentsService.importarAlumnos(parsedStudents);
+      const data = res?.data || res;
+      setImportStats(data);
+      setImportSuccess(true);
+      const resAlumnos = await StudentsService.getAlumnos({ limit: 100 });
+      if (resAlumnos?.data) {
+        setExistingStudents(resAlumnos.data);
+      }
+      window.scrollTo({ top: 120, behavior: "smooth" });
+    } catch (err) {
+      console.error("Error al importar nómina de alumnos:", err);
+      alert(`Error al procesar la carga masiva: ${err?.mensaje || err?.message || "Ocurrió un error inesperado."}`);
+    } finally {
+      setImporting(false);
+    }
   };
 
   // Control de animación de entrada y salida para el modal flotante
@@ -1613,6 +1636,22 @@ export default function CargarAlumnoView() {
                           h("td", { colSpan: 8, style: { textAlign: "center", padding: "24px", color: "#64748b" } }, "No se detectaron filas de alumnos en la planilla.")
                         )
                   )
+                ),
+                // Botón de confirmación al pie de la tabla
+                h(
+                  "div",
+                  { style: { display: "flex", justifyContent: "flex-end", marginTop: "16px" } },
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      className: "btn-confirmar-masiva",
+                      style: { padding: "12px 24px", fontSize: "14px", fontWeight: "700" },
+                      disabled: importing,
+                      onClick: handleConfirmImport
+                    },
+                    importing ? "Guardando en el sistema..." : `✓ Confirmar e Importar ${parsedStudents.length} Alumnos en ${excelFile?.curso || "el curso"}`
+                  )
                 )
               )
             )
@@ -1656,11 +1695,27 @@ export default function CargarAlumnoView() {
                 "div",
                 { className: "save-success-text" },
                 h("h3", null, "¡Carga Masiva Procesada con Éxito!"),
-                h("p", null, `Se incorporaron exitosamente los ${excelFile ? excelFile.totalAlumnos : 32} alumnos de la planilla en el padrón del ciclo lectivo.`)
+                h(
+                  "p",
+                  null,
+                  importStats
+                    ? `Se guardaron ${importStats.importados ?? parsedStudents.length} alumnos nuevos (${importStats.actualizados ?? 0} actualizados) en el curso ${excelFile?.curso || ""} y ya están matriculados y visibles en los cursos y listas.`
+                    : `Se incorporaron exitosamente los alumnos en el padrón del ciclo lectivo y ya están disponibles en los cursos.`
+                )
               ),
               h(
                 "div",
                 { className: "save-success-actions" },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "btn-volver-listado-success",
+                    style: { background: "#059669", color: "#fff", marginRight: "8px" },
+                    onClick: () => { window.location.hash = "#/cursos"; }
+                  },
+                  "Ver Directorio de Cursos"
+                ),
                 h(
                   "button",
                   {
@@ -1745,21 +1800,23 @@ export default function CargarAlumnoView() {
                 {
                   type: "button",
                   className: "btn-confirmar-masiva",
-                  onClick: () => {
-                    setImportSuccess(true);
-                    window.scrollTo({ top: 120, behavior: "smooth" });
-                  }
+                  disabled: importing,
+                  onClick: handleConfirmImport
                 },
-                h(
-                  "svg",
-                  { viewBox: "0 0 20 20", fill: "currentColor", width: 18, height: 18 },
-                  h("path", {
-                    fillRule: "evenodd",
-                    d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z",
-                    clipRule: "evenodd"
-                  })
-                ),
-                h("span", null, `Confirmar e Importar ${floatingInfoRef.current.count} Alumnos`)
+                importing
+                  ? h("span", null, "Guardando alumnos...")
+                  : [
+                      h(
+                        "svg",
+                        { key: "icon", viewBox: "0 0 20 20", fill: "currentColor", width: 18, height: 18 },
+                        h("path", {
+                          fillRule: "evenodd",
+                          d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z",
+                          clipRule: "evenodd"
+                        })
+                      ),
+                      h("span", { key: "text" }, `Confirmar e Importar ${floatingInfoRef.current.count} Alumnos`)
+                    ]
               )
             )
           ),

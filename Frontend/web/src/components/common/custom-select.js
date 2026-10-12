@@ -37,7 +37,8 @@ export function CustomSelect({
   id,
   name,
   defaultOpen = false,
-  onClose
+  onClose,
+  dropUp = false
 }) {
   const [isOpen, setIsOpen] = useState(Boolean(defaultOpen));
   const [busqueda, setBusqueda] = useState("");
@@ -170,7 +171,7 @@ export function CustomSelect({
     "div",
     {
       ref: containerRef,
-      className: `custom-select-wrapper ${isOpen ? "custom-select-wrapper--open" : ""} ${disabled ? "custom-select-wrapper--disabled" : ""} ${className}`.trim()
+      className: `custom-select-wrapper ${isOpen ? "custom-select-wrapper--open" : ""} ${disabled ? "custom-select-wrapper--disabled" : ""} ${dropUp ? "custom-select-wrapper--dropup" : ""} ${className}`.trim()
     },
 
     // Hidden input for form integrations if needed

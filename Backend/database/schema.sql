@@ -909,7 +909,7 @@ INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division
   (@escuela_id, @ciclo_id, 3, '4', 'tarde',  NULL),
   (@escuela_id, @ciclo_id, 3, '6', 'mañana', NULL);
 
--- Técnico en Informática: 4°1, 4°2, 5°1, 5°2, 6°1, 7°1
+-- Técnico en Informática: 4°1, 4°2, 5°1, 5°2, 6°1, 6°2, 7°1
 -- En 7° el turno_aula elegido ES el único turno (aula y taller coinciden, por la columna generada).
 INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division, turno_aula, orientacion_id) VALUES
   (@escuela_id, @ciclo_id, 4, '1', 'mañana', @orient_informatica),
@@ -917,13 +917,17 @@ INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division
   (@escuela_id, @ciclo_id, 5, '1', 'mañana', @orient_informatica),
   (@escuela_id, @ciclo_id, 5, '2', 'tarde',  @orient_informatica),
   (@escuela_id, @ciclo_id, 6, '1', 'mañana', @orient_informatica),
+  (@escuela_id, @ciclo_id, 6, '2', 'tarde',  @orient_informatica),
   (@escuela_id, @ciclo_id, 7, '1', 'mañana', @orient_informatica);
 
--- Técnico en Programación: 4°3, 4°4, 5°3, 5°4, 6°3, 7°2
+-- Técnico en Programación: 4°3, 4°4, 5°3, 5°4, 6°3, 6°4, 7°2, 7°3, 7°4
 INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division, turno_aula, orientacion_id) VALUES
   (@escuela_id, @ciclo_id, 4, '3', 'mañana', @orient_programacion),
   (@escuela_id, @ciclo_id, 4, '4', 'tarde',  @orient_programacion),
   (@escuela_id, @ciclo_id, 5, '3', 'mañana', @orient_programacion),
   (@escuela_id, @ciclo_id, 5, '4', 'tarde',  @orient_programacion),
   (@escuela_id, @ciclo_id, 6, '3', 'mañana', @orient_programacion),
-  (@escuela_id, @ciclo_id, 7, '2', 'tarde',  @orient_programacion);
+  (@escuela_id, @ciclo_id, 6, '4', 'tarde',  @orient_programacion),
+  (@escuela_id, @ciclo_id, 7, '2', 'tarde',  @orient_programacion),
+  (@escuela_id, @ciclo_id, 7, '3', 'mañana', @orient_programacion),
+  (@escuela_id, @ciclo_id, 7, '4', 'tarde',  @orient_programacion);

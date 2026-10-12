@@ -316,6 +316,140 @@ const studentService = {
     return { statusCode: 201, body: { data: vista(registro) } };
   },
 
+  createBulk(lista, user) {
+    const elementos = Array.isArray(lista) ? lista : (lista?.alumnos || lista?.estudiantes || []);
+    if (!Array.isArray(elementos) || elementos.length === 0) {
+      throw errorDeValidacion([{ field: "alumnos", message: "La lista de alumnos no puede estar vacía." }]);
+    }
+
+    const escuelaId = String(user.assignments?.[0]?.schoolId ?? ESCUELA_DEFECTO);
+    let importados = 0;
+    let actualizados = 0;
+    const creados = [];
+
+    for (let i = 0; i < elementos.length; i++) {
+      const item = elementos[i];
+      let nombreRaw = String(item.nombre || item.nombreCompleto || "").trim();
+      if (!nombreRaw) continue;
+
+      let apellido = String(item.apellido || "").trim();
+      let nombre = "";
+
+      if (apellido && item.nombre) {
+        nombre = String(item.nombre).trim();
+      } else if (nombreRaw.includes(",")) {
+        const partes = nombreRaw.split(",");
+        apellido = partes[0].trim();
+        nombre = partes.slice(1).join(" ").trim();
+      } else {
+        const partes = nombreRaw.split(/\s+/);
+        if (partes.length === 1) {
+          apellido = partes[0];
+          nombre = partes[0];
+        } else if (partes.length === 2) {
+          apellido = partes[0];
+          nombre = partes[1];
+        } else {
+          apellido = partes.slice(0, 2).join(" ");
+          nombre = partes.slice(2).join(" ");
+        }
+      }
+
+      // Curso y división
+      let curso = null;
+      let division = null;
+      if (item.curso !== undefined && item.curso !== null) {
+        const strCurso = String(item.curso);
+        const matchC = strCurso.match(/(\d+)/);
+        if (matchC) curso = Number(matchC[1]);
+        if (item.division) {
+          const matchD = String(item.division).match(/(\d+)/);
+          if (matchD) division = String(matchD[1]);
+        } else if (strCurso.includes("°")) {
+          const partes = strCurso.split("°");
+          if (partes.length >= 2) {
+            const m = partes[1].match(/(\d+)/);
+            if (m) division = String(m[1]);
+          }
+        }
+      }
+      curso = curso || 1;
+      division = division || "1";
+
+      const cursoDivision = resolverCursoDivision({ curso, division }, []);
+      const turno = cursoDivision?.turno ?? (item.turno?.toLowerCase() || "mañana");
+      const orientacion = cursoDivision?.orientacion ?? (curso <= 3 ? "Ciclo Básico" : "Técnico en Informática");
+
+      // DNI
+      let dni = item.dni ? soloDigitos(item.dni) : "";
+      if (!dni || dni.length < 7 || dni.length > 9) {
+        let hash = 0;
+        const str = `${apellido}_${nombre}_${curso}_${division}_${i}`;
+        for (let c = 0; c < str.length; c++) {
+          hash = (hash << 5) - hash + str.charCodeAt(c);
+          hash |= 0;
+        }
+        const numProv = 80000000 + Math.abs(hash % 9000000);
+        dni = String(numProv).padStart(8, "0");
+        while (studentRepository.findByDni(dni)) {
+          dni = String(Number(dni) + 1);
+        }
+      }
+
+      const existente = studentRepository.findByDni(dni);
+      if (existente) {
+        studentRepository.update(existente.id, {
+          nombre,
+          apellido,
+          curso,
+          division,
+          turno,
+          orientacion,
+          genero: item.genero || existente.genero || null,
+          condicion: item.proviene?.toLowerCase() === "irregular" ? "irregular" : "regular",
+          isActive: true
+        });
+        actualizados++;
+        creados.push(existente);
+      } else {
+        const nuevo = studentRepository.create({
+          escuelaId,
+          nombre,
+          apellido,
+          dni,
+          genero: item.genero || null,
+          curso,
+          division,
+          turno,
+          orientacion,
+          condicion: item.proviene?.toLowerCase() === "irregular" ? "irregular" : "regular",
+          isActive: true
+        });
+        importados++;
+        creados.push(nuevo);
+      }
+    }
+
+    studentRepository.registrarAuditoria({
+      accion: "bulk_import",
+      usuarioId: user.id,
+      registroId: "bulk",
+      valorNuevo: { total: elementos.length, importados, actualizados }
+    });
+
+    return {
+      statusCode: 200,
+      body: {
+        data: {
+          total: elementos.length,
+          importados,
+          actualizados,
+          estudiantes: creados.map(vista)
+        }
+      }
+    };
+  },
+
   getById(id) {
     const registro = studentRepository.findById(id);
     if (!registro) {

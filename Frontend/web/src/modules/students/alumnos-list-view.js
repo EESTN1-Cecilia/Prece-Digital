@@ -27,13 +27,13 @@ export default function AlumnosListView() {
   const [sortBy, setSortBy] = useState("apellido");
   const [sortOrder, setSortOrder] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 25;
+  const [pageSize, setPageSize] = useState(10);
 
   const [students, setStudents] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    limit: 25,
+    limit: 10,
     totalPages: 1,
     hasNextPage: false,
     hasPrevPage: false
@@ -491,7 +491,7 @@ export default function AlumnosListView() {
           ? // 1. Tabla de Alumnos
             h(
               "div",
-              { className: "table-responsive alumnos-table-wrap" },
+              { className: "alumnos-table-wrap" },
               h(
                 "table",
                 { className: "custom-table alumnos-table" },
@@ -783,10 +783,32 @@ export default function AlumnosListView() {
                 )
               )
             ),
-            // Acción secundaria a la derecha
+            // Selector de cantidad y acciones a la derecha
             h(
               "div",
               { className: "alumnos-bottom-actions" },
+              h(
+                "div",
+                { className: "pagination-page-size-selector" },
+                h("span", { className: "pagination-size-label" }, "Mostrar:"),
+                h(CustomSelect, {
+                  className: "pagination-custom-select",
+                  value: String(pageSize),
+                  dropUp: true,
+                  onChange: (val) => {
+                    setPageSize(Number(val) || 10);
+                    setCurrentPage(1);
+                  },
+                  options: [
+                    { value: "10", label: "10 por pág." },
+                    { value: "15", label: "15 por pág." },
+                    { value: "20", label: "20 por pág." },
+                    { value: "25", label: "25 por pág." },
+                    { value: "50", label: "50 por pág." }
+                  ],
+                  ariaLabel: "Cantidad de alumnos por página"
+                })
+              ),
               h(
                 ActionButton,
                 {

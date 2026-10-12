@@ -4,16 +4,44 @@ const STORAGE_KEY_PREFIX = "prece_asistencias_planilla_";
 
 // Catálogo base de cursos (se complementa dinámicamente con getDivisiones del backend)
 export const CURSOS_CATALOGO_BASE = [
+  // 1° Año
   { id: "1-1", curso: "1°", division: "1", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
-  { id: "1-2", curso: "1°", division: "2", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "1-2", curso: "1°", division: "2", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
+  { id: "1-3", curso: "1°", division: "3", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "1-4", curso: "1°", division: "4", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "1-6", curso: "1°", division: "6", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
+  // 2° Año
   { id: "2-1", curso: "2°", division: "1", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
-  { id: "2-2", curso: "2°", division: "2", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "2-2", curso: "2°", division: "2", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
+  { id: "2-3", curso: "2°", division: "3", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "2-4", curso: "2°", division: "4", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "2-6", curso: "2°", division: "6", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
+  // 3° Año
   { id: "3-1", curso: "3°", division: "1", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
-  { id: "4-1", curso: "4°", division: "1", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" },
+  { id: "3-2", curso: "3°", division: "2", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
+  { id: "3-3", curso: "3°", division: "3", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "3-4", curso: "3°", division: "4", turno: "Tarde", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Tarde" },
+  { id: "3-6", curso: "3°", division: "6", turno: "Mañana", orientacion: "Ciclo Básico", preceptor: "Preceptoría Turno Mañana" },
+  // 4° Año
+  { id: "4-1", curso: "4°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", preceptor: "Preceptoría Turno Mañana" },
+  { id: "4-2", curso: "4°", division: "2", turno: "Tarde", orientacion: "Técnico en Informática", preceptor: "Preceptoría Turno Tarde" },
+  { id: "4-3", curso: "4°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Mañana" },
+  { id: "4-4", curso: "4°", division: "4", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" },
+  // 5° Año
   { id: "5-1", curso: "5°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", preceptor: "Preceptoría Turno Mañana" },
-  { id: "6-1", curso: "6°", division: "1", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" },
+  { id: "5-2", curso: "5°", division: "2", turno: "Tarde", orientacion: "Técnico en Informática", preceptor: "Preceptoría Turno Tarde" },
+  { id: "5-3", curso: "5°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Mañana" },
+  { id: "5-4", curso: "5°", division: "4", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" },
+  // 6° Año
+  { id: "6-1", curso: "6°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", preceptor: "Preceptoría Turno Mañana" },
+  { id: "6-2", curso: "6°", division: "2", turno: "Tarde", orientacion: "Técnico en Informática", preceptor: "Preceptoría Turno Tarde" },
+  { id: "6-3", curso: "6°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Mañana" },
+  { id: "6-4", curso: "6°", division: "4", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" },
+  // 7° Año
   { id: "7-1", curso: "7°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", preceptor: "Preceptoría Turno Mañana" },
-  { id: "7-2", curso: "7°", division: "2", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" }
+  { id: "7-2", curso: "7°", division: "2", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" },
+  { id: "7-3", curso: "7°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Mañana" },
+  { id: "7-4", curso: "7°", division: "4", turno: "Tarde", orientacion: "Técnico en Programación", preceptor: "Preceptoría Turno Tarde" }
 ];
 
 export const CURSOS_DISPONIBLES = CURSOS_CATALOGO_BASE;

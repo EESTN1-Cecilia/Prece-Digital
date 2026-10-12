@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -69,6 +69,7 @@ Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/students/listas/grupo` | `students.read` |
 | GET | `/api/v1/students/listas/taller` | `students.read` |
 | POST | `/api/v1/students` | `students.write` |
+| POST | `/api/v1/students/bulk` | `students.write` |
 | GET | `/api/v1/students` | `students.read` |
 | GET | `/api/v1/students/divisions` | `students.read` |
 | GET | `/api/v1/students/:studentId` | `students.read` |
