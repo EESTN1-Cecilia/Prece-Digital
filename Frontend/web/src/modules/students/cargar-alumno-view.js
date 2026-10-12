@@ -13,32 +13,114 @@ function soloDigitos(val) {
 }
 
 function isSummaryRow(text) {
-  const t = String(text || "")
+  const raw = String(text || "").trim();
+  if (!raw) return true;
+
+  // 1. Un nombre legítimo de alumno debe contener al menos 3 letras alfabéticas
+  const letterMatches = (raw.match(/[a-zA-ZñÑáéíóúÁÉÍÓÚ]/g) || []).length;
+  if (letterMatches < 3) return true;
+
+  // 2. Caracteres que JAMÁS pertenecen a un nombre de alumno (asteriscos, porcentajes, grados, barras, iguales, etc.)
+  if (/[*%=\\/_#@+~<>^{}\[\]]/.test(raw) || /[º°]/.test(raw)) return true;
+
+  // 3. Patrones de cursos, divisiones o años (ej: 4*3°, 4° 3°, 4°3°, 4to 3ra, 5to 1ra, 4-3, 4/3, 1° 1°)
+  if (/^\d+\s*[*º°oªa°\-_/\\tT]\s*\d+[*º°oªa°]?$/i.test(raw)) return true;
+  if (/^\d+\s*(?:ro|do|to|vo|mo|er|era|ra|da|ta|va|ma)[\s\-_/\\]*(?:\d+[*º°oªa°]?)?$/i.test(raw)) return true;
+  if (/^(curso|division|ano|anio|seccion|turno|ciclo)\b/i.test(raw)) return true;
+
+  const t = raw
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
-  if (!t) return true;
-  if (/^(varon|varones|mujer|mujeres)\s*(presentes?|ausentes?|totales?)?$/.test(t)) return true;
-  if (/^(presentes?|ausentes?|totales?|total|just|injust)$/.test(t)) return true;
-  if (t.includes("presentes") || t.includes("ausentes") || t.includes("total varon") || t.includes("total mujer") || t.includes("totales")) return true;
-  if (t.includes("preceptor") || t.includes("apellido y nombre") || t.includes("n de orden")) return true;
+
+  // 4. Si contiene números y no es un nombre precedido por número de orden
+  if (/\d/.test(t)) {
+    if (/^\d+[\.\-\s\)]*$/.test(t)) return true;
+    if (/\b(curso|division|ano|anio|sec|turno|sala|grado|seccion|ingreso|pase)\b/i.test(t)) return true;
+    if (!/^\d+[\.\-\s\)]+[a-zñ\s]{4,}$/i.test(t)) {
+      if (/\b\d+\s*(ro|do|to|vo|mo|er|ra|da|ta)\b/i.test(t)) return true;
+    }
+  }
+
+  // 5. Términos administrativos, movimientos de matrícula, ingresos, pases, asistencias y pie de registros
+  if (
+    /\b(ingreso|ingresos|ingresante|ingresantes|pase|pases|procedencia|proviene|repitente|repitentes|recursante|recursantes|reincorporad[oa]s?|condicional(?:es)?|promovid[oa]s?|egresad[oa]s?|traslados?|movilidad|baja|bajas|alta|altas)\b/i.test(t) ||
+    /\b(alumnos?|alumnas?|entrados?|salidos?|quedan|asistencia|inasistencia|presentes|ausentes|matricula|promedio|preceptor|director|secretari[oa]|firma|observacion(?:es)?)\b/i.test(t) ||
+    /\b(dias\s+habiles|dias\s+de\s+clase|apellido\s+y\s+nombre|n\s*de\s*orden|orden|total|totales|subtotal|just|injust)\b/i.test(t) ||
+    /\b(viene\s+de|paso\s+de|de\s+otra\s+division)\b/i.test(t) ||
+    /^(curso|division|ano|anio|turno|seccion|ciclo)\b/i.test(t)
+  ) {
+    return true;
+  }
+
   return false;
 }
 
-function isSwitchToMujeres(text) {
-  const t = String(text || "")
+const NOMBRES_FEMENINOS = new Set([
+  "abril", "agustina", "ainara", "aitana", "alana", "alba", "alicia", "alma", "alondra", "amalia", "amanda", "ambar", "amelia",
+  "ana", "anahi", "anabela", "analia", "andrea", "angeles", "antonella", "araceli", "ariadna", "ariana", "astrid", "ayelen", "aylen", "aylin",
+  "barbara", "belen", "berenice", "bianca", "brenda", "brisa", "camila", "candelaria", "candela", "carla", "carmela", "carolina", "catalina",
+  "cecilia", "celeste", "charo", "ciara", "cielo", "clara", "clarisa", "claudia", "constanza", "daiana", "dana", "daniela", "debora",
+  "delfina", "denise", "diana", "dolores", "elena", "eliana", "elisa", "elizabeth", "eloisa", "elsa", "emilia", "emilse", "emma", "erica",
+  "esperanza", "estefania", "eugenia", "eva", "evelyn", "fatima", "federica", "fiama", "fiona", "fiorella", "florencia", "francesca", "gala",
+  "geraldine", "gianna", "gina", "gisela", "giselle", "guadalupe", "guillermina", "helen", "helena", "ianara", "indiana", "ines", "ingrid",
+  "isabel", "isabella", "isidora", "ivana", "ivanna", "jazmin", "jenifer", "jennifer", "jesica", "jessica", "jimena", "joana", "johana",
+  "josefina", "juana", "juanita", "julia", "juliana", "julieta", "justina", "kiara", "lara", "larisa", "laura", "leila", "leonor", "lilia",
+  "liliana", "lina", "lola", "lorena", "lourdes", "luana", "lucia", "luciana", "lucila", "ludmila", "luisa", "lujan", "luna", "macarena",
+  "magali", "magdalena", "maia", "maira", "maite", "maitena", "malena", "mara", "marcela", "maria", "mariana", "mariela", "marina",
+  "marisol", "marta", "martina", "matilda", "maya", "melanie", "melina", "melisa", "mercedes", "mia", "micaela", "milagros", "milena",
+  "miranda", "miriam", "morena", "mora", "nadia", "naiara", "nayla", "nazarena", "nicole", "nina", "noelia", "olivia", "oriana", "paloma",
+  "paola", "patricia", "paula", "paulina", "paz", "pilar", "priscila", "ramona", "regina", "renata", "rita", "rocio", "romina", "rosalia",
+  "rosario", "sabrina", "samanta", "samira", "sandra", "sarah", "selena", "serena", "sharon", "silvia", "silvina", "simona", "sofia", "sol",
+  "solange", "soledad", "stephanie", "tamara", "tania", "tatiana", "umara", "valentina", "valeria", "vaneza", "vanesa", "vera", "veronica",
+  "victoria", "violeta", "virginia", "ximena", "xiomara", "yael", "yamila", "yanina", "yasmin", "yazmin", "zaira", "zoe"
+]);
+
+const NOMBRES_MASCULINOS = new Set([
+  "agustin", "alan", "alejandro", "alex", "alexis", "alfonso", "alfredo", "alonso", "alvaro", "amadeo", "angel", "antonio", "ariel",
+  "armin", "arturo", "augusto", "axel", "bautista", "benicio", "benjamin", "bernardo", "blas", "boris", "braian", "brian", "bruno",
+  "camilo", "carlos", "cesar", "ciro", "claudio", "cristian", "cristobal", "damian", "dante", "dario", "david", "diego", "dilan",
+  "dino", "domenico", "dylan", "edgar", "eduardo", "elias", "eliseo", "emanuel", "emiliano", "emilio", "enoc", "enrique", "enzo",
+  "eric", "erick", "ernesto", "esteban", "ezequiel", "fabian", "fabrizio", "facundo", "fausto", "federico", "felipe",
+  "felix", "fernando", "fidel", "francesco", "francisco", "franco", "gabriel", "gael", "gaston", "genaro", "george", "gerardo",
+  "german", "geronimo", "gian", "gianluca", "giorgio", "giovanni", "gonzalo", "guido", "guillermo", "gustavo", "hector", "hernan",
+  "hilario", "hugo", "ian", "ignacio", "isaias", "ismael", "ivan", "jacobo", "jaime", "jairo", "javier", "jean", "jeremias",
+  "jeronimo", "jesus", "joaquin", "joel", "jonas", "jonatan", "jonathan", "jorge", "jose", "joseph", "joshua", "josue",
+  "juan", "julian", "julio", "justo", "kevin", "lautaro", "leandro", "leo", "leon", "leonardo", "leonel", "leopoldo", "lisan",
+  "lisandro", "lorenzo", "lucas", "luciano", "lucio", "luis", "luka", "lukas", "manuel", "marcelo", "marcio", "marco", "marcos",
+  "mario", "martin", "mateo", "matias", "mauricio", "mauro", "maximiliano", "maximo", "michel", "miguel", "milo", "nahuel",
+  "natan", "nelson", "nestor", "nicolas", "noah", "octavio", "oliver", "omar", "orlando", "oscar", "pablo", "patricio", "paulo",
+  "pedro", "rafael", "ramiro", "ramon", "raul", "renato", "renzo", "ricardo", "roberto", "rodrigo", "roman", "salvador", "samuel",
+  "santiago", "santino", "santos", "sebastian", "sergio", "simon", "tadeo", "thiago", "tiago", "tito", "tomas", "ulises",
+  "uriel", "valentin", "vicente", "victor", "vito", "walter", "yamil"
+]);
+
+function inferirGeneroPorNombre(nombreCompleto) {
+  if (!nombreCompleto) return null;
+  const palabras = String(nombreCompleto)
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-  return (
-    t.includes("varones presentes") ||
-    t.includes("varones ausentes") ||
-    t.includes("total varon") ||
-    t.includes("varones totales") ||
-    t.includes("mujeres")
-  );
+    .replace(/[^a-z\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 2);
+
+  if (palabras.length === 0) return null;
+
+  let femScore = 0;
+  let mascScore = 0;
+
+  palabras.forEach((p, idx) => {
+    // Mayor peso a los nombres de pila que suelen ir tras los apellidos en las planillas oficiales
+    const peso = idx === 0 ? 1 : 2;
+    if (NOMBRES_FEMENINOS.has(p)) femScore += peso;
+    if (NOMBRES_MASCULINOS.has(p)) mascScore += peso;
+  });
+
+  if (femScore > mascScore) return "Femenino";
+  if (mascScore > femScore) return "Masculino";
+  return null;
 }
 
 function normalizarTexto(txt) {
@@ -192,6 +274,7 @@ export default function CargarAlumnoView() {
   const [existingStudents, setExistingStudents] = useState([]);
 
   useEffect(() => {
+    if (modalidad !== "masiva" || existingStudents.length > 0) return;
     let active = true;
     StudentsService.getAlumnos({ limit: 100 })
       .then((res) => {
@@ -205,7 +288,7 @@ export default function CargarAlumnoView() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [modalidad, existingStudents.length]);
 
   const handleDeleteRow = (rowId) => {
     setParsedStudents((prev) => {
@@ -267,14 +350,14 @@ export default function CargarAlumnoView() {
         setFloatingVisible(true);
       }, 30);
       return () => clearTimeout(timer);
-    } else {
+    } else if (floatingMounted) {
       setFloatingVisible(false);
       const timer = setTimeout(() => {
         setFloatingMounted(false);
       }, 320);
       return () => clearTimeout(timer);
     }
-  }, [shouldShowFloating]);
+  }, [shouldShowFloating, floatingMounted]);
 
   const handleSaveEdit = (rowId, field, newValue) => {
     justSavedRef.current = true;
@@ -361,40 +444,161 @@ export default function CargarAlumnoView() {
       let currentGenero = "Masculino";
       const students = [];
       const startIdx = headerRowIdx >= 0 ? headerRowIdx + 1 : 1;
+      let lastParsedOrden = 0;
 
       for (let i = startIdx; i < rows.length; i++) {
         const row = rows[i];
-        if (!row) continue;
-        const nombreRaw = String(row[colNombre] || "").trim();
-        const col0Raw = String(row[colOrden] || "").trim();
+        if (!row || !Array.isArray(row)) continue;
 
-        // Si se encuentra fila de resumen/divisor, cambiar de sección si corresponde y no mostrarla
-        if (isSummaryRow(nombreRaw)) {
-          if (isSwitchToMujeres(nombreRaw)) {
-            currentGenero = "Femenino";
-          }
+        // Inspeccionar el contenido completo de la fila para detectar encabezados, divisores o totales
+        const rowCells = row.map((c) => String(c ?? "").trim());
+        const rowJoined = rowCells.filter(Boolean).join(" ");
+        if (!rowJoined || rowJoined.length === 0) continue;
+
+        // 0. Si entre todas las celdas de la fila no hay al menos 3 letras alfabéticas,
+        // no puede ser una fila con un alumno real (ej: "22 4*3°", "4° 3°", separadores con guiones, números sueltos)
+        const totalLettersInRow = (rowJoined.match(/[a-zA-ZñÑáéíóúÁÉÍÓÚ]/g) || []).length;
+        if (totalLettersInRow < 3) {
           continue;
         }
 
-        if (isSummaryRow(col0Raw)) {
-          if (isSwitchToMujeres(col0Raw)) {
-            currentGenero = "Femenino";
-          }
+        const rowNorm = normalizarTexto(rowJoined);
+
+        // 1. Detección de divisor o encabezado hacia Mujeres (sección femenina)
+        const isMujeresDivider = (
+          rowNorm.includes("mujeres") ||
+          rowNorm.includes("femenino") ||
+          rowNorm.includes("alumnas") ||
+          rowNorm.includes("senoritas") ||
+          rowNorm.includes("chicas") ||
+          rowNorm.includes("totalvaron") ||
+          rowNorm.includes("totalvarones") ||
+          rowNorm.includes("totvaron") ||
+          rowNorm.includes("totvarones") ||
+          rowNorm.includes("varonestotales") ||
+          rowNorm.includes("varonespresentes") ||
+          rowNorm.includes("varonesausentes")
+        );
+
+        if (isMujeresDivider) {
+          currentGenero = "Femenino";
+          continue; // Saltear fila de división/resumen
+        }
+
+        // 2. Detección de divisor explícito a Varones (sección masculina)
+        const isVaronesDivider = (
+          (rowNorm.includes("varones") || rowNorm.includes("masculino")) &&
+          !rowNorm.includes("total") &&
+          !rowNorm.includes("presente") &&
+          !rowNorm.includes("ausente") &&
+          rowCells.filter(Boolean).length <= 3
+        );
+
+        if (isVaronesDivider) {
+          currentGenero = "Masculino";
+          continue; // Saltear fila de encabezado
+        }
+
+        // 3. Fila de resumen general, totales, encabezado repetido, pie estadístico mensual o separadores
+        const isSummaryOrHeader = (
+          rowNorm.includes("preceptor") ||
+          rowNorm.includes("director") ||
+          rowNorm.includes("secretari") ||
+          rowNorm.includes("apellidoynombre") ||
+          rowNorm.includes("ndeorden") ||
+          rowNorm.includes("totalgeneral") ||
+          rowNorm.includes("subtotal") ||
+          rowNorm.includes("entrados") ||
+          rowNorm.includes("salidos") ||
+          rowNorm.includes("quedan") ||
+          rowNorm.includes("asistencia") ||
+          rowNorm.includes("inasistencia") ||
+          rowNorm.includes("diashabiles") ||
+          rowNorm.includes("diasdeclase") ||
+          rowNorm.includes("matricula") ||
+          rowNorm.includes("promedio") ||
+          rowNorm.includes("observacion") ||
+          rowNorm.includes("firma") ||
+          rowNorm.includes("alumnos") ||
+          rowNorm.includes("alumnas") ||
+          rowJoined.includes("%") ||
+          rowJoined.includes("=") ||
+          /^(total|totales|presentes|ausentes|just|injust|firmas?)$/.test(rowNorm) ||
+          /(alumnos?|alumnas?)$/.test(rowNorm) ||
+          /^(ingreso|ingresos|ingresante|ingresantes|pase|pases|repitente|repitentes|condicional(?:es)?)$/.test(rowNorm)
+        );
+
+        if (isSummaryOrHeader) {
           continue;
         }
 
-        if (nombreRaw.length < 3) continue;
+        // 4. Extraer nombre del alumno
+        let nombreRaw = String(row[colNombre] ?? "").trim();
+        nombreRaw = nombreRaw.replace(/^\d+[\s\.\-\)\/]+\s*/, "").trim();
 
+        if (nombreRaw.length < 3 || isSummaryRow(nombreRaw)) {
+          // Intentar ubicar celda de texto alternativa que realmente contenga un nombre válido
+          const altCell = row.find((c, idx) => {
+            if (idx === colOrden || typeof c !== "string") return false;
+            const val = c.replace(/^\d+[\s\.\-\)\/]+\s*/, "").trim();
+            if (val.length < 3 || isSummaryRow(val)) return false;
+            const letters = (val.match(/[a-zA-ZñÑáéíóúÁÉÍÓÚ]/g) || []).length;
+            return letters >= 3;
+          });
+          if (altCell) {
+            nombreRaw = String(altCell).replace(/^\d+[\s\.\-\)\/]+\s*/, "").trim();
+          } else {
+            continue; // No hay nombre válido en esta fila
+          }
+        }
+
+        if (nombreRaw.length < 3 || isSummaryRow(nombreRaw)) {
+          continue;
+        }
+
+        // 5. Leer y evaluar N° de orden
         const rawOrden = row[colOrden];
-        const orden = rawOrden !== "" && rawOrden !== undefined ? String(rawOrden).replace(/\.0$/, "").trim() : String(students.length + 1);
-        const proviene = row[colProviene] ? String(row[colProviene]).trim() : "REGULAR";
+        const ordenStr = rawOrden !== "" && rawOrden !== undefined ? String(rawOrden).replace(/\.0$/, "").trim() : "";
+        const ordenNum = parseInt(ordenStr, 10);
+
+        // 6. DETECCIÓN DE REINICIO DE LISTA / DIVISIÓN EN 1
+        // Si ya veníamos listando alumnos (ej: del 1 al 24) y el orden se reinicia en 1 o 2:
+        // en planillas escolares oficiales este salto marca el comienzo del padrón de Mujeres.
+        if (
+          students.length >= 3 &&
+          lastParsedOrden >= 3 &&
+          !isNaN(ordenNum) &&
+          (ordenNum === 1 || (ordenNum <= 2 && ordenNum < lastParsedOrden - 2))
+        ) {
+          currentGenero = "Femenino";
+        }
+
+        // 7. INFERENCIA INTELIGENTE POR NOMBRE
+        const generoInferred = inferirGeneroPorNombre(nombreRaw);
+        let studentGenero = currentGenero;
+
+        if (currentGenero === "Masculino" && generoInferred === "Femenino") {
+          // Si el orden se reinició o veníamos con varios alumnos, cambiar también currentGenero
+          if (students.length >= 5 && (!isNaN(ordenNum) && ordenNum < lastParsedOrden)) {
+            currentGenero = "Femenino";
+            studentGenero = "Femenino";
+          } else if (generoInferred === "Femenino") {
+            studentGenero = "Femenino";
+          }
+        } else if (currentGenero === "Femenino") {
+          studentGenero = "Femenino";
+        }
+
+        if (!isNaN(ordenNum)) {
+          lastParsedOrden = ordenNum;
+        }
 
         students.push({
           id: students.length + 1,
-          orden: orden || String(students.length + 1),
+          orden: ordenStr || String(students.length + 1),
           nombre: nombreRaw,
-          proviene: proviene || "REGULAR",
-          genero: currentGenero,
+          proviene: "REGULAR",
+          genero: studentGenero,
           curso: cursoDetectado,
           turno: cursoDetectado.startsWith("1") || cursoDetectado.startsWith("2") || cursoDetectado.startsWith("7") ? "Mañana" : "Tarde"
         });
@@ -1051,7 +1255,12 @@ export default function CargarAlumnoView() {
                     { className: "excel-file-meta-pills" },
                     h("span", null, `Tamaño: ${excelFile.size}`),
                     h("span", null, "•"),
-                    h("span", { className: "excel-file-status-badge" }, "✓ Archivo Validado")
+                    h("span", { className: "excel-file-status-badge" },
+                      h("svg", { viewBox: "0 0 20 20", width: 12, height: 12, fill: "currentColor", style: { flexShrink: 0 } },
+                        h("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" })
+                      ),
+                      h("span", null, "Archivo Validado")
+                    )
                   )
                 )
               ),
@@ -1142,7 +1351,16 @@ export default function CargarAlumnoView() {
                   h("h4", { className: "excel-preview-title" }, "Vista Previa de Alumnos Detectados"),
                   h("span", { className: "excel-preview-subtitle" }, `Mostrando ${parsedStudents.length} alumnos detectados en la planilla:`)
                 ),
-                h("span", { className: "badge-valid-row" }, "✓ Formato Correcto")
+                h(
+                  "span",
+                  { className: "badge-valid-row" },
+                  h(
+                    "svg",
+                    { viewBox: "0 0 20 20", width: 12, height: 12, fill: "currentColor", style: { flexShrink: 0 } },
+                    h("path", { fillRule: "evenodd", d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z", clipRule: "evenodd" })
+                  ),
+                  h("span", null, "Formato Correcto")
+                )
               ),
               h(
                 "div",
@@ -1157,11 +1375,10 @@ export default function CargarAlumnoView() {
                       "tr",
                       null,
                       h("th", { style: { width: "7%", textAlign: "center" } }, "N°"),
-                      h("th", { style: { width: "30%" } }, "Apellido y Nombre"),
-                      h("th", { style: { width: "12%" } }, "Género"),
-                      h("th", { style: { width: "12%" } }, "Condición"),
-                      h("th", { style: { width: "9%", textAlign: "center" } }, "Curso"),
-                      h("th", { style: { width: "10%" } }, "Turno"),
+                      h("th", { style: { width: "36%" } }, "Apellido y Nombre"),
+                      h("th", { style: { width: "14%" } }, "Género"),
+                      h("th", { style: { width: "11%", textAlign: "center" } }, "Curso"),
+                      h("th", { style: { width: "12%" } }, "Turno"),
                       h("th", { style: { width: "14%", textAlign: "center" } }, "Estado"),
                       h("th", { style: { width: "6%", textAlign: "center" }, title: "Acciones" }, "")
                     )
@@ -1200,7 +1417,7 @@ export default function CargarAlumnoView() {
                               "td",
                               {
                                 className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "nombre" ? "editable-cell--editing" : ""}`,
-                                style: { width: "30%", overflow: "hidden", textOverflow: "ellipsis" }
+                                style: { width: "36%", overflow: "hidden", textOverflow: "ellipsis" }
                               },
                               renderEditableCell({
                                 row,
@@ -1215,7 +1432,7 @@ export default function CargarAlumnoView() {
                               "td",
                               {
                                 className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "genero" ? "editable-cell--editing" : ""}`,
-                                style: { width: "12%" }
+                                style: { width: "14%" }
                               },
                               renderEditableCell({
                                 row,
@@ -1263,42 +1480,12 @@ export default function CargarAlumnoView() {
                                       )
                               })
                             ),
-                            // 4. Condición
-                            h(
-                              "td",
-                              {
-                                className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "proviene" ? "editable-cell--editing" : ""}`,
-                                style: { width: "12%" }
-                              },
-                              renderEditableCell({
-                                row,
-                                field: "proviene",
-                                value: row.proviene,
-                                type: "select",
-                                options: CONDICION_OPTIONS,
-                                displayContent: h(
-                                  "span",
-                                  {
-                                    style: {
-                                      background: "#f8fafc",
-                                      color: "#475569",
-                                      border: "1px solid #e2e8f0",
-                                      padding: "2px 7px",
-                                      borderRadius: "6px",
-                                      fontWeight: 700,
-                                      fontSize: "11.5px"
-                                    }
-                                  },
-                                  row.proviene
-                                )
-                              })
-                            ),
-                            // 5. Curso
+                            // 4. Curso
                             h(
                               "td",
                               {
                                 className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "curso" ? "editable-cell--editing" : ""}`,
-                                style: { width: "9%", textAlign: "center" }
+                                style: { width: "11%", textAlign: "center" }
                               },
                               renderEditableCell({
                                 row,
@@ -1322,12 +1509,12 @@ export default function CargarAlumnoView() {
                                 )
                               })
                             ),
-                            // 6. Turno
+                            // 5. Turno
                             h(
                               "td",
                               {
                                 className: `editable-cell ${editingCell?.rowId === row.id && editingCell?.field === "turno" ? "editable-cell--editing" : ""}`,
-                                style: { width: "10%" }
+                                style: { width: "12%" }
                               },
                               renderEditableCell({
                                 row,
@@ -1349,7 +1536,22 @@ export default function CargarAlumnoView() {
                                       className: "badge-duplicate-row",
                                       title: `Registro con conflicto: ${duplicateStatus.reason}`
                                     },
-                                    `⚠️ ${duplicateStatus.reason}`
+                                    h(
+                                      "svg",
+                                      {
+                                        viewBox: "0 0 20 20",
+                                        width: 12.5,
+                                        height: 12.5,
+                                        fill: "currentColor",
+                                        style: { flexShrink: 0 }
+                                      },
+                                      h("path", {
+                                        fillRule: "evenodd",
+                                        d: "M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z",
+                                        clipRule: "evenodd"
+                                      })
+                                    ),
+                                    h("span", null, duplicateStatus.reason)
                                   )
                                 : h(
                                     "span",
@@ -1357,7 +1559,22 @@ export default function CargarAlumnoView() {
                                       className: "badge-valid-row",
                                       title: "Listo para alta"
                                     },
-                                    "✓ Listo para alta"
+                                    h(
+                                      "svg",
+                                      {
+                                        viewBox: "0 0 20 20",
+                                        width: 12.5,
+                                        height: 12.5,
+                                        fill: "currentColor",
+                                        style: { flexShrink: 0 }
+                                      },
+                                      h("path", {
+                                        fillRule: "evenodd",
+                                        d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z",
+                                        clipRule: "evenodd"
+                                      })
+                                    ),
+                                    h("span", null, "Listo para alta")
                                   )
                             ),
                             // 8. Acción (Eliminar fila)

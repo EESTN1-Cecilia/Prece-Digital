@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { h, IconoFigma } from "../../../layouts/site-layout.js";
 import { StudentBasicInfo } from "./student-basic-info.js";
 import { StudentSchoolInfo } from "./student-school-info.js";
@@ -6,6 +7,8 @@ import { StudentAttendanceSummary } from "./student-attendance-summary.js";
 import { StudentAlertList } from "./student-alert-list.js";
 import { StudentProfileLink } from "./student-profile-link.js";
 import { StatusBadge, ConditionBadge } from "./student-badges.js";
+import { BoletinDigitalModal } from "./boletin-digital-modal.js";
+import { obtenerLibroFolioLegajo } from "../students-service.js";
 
 /**
  * StudentSummary: Componente contenedor principal para la Ficha Resumida del Alumno
@@ -18,6 +21,15 @@ export function StudentSummary({
 }) {
   if (!resumen) return null;
 
+  const [boletinOpen, setBoletinOpen] = useState(false);
+  const [, setVersion] = useState(0);
+
+  useEffect(() => {
+    const handleUpdate = () => setVersion((v) => v + 1);
+    window.addEventListener("prece:libro-folio-updated", handleUpdate);
+    return () => window.removeEventListener("prece:libro-folio-updated", handleUpdate);
+  }, []);
+
   const {
     datosPersonales = {},
     informacionEscolar = {},
@@ -26,6 +38,13 @@ export function StudentSummary({
     alertas = [],
     actualizadoEn
   } = resumen;
+
+  const infoLegajo = obtenerLibroFolioLegajo({
+    ...datosPersonales,
+    ...informacionEscolar,
+    id: datosPersonales.id,
+    studentId: datosPersonales.id
+  });
 
   const displayNombreCompleto =
     datosPersonales.nombreCompleto ||
@@ -170,8 +189,8 @@ export function StudentSummary({
               ),
               h(
                 "span",
-                { className: "hero-pill" },
-                `Legajo: ${datosPersonales.legajo || (datosPersonales.id ? `ID: ${datosPersonales.id}` : "S/N")}`
+                { className: "hero-pill font-mono", title: `Libro: ${infoLegajo.libro} · Folio: ${infoLegajo.folio} · N° Legajo: ${infoLegajo.numLegajo}` },
+                `Legajo: (${infoLegajo.libro}-${infoLegajo.folio}-${infoLegajo.numLegajo})`
               ),
               informacionEscolar.orientacion
                 ? h(
@@ -186,6 +205,35 @@ export function StudentSummary({
         h(
           "div",
           { className: "student-hero-right" },
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-boletin-digital-styled",
+              onClick: () => setBoletinOpen(true),
+              title: "Consultar y editar Boletín Digital de Calificaciones (1° a 7° Año)",
+              "aria-label": "Boletín Digital"
+            },
+            h(
+              "svg",
+              {
+                className: "btn-boletin-icon",
+                viewBox: "0 0 24 24",
+                fill: "none",
+                stroke: "currentColor",
+                strokeWidth: "2",
+                strokeLinecap: "round",
+                strokeLinejoin: "round",
+                "aria-hidden": "true"
+              },
+              h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+              h("polyline", { points: "14 2 14 8 20 8" }),
+              h("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
+              h("line", { x1: "16", y1: "17", x2: "8", y2: "17" }),
+              h("polyline", { points: "10 9 9 9 8 9" })
+            ),
+            h("span", null, "Boletín Digital")
+          ),
           h(StudentProfileLink, {
             alumnoId: datosPersonales.id,
             url: resumen.perfilCompletoUrl,
@@ -215,6 +263,15 @@ export function StudentSummary({
         h(StudentAttendanceSummary, { inasistencias: inasistencias }),
         h(StudentAlertList, { alertas: alertas })
       )
-    )
+    ),
+
+    // Modal de Boletín Digital Oficial
+    boletinOpen
+      ? h(BoletinDigitalModal, {
+          abierto: boletinOpen,
+          onCerrar: () => setBoletinOpen(false),
+          alumno: resumen
+        })
+      : null
   );
 }
