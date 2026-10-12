@@ -157,7 +157,7 @@ export default function ServerDashboardView() {
       h(
         "div",
         { className: "secretaria-eyebrow" },
-        `${data?.institucion?.nombre || user.escuela || "E.E.S.T N° 1 MONTE GRANDE"} • ${data?.institucion?.sector || "MÓDULO SERVER / RECURSOS"}`
+        `${data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"} • ${data?.institucion?.sector || "MÓDULO SERVER / RECURSOS"}`
       )
     ),
 
@@ -222,19 +222,16 @@ export default function ServerDashboardView() {
                 "div",
                 { className: "school-crest-avatar" },
                 h("img", {
-                  src: "/assets/tecnica-n1-monte-grande.png",
-                  alt: "Escudo E.E.S.T N°1",
-                  className: "school-crest-img",
-                  onError: (e) => {
-                    e.currentTarget.src = "/assets/Técnica_N°1_Monte_Grande.png";
-                  }
+                  src: "/assets/precelogo.jpeg",
+                  alt: "Prece Digital",
+                  className: "school-crest-img"
                 })
               ),
               h(
                 "div",
                 { className: "school-crest-text" },
-                h("strong", { className: "school-crest-title" }, "E.E.S.T N°1"),
-                h("span", { className: "school-crest-subtitle" }, "Server & Recursos")
+                h("strong", { className: "school-crest-title" }, "E.E.S.T. N°1"),
+                h("span", { className: "school-crest-subtitle" }, "Cecilia Berdichevski")
               )
             )
           ),

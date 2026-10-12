@@ -4,6 +4,8 @@
 
 .alumnos-panel {
   max-width: 1160px;
+  animation: viewEnter 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 .alumnos-top-nav {

@@ -369,7 +369,7 @@ export default function JefaturaDashboardView() {
     h(
       "div",
       { className: "secretaria-top-bar" },
-      h("div", { className: "secretaria-eyebrow" }, `${user.escuela || "E.E.S.T N° 1 MONTE GRANDE"}`)
+      h("div", { className: "secretaria-eyebrow" }, `${user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"}`)
     ),
     h(
       "div",

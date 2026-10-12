@@ -4,7 +4,7 @@ import { h } from "../../../../layouts/site-layout.js";
 /**
  * StudentAcademicTab: Presenta la situación académica global y la grilla de materias en curso con calificaciones.
  */
-export function StudentAcademicTab({ situacionAcademica = {}, materias = [] }) {
+export function StudentAcademicTab({ situacionAcademica = {}, materias = [], onOpenBoletin }) {
   const getEstadoBadgeClass = (estado) => {
     const s = String(estado || "").toLowerCase();
     if (s.includes("aprobada")) return "badge-materia-aprobada";
@@ -316,7 +316,27 @@ export function StudentAcademicTab({ situacionAcademica = {}, materias = [] }) {
             h("h2", { className: "profile-section-title" }, "5. Materias y Calificaciones"),
             h("span", { className: "profile-section-subtitle-inline" }, `Listado curricular correspondiente al ciclo lectivo (${materias.length} materias)`)
           )
-        )
+        ),
+        onOpenBoletin
+          ? h(
+              "button",
+              {
+                type: "button",
+                className: "btn-boletin-digital-styled",
+                onClick: onOpenBoletin,
+                title: "Abrir Boletín Digital de Calificaciones (1° a 7° Año)"
+              },
+              h(
+                "svg",
+                { className: "btn-boletin-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+                h("polyline", { points: "14 2 14 8 20 8" }),
+                h("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
+                h("line", { x1: "16", y1: "17", x2: "8", y2: "17" })
+              ),
+              h("span", null, "Boletín Digital")
+            )
+          : null
       ),
 
       materias && materias.length > 0

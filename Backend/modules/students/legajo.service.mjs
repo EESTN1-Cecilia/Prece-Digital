@@ -324,6 +324,8 @@ const legajoService = {
           nombreCompleto: nombreCompleto(alumno),
           dni: alumno.dni,
           legajo: alumno.id,
+          libro: alumno.libro ?? "2026",
+          folio: alumno.folio ?? String(alumno.id.replace(/\D/g, "") || "1").padStart(2, "0"),
           fotoPerfil: null,
           email: alumno.email,
           telefono: alumno.telefono,
@@ -369,7 +371,9 @@ const legajoService = {
           condicion: capitalizar(alumno.condicion),
           fechaIngreso: alumno.fechaAlta,
           anioLectivoActual: anioLectivo(),
-          legajo: alumno.id
+          legajo: alumno.id,
+          libro: alumno.libro ?? "2026",
+          folio: alumno.folio ?? String(alumno.id.replace(/\D/g, "") || "1").padStart(2, "0")
         },
         contacto: {
           telefono: alumno.telefono,
