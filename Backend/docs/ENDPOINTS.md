@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 239 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -272,6 +272,10 @@ Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| GET | `/api/v1/teachers/catalogos` | `teachers.read` |
+| GET | `/api/v1/teachers/by-subject/:subjectId` | `teachers.read` |
+| GET | `/api/v1/teachers/by-course/:cursoId` | `teachers.read` |
+| GET | `/api/v1/teachers/by-division/:divisionId` | `teachers.read` |
 | POST | `/api/v1/teachers` | `teachers.write` |
 | GET | `/api/v1/teachers` | `teachers.read` |
 | GET | `/api/v1/teachers/:teacherId` | `teachers.read` |
@@ -279,12 +283,24 @@ Total: 228 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | DELETE | `/api/v1/teachers/:teacherId` | `teachers.manage` |
 | POST | `/api/v1/teachers/:teacherId/subjects` | `teachers.write` |
 | GET | `/api/v1/teachers/:teacherId/subjects` | `teachers.read` |
+| GET | `/api/v1/teachers/:teacherId/subjects/:assignmentId` | `teachers.read` |
+| POST | `/api/v1/teachers/:teacherId/courses` | `teachers.write` |
+| GET | `/api/v1/teachers/:teacherId/courses` | `teachers.read` |
+| GET | `/api/v1/teachers/:teacherId/courses/:assignmentId` | `teachers.read` |
 
 ## teacher-subjects
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| PATCH | `/api/v1/teacher-subjects/:assignmentId` | `teachers.write` |
 | DELETE | `/api/v1/teacher-subjects/:assignmentId` | `teachers.write` |
+
+## teacher-courses
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| PATCH | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
+| DELETE | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
 
 ## absences
 
