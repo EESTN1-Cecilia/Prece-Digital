@@ -17,6 +17,7 @@ import { PERMISSIONS as P } from "../config/permissions.config.mjs";
 import * as authController from "../modules/auth/auth.controller.mjs";
 import * as usersController from "../modules/auth/users.controller.mjs";
 import * as studentsController from "../modules/students/students.controller.mjs";
+import * as courseChangesController from "../modules/course-changes/course-changes.controller.mjs";
 import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
@@ -93,6 +94,23 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
   { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
+
+  /* Promocion y cambio de curso. Los literales (catalogos, asignados,
+     operaciones, masivos) van antes que :movimientoId y :operacionId porque el
+     router gana con la primera coincidencia. El destino se valida contra el
+     catalogo academico y la escuela sale del padron del alumno. */
+  { method: "GET", path: "/api/v1/movimientos-cursos/catalogos", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.getCatalogos },
+  { method: "GET", path: "/api/v1/movimientos-cursos/asignados", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.asignados },
+  { method: "GET", path: "/api/v1/movimientos-cursos/operaciones/:operacionId", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.obtenerOperacion },
+  { method: "POST", path: "/api/v1/movimientos-cursos/masivos", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.registrarMasivos },
+  { method: "GET", path: "/api/v1/movimientos-cursos", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.listarMovimientos },
+  { method: "GET", path: "/api/v1/movimientos-cursos/:movimientoId", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.obtenerMovimiento },
+  { method: "POST", path: "/api/v1/students/:studentId/promover", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.promoverAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/cambio-curso", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.cambiarCurso },
+  { method: "POST", path: "/api/v1/students/:studentId/cambio-division", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.cambiarDivision },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/movimientos-cursos", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.historialDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/movimientos-cursos/ultimo", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.ultimoDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/situacion-curso", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.situacionDeAlumno },
 
   { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },
   { method: "GET", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.listTutors },

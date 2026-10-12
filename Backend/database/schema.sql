@@ -586,6 +586,60 @@ CREATE TABLE evaluaciones_alertas (
 --         instancias_intensificacion, solicitudes_reapertura
 -- =====================================================================================
 
+-- =====================================================================================
+-- MÓDULO: PROMOCIÓN Y CAMBIO DE CURSO
+-- Tablas: movimientos_curso, operaciones_masivas_movimientos
+-- =====================================================================================
+
+-- Movimiento de curso/división de un alumno. Es inmutable: se crea y se consulta,
+-- nunca se modifica ni se borra, para que el historial académico no se sobrescriba.
+-- Guarda la ubicación anterior y la nueva, el tipo de movimiento, el período
+-- académico y el usuario responsable (siempre el autenticado).
+CREATE TABLE movimientos_curso (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  curso_anterior        TINYINT UNSIGNED NOT NULL,
+  division_anterior     VARCHAR(10)  NOT NULL,
+  curso_nuevo           TINYINT UNSIGNED NOT NULL,
+  division_nueva        VARCHAR(10)  NOT NULL,
+  tipo                  ENUM('promocion','cambio_curso','cambio_division','otro') NOT NULL,
+  anio                  SMALLINT     NOT NULL COMMENT 'Período académico (año lectivo)',
+  cuatrimestre          TINYINT      NULL,
+  fecha                 DATE         NOT NULL COMMENT 'Fecha en que se realizó el cambio',
+  motivo                VARCHAR(500) NULL,
+  registrado_por        INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que realizó la operación',
+  operacion_id          INT UNSIGNED NULL COMMENT 'Operación masiva que originó el movimiento',
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_mc_movimiento (id),
+  KEY idx_mc_estudiante (estudiante_id),
+  KEY idx_mc_destino   (curso_nuevo, division_nueva),
+  KEY idx_mc_periodo   (anio, cuatrimestre),
+  KEY idx_mc_fecha     (fecha),
+  CONSTRAINT fk_mc_escuela      FOREIGN KEY (escuela_id)      REFERENCES escuelas(id),
+  CONSTRAINT fk_mc_estudiante   FOREIGN KEY (estudiante_id)   REFERENCES estudiantes(id),
+  CONSTRAINT fk_mc_usuario      FOREIGN KEY (registrado_por)  REFERENCES usuarios(id),
+  CONSTRAINT fk_mc_operacion    FOREIGN KEY (operacion_id)    REFERENCES operaciones_masivas_movimientos(id)
+) ENGINE=InnoDB;
+
+-- Operación masiva de promociones/cambios: agrupa los movimientos de una misma
+-- carga y conserva el detalle por alumno (exitosos y fallidos) y el responsable.
+CREATE TABLE operaciones_masivas_movimientos (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  tipo                  ENUM('promocion','cambio_curso','cambio_division','otro') NOT NULL,
+  anio                  SMALLINT     NOT NULL,
+  cuatrimestre          TINYINT      NULL,
+  fecha                 DATE         NOT NULL,
+  motivo                VARCHAR(500) NULL,
+  detalle               JSON         NULL COMMENT 'Resumen por alumno: exitosos y fallidos',
+  registrado_por        INT UNSIGNED NOT NULL,
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_omm_escuela (escuela_id, creado_en),
+  CONSTRAINT fk_omm_escuela FOREIGN KEY (escuela_id)     REFERENCES escuelas(id),
+  CONSTRAINT fk_omm_usuario FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
 CREATE TABLE calificaciones_parciales (
   id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id           INT UNSIGNED NOT NULL,
