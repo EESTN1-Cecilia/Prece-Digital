@@ -441,6 +441,41 @@ CREATE TABLE seguimientos_inasistencia (
 ) ENGINE=InnoDB;
 
 -- =====================================================================================
+-- MÓDULO: CONDICIONES PARTICULARES DE ALUMNOS
+-- Tablas: condiciones_particulares
+-- =====================================================================================
+
+-- Condiciones informadas sobre un alumno (salud, accesibilidad, adaptaciones,
+-- situaciones familiares, etc.). Pueden estar activas o finalizadas; al finalizar
+-- se conservan fecha y responsable, y el registro completo queda para consulta
+-- historica. El responsable de cada operacion es siempre el usuario autenticado.
+CREATE TABLE condiciones_particulares (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  descripcion           VARCHAR(1000) NOT NULL,
+  fecha_inicio          DATE          NOT NULL COMMENT 'Fecha de registro o inicio de la condicion',
+  estado                ENUM('activa','finalizada') NOT NULL DEFAULT 'activa',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registro la condicion',
+  fecha_finalizacion    DATE          NULL COMMENT 'Fecha en que la condicion se dio por finalizada',
+  finalizado_por        INT UNSIGNED  NULL COMMENT 'Usuario autenticado que finalizo la condicion',
+  historial             JSON          NULL COMMENT 'Estado anterior en cada modificacion, para no perder informacion',
+  creado_en             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED  NULL,
+  actualizado_en        DATETIME      NULL,
+  actualizado_por       INT UNSIGNED  NULL,
+  KEY idx_cond_estudiante (estudiante_id, estado),
+  KEY idx_cond_fecha      (fecha_inicio),
+  KEY idx_cond_estado     (estado),
+  CONSTRAINT fk_cond_escuela      FOREIGN KEY (escuela_id)          REFERENCES escuelas(id),
+  CONSTRAINT fk_cond_estudiante   FOREIGN KEY (estudiante_id)       REFERENCES estudiantes(id),
+  CONSTRAINT fk_cond_responsable  FOREIGN KEY (usuario_responsable) REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_finalizado   FOREIGN KEY (finalizado_por)      REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_creado_por   FOREIGN KEY (creado_por)          REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_actualizado  FOREIGN KEY (actualizado_por)     REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
 -- MÓDULO: ALERTAS POR INASISTENCIA CONSECUTIVA
 -- Tablas: configuraciones_alertas_ausencia, inasistencias, alertas_ausencia,
 --         eventos_notificacion, evaluaciones_alertas
