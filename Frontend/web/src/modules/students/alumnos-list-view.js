@@ -5,6 +5,7 @@ import { PERMISOS, puede } from "../../utils/permisos.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../components/common/state-handlers.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
+import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
 
 export default function AlumnosListView() {
@@ -697,46 +698,92 @@ export default function AlumnosListView() {
         ? h(
             "div",
             { className: "alumnos-pagination-row" },
+            // Indicador / Resumen a la izquierda
             h(
               "div",
               { className: "pagination-info" },
+              h("span", { className: "pagination-info-dot" }),
               h(
                 "span",
                 { className: "pagination-counter-text" },
-                `Página ${pagination.page} de ${pagination.totalPages} • Total: ${pagination.total} alumnos`
+                h("span", { className: "pagination-text-muted" }, "Página "),
+                h("strong", { className: "pagination-text-bold" }, String(pagination.page)),
+                h("span", { className: "pagination-text-muted" }, ` de ${pagination.totalPages}`),
+                h("span", { className: "pagination-divider" }, "•"),
+                h("strong", { className: "pagination-text-bold" }, String(pagination.total)),
+                h("span", { className: "pagination-text-muted" }, " alumnos")
               )
             ),
+            // Controles de navegación y números de página al centro
             h(
-              "div",
-              { className: "pagination-controls-buttons" },
+              "nav",
+              { className: "pagination-controls-buttons", "aria-label": "Navegación de páginas" },
               h(
                 "button",
                 {
                   type: "button",
-                  className: "pagination-btn",
+                  className: "pagination-nav-btn pagination-nav-btn--prev",
                   disabled: !pagination.hasPrevPage || currentPage <= 1,
                   onClick: () => setCurrentPage((prev) => Math.max(1, prev - 1)),
-                  title: "Página anterior"
+                  title: "Ir a la página anterior",
+                  "aria-label": "Página anterior"
                 },
-                "← Anterior"
+                h(
+                  "svg",
+                  { className: "pagination-nav-icon", viewBox: "0 0 20 20", fill: "currentColor" },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z",
+                    clipRule: "evenodd"
+                  })
+                ),
+                h("span", { className: "pagination-nav-label" }, "Anterior")
               ),
               h(
-                "span",
-                { className: "pagination-current-badge" },
-                `Pág. ${currentPage}`
+                "div",
+                { className: "pagination-pages-list" },
+                paginasVisibles(currentPage, pagination.totalPages, 5).map((num, idx) => {
+                  if (num === "…") {
+                    return h("span", { key: `ellipsis-${idx}`, className: "pagination-ellipsis" }, "…");
+                  }
+                  const isActive = num === currentPage;
+                  return h(
+                    "button",
+                    {
+                      key: `page-${num}`,
+                      type: "button",
+                      className: `pagination-page-btn ${isActive ? "pagination-page-btn--active" : ""}`,
+                      onClick: () => setCurrentPage(num),
+                      title: `Ir a la página ${num}`,
+                      "aria-current": isActive ? "page" : undefined
+                    },
+                    String(num)
+                  );
+                })
               ),
               h(
                 "button",
                 {
                   type: "button",
-                  className: "pagination-btn",
+                  className: "pagination-nav-btn pagination-nav-btn--next",
                   disabled: !pagination.hasNextPage || currentPage >= pagination.totalPages,
                   onClick: () => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1)),
-                  title: "Página siguiente"
+                  title: "Ir a la página siguiente",
+                  "aria-label": "Página siguiente"
                 },
-                "Siguiente →"
+                h("span", { className: "pagination-nav-label" }, "Siguiente"),
+                h(
+                  "svg",
+                  { className: "pagination-nav-icon", viewBox: "0 0 20 20", fill: "currentColor" },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z",
+                    clipRule: "evenodd"
+                  })
+                )
               )
             ),
+            // Acción secundaria a la derecha
             h(
               "div",
               { className: "alumnos-bottom-actions" },
