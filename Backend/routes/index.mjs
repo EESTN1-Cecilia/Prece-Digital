@@ -17,6 +17,7 @@ import { PERMISSIONS as P } from "../config/permissions.config.mjs";
 import * as authController from "../modules/auth/auth.controller.mjs";
 import * as usersController from "../modules/auth/users.controller.mjs";
 import * as studentsController from "../modules/students/students.controller.mjs";
+import * as bookRegistryController from "../modules/book-registry/book-registry.controller.mjs";
 import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
@@ -93,6 +94,18 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
   { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
+
+  /* Libro Matriz digital. Los literales (catalogos, exists) van antes que los
+     parametros porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/students/:studentId/book-registry/exists", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.existeDeAlumno },
+  { method: "GET", path: "/api/v1/students/:studentId/book-registry", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.obtenerDeAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/book-registry", middlewares: [verifyToken, required(P.BOOK_REGISTRY_WRITE)], handler: bookRegistryController.crearRegistro },
+  { method: "GET", path: "/api/v1/book-registry/catalogos", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.catalogos },
+  { method: "GET", path: "/api/v1/book-registry", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.listarRegistros },
+  { method: "GET", path: "/api/v1/book-registry/:registryId/historial", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.historialDeRegistro },
+  { method: "GET", path: "/api/v1/book-registry/:registryId", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.obtenerRegistro },
+  { method: "PATCH", path: "/api/v1/book-registry/:registryId", middlewares: [verifyToken, required(P.BOOK_REGISTRY_WRITE)], handler: bookRegistryController.actualizarRegistro },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/libro-matriz", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.obtenerDeAlumno },
 
   { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },
   { method: "GET", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.listTutors },

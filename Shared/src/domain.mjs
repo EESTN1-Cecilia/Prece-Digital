@@ -14,6 +14,7 @@ export const modules = [
   { id: "users", name: "Usuarios", description: "Cuentas del sistema y su estado." },
   { id: "students", name: "Estudiantes", description: "Legajo, datos personales, observaciones, pases y constancias." },
   { id: "observations", name: "Observaciones", description: "Observaciones de preceptoria, secretaria y equipo docente sobre alumnos." },
+  { id: "book-registry", name: "Libro Matriz", description: "Libro Matriz digital de los alumnos y su historial de modificaciones." },
   { id: "attendance", name: "Asistencia", description: "Registro y consulta de asistencias." },
   { id: "attendance-alerts", name: "Alertas por inasistencia", description: "Deteccion de inasistencias consecutivas y avisos a las familias." },
   { id: "attendance-followups", name: "Seguimiento de inasistencias", description: "Intervenciones de la institucion ante inasistencias de alumnos." },
