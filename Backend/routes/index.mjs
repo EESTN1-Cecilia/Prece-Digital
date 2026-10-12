@@ -20,6 +20,7 @@ import * as studentsController from "../modules/students/students.controller.mjs
 import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
+import * as gradesController from "../modules/grades/grades.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
 import * as attendanceAlertsController from "../modules/attendance-alerts/attendance-alerts.controller.mjs";
 import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
@@ -149,6 +150,19 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/situacion-academica", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getSituacionDeAlumno },
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getSituacionDeAlumnoYMateria },
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/historial-academico", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getHistorialDeAlumno },
+
+  /* Calificaciones: los literales (catalogos) y las consultas por alumno/docente
+     van antes que /calificaciones/:calificacionId porque el router gana con la
+     primera coincidencia. */
+  { method: "GET", path: "/api/v1/calificaciones/catalogos", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCatalogos },
+  { method: "POST", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.createCalificacion },
+  { method: "GET", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.listCalificaciones },
+  { method: "GET", path: "/api/v1/calificaciones/:calificacionId", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacion },
+  { method: "PATCH", path: "/api/v1/calificaciones/:calificacionId", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.updateCalificacion },
+  { method: "DELETE", path: "/api/v1/calificaciones/:calificacionId", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.deleteCalificacion },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacionesDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/calificaciones/resumen", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getResumenDeAlumno },
+  { method: "GET", path: "/api/v1/docentes/:docenteId/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacionesDeDocente },
 
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },

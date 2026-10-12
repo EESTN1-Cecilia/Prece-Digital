@@ -107,6 +107,22 @@ const teachersRepository = {
     return null;
   },
 
+  findDocenteByUserId(userId, escuelaId) {
+    this.init();
+
+    if (!userId) {
+      return null;
+    }
+
+    for (const docente of getStore().teachers.values()) {
+      if (docente.userId === userId && (!escuelaId || docente.escuelaId === escuelaId)) {
+        return cloneDeep(docente);
+      }
+    }
+
+    return null;
+  },
+
   listDocentes({ escuelaId, estado, q } = {}) {
     this.init();
     const buscado = normalizarTexto(q);
