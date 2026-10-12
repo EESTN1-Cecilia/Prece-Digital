@@ -5,7 +5,8 @@
    - alumno: students.repository (unica fuente de alumnos)
    - tutores: modulo tutors
    - situacion academica, materias e historial: modulo academic-records
-   - observaciones, pases, constancias y alertas descartadas: students.repository
+   - observaciones: modulo observations
+   - pases, constancias y alertas descartadas: students.repository
 
    Asistencia todavia no tiene modulo en el backend: los bloques de inasistencias
    se devuelven en cero con `disponible: false`, sin inventar datos. */
@@ -15,13 +16,12 @@ import { buscarDivision, CURSOS_VALIDOS } from "./catalogo.mjs";
 import { vistaAlumno } from "./students.service.mjs";
 import tutorsRepository from "../tutors/tutors.repository.mjs";
 import academicRecordsRepository from "../academic-records/academic-records.repository.mjs";
+import observationsRepository from "../observations/observations.repository.mjs";
+import { vistaObservacion } from "../observations/observations.service.mjs";
 import { permisosDelUsuario } from "../auth/permission.service.mjs";
 import { PERMISSIONS } from "../../config/permissions.config.mjs";
 import { errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
 
-const TIPOS_OBSERVACION = ["Académica", "Convivencia", "Asistencia", "Administrativa", "Pedagógica"];
-const ESTADOS_OBSERVACION = ["Activa", "Modificada", "Histórica"];
-const DESCRIPCION_MAXIMA = 500;
 const INSTITUCION = "E.E.S.T N° 1 Monte Grande";
 
 /* ---------------- Utilidades ---------------- */
@@ -61,10 +61,6 @@ function turnoTaller(turno) {
   if (turno === "mañana") return "Tarde";
   if (turno === "tarde") return "Mañana";
   return null;
-}
-
-function nombreActor(user) {
-  return user?.displayName ?? user?.email ?? "Usuario del sistema";
 }
 
 /* ---------------- Situacion academica ---------------- */
@@ -248,65 +244,6 @@ function alertasDelAlumno(alumno, academico) {
   return alertas.filter((alerta) => !studentRepository.alertaDescartada(alerta.id));
 }
 
-/* ---------------- Observaciones ---------------- */
-
-function vistaObservacion(registro) {
-  return {
-    id: registro.id,
-    alumnoId: registro.alumnoId,
-    alumno: registro.alumno,
-    dni: registro.dni,
-    fecha: registro.fecha,
-    tipo: registro.tipo,
-    descripcion: registro.descripcion,
-    sector: registro.sector,
-    responsable: registro.responsable,
-    usuarioResponsable: registro.responsable,
-    estado: registro.estado,
-    creadoPor: registro.creadoPor,
-    creadoEn: registro.creadoEn,
-    actualizadoEn: registro.actualizadoEn
-  };
-}
-
-function validarObservacion(datos = {}) {
-  const errores = [];
-  const descripcion = String(datos.descripcion ?? "").trim();
-  const tipo = String(datos.tipo ?? "").trim();
-  const fecha = String(datos.fecha ?? hoy()).trim();
-  const estado = String(datos.estado ?? "Activa").trim() || "Activa";
-
-  if (!descripcion) {
-    errores.push({ field: "descripcion", message: "La descripcion es obligatoria." });
-  } else if (descripcion.length > DESCRIPCION_MAXIMA) {
-    errores.push({ field: "descripcion", message: `La descripcion admite hasta ${DESCRIPCION_MAXIMA} caracteres.` });
-  }
-
-  if (!TIPOS_OBSERVACION.includes(tipo)) {
-    errores.push({ field: "tipo", message: `El tipo debe ser uno de: ${TIPOS_OBSERVACION.join(", ")}.` });
-  }
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    errores.push({ field: "fecha", message: "La fecha debe tener formato AAAA-MM-DD." });
-  }
-
-  if (!ESTADOS_OBSERVACION.includes(estado)) {
-    errores.push({ field: "estado", message: `El estado debe ser uno de: ${ESTADOS_OBSERVACION.join(", ")}.` });
-  }
-
-  if (errores.length) {
-    throw errorDeValidacion(errores);
-  }
-
-  return {
-    descripcion,
-    tipo,
-    fecha,
-    estado,
-    sector: String(datos.sector ?? "").trim().slice(0, 80) || null
-  };
-}
-
 /* ---------------- Servicio ---------------- */
 
 const legajoService = {
@@ -392,7 +329,7 @@ const legajoService = {
         },
         materias: situaciones.filter((situacion) => situacion.anio === anioLectivo() || situacion.tipo !== "cursada").map((situacion) => materiaParaPerfil(situacion, alumno)),
         inasistencias: { resumen: { ...inasistenciasSinDatos(), situacionActual: "Sin registros de asistencia" }, detalle: [] },
-        observaciones: studentRepository.listarObservaciones({ alumnoId: alumno.id }).map(vistaObservacion),
+        observaciones: observationsRepository.listObservations({ alumnoId: alumno.id }).map(vistaObservacion),
         condicionesParticulares: { salud: [], pedagogicas: [] },
         libroMatriz: libroMatriz(situaciones, alumno),
         historialCambios: studentRepository.listarTraza(alumno.id).map((entrada) => ({
@@ -415,31 +352,6 @@ const legajoService = {
         actualizadoEn: alumno.actualizadoEn
       }
     };
-  },
-
-  listarObservaciones(alumnoId) {
-    if (alumnoId) {
-      alumnoExistente(alumnoId);
-    }
-
-    return { data: studentRepository.listarObservaciones({ alumnoId }).map(vistaObservacion) };
-  },
-
-  crearObservacion(alumnoId, datos, user) {
-    const alumno = alumnoExistente(alumnoId);
-    const entrada = validarObservacion(datos);
-
-    const registro = studentRepository.crearObservacion({
-      ...entrada,
-      alumnoId: alumno.id,
-      alumno: nombreCompleto(alumno),
-      dni: alumno.dni,
-      /* El responsable es siempre quien esta autenticado: no lo decide el cliente. */
-      responsable: nombreActor(user),
-      creadoPor: user.id
-    });
-
-    return { statusCode: 201, body: { data: vistaObservacion(registro) } };
   },
 
   iniciarPase(alumnoId, datos = {}, user) {

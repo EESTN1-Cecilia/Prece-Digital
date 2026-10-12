@@ -27,5 +27,8 @@ export function resetStore() {
   if (store.requests) store.requests.clear();
   if (store.requestComments) store.requestComments.clear();
   if (store.reservations) store.reservations.clear();
+  if (store.observations) store.observations.clear();
+  if (store.observationFollowups) store.observationFollowups.clear();
+  if (store.observationsAudit) store.observationsAudit.length = 0;
 }
 
