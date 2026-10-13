@@ -1,6 +1,7 @@
 import { seedAuthData } from "./auth.seed.mjs";
 import { seedStudents } from "./students.seed.mjs";
 import { seedAcademic } from "./academic.seed.mjs";
+import { seedTeachers } from "./teachers.seed.mjs";
 import { seedAcademicRecords } from "./academic-records.seed.mjs";
 import { seedAttendanceFollowups } from "./attendance-followups.seed.mjs";
 import { seedObservations } from "./observations.seed.mjs";
@@ -16,6 +17,7 @@ export async function seedDesarrollo() {
   await seedAuthData();
   seedStudents();
   seedAcademic();
+  seedTeachers();
   seedAcademicRecords();
   seedInasistencias();
   seedTutores();

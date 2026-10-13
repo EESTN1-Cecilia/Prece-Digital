@@ -22,6 +22,10 @@ export function resetStore() {
   store.auditLogs.clear();
   store.errorLogs.clear();
   store.rolePermissions.clear();
+  if (store.teachers) store.teachers.clear();
+  if (store.teacherSubjects) store.teacherSubjects.clear();
+  if (store.teacherCourses) store.teacherCourses.clear();
+  if (store.teachersAudit) store.teachersAudit.length = 0;
   if (store.inventoryItems) store.inventoryItems.clear();
   if (store.inventoryMovements) store.inventoryMovements.clear();
   if (store.requests) store.requests.clear();

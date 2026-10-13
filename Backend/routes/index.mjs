@@ -200,6 +200,12 @@ export const apiRoutes = [
   { method: "PATCH", path: "/api/v1/schedule-assignments/:assignmentId", middlewares: [verifyToken, required(P.SCHEDULES_WRITE)], handler: schedulesController.updateAssignment },
   { method: "DELETE", path: "/api/v1/schedule-assignments/:assignmentId", middlewares: [verifyToken, required(P.SCHEDULES_MANAGE)], handler: schedulesController.deleteAssignment },
 
+  /* Docentes: primero los literales (catalogos, by-*) porque matchRoute se
+     queda con la primera coincidencia y /teachers/:teacherId es generico. */
+  { method: "GET", path: "/api/v1/teachers/catalogos", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getCatalogos },
+  { method: "GET", path: "/api/v1/teachers/by-subject/:subjectId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachersBySubject },
+  { method: "GET", path: "/api/v1/teachers/by-course/:cursoId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachersByCourse },
+  { method: "GET", path: "/api/v1/teachers/by-division/:divisionId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachersByDivision },
   { method: "POST", path: "/api/v1/teachers", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.createTeacher },
   { method: "GET", path: "/api/v1/teachers", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachers },
   { method: "GET", path: "/api/v1/teachers/:teacherId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getTeacher },
@@ -207,7 +213,14 @@ export const apiRoutes = [
   { method: "DELETE", path: "/api/v1/teachers/:teacherId", middlewares: [verifyToken, required(P.TEACHERS_MANAGE)], handler: teachersController.deactivateTeacher },
   { method: "POST", path: "/api/v1/teachers/:teacherId/subjects", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.addSubjectToTeacher },
   { method: "GET", path: "/api/v1/teachers/:teacherId/subjects", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeacherSubjects },
+  { method: "GET", path: "/api/v1/teachers/:teacherId/subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getTeacherSubject },
+  { method: "PATCH", path: "/api/v1/teacher-subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.updateTeacherSubject },
   { method: "DELETE", path: "/api/v1/teacher-subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeSubjectFromTeacher },
+  { method: "POST", path: "/api/v1/teachers/:teacherId/courses", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.addCourseToTeacher },
+  { method: "GET", path: "/api/v1/teachers/:teacherId/courses", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeacherCourses },
+  { method: "GET", path: "/api/v1/teachers/:teacherId/courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getTeacherCourse },
+  { method: "PATCH", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.updateTeacherCourse },
+  { method: "DELETE", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeCourseFromTeacher },
 
   { method: "POST", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createAbsence },
 
