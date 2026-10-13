@@ -229,6 +229,94 @@ CREATE TABLE asignaciones_docentes (
 ) ENGINE=InnoDB;
 
 -- =====================================================================================
+-- MÓDULO: DOCENTES
+-- Tablas: docentes, docentes_asignaciones_materias, docentes_asignaciones_cursos
+--
+-- El módulo de gestión de docentes guarda el perfil del docente y sus asociaciones
+-- con la estructura académica (materias y cursos/divisiones) por período lectivo,
+-- con historial de cambios y baja lógica. Se diferencia de `asignaciones_docentes`
+-- (módulo de estructura académica), que queda como relación histórica usada por
+-- asistencias y calificaciones.
+-- =====================================================================================
+
+-- Perfil del docente. La identidad y el acceso siguen en usuarios (usuario_id);
+-- este registro agrega datos personales, título, especialidades y estado.
+CREATE TABLE docentes (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id       INT UNSIGNED NOT NULL,
+  usuario_id       INT UNSIGNED NULL COMMENT 'Cuenta de acceso asociada (opcional)',
+  apellido         VARCHAR(100) NOT NULL,
+  nombre           VARCHAR(100) NOT NULL,
+  tipo_documento   ENUM('dni','lc','le','ci','pasaporte') NOT NULL DEFAULT 'dni',
+  documento        VARCHAR(12)  NOT NULL,
+  email            VARCHAR(150) NOT NULL,
+  telefono         VARCHAR(30)  NULL,
+  titulo           VARCHAR(150) NULL,
+  especialidades   JSON         NULL COMMENT 'Lista de especialidades declaradas',
+  estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+  activo           TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '0 cuando estado=inactivo (compatibilidad)',
+  creado_por       INT UNSIGNED NULL,
+  actualizado_por  INT UNSIGNED NULL,
+  creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  fecha_baja       DATETIME     NULL,
+  UNIQUE KEY uq_docente_documento (escuela_id, documento),
+  UNIQUE KEY uq_docente_email (escuela_id, email),
+  CONSTRAINT fk_docente_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_docente_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Materias que dicta un docente, con su alcance (curso/división) y período lectivo.
+CREATE TABLE docentes_asignaciones_materias (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id       INT UNSIGNED NOT NULL,
+  docente_id       INT UNSIGNED NOT NULL,
+  materia_id       INT UNSIGNED NOT NULL,
+  anio_division_id INT UNSIGNED NULL COMMENT 'Alcance curso/división; NULL = sin alcance puntual',
+  anio_lectivo     SMALLINT UNSIGNED NOT NULL,
+  cuatrimestre     TINYINT UNSIGNED NULL COMMENT 'NULL = período anual',
+  horas_semanales  SMALLINT UNSIGNED NULL,
+  observaciones    VARCHAR(500) NULL,
+  estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+  activo           TINYINT(1)   NOT NULL DEFAULT 1,
+  historial        JSON         NULL COMMENT 'Estado anterior en cada modificación, para no perder información',
+  creado_por       INT UNSIGNED NULL,
+  actualizado_por  INT UNSIGNED NULL,
+  creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  fecha_baja       DATETIME     NULL,
+  UNIQUE KEY uq_asigm_docente (docente_id, materia_id, anio_division_id, anio_lectivo, cuatrimestre),
+  CONSTRAINT fk_asigm_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_asigm_docente FOREIGN KEY (docente_id) REFERENCES docentes(id),
+  CONSTRAINT fk_asigm_materia FOREIGN KEY (materia_id) REFERENCES materias(id),
+  CONSTRAINT fk_asigm_aniodiv FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id)
+) ENGINE=InnoDB;
+
+-- Cursos/divisiones a los que queda vinculado un docente, con su rol y período lectivo.
+CREATE TABLE docentes_asignaciones_cursos (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id       INT UNSIGNED NOT NULL,
+  docente_id       INT UNSIGNED NOT NULL,
+  anio_division_id INT UNSIGNED NOT NULL,
+  rol_asignacion   ENUM('titular','suplente','ayudante') NOT NULL DEFAULT 'titular',
+  anio_lectivo     SMALLINT UNSIGNED NOT NULL,
+  cuatrimestre     TINYINT UNSIGNED NULL COMMENT 'NULL = período anual',
+  observaciones    VARCHAR(500) NULL,
+  estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+  activo           TINYINT(1)   NOT NULL DEFAULT 1,
+  historial        JSON         NULL COMMENT 'Estado anterior en cada modificación, para no perder información',
+  creado_por       INT UNSIGNED NULL,
+  actualizado_por  INT UNSIGNED NULL,
+  creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  fecha_baja       DATETIME     NULL,
+  UNIQUE KEY uq_asigc_docente (docente_id, anio_division_id, rol_asignacion, anio_lectivo, cuatrimestre),
+  CONSTRAINT fk_asigc_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_asigc_docente FOREIGN KEY (docente_id) REFERENCES docentes(id),
+  CONSTRAINT fk_asigc_aniodiv FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
 -- MÓDULO: ESTUDIANTES
 -- Tablas: estudiantes, contacto_responsable, estudiante_contacto, datos_salud, pases,
 --         asistencias_diarias, asistencias_materia, conflictos_asistencia,
