@@ -2,8 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 240 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
-Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 249 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -111,6 +110,9 @@ Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones/resumen` | `observations.read` |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos` | `course-changes.read` |
+| GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos/ultimo` | `course-changes.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-curso` | `course-changes.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
@@ -151,23 +153,6 @@ Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/movimientos-cursos/masivos` | `course-changes.write` |
 | GET | `/api/v1/movimientos-cursos` | `course-changes.read` |
 | GET | `/api/v1/movimientos-cursos/:movimientoId` | `course-changes.read` |
-
-## alumnos
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos` | `course-changes.read` |
-| GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos/ultimo` | `course-changes.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-curso` | `course-changes.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## tutors
 
