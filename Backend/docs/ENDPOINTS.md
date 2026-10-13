@@ -3,6 +3,8 @@
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
 Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 239 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -88,7 +90,35 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| GET | `/api/v1/observations/catalogos` | `observations.read` |
 | GET | `/api/v1/observations` | `observations.read` |
+| GET | `/api/v1/observations/:observationId` | `observations.read` |
+| PATCH | `/api/v1/observations/:observationId` | `observations.write` |
+| POST | `/api/v1/observations/:observationId/seguimientos` | `observations.write` |
+| GET | `/api/v1/observations/:observationId/seguimientos` | `observations.read` |
+
+## seguimientos-observacion
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/seguimientos-observacion/:seguimientoId` | `observations.read` |
+| PATCH | `/api/v1/seguimientos-observacion/:seguimientoId` | `observations.write` |
+
+## alumnos
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/alumnos/:alumnoId/observaciones/resumen` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/observaciones` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## dashboard
 
@@ -190,20 +220,6 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.read` |
 | PATCH | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.write` |
 
-## alumnos
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
-
 ## buildings
 
 | Metodo | Ruta | Permiso |
@@ -273,6 +289,10 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| GET | `/api/v1/teachers/catalogos` | `teachers.read` |
+| GET | `/api/v1/teachers/by-subject/:subjectId` | `teachers.read` |
+| GET | `/api/v1/teachers/by-course/:cursoId` | `teachers.read` |
+| GET | `/api/v1/teachers/by-division/:divisionId` | `teachers.read` |
 | POST | `/api/v1/teachers` | `teachers.write` |
 | GET | `/api/v1/teachers` | `teachers.read` |
 | GET | `/api/v1/teachers/:teacherId` | `teachers.read` |
@@ -280,12 +300,24 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | DELETE | `/api/v1/teachers/:teacherId` | `teachers.manage` |
 | POST | `/api/v1/teachers/:teacherId/subjects` | `teachers.write` |
 | GET | `/api/v1/teachers/:teacherId/subjects` | `teachers.read` |
+| GET | `/api/v1/teachers/:teacherId/subjects/:assignmentId` | `teachers.read` |
+| POST | `/api/v1/teachers/:teacherId/courses` | `teachers.write` |
+| GET | `/api/v1/teachers/:teacherId/courses` | `teachers.read` |
+| GET | `/api/v1/teachers/:teacherId/courses/:assignmentId` | `teachers.read` |
 
 ## teacher-subjects
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| PATCH | `/api/v1/teacher-subjects/:assignmentId` | `teachers.write` |
 | DELETE | `/api/v1/teacher-subjects/:assignmentId` | `teachers.write` |
+
+## teacher-courses
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| PATCH | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
+| DELETE | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
 
 ## absences
 
