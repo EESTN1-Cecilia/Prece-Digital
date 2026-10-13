@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 287 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -81,6 +81,14 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/students/:studentId/observations` | `observations.write` |
 | POST | `/api/v1/students/:studentId/transfers` | `students.write` |
 | POST | `/api/v1/students/:studentId/certificate` | `documents.write` |
+| GET | `/api/v1/students/:studentId/particular-conditions` | `particular-conditions.read` |
+| POST | `/api/v1/students/:studentId/particular-conditions` | `particular-conditions.write` |
+| POST | `/api/v1/students/:studentId/promover` | `course-changes.write` |
+| POST | `/api/v1/students/:studentId/cambio-curso` | `course-changes.write` |
+| POST | `/api/v1/students/:studentId/cambio-division` | `course-changes.write` |
+| GET | `/api/v1/students/:studentId/book-registry/exists` | `book-registry.read` |
+| GET | `/api/v1/students/:studentId/book-registry` | `book-registry.read` |
+| POST | `/api/v1/students/:studentId/book-registry` | `book-registry.write` |
 | POST | `/api/v1/students/:studentId/tutors` | `students.write` |
 | GET | `/api/v1/students/:studentId/tutors` | `students.read` |
 
@@ -88,7 +96,43 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| GET | `/api/v1/observations/catalogos` | `observations.read` |
 | GET | `/api/v1/observations` | `observations.read` |
+| GET | `/api/v1/observations/:observationId` | `observations.read` |
+| PATCH | `/api/v1/observations/:observationId` | `observations.write` |
+| POST | `/api/v1/observations/:observationId/seguimientos` | `observations.write` |
+| GET | `/api/v1/observations/:observationId/seguimientos` | `observations.read` |
+
+## seguimientos-observacion
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/seguimientos-observacion/:seguimientoId` | `observations.read` |
+| PATCH | `/api/v1/seguimientos-observacion/:seguimientoId` | `observations.write` |
+
+## alumnos
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/alumnos/:alumnoId/observaciones/resumen` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/observaciones` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/condiciones/resumen` | `particular-conditions.read` |
+| GET | `/api/v1/alumnos/:alumnoId/condiciones` | `particular-conditions.read` |
+| GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos` | `course-changes.read` |
+| GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos/ultimo` | `course-changes.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-curso` | `course-changes.read` |
+| GET | `/api/v1/alumnos/:alumnoId/libro-matriz` | `book-registry.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/calificaciones` | `grades.read` |
+| GET | `/api/v1/alumnos/:alumnoId/calificaciones/resumen` | `grades.read` |
+| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## dashboard
 
@@ -109,6 +153,37 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
 | POST | `/api/v1/alerts/:alertId/dismiss` | `students.write` |
+
+## particular-conditions
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/particular-conditions/catalogos` | `particular-conditions.read` |
+| GET | `/api/v1/particular-conditions` | `particular-conditions.read` |
+| GET | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.read` |
+| PATCH | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.write` |
+| POST | `/api/v1/particular-conditions/:conditionId/finalizar` | `particular-conditions.write` |
+
+## movimientos-cursos
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/movimientos-cursos/catalogos` | `course-changes.read` |
+| GET | `/api/v1/movimientos-cursos/asignados` | `course-changes.read` |
+| GET | `/api/v1/movimientos-cursos/operaciones/:operacionId` | `course-changes.read` |
+| POST | `/api/v1/movimientos-cursos/masivos` | `course-changes.write` |
+| GET | `/api/v1/movimientos-cursos` | `course-changes.read` |
+| GET | `/api/v1/movimientos-cursos/:movimientoId` | `course-changes.read` |
+
+## book-registry
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/book-registry/catalogos` | `book-registry.read` |
+| GET | `/api/v1/book-registry` | `book-registry.read` |
+| GET | `/api/v1/book-registry/:registryId/historial` | `book-registry.read` |
+| GET | `/api/v1/book-registry/:registryId` | `book-registry.read` |
+| PATCH | `/api/v1/book-registry/:registryId` | `book-registry.write` |
 
 ## tutors
 
@@ -190,19 +265,22 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.read` |
 | PATCH | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.write` |
 
-## alumnos
+## calificaciones
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
+| GET | `/api/v1/calificaciones/catalogos` | `grades.read` |
+| POST | `/api/v1/calificaciones` | `grades.write` |
+| GET | `/api/v1/calificaciones` | `grades.read` |
+| GET | `/api/v1/calificaciones/:calificacionId` | `grades.read` |
+| PATCH | `/api/v1/calificaciones/:calificacionId` | `grades.write` |
+| DELETE | `/api/v1/calificaciones/:calificacionId` | `grades.write` |
+
+## docentes
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/docentes/:docenteId/calificaciones` | `grades.read` |
 
 ## buildings
 
@@ -273,6 +351,10 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| GET | `/api/v1/teachers/catalogos` | `teachers.read` |
+| GET | `/api/v1/teachers/by-subject/:subjectId` | `teachers.read` |
+| GET | `/api/v1/teachers/by-course/:cursoId` | `teachers.read` |
+| GET | `/api/v1/teachers/by-division/:divisionId` | `teachers.read` |
 | POST | `/api/v1/teachers` | `teachers.write` |
 | GET | `/api/v1/teachers` | `teachers.read` |
 | GET | `/api/v1/teachers/:teacherId` | `teachers.read` |
@@ -280,12 +362,24 @@ Total: 229 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | DELETE | `/api/v1/teachers/:teacherId` | `teachers.manage` |
 | POST | `/api/v1/teachers/:teacherId/subjects` | `teachers.write` |
 | GET | `/api/v1/teachers/:teacherId/subjects` | `teachers.read` |
+| GET | `/api/v1/teachers/:teacherId/subjects/:assignmentId` | `teachers.read` |
+| POST | `/api/v1/teachers/:teacherId/courses` | `teachers.write` |
+| GET | `/api/v1/teachers/:teacherId/courses` | `teachers.read` |
+| GET | `/api/v1/teachers/:teacherId/courses/:assignmentId` | `teachers.read` |
 
 ## teacher-subjects
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| PATCH | `/api/v1/teacher-subjects/:assignmentId` | `teachers.write` |
 | DELETE | `/api/v1/teacher-subjects/:assignmentId` | `teachers.write` |
+
+## teacher-courses
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| PATCH | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
+| DELETE | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
 
 ## absences
 

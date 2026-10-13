@@ -17,9 +17,14 @@ import { PERMISSIONS as P } from "../config/permissions.config.mjs";
 import * as authController from "../modules/auth/auth.controller.mjs";
 import * as usersController from "../modules/auth/users.controller.mjs";
 import * as studentsController from "../modules/students/students.controller.mjs";
+import * as courseChangesController from "../modules/course-changes/course-changes.controller.mjs";
+import * as bookRegistryController from "../modules/book-registry/book-registry.controller.mjs";
+import * as particularConditionsController from "../modules/particular-conditions/particular-conditions.controller.mjs";
+import * as observationsController from "../modules/observations/observations.controller.mjs";
 import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
+import * as gradesController from "../modules/grades/grades.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
 import * as attendanceAlertsController from "../modules/attendance-alerts/attendance-alerts.controller.mjs";
 import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
@@ -84,16 +89,68 @@ export const apiRoutes = [
   { method: "DELETE", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.desactivarAlumno },
   { method: "GET", path: "/api/v1/students/:studentId/summary", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerResumen },
   { method: "GET", path: "/api/v1/students/:studentId/profile", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerPerfil },
-  { method: "GET", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservacionesDeAlumno },
-  { method: "POST", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: studentsController.crearObservacion },
+  { method: "GET", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.listarDeAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.crearObservacion },
   { method: "POST", path: "/api/v1/students/:studentId/transfers", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.iniciarPase },
   { method: "POST", path: "/api/v1/students/:studentId/certificate", middlewares: [verifyToken, required(P.DOCUMENTS_WRITE)], handler: studentsController.emitirConstancia },
-  { method: "GET", path: "/api/v1/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservaciones },
+
+  /* Observaciones de alumnos. Los literales (catalogos) van antes que los
+     parametros porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/observations/catalogos", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.catalogos },
+  { method: "GET", path: "/api/v1/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.listarObservaciones },
+  { method: "GET", path: "/api/v1/observations/:observationId", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.obtenerObservacion },
+  { method: "PATCH", path: "/api/v1/observations/:observationId", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.actualizarObservacion },
+  { method: "POST", path: "/api/v1/observations/:observationId/seguimientos", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.crearSeguimiento },
+  { method: "GET", path: "/api/v1/observations/:observationId/seguimientos", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.listarSeguimientos },
+  { method: "GET", path: "/api/v1/seguimientos-observacion/:seguimientoId", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.obtenerSeguimiento },
+  { method: "PATCH", path: "/api/v1/seguimientos-observacion/:seguimientoId", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.actualizarSeguimiento },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/observaciones/resumen", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.resumenDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/observaciones", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.historialDeAlumno },
   { method: "GET", path: "/api/v1/dashboard/secretaria", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.tableroSecretaria },
   { method: "GET", path: "/api/v1/jefatura/cursos-grupos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: jefaturaController.listCursosGrupos },
   { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
   { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
+
+  /* Condiciones particulares de alumnos. Los literales (catalogos) van antes que
+     los parametros porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/students/:studentId/particular-conditions", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_READ)], handler: particularConditionsController.listarDeAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/particular-conditions", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_WRITE)], handler: particularConditionsController.crearCondicion },
+  { method: "GET", path: "/api/v1/particular-conditions/catalogos", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_READ)], handler: particularConditionsController.catalogos },
+  { method: "GET", path: "/api/v1/particular-conditions", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_READ)], handler: particularConditionsController.listarCondiciones },
+  { method: "GET", path: "/api/v1/particular-conditions/:conditionId", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_READ)], handler: particularConditionsController.obtenerCondicion },
+  { method: "PATCH", path: "/api/v1/particular-conditions/:conditionId", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_WRITE)], handler: particularConditionsController.actualizarCondicion },
+  { method: "POST", path: "/api/v1/particular-conditions/:conditionId/finalizar", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_WRITE)], handler: particularConditionsController.finalizarCondicion },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/condiciones/resumen", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_READ)], handler: particularConditionsController.resumenDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/condiciones", middlewares: [verifyToken, required(P.PARTICULAR_CONDITIONS_READ)], handler: particularConditionsController.historialDeAlumno },
+
+  /* Promocion y cambio de curso. Los literales (catalogos, asignados,
+     operaciones, masivos) van antes que :movimientoId y :operacionId porque el
+     router gana con la primera coincidencia. El destino se valida contra el
+     catalogo academico y la escuela sale del padron del alumno. */
+  { method: "GET", path: "/api/v1/movimientos-cursos/catalogos", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.getCatalogos },
+  { method: "GET", path: "/api/v1/movimientos-cursos/asignados", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.asignados },
+  { method: "GET", path: "/api/v1/movimientos-cursos/operaciones/:operacionId", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.obtenerOperacion },
+  { method: "POST", path: "/api/v1/movimientos-cursos/masivos", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.registrarMasivos },
+  { method: "GET", path: "/api/v1/movimientos-cursos", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.listarMovimientos },
+  { method: "GET", path: "/api/v1/movimientos-cursos/:movimientoId", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.obtenerMovimiento },
+  { method: "POST", path: "/api/v1/students/:studentId/promover", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.promoverAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/cambio-curso", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.cambiarCurso },
+  { method: "POST", path: "/api/v1/students/:studentId/cambio-division", middlewares: [verifyToken, required(P.COURSE_CHANGES_WRITE)], handler: courseChangesController.cambiarDivision },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/movimientos-cursos", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.historialDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/movimientos-cursos/ultimo", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.ultimoDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/situacion-curso", middlewares: [verifyToken, required(P.COURSE_CHANGES_READ)], handler: courseChangesController.situacionDeAlumno },
+  /* Libro Matriz digital. Los literales (catalogos, exists) van antes que los
+     parametros porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/students/:studentId/book-registry/exists", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.existeDeAlumno },
+  { method: "GET", path: "/api/v1/students/:studentId/book-registry", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.obtenerDeAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/book-registry", middlewares: [verifyToken, required(P.BOOK_REGISTRY_WRITE)], handler: bookRegistryController.crearRegistro },
+  { method: "GET", path: "/api/v1/book-registry/catalogos", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.catalogos },
+  { method: "GET", path: "/api/v1/book-registry", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.listarRegistros },
+  { method: "GET", path: "/api/v1/book-registry/:registryId/historial", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.historialDeRegistro },
+  { method: "GET", path: "/api/v1/book-registry/:registryId", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.obtenerRegistro },
+  { method: "PATCH", path: "/api/v1/book-registry/:registryId", middlewares: [verifyToken, required(P.BOOK_REGISTRY_WRITE)], handler: bookRegistryController.actualizarRegistro },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/libro-matriz", middlewares: [verifyToken, required(P.BOOK_REGISTRY_READ)], handler: bookRegistryController.obtenerDeAlumno },
 
   { method: "POST", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: tutorController.createTutor },
   { method: "GET", path: "/api/v1/tutors", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: tutorController.listTutors },
@@ -151,6 +208,19 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getSituacionDeAlumnoYMateria },
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/historial-academico", middlewares: [verifyToken, required(P.ACADEMIC_RECORDS_READ)], handler: academicRecordsController.getHistorialDeAlumno },
 
+  /* Calificaciones: los literales (catalogos) y las consultas por alumno/docente
+     van antes que /calificaciones/:calificacionId porque el router gana con la
+     primera coincidencia. */
+  { method: "GET", path: "/api/v1/calificaciones/catalogos", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCatalogos },
+  { method: "POST", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.createCalificacion },
+  { method: "GET", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.listCalificaciones },
+  { method: "GET", path: "/api/v1/calificaciones/:calificacionId", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacion },
+  { method: "PATCH", path: "/api/v1/calificaciones/:calificacionId", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.updateCalificacion },
+  { method: "DELETE", path: "/api/v1/calificaciones/:calificacionId", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.deleteCalificacion },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacionesDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/calificaciones/resumen", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getResumenDeAlumno },
+  { method: "GET", path: "/api/v1/docentes/:docenteId/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacionesDeDocente },
+
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },
   { method: "GET", path: "/api/v1/buildings/:buildingId", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.getBuilding },
@@ -188,6 +258,12 @@ export const apiRoutes = [
   { method: "PATCH", path: "/api/v1/schedule-assignments/:assignmentId", middlewares: [verifyToken, required(P.SCHEDULES_WRITE)], handler: schedulesController.updateAssignment },
   { method: "DELETE", path: "/api/v1/schedule-assignments/:assignmentId", middlewares: [verifyToken, required(P.SCHEDULES_MANAGE)], handler: schedulesController.deleteAssignment },
 
+  /* Docentes: primero los literales (catalogos, by-*) porque matchRoute se
+     queda con la primera coincidencia y /teachers/:teacherId es generico. */
+  { method: "GET", path: "/api/v1/teachers/catalogos", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getCatalogos },
+  { method: "GET", path: "/api/v1/teachers/by-subject/:subjectId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachersBySubject },
+  { method: "GET", path: "/api/v1/teachers/by-course/:cursoId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachersByCourse },
+  { method: "GET", path: "/api/v1/teachers/by-division/:divisionId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachersByDivision },
   { method: "POST", path: "/api/v1/teachers", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.createTeacher },
   { method: "GET", path: "/api/v1/teachers", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeachers },
   { method: "GET", path: "/api/v1/teachers/:teacherId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getTeacher },
@@ -195,7 +271,14 @@ export const apiRoutes = [
   { method: "DELETE", path: "/api/v1/teachers/:teacherId", middlewares: [verifyToken, required(P.TEACHERS_MANAGE)], handler: teachersController.deactivateTeacher },
   { method: "POST", path: "/api/v1/teachers/:teacherId/subjects", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.addSubjectToTeacher },
   { method: "GET", path: "/api/v1/teachers/:teacherId/subjects", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeacherSubjects },
+  { method: "GET", path: "/api/v1/teachers/:teacherId/subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getTeacherSubject },
+  { method: "PATCH", path: "/api/v1/teacher-subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.updateTeacherSubject },
   { method: "DELETE", path: "/api/v1/teacher-subjects/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeSubjectFromTeacher },
+  { method: "POST", path: "/api/v1/teachers/:teacherId/courses", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.addCourseToTeacher },
+  { method: "GET", path: "/api/v1/teachers/:teacherId/courses", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.listTeacherCourses },
+  { method: "GET", path: "/api/v1/teachers/:teacherId/courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getTeacherCourse },
+  { method: "PATCH", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.updateTeacherCourse },
+  { method: "DELETE", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeCourseFromTeacher },
 
   { method: "POST", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createAbsence },
 
