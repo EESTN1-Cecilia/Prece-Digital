@@ -1,4 +1,5 @@
 import { h } from "../../../../layouts/site-layout.js";
+import { obtenerLibroFolioLegajo } from "../../students-service.js";
 
 /**
  * StudentGradeBookTab: Muestra la información del Libro Matriz histórico organizada por ciclo lectivo.
@@ -8,6 +9,12 @@ export function StudentGradeBookTab({
   situacionAcademica = {},
   onOpenMatrizModal
 }) {
+  const infoLegajo = obtenerLibroFolioLegajo({
+    ...datosPersonales,
+    ...situacionAcademica,
+    id: datosPersonales.id,
+    studentId: datosPersonales.id
+  });
   return h(
     "div",
     { className: "student-tab-content-pane" },
@@ -71,7 +78,7 @@ export function StudentGradeBookTab({
         ),
         h("div", { className: "gradebook-field" },
           h("span", { className: "lbl" }, "Legajo Oficial:"),
-          h("span", { className: "val font-mono" }, datosPersonales.legajo || `LEG-${datosPersonales.id}`)
+          h("span", { className: "val font-mono", title: `Libro: ${infoLegajo.libro} · Folio: ${infoLegajo.folio} · N° Legajo: ${infoLegajo.numLegajo}` }, `(${infoLegajo.libro}-${infoLegajo.folio}-${infoLegajo.numLegajo})`)
         ),
         h("div", { className: "gradebook-field" },
           h("span", { className: "lbl" }, "Ciclo Actual:"),

@@ -634,7 +634,7 @@ export default function AlumnosListView() {
                       "div",
                       { className: "student-mini-card__title-wrap" },
                       h("h3", { className: "student-mini-card__name" }, `${alumno.apellido}, ${alumno.nombre}`),
-                      h("span", { className: "student-mini-card__legajo" }, alumno.legajo || `ID: ${alumno.id}`)
+                      h("span", { className: "student-mini-card__legajo font-mono", title: `Legajo: ${alumno.legajoCompleto || alumno.legajo}` }, `Legajo: ${alumno.legajoCompleto || alumno.legajo || (alumno.id ? `ID: ${alumno.id}` : "-")}`)
                     ),
                     h(StatusBadge, {
                       status:
