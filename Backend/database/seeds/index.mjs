@@ -3,6 +3,7 @@ import { seedStudents } from "./students.seed.mjs";
 import { seedAcademic } from "./academic.seed.mjs";
 import { seedAcademicRecords } from "./academic-records.seed.mjs";
 import { seedAttendanceFollowups } from "./attendance-followups.seed.mjs";
+import { seedObservations } from "./observations.seed.mjs";
 import { seedTutores } from "./tutores.seed.mjs";
 import { seedInventory } from "./inventory.seed.mjs";
 import { seedAttendanceAlerts } from "./attendance-alerts.seed.mjs";
@@ -23,5 +24,6 @@ export async function seedDesarrollo() {
   seedAttendanceAlerts();
   seedAttendanceFollowups();
   seedCourseChanges();
+  seedObservations();
 }
 

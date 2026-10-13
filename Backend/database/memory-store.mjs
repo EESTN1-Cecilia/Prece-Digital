@@ -30,5 +30,8 @@ export function resetStore() {
   if (store.courseChangesMovimientos) store.courseChangesMovimientos.clear();
   if (store.courseChangesOperaciones) store.courseChangesOperaciones.clear();
   if (store.courseChangesAudit) store.courseChangesAudit.length = 0;
+  if (store.observations) store.observations.clear();
+  if (store.observationFollowups) store.observationFollowups.clear();
+  if (store.observationsAudit) store.observationsAudit.length = 0;
 }
 

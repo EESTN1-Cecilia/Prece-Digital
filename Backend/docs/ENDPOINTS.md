@@ -3,6 +3,7 @@
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
 Total: 240 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -90,7 +91,35 @@ Total: 240 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| GET | `/api/v1/observations/catalogos` | `observations.read` |
 | GET | `/api/v1/observations` | `observations.read` |
+| GET | `/api/v1/observations/:observationId` | `observations.read` |
+| PATCH | `/api/v1/observations/:observationId` | `observations.write` |
+| POST | `/api/v1/observations/:observationId/seguimientos` | `observations.write` |
+| GET | `/api/v1/observations/:observationId/seguimientos` | `observations.read` |
+
+## seguimientos-observacion
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/seguimientos-observacion/:seguimientoId` | `observations.read` |
+| PATCH | `/api/v1/seguimientos-observacion/:seguimientoId` | `observations.write` |
+
+## alumnos
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/alumnos/:alumnoId/observaciones/resumen` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/observaciones` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
+| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## dashboard
 

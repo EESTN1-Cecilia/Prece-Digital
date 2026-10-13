@@ -91,8 +91,8 @@ test("observaciones: alta validada, responsable del token y listado", async () =
 
   const delAlumno = await pedir("GET", "/api/v1/students/alu-2/observations", "docente");
   const todas = await pedir("GET", "/api/v1/observations", "secretario");
-  assert.equal(delAlumno.cuerpo.data.length, 1);
-  assert.equal(todas.cuerpo.data.length, 1);
+  assert.ok(delAlumno.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));
+  assert.ok(todas.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));
 
   const docenteEscribe = await pedir("POST", "/api/v1/students/alu-2/observations", "docente", {
     tipo: "Académica",

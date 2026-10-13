@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { h, IconoFigma } from "../../../../layouts/site-layout.js";
 import { StatusBadge, ConditionBadge } from "../student-badges.js";
+import { obtenerLibroFolioLegajo } from "../../students-service.js";
 
 /**
  * StudentProfileHero: Banner superior del perfil completo con datos principales y barra de navegación por pestañas.
@@ -16,6 +17,20 @@ export function StudentProfileHero({
   const tabsNavRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [, setVersion] = useState(0);
+
+  useEffect(() => {
+    const handleUpdate = () => setVersion((v) => v + 1);
+    window.addEventListener("prece:libro-folio-updated", handleUpdate);
+    return () => window.removeEventListener("prece:libro-folio-updated", handleUpdate);
+  }, []);
+
+  const infoLegajo = obtenerLibroFolioLegajo({
+    ...alumno,
+    ...escolar,
+    id: alumno.id,
+    studentId: alumno.id
+  });
 
   const checkScroll = () => {
     const el = tabsNavRef.current;
@@ -181,9 +196,9 @@ export function StudentProfileHero({
           ),
           h(
             "span",
-            { className: "profile-pill" },
+            { className: "profile-pill", title: `Libro: ${infoLegajo.libro} · Folio: ${infoLegajo.folio} · N° Legajo: ${infoLegajo.numLegajo}` },
             h("span", { className: "pill-label" }, "Legajo:"),
-            h("span", { className: "pill-value font-mono" }, alumno.legajo || (alumno.id ? `LEG-${alumno.id}` : "S/N"))
+            h("span", { className: "pill-value font-mono" }, `(${infoLegajo.libro}-${infoLegajo.folio}-${infoLegajo.numLegajo})`)
           ),
           escolar.orientacion
             ? h(

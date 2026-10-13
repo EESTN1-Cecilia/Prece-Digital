@@ -2,8 +2,29 @@
    8. Formulario de Cargar Alumno (Multi-Paso / Wizard con Estilo Dashboard)
    ========================================================================== */
 
+@keyframes cargarAlumnoEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .cargar-alumno-page {
-  animation: fadeIn 220ms ease;
+  animation: cargarAlumnoEnter 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* Optimización de rendimiento (GPU): Anular backdrop-filter en contenedor de página grande */
+.cargar-alumno-page.secretaria-dashboard {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.06);
+  contain: layout style;
 }
 
 .wizard-badge-step {
@@ -36,7 +57,7 @@
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, background-color 150ms ease;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
 }
 
@@ -69,7 +90,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 180ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .wizard-tab-btn.active .wizard-tab-number {
@@ -196,7 +217,7 @@
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
   box-sizing: border-box;
-  transition: all 160ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
   outline: none;
 }
 
@@ -692,14 +713,14 @@
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(34, 42, 76, 0.22);
+  box-shadow: none;
   transition: all 160ms ease;
 }
 
 .btn-wizard-siguiente:hover {
   background: var(--indigo-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(34, 42, 76, 0.32);
+  box-shadow: none;
 }
 
 .btn-wizard-submit {
@@ -712,24 +733,24 @@
   font-weight: 800;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(22, 163, 74, 0.28);
+  box-shadow: none;
   transition: all 160ms ease;
 }
 
 .observations-form-page .btn-wizard-submit {
   background: var(--navy);
-  box-shadow: 0 2px 10px rgba(34, 42, 76, 0.24);
+  box-shadow: none;
 }
 
 .observations-form-page .btn-wizard-submit:hover:not(:disabled) {
   background: var(--indigo-dark);
-  box-shadow: 0 4px 16px rgba(34, 42, 76, 0.32);
+  box-shadow: none;
 }
 
 .btn-wizard-submit:hover:not(:disabled) {
   background: #15803d;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.38);
+  box-shadow: none;
 }
 
 .btn-wizard-submit:disabled {
@@ -779,3 +800,945 @@
     flex: 1;
   }
 }
+
+/* ==========================================================================
+   Pestañas de Selección de Modalidad (Individual vs Masiva)
+   ========================================================================== */
+.cargar-modalidad-tabs {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 5px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+
+.modalidad-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 14.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+}
+
+.modalidad-tab-btn:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.modalidad-tab-btn.active {
+  background: #ffffff;
+  color: #1e3a8a;
+  box-shadow: none;
+  border: 1.5px solid #cbd5e1;
+}
+
+.modalidad-tab-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.modalidad-tab-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  color: #475569;
+  letter-spacing: 0.2px;
+}
+
+.modalidad-tab-btn.active .modalidad-tab-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.modalidad-tab-badge--excel {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.modalidad-tab-btn.active .modalidad-tab-badge--excel {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+/* ==========================================================================
+   Carga Masiva Excel
+   ========================================================================== */
+.excel-bulk-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.excel-template-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1.5px solid #bbf7d0;
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 16px rgba(22, 101, 52, 0.04);
+}
+
+.excel-template-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.excel-icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #107c41;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(16, 124, 65, 0.25);
+  overflow: hidden;
+}
+
+.excel-icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  display: block;
+}
+
+.excel-tab-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.excel-template-banner__info h3 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #14532d;
+  margin: 0 0 4px;
+}
+
+.excel-template-banner__info p {
+  font-size: 13.5px;
+  color: #166534;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.btn-descargar-plantilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #107c41;
+  color: #ffffff;
+  padding: 11px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 160ms ease;
+  box-shadow: none;
+}
+
+.btn-descargar-plantilla:hover {
+  background: #0d6535;
+  box-shadow: none;
+}
+
+/* Área de Arrastre / Drag & Drop */
+.excel-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 18px;
+  padding: 38px 24px;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.excel-dropzone:hover,
+.excel-dropzone--dragover {
+  border-color: #107c41;
+  background: #f0fdf4;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 124, 65, 0.08);
+}
+
+.excel-dropzone__icon-circle {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  transition: all 180ms ease;
+}
+
+.excel-dropzone:hover .excel-dropzone__icon-circle {
+  background: #dcfce7;
+  color: #107c41;
+  transform: scale(1.06);
+}
+
+.excel-dropzone__title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.excel-dropzone__desc {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+.excel-dropzone__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px solid #cbd5e1;
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+  margin-top: 6px;
+  transition: all 160ms ease;
+}
+
+.excel-dropzone__btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* Ficha de Archivo Cargado */
+.excel-file-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #ffffff;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 16px;
+  padding: 16px 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 2px 10px rgba(16, 124, 65, 0.06);
+}
+
+.excel-file-card__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.excel-file-badge-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #107c41;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(16, 124, 65, 0.25);
+}
+
+.excel-file-meta h4 {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.excel-file-meta-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.excel-file-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.excel-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-file-action {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  transition: all 160ms ease;
+}
+
+.btn-file-action:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.btn-file-action--remove {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.btn-file-action--remove:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+/* Grilla de Métricas de Importación */
+.excel-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.excel-metric-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  transition: all 160ms ease;
+}
+
+.excel-metric-card:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+}
+
+.excel-metric-card strong {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.excel-metric-card span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Tabla de Previsualización */
+.excel-preview-block {
+  margin-bottom: 22px;
+}
+
+.excel-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.excel-preview-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.excel-preview-subtitle {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.excel-preview-table-container {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.excel-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+  table-layout: fixed;
+}
+
+.excel-preview-table th {
+  background: #f8fafc;
+  padding: 10px 8px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1.5px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.excel-preview-table td {
+  padding: 8px 8px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.excel-preview-table tr:hover td {
+  background: #f8fafc;
+}
+
+.badge-valid-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8.5px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.badge-valid-row svg {
+  flex-shrink: 0;
+  color: #16a34a;
+}
+
+.badge-duplicate-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8.5px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.badge-duplicate-row svg {
+  flex-shrink: 0;
+  color: #d97706;
+}
+
+.excel-preview-row--duplicate td {
+  background-color: #fffbeb !important;
+  border-bottom-color: #fef3c7 !important;
+}
+
+.excel-preview-table tr.excel-preview-row--duplicate:hover td {
+  background-color: #fef3c7 !important;
+}
+
+/* Botón para eliminar fila no deseada */
+.btn-delete-row {
+  opacity: 0;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.9);
+  padding: 0;
+}
+
+.excel-preview-table tr:hover .btn-delete-row {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  color: #ef4444;
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.btn-delete-row:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  transform: scale(1.1) !important;
+  box-shadow: none;
+}
+
+.btn-delete-row--highlight {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: scale(1) !important;
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fee2e2;
+  box-shadow: none;
+}
+
+.btn-delete-row--highlight:hover {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+/* Tarjeta de Guía y Requisitos */
+.excel-guide-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.excel-guide-card h4 {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.excel-guide-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.excel-guide-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.excel-guide-bullet {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+/* Celda Editable con Icono de Lapiz y Combobox */
+.editable-cell {
+  position: relative;
+  transition: background-color 150ms ease;
+  cursor: pointer;
+}
+
+.excel-preview-table tr:hover .editable-cell:hover {
+  background-color: #f1f5f9;
+}
+
+.cell-view-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 28px;
+}
+
+.cell-view-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-cell-pencil {
+  opacity: 0;
+  visibility: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.editable-cell:hover .btn-cell-pencil {
+  opacity: 1;
+  visibility: visible;
+}
+
+.btn-cell-pencil:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  transform: scale(1.1);
+  box-shadow: none;
+}
+
+
+/* Editores inline */
+.cell-editor-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 28px;
+}
+
+.cell-select-input {
+  width: 100%;
+  height: 32px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1.5px solid #2563eb;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  cursor: pointer;
+}
+
+/* CustomSelect integrado en celdas */
+.editable-cell--editing {
+  position: relative;
+  z-index: 1250 !important;
+  overflow: visible !important;
+  background-color: #eff6ff !important;
+}
+
+.excel-preview-table tr:has(.editable-cell--editing) {
+  position: relative;
+  z-index: 1250 !important;
+}
+
+.cell-editor-wrap--combobox {
+  width: 100%;
+  position: relative;
+}
+
+.cell-custom-select {
+  width: 100% !important;
+  min-width: 65px;
+}
+
+.cell-custom-select .custom-select__trigger {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border-radius: 7px !important;
+  border: 1.5px solid #2563eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+.cell-custom-select .custom-select__dropdown {
+  z-index: 1350 !important;
+  min-width: 140px !important;
+  box-shadow: 0 14px 32px -4px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.1) !important;
+}
+
+.cell-editor-wrap--text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.cell-text-input {
+  flex: 1;
+  height: 32px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #2563eb;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.btn-cell-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #107c41;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.btn-cell-save:hover {
+  background: #0d6535;
+  transform: scale(1.05);
+}
+
+/* Contenedor con espacio para barra flotante */
+.excel-bulk-container {
+  position: relative;
+}
+
+.excel-bulk-container--has-floating {
+  padding-bottom: 96px;
+}
+
+/* Modal Flotante de Confirmación y Cancelación */
+.excel-floating-action-modal {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translate(-50%, 45px) scale(0.96);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 99999;
+  background: #ffffff;
+  border: 1.5px solid rgba(203, 213, 225, 0.9);
+  border-radius: 20px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-shadow: 0 20px 45px -4px rgba(15, 23, 42, 0.22), 0 6px 18px rgba(15, 23, 42, 0.1);
+  width: min(860px, calc(100vw - 40px));
+  transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.excel-floating-action-modal--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.excel-floating-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.excel-floating-bar__icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(16, 124, 65, 0.12);
+}
+
+.excel-floating-bar__img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.excel-floating-bar__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.excel-floating-bar__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.excel-floating-bar__subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.excel-floating-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.btn-cancelar-masiva {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  color: #64748b;
+  border: 1.5px solid #cbd5e1;
+  padding: 11px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 180ms ease;
+  box-shadow: none;
+}
+
+.btn-cancelar-masiva:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+  box-shadow: none;
+}
+
+.btn-confirmar-masiva {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #107c41;
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 180ms ease;
+}
+
+.btn-confirmar-masiva:hover:not(:disabled) {
+  background: #0d6535;
+  box-shadow: none;
+}
+
+.btn-confirmar-masiva:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .excel-template-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .excel-template-banner__left {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .btn-descargar-plantilla {
+    width: 100%;
+    justify-content: center;
+  }
+  .excel-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .excel-guide-list {
+    grid-template-columns: 1fr;
+  }
+  .excel-file-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .excel-file-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .excel-floating-action-modal {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 18px;
+    bottom: 12px;
+    border-radius: 16px;
+    transform: translate(-50%, 35px) scale(0.96);
+  }
+  .excel-floating-action-modal--visible {
+    transform: translate(-50%, 0) scale(1);
+  }
+  .excel-floating-bar__left {
+    justify-content: flex-start;
+  }
+  .excel-floating-bar__actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .excel-floating-bar__actions button {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+
