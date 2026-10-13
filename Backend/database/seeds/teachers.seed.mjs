@@ -10,11 +10,15 @@ import teachersRepository from "../../modules/teachers/teachers.repository.mjs";
    Las asignaciones referencian cursos, divisiones y materias que ya existen en el
    seed academico (cur-*, div-*, mat/lng/his/prog). Correr despues de seedAcademic()
    (ver database/seeds/index.mjs). El responsable del seed de auth es usr_8
-   ("Secretaría"). */
+   ("Secretaría").
+
+   tch-1 queda ligado a usr_3 ("docente@prece.local") para que el modulo de
+   calificaciones resuelva la autorizacion del docente por sus asignaciones. */
 
 const DOCENTES = [
   {
     id: "tch-1",
+    userId: "usr_3",
     apellido: "Villatoro",
     nombre: "María",
     tipoDocumento: "dni",

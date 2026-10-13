@@ -138,6 +138,9 @@ test("directorio de divisiones y busqueda libre del listado", async () => {
   assert.equal(divisiones.cuerpo.data.find((division) => division.id === "4-1").activos, 4);
   assert.ok(divisiones.cuerpo.data.some((division) => division.id === "6-2"));
   assert.ok(divisiones.cuerpo.data.some((division) => division.id === "7-3"));
+  assert.equal(divisiones.cuerpo.data.length, 27);
+  /* la promocion del seed de course-changes (alu-17) suma un activo a 4-1 */
+  assert.equal(divisiones.cuerpo.data.find((division) => division.id === "4-1").activos, 5);
 
   const busqueda = await pedir("GET", "/api/v1/students?q=carla", "preceptor");
   assert.deepEqual(busqueda.cuerpo.data.map((alumno) => alumno.id), ["alu-2"]);
