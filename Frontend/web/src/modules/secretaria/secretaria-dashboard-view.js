@@ -181,7 +181,7 @@ export default function SecretariaDashboardView() {
       h(
         "div",
         { className: "secretaria-eyebrow" },
-        `${data?.institucion?.nombre || user.escuela || "E.E.S.T N° 1 MONTE GRANDE"}`
+        `${data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"}`
       )
     ),
 
@@ -246,19 +246,16 @@ export default function SecretariaDashboardView() {
                 "div",
                 { className: "school-crest-avatar" },
                 h("img", {
-                  src: "/assets/tecnica-n1-monte-grande.png",
-                  alt: "Escudo E.E.S.T N°1",
-                  className: "school-crest-img",
-                  onError: (e) => {
-                    e.currentTarget.src = "/assets/Técnica_N°1_Monte_Grande.png";
-                  }
+                  src: "/assets/precelogo.jpeg",
+                  alt: "Prece Digital",
+                  className: "school-crest-img"
                 })
               ),
               h(
                 "div",
                 { className: "school-crest-text" },
-                h("strong", { className: "school-crest-title" }, "E.E.S.T N°1"),
-                h("span", { className: "school-crest-subtitle" }, "Monte Grande")
+                h("strong", { className: "school-crest-title" }, "E.E.S.T. N°1"),
+                h("span", { className: "school-crest-subtitle" }, "Cecilia Berdichevski")
               )
             )
           ),

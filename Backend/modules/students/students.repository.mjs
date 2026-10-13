@@ -4,8 +4,8 @@ import { getStore } from "../../database/memory-store.mjs";
 
    Lo usan el CRUD y los listados de este modulo y, como referencia, los modulos
    academic, academic-records y tutors (no guardan copias propias de alumnos).
-   Tambien guarda lo que cuelga del legajo: observaciones, pases, constancias
-   emitidas y alertas descartadas.
+   Tambien guarda lo que cuelga del legajo: pases, constancias emitidas y
+   alertas descartadas. Las observaciones viven en el modulo observations.
 
    Persiste en el store en memoria (database/memory-store.mjs), como el resto de
    los modulos. */
@@ -45,7 +45,6 @@ const studentRepository = {
     const store = getStore();
     store.students ??= new Map();
     store.studentsAudit ??= [];
-    store.studentObservations ??= new Map();
     store.studentTransfers ??= new Map();
     store.studentCertificates ??= new Map();
     store.dismissedAlerts ??= new Set();
@@ -178,24 +177,6 @@ const studentRepository = {
   all() {
     this.init();
     return [...getStore().students.values()].map(clonar);
-  },
-
-  /* ---------------- Observaciones ---------------- */
-
-  crearObservacion(datos) {
-    this.init();
-    const ahora = new Date().toISOString();
-    const registro = { id: `obs_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, ...datos, creadoEn: ahora, actualizadoEn: ahora };
-    getStore().studentObservations.set(registro.id, registro);
-    return { ...registro };
-  },
-
-  listarObservaciones({ alumnoId } = {}) {
-    this.init();
-    return [...getStore().studentObservations.values()]
-      .filter((registro) => !alumnoId || registro.alumnoId === alumnoId)
-      .sort((a, b) => comparar(b.creadoEn, a.creadoEn))
-      .map((registro) => ({ ...registro }));
   },
 
   /* ---------------- Pases ---------------- */

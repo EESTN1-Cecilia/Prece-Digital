@@ -25,6 +25,7 @@ import { SolicitudPaseModal } from "./components/solicitud-pase-modal.js";
 import { SituacionAcademicaModal } from "./components/constancia-situacion-academica-modal.js";
 import { RiteModal } from "../documents/rite-modal.js";
 import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
+import { BoletinDigitalModal } from "./components/boletin-digital-modal.js";
 
 /**
  * AlumnoPerfilView: Vista completa y centralizada del Perfil del Alumno.
@@ -68,6 +69,7 @@ export default function AlumnoPerfilView({ id, ruta }) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [observationModalOpen, setObservationModalOpen] = useState(false);
   const [matrizModalOpen, setMatrizModalOpen] = useState(false);
+  const [boletinOpen, setBoletinOpen] = useState(false);
   const [actionSubmitting, setActionSubmitting] = useState(false);
 
   const fetchProfile = async (isSilentRefresh = false) => {
@@ -325,7 +327,9 @@ export default function AlumnoPerfilView({ id, ruta }) {
     division: String(situacionAcademica.division || datosPersonales.division || "1"),
     turno: situacionAcademica.turno || datosPersonales.turno || "Mañana",
     orientacion: situacionAcademica.orientacion || datosPersonales.orientacion || "Ciclo Básico",
-    legajo: datosPersonales.legajo || situacionAcademica.legajo || "S/N"
+    legajo: datosPersonales.legajo || situacionAcademica.legajo || "S/N",
+    libro: datosPersonales.libro,
+    folio: datosPersonales.folio
   };
 
   return h(
@@ -415,7 +419,7 @@ export default function AlumnoPerfilView({ id, ruta }) {
       observacionesCount: observaciones.length
     }),
 
-    // Barra de Acciones Principales (Constancia, Pase, Edición, Observación, Libro Matriz)
+    // Barra de Acciones Principales (Constancia, Pase, Edición, Observación, Libro Matriz, Boletín)
     h(StudentActionsBar, {
       alumno: datosPersonales,
       permisos: {
@@ -426,7 +430,8 @@ export default function AlumnoPerfilView({ id, ruta }) {
       onOpenTransferModal: () => setSolicitudPaseOpen(true),
       onOpenEditModal: () => setEditModalOpen(true),
       onOpenObservationModal: () => setObservationModalOpen(true),
-      onOpenMatrizModal: () => setMatrizModalOpen(true)
+      onOpenMatrizModal: () => setMatrizModalOpen(true),
+      onOpenBoletinModal: () => setBoletinOpen(true)
     }),
 
     // Renderizado condicional del contenido según la Pestaña Activa
@@ -446,7 +451,8 @@ export default function AlumnoPerfilView({ id, ruta }) {
       activeTab === "academico"
         ? h(StudentAcademicTab, {
             situacionAcademica,
-            materias
+            materias,
+            onOpenBoletin: () => setBoletinOpen(true)
           })
         : null,
 
@@ -475,7 +481,8 @@ export default function AlumnoPerfilView({ id, ruta }) {
             onOpenSituacionAcademica: () => setSituacionAcademicaOpen(true),
             onOpenRite: () => setRiteOpen(true),
             onOpenPlanillaCalificaciones: () => setPlanillaCalificacionesOpen(true),
-            onOpenMatriz: () => setMatrizModalOpen(true)
+            onOpenMatriz: () => setMatrizModalOpen(true),
+            onOpenBoletin: () => setBoletinOpen(true)
           })
         : null,
 
@@ -561,6 +568,30 @@ export default function AlumnoPerfilView({ id, ruta }) {
       abierto: matrizModalOpen,
       onCerrar: () => setMatrizModalOpen(false),
       alumnoInicial: alumnoCompleto
-    })
+    }),
+
+    boletinOpen
+      ? h(BoletinDigitalModal, {
+          abierto: boletinOpen,
+          onCerrar: () => setBoletinOpen(false),
+          alumno: {
+            datosPersonales: {
+              ...datosPersonales,
+              nombreCompleto: alumnoCompleto.nombreCompleto || `${datosPersonales.apellido || ""}, ${datosPersonales.nombre || ""}`.trim(),
+              dni: alumnoCompleto.dni || datosPersonales.dni,
+              legajo: alumnoCompleto.legajo || datosPersonales.legajo,
+              libro: alumnoCompleto.libro || datosPersonales.libro,
+              folio: alumnoCompleto.folio || datosPersonales.folio
+            },
+            informacionEscolar: {
+              ...situacionAcademica,
+              curso: alumnoCompleto.curso || situacionAcademica.curso,
+              division: alumnoCompleto.division || situacionAcademica.division,
+              turno: alumnoCompleto.turno || situacionAcademica.turno,
+              orientacion: alumnoCompleto.orientacion || situacionAcademica.orientacion
+            }
+          }
+        })
+      : null
   );
 }

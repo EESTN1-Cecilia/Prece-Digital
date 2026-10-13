@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { h, IconoFigma } from "../../../layouts/site-layout.js";
+import { obtenerLibroFolioLegajo } from "../students-service.js";
 
 /**
  * StudentBasicInfo: Componente para visualizar los datos personales del alumno
@@ -8,6 +9,8 @@ export function StudentBasicInfo({ alumno, defaultExpanded = true }) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   if (!alumno) return null;
+
+  const infoLegajo = obtenerLibroFolioLegajo(alumno);
 
   const {
     id,
@@ -101,7 +104,7 @@ export function StudentBasicInfo({ alumno, defaultExpanded = true }) {
               "div",
               { className: "student-info-item" },
               h("span", { className: "student-info-item__label" }, "ID de Alumno / Legajo"),
-              h("span", { className: "student-info-item__value font-mono" }, legajo || (id ? `ID: ${id}` : "No asignado"))
+              h("span", { className: "student-info-item__value font-mono", title: `Libro: ${infoLegajo.libro} · Folio: ${infoLegajo.folio} · N° Legajo: ${infoLegajo.numLegajo}` }, `(${infoLegajo.libro}-${infoLegajo.folio}-${infoLegajo.numLegajo})`)
             ),
             email
               ? h(
