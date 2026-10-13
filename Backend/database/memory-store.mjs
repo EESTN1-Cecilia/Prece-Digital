@@ -31,6 +31,8 @@ export function resetStore() {
   if (store.requests) store.requests.clear();
   if (store.requestComments) store.requestComments.clear();
   if (store.reservations) store.reservations.clear();
+  if (store.gradesCalificaciones) store.gradesCalificaciones.clear();
+  if (store.gradesAudit) store.gradesAudit.length = 0;
   if (store.bookRegistries) store.bookRegistries.clear();
   if (store.bookRegistriesAudit) store.bookRegistriesAudit.length = 0;
   if (store.particularConditions) store.particularConditions.clear();

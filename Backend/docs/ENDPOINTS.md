@@ -118,6 +118,8 @@ Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/calificaciones` | `grades.read` |
+| GET | `/api/v1/alumnos/:alumnoId/calificaciones/resumen` | `grades.read` |
 | GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
 | GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
 | GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
@@ -243,6 +245,23 @@ Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/situaciones-academicas/intensificadas` | `academic-records.read` |
 | GET | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.read` |
 | PATCH | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.write` |
+
+## calificaciones
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/calificaciones/catalogos` | `grades.read` |
+| POST | `/api/v1/calificaciones` | `grades.write` |
+| GET | `/api/v1/calificaciones` | `grades.read` |
+| GET | `/api/v1/calificaciones/:calificacionId` | `grades.read` |
+| PATCH | `/api/v1/calificaciones/:calificacionId` | `grades.write` |
+| DELETE | `/api/v1/calificaciones/:calificacionId` | `grades.write` |
+
+## docentes
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/docentes/:docenteId/calificaciones` | `grades.read` |
 
 ## buildings
 
