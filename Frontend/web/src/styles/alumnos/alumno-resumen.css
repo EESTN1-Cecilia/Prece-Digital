@@ -121,10 +121,9 @@
 .student-summary-hero-card {
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 247, 255, 0.9) 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f1f7fe 100%);
   padding: 20px 24px;
-  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.06);
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.05);
 }
 
 .student-hero-content {
@@ -146,6 +145,7 @@
 .student-hero-right {
   display: flex;
   align-items: center;
+  gap: 10px;
   flex-shrink: 0;
 }
 

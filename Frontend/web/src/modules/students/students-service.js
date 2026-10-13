@@ -36,6 +36,67 @@ export function formatDni(dni) {
   return String(dni ?? "");
 }
 
+/**
+ * Obtiene libro, folio y número de legajo de un estudiante,
+ * priorizando datos del backend o cambios locales en localStorage.
+ * Formato requerido: Legajo: (Libro-Folio-Número de Legajo)
+ */
+export function obtenerLibroFolioLegajo(alumnoOrDatos = {}) {
+  if (!alumnoOrDatos) alumnoOrDatos = {};
+  const id = alumnoOrDatos.id || alumnoOrDatos.studentId || "";
+  const numId = String(id).replace(/\D/g, "") || "1";
+
+  let libro = alumnoOrDatos.libro || alumnoOrDatos.libroMatriz;
+  let folio = alumnoOrDatos.folio;
+  const numLegajo = alumnoOrDatos.legajo || (id ? id : "S/N");
+
+  if ((!libro || !folio) && id && typeof localStorage !== "undefined") {
+    try {
+      const stored = localStorage.getItem(`prece_student_${id}_libro_folio`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (!libro && parsed?.libro) libro = parsed.libro;
+        if (!folio && parsed?.folio) folio = parsed.folio;
+      }
+
+      if (!libro || !folio) {
+        for (let anio = 1; anio <= 7; anio++) {
+          const bKey = localStorage.getItem(`prece_boletin_${id}_anio_${anio}`);
+          if (bKey) {
+            const parsedB = JSON.parse(bKey);
+            if (parsedB?.libroFolio) {
+              if (!libro && parsedB.libroFolio.libro) libro = parsedB.libroFolio.libro;
+              if (!folio && parsedB.libroFolio.folio) folio = parsedB.libroFolio.folio;
+              break;
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignorar error de lectura de localStorage
+    }
+  }
+
+  if (!libro) {
+    libro = "2026";
+  }
+
+  if (!folio) {
+    folio = numId.padStart(2, "0");
+  }
+
+  return {
+    libro: String(libro),
+    folio: String(folio),
+    numLegajo: String(numLegajo),
+    legajoFormateado: `(${libro}-${folio}-${numLegajo})`
+  };
+}
+
+export function formatLegajo(alumnoOrDatos = {}) {
+  return obtenerLibroFolioLegajo(alumnoOrDatos).legajoFormateado;
+}
+
 function anioDeCurso(curso) {
   const numero = Number.parseInt(soloDigitos(curso), 10);
   return Number.isInteger(numero) ? numero : null;
@@ -47,9 +108,13 @@ function filtroTexto(valor) {
 
 /* Alumno de la API -> fila de pantalla. */
 export function aVistaAlumno(item) {
+  const { libro, folio, legajoFormateado } = obtenerLibroFolioLegajo(item);
   return {
     id: item.id,
     legajo: item.id,
+    libro,
+    folio,
+    legajoCompleto: legajoFormateado,
     apellido: item.apellido,
     nombre: item.nombre,
     nombreCompleto: item.nombreCompleto,

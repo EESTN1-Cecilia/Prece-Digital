@@ -35,9 +35,11 @@ export function CustomSelect({
   isSearchable = false,
   ariaLabel,
   id,
-  name
+  name,
+  defaultOpen = false,
+  onClose
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(Boolean(defaultOpen));
   const [busqueda, setBusqueda] = useState("");
   const [instanceId] = useState(() => Math.random().toString(36).slice(2));
   const containerRef = useRef(null);
@@ -67,6 +69,7 @@ export function CustomSelect({
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
         setBusqueda("");
+        if (onClose) onClose();
       }
     };
 
@@ -74,6 +77,7 @@ export function CustomSelect({
       if (event.key === "Escape") {
         setIsOpen(false);
         setBusqueda("");
+        if (onClose) onClose();
       }
     };
 
@@ -91,6 +95,7 @@ export function CustomSelect({
       if (event.detail !== instanceId) {
         setIsOpen(false);
         setBusqueda("");
+        if (onClose) onClose();
       }
     };
     window.addEventListener("prece-custom-select:open", handleOtherSelectOpen);
@@ -108,10 +113,12 @@ export function CustomSelect({
     if (disabled) return;
     if (!isOpen) {
       window.dispatchEvent(new CustomEvent("prece-custom-select:open", { detail: instanceId }));
+      setIsOpen(true);
     } else {
       setBusqueda("");
+      setIsOpen(false);
+      if (onClose) onClose();
     }
-    setIsOpen((prev) => !prev);
   };
 
   const handleSelect = (optionValue) => {
@@ -120,6 +127,7 @@ export function CustomSelect({
     }
     setIsOpen(false);
     setBusqueda("");
+    if (onClose) onClose();
   };
 
   // Opciones filtradas por búsqueda
