@@ -2,9 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 248 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
-Total: 239 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
-Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -112,6 +110,8 @@ Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
+| GET | `/api/v1/alumnos/:alumnoId/calificaciones` | `grades.read` |
+| GET | `/api/v1/alumnos/:alumnoId/calificaciones/resumen` | `grades.read` |
 | GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
 | GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
 | GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
@@ -218,22 +218,6 @@ Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/situaciones-academicas/intensificadas` | `academic-records.read` |
 | GET | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.read` |
 | PATCH | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.write` |
-
-## alumnos
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/calificaciones` | `grades.read` |
-| GET | `/api/v1/alumnos/:alumnoId/calificaciones/resumen` | `grades.read` |
-| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## calificaciones
 
