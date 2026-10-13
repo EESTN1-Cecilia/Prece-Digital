@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 246 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -109,6 +109,8 @@ Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones/resumen` | `observations.read` |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/condiciones/resumen` | `particular-conditions.read` |
+| GET | `/api/v1/alumnos/:alumnoId/condiciones` | `particular-conditions.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
@@ -148,22 +150,6 @@ Total: 237 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.read` |
 | PATCH | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.write` |
 | POST | `/api/v1/particular-conditions/:conditionId/finalizar` | `particular-conditions.write` |
-
-## alumnos
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| GET | `/api/v1/alumnos/:alumnoId/condiciones/resumen` | `particular-conditions.read` |
-| GET | `/api/v1/alumnos/:alumnoId/condiciones` | `particular-conditions.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
-| GET | `/api/v1/alumnos/:alumnoId/inasistencias` | `attendance.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/alertas/resumen` | `attendance-alerts.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
-| GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
 
 ## tutors
 
