@@ -473,6 +473,63 @@ CREATE TABLE libro_matriz (
   CONSTRAINT fk_lm_responsable  FOREIGN KEY (usuario_responsable) REFERENCES usuarios(id),
   CONSTRAINT fk_lm_creado_por   FOREIGN KEY (creado_por)          REFERENCES usuarios(id),
   CONSTRAINT fk_lm_actualizado  FOREIGN KEY (actualizado_por)     REFERENCES usuarios(id)
+-- MÓDULO: OBSERVACIONES DE ALUMNOS
+-- Tablas: observaciones, observaciones_seguimiento
+-- =====================================================================================
+
+-- Observaciones: novedades que un sector registra sobre un alumno.
+-- El responsable es siempre el usuario autenticado que registra la observación; el
+-- cliente no lo decide. Cada modificación conserva el estado anterior en `historial`.
+CREATE TABLE observaciones (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  fecha                 DATE         NOT NULL COMMENT 'Fecha de la observación',
+  tipo                  ENUM('Académica','Convivencia','Asistencia','Administrativa','Pedagógica') NOT NULL,
+  descripcion           VARCHAR(500) NOT NULL,
+  sector                VARCHAR(80)  NULL COMMENT 'Sector que registra la observación',
+  estado                ENUM('Activa','Modificada','Histórica') NOT NULL DEFAULT 'Activa',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registró la observación',
+  historial             JSON         NULL COMMENT 'Estado anterior en cada modificación, para no perder información',
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED NULL,
+  actualizado_en        DATETIME     NULL,
+  actualizado_por       INT UNSIGNED NULL,
+  KEY idx_obs_estudiante (estudiante_id, fecha),
+  KEY idx_obs_fecha      (fecha),
+  KEY idx_obs_tipo       (tipo),
+  KEY idx_obs_estado     (estado),
+  CONSTRAINT fk_obs_escuela      FOREIGN KEY (escuela_id)           REFERENCES escuelas(id),
+  CONSTRAINT fk_obs_estudiante   FOREIGN KEY (estudiante_id)        REFERENCES estudiantes(id),
+  CONSTRAINT fk_obs_responsable  FOREIGN KEY (usuario_responsable)  REFERENCES usuarios(id),
+  CONSTRAINT fk_obs_creado_por   FOREIGN KEY (creado_por)           REFERENCES usuarios(id),
+  CONSTRAINT fk_obs_actualizado  FOREIGN KEY (actualizado_por)      REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Acciones de seguimiento sobre una observación.
+-- No modifican la observación: solo documentan la intervención asociada.
+CREATE TABLE observaciones_seguimiento (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  observacion_id        INT UNSIGNED NOT NULL,
+  escuela_id            INT UNSIGNED NOT NULL,
+  fecha                 DATE         NOT NULL COMMENT 'Fecha en que se realizó la acción',
+  accion                VARCHAR(200) NOT NULL,
+  observaciones         VARCHAR(500) NULL,
+  estado                ENUM('pendiente','realizada','cancelada') NOT NULL DEFAULT 'pendiente',
+  fecha_cierre          DATE         NULL COMMENT 'Fecha en que la acción quedó resuelta',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registró la acción',
+  historial             JSON         NULL,
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED NULL,
+  actualizado_en        DATETIME     NULL,
+  actualizado_por       INT UNSIGNED NULL,
+  KEY idx_oseg_observacion (observacion_id, fecha),
+  KEY idx_oseg_estado      (estado),
+  CONSTRAINT fk_oseg_observacion FOREIGN KEY (observacion_id)       REFERENCES observaciones(id),
+  CONSTRAINT fk_oseg_escuela     FOREIGN KEY (escuela_id)           REFERENCES escuelas(id),
+  CONSTRAINT fk_oseg_responsable FOREIGN KEY (usuario_responsable)  REFERENCES usuarios(id),
+  CONSTRAINT fk_oseg_creado_por  FOREIGN KEY (creado_por)           REFERENCES usuarios(id),
+  CONSTRAINT fk_oseg_actualizado FOREIGN KEY (actualizado_por)      REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
 -- =====================================================================================

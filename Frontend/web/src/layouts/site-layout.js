@@ -375,13 +375,7 @@ function HeaderNotificationsMenu() {
   );
 }
 
-function Header({ ruta, esLogin }) {
-  const enlaces = [
-    ["Inicio", "#/inicio"],
-    ["Sobre Nosotros", "#nosotros"],
-    ["Menú", "#menu"]
-  ];
-
+function Header({ esLogin }) {
   return h(
     "header",
     { className: "site-header" },
@@ -400,39 +394,6 @@ function Header({ ruta, esLogin }) {
             alt: "Prece.Digital"
           })
         )
-      ),
-      h(
-        "div",
-        { className: "site-header__center" },
-        !esLogin
-          ? h(
-              "nav",
-              { className: "main-nav", "aria-label": "Navegación principal" },
-              enlaces.map(([label, href]) => {
-                const activo =
-                  href === ruta ||
-                  (href === "#/inicio" &&
-                    (!ruta ||
-                      ruta === "#/inicio" ||
-                      ruta === "#/secretaria" ||
-                      ruta === "#/preceptoria" ||
-                      ruta === "#/alumnos" ||
-                      ruta === "#/alumnos/cargar" ||
-                      ruta === "#/alumnos/nuevo"));
-
-                return h(
-                  "a",
-                  {
-                    key: href,
-                    className: `nav-pill-btn ${activo ? "active" : ""}`,
-                    href,
-                    "aria-current": activo ? "page" : undefined
-                  },
-                  label
-                );
-              })
-            )
-          : null
       ),
       h(
         "div",

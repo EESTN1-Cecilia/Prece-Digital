@@ -169,8 +169,8 @@ a {
 }
 
 .site-header__top {
-  display: grid;
-  grid-template-columns: 260px 1fr 260px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   width: min(1360px, calc(100% - 48px));
   margin: 0 auto;
@@ -304,6 +304,40 @@ a {
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+/* Animaciones globales compuestas en GPU (60-120 FPS sin tocar hilo de CPU) */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes viewEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

@@ -18,6 +18,7 @@ import * as authController from "../modules/auth/auth.controller.mjs";
 import * as usersController from "../modules/auth/users.controller.mjs";
 import * as studentsController from "../modules/students/students.controller.mjs";
 import * as bookRegistryController from "../modules/book-registry/book-registry.controller.mjs";
+import * as observationsController from "../modules/observations/observations.controller.mjs";
 import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
@@ -84,11 +85,23 @@ export const apiRoutes = [
   { method: "DELETE", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.desactivarAlumno },
   { method: "GET", path: "/api/v1/students/:studentId/summary", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerResumen },
   { method: "GET", path: "/api/v1/students/:studentId/profile", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerPerfil },
-  { method: "GET", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservacionesDeAlumno },
-  { method: "POST", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: studentsController.crearObservacion },
+  { method: "GET", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.listarDeAlumno },
+  { method: "POST", path: "/api/v1/students/:studentId/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.crearObservacion },
   { method: "POST", path: "/api/v1/students/:studentId/transfers", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.iniciarPase },
   { method: "POST", path: "/api/v1/students/:studentId/certificate", middlewares: [verifyToken, required(P.DOCUMENTS_WRITE)], handler: studentsController.emitirConstancia },
-  { method: "GET", path: "/api/v1/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: studentsController.listarObservaciones },
+
+  /* Observaciones de alumnos. Los literales (catalogos) van antes que los
+     parametros porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/observations/catalogos", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.catalogos },
+  { method: "GET", path: "/api/v1/observations", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.listarObservaciones },
+  { method: "GET", path: "/api/v1/observations/:observationId", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.obtenerObservacion },
+  { method: "PATCH", path: "/api/v1/observations/:observationId", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.actualizarObservacion },
+  { method: "POST", path: "/api/v1/observations/:observationId/seguimientos", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.crearSeguimiento },
+  { method: "GET", path: "/api/v1/observations/:observationId/seguimientos", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.listarSeguimientos },
+  { method: "GET", path: "/api/v1/seguimientos-observacion/:seguimientoId", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.obtenerSeguimiento },
+  { method: "PATCH", path: "/api/v1/seguimientos-observacion/:seguimientoId", middlewares: [verifyToken, required(P.OBSERVATIONS_WRITE)], handler: observationsController.actualizarSeguimiento },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/observaciones/resumen", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.resumenDeAlumno },
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/observaciones", middlewares: [verifyToken, required(P.OBSERVATIONS_READ)], handler: observationsController.historialDeAlumno },
   { method: "GET", path: "/api/v1/dashboard/secretaria", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.tableroSecretaria },
   { method: "GET", path: "/api/v1/jefatura/cursos-grupos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: jefaturaController.listCursosGrupos },
   { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },

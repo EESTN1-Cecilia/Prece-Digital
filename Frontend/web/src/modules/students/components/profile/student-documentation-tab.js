@@ -15,7 +15,8 @@ export function StudentDocumentationTab({
   onOpenSituacionAcademica,
   onOpenRite,
   onOpenPlanillaCalificaciones,
-  onOpenMatriz
+  onOpenMatriz,
+  onOpenBoletin
 }) {
   const [documentosAdjuntos, setDocumentosAdjuntos] = useState([
     {
@@ -425,7 +426,54 @@ export function StudentDocumentationTab({
           )
         ),
 
-        // 7. Libro Matriz Oficial
+        // 7. Boletín Digital Oficial (1° a 7° Año)
+        h(
+          "article",
+          { className: "doc-official-card doc-official-card--primary" },
+          h(
+            "div",
+            { className: "doc-official-card__header" },
+            h(
+              "div",
+              { className: "doc-card-icon-wrap doc-card-icon-wrap--blue" },
+              h(
+                "svg",
+                { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", width: "22", height: "22" },
+                h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+                h("polyline", { points: "14 2 14 8 20 8" }),
+                h("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
+                h("line", { x1: "16", y1: "17", x2: "8", y2: "17" })
+              )
+            ),
+            h("span", { className: "doc-card-tag doc-card-tag--oficial" }, "Boletín Digital")
+          ),
+          h(
+            "div",
+            { className: "doc-official-card__body" },
+            h("h4", { className: "doc-card-title" }, "Boletín Digital de Calificaciones"),
+            h(
+              "p",
+              { className: "doc-card-text" },
+              "Boletín oficial de calificaciones de 1° a 7° Año con informes cuatrimestrales, instancias de acreditación, pendientes y exportación a PDF y Excel."
+            )
+          ),
+          h(
+            "div",
+            { className: "doc-official-card__footer" },
+            h(
+              "button",
+              {
+                type: "button",
+                className: "btn-emitir-doc btn-emitir-doc--primary",
+                onClick: onOpenBoletin
+              },
+              h(IconoFigma, { className: "btn-emitir-icon", nombre: "clipboard" }),
+              h("span", null, "Abrir Boletín Digital")
+            )
+          )
+        ),
+
+        // 8. Libro Matriz Oficial
         h(
           "article",
           { className: "doc-official-card doc-official-card--matriz" },
