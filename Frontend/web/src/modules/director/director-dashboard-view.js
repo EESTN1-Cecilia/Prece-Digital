@@ -6,6 +6,7 @@ import { useUsuarioActual } from "../../estado/index.js";
 import { DirectorService, ROLES_DISPONIBLES } from "./director-service.js";
 import { NuevoPerfilModal } from "./components/nuevo-perfil-modal.js";
 import { EditarRolesModal } from "./components/editar-roles-modal.js";
+import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.js";
 import { fecha } from "../../utils/formato.js";
 
 // Íconos auxiliares con dimensiones explícitas (Sin emojis)
@@ -133,8 +134,9 @@ export default function DirectorDashboardView() {
 
   const [resumen, setResumen] = useState(null);
   const [personal, setPersonal] = useState([]);
+  const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'alertas' | 'supervision'
+  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'supervision' | 'pedidos' | 'alertas'
 
   // Filtros de personal
   const [busquedaPersonal, setBusquedaPersonal] = useState("");
@@ -151,12 +153,14 @@ export default function DirectorDashboardView() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const [resumenData, personalData] = await Promise.all([
+      const [resumenData, personalData, pedidosData] = await Promise.all([
         DirectorService.getDashboardConsolidado(),
-        DirectorService.listarPerfiles()
+        DirectorService.listarPerfiles(),
+        DirectorService.listarPedidos()
       ]);
       setResumen(resumenData);
       setPersonal(personalData);
+      setPedidos(pedidosData);
     } catch {
       // Ignorar fallback silencioso
     } finally {
@@ -172,6 +176,40 @@ export default function DirectorDashboardView() {
     setToastMensaje(mensaje);
     setTimeout(() => setToastMensaje(null), 3500);
   };
+
+  const handleAprobarPedido = async (id) => {
+    try {
+      const lista = await DirectorService.aprobarPedido(id);
+      setPedidos(lista);
+      mostrarToast("Pedido habilitado con éxito. Las planillas de Server se han actualizado.");
+    } catch {
+      mostrarToast("No se pudo habilitar el pedido.");
+    }
+  };
+
+  const handleRechazarPedido = async (id) => {
+    try {
+      const lista = await DirectorService.rechazarPedido(id);
+      setPedidos(lista);
+      mostrarToast("Pedido rechazado. No se modificó ninguna planilla.");
+    } catch {
+      mostrarToast("No se pudo rechazar el pedido.");
+    }
+  };
+
+  const handleCrearPedidoPrueba = async (sector = "Server") => {
+    try {
+      const lista = await DirectorService.crearPedidoPrueba(sector);
+      setPedidos(lista);
+      mostrarToast(`Nuevo pedido de ${sector} generado y en espera de autorización.`);
+    } catch {
+      mostrarToast("Error al simular pedido.");
+    }
+  };
+
+  const pedidosPendientesCount = useMemo(() => {
+    return pedidos.filter((p) => p.estado === "pendiente").length;
+  }, [pedidos]);
 
   const handlePerfilCreado = (nuevo) => {
     mostrarToast(`Perfil de ${nuevo.displayName || nuevo.nombre} creado con éxito.`);
@@ -232,8 +270,8 @@ export default function DirectorDashboardView() {
   }).format(new Date());
 
   return h(
-    "section",
-    { className: "director-dashboard-wrapper" },
+    "div",
+    { className: "director-page-container" },
 
     // Toast de Notificación Flotante
     toastMensaje
@@ -245,289 +283,423 @@ export default function DirectorDashboardView() {
         )
       : null,
 
-    // Barra Superior Institucional (Sin contenedor blanco de fondo)
+    // Panel Lateral a la Izquierda (Fuera del dashboard)
     h(
-      "div",
-      { className: "director-top-bar" },
+      "aside",
+      { className: "director-sidebar-access", "aria-label": "Accesos Rápidos Institucionales" },
       h(
         "div",
-        { className: "director-top-title-wrap" },
-        h("span", { className: "director-badge-main" }, "Dirección General"),
-        h("span", { className: "badge-institucion" }, "E.E.S.T N°1 Monte Grande")
+        { className: "director-sidebar-access__header" },
+        h("span", { className: "director-sidebar-access__tag" }, "Accesos Rápidos"),
+        h("h2", { className: "director-sidebar-access__title" }, "Panel de Accesos"),
+        h("p", { className: "director-sidebar-access__subtitle" }, "Navegación directa por áreas y sectores")
       ),
       h(
-        "div",
-        { className: "alumnos-top-badges" },
-        h("span", { className: "badge-ciclo" }, `Ciclo Lectivo ${new Date().getFullYear()}`),
-        h("span", { className: "badge-ciclo badge-ciclo--status" }, "● Turno Activo")
+        "nav",
+        { className: "director-sidebar-nav-grouped" },
+
+        // --- Secretaría ---
+        h("div", { className: "director-sidebar-divider-label" }, "Secretaría"),
+        h(
+          "a",
+          { href: "#/secretaria", className: "director-sidebar-item director-sidebar-item--sec" },
+          h("div", { className: "director-sidebar-icon director-sidebar-icon--sec" }, h(IconClipboard, { width: "16", height: "16" })),
+          h(
+            "div",
+            { className: "director-sidebar-item-text" },
+            h("strong", null, "Secretaría"),
+            h("span", null, "Legajos y Documentación")
+          ),
+          h("span", { className: "director-sidebar-item-arrow" }, "➔")
+        ),
+        h(
+          "a",
+          { href: "#/alumnos", className: "director-sidebar-sub-btn" },
+          h(IconUsers, { width: "15", height: "15" }),
+          h("span", null, "Alumnos")
+        ),
+        h(
+          "a",
+          { href: "#/cursos", className: "director-sidebar-sub-btn" },
+          h(IconSchool, { width: "15", height: "15" }),
+          h("span", null, "Cursos")
+        ),
+
+        // --- Preceptoría ---
+        h("div", { className: "director-sidebar-divider-label" }, "Preceptoría"),
+        h(
+          "a",
+          { href: "#/preceptoria", className: "director-sidebar-item director-sidebar-item--prec" },
+          h("div", { className: "director-sidebar-icon director-sidebar-icon--prec" }, h(IconClock, { width: "16", height: "16" })),
+          h(
+            "div",
+            { className: "director-sidebar-item-text" },
+            h("strong", null, "Preceptoría"),
+            h("span", null, "Asistencias y Cursos")
+          ),
+          h("span", { className: "director-sidebar-item-arrow" }, "➔")
+        ),
+        h(
+          "a",
+          { href: "#/asistencias", className: "director-sidebar-sub-btn" },
+          h(IconClock, { width: "15", height: "15" }),
+          h("span", null, "Asistencias")
+        ),
+
+        // --- Server ---
+        h("div", { className: "director-sidebar-divider-label" }, "Server"),
+        h(
+          "a",
+          { href: "#/server", className: "director-sidebar-item director-sidebar-item--srv" },
+          h("div", { className: "director-sidebar-icon director-sidebar-icon--srv" }, h(IconServer, { width: "16", height: "16" })),
+          h(
+            "div",
+            { className: "director-sidebar-item-text" },
+            h("strong", null, "Server"),
+            h("span", null, "Stock y Equipamiento")
+          ),
+          h("span", { className: "director-sidebar-item-arrow" }, "➔")
+        ),
+        h(
+          "a",
+          { href: "#/inventario", className: "director-sidebar-sub-btn" },
+          h(IconServer, { width: "15", height: "15" }),
+          h("span", null, "Inventario")
+        ),
+
+        // --- Jefatura ---
+        h("div", { className: "director-sidebar-divider-label" }, "Jefatura"),
+        h(
+          "a",
+          { href: "#/jefatura", className: "director-sidebar-item director-sidebar-item--jef" },
+          h("div", { className: "director-sidebar-icon director-sidebar-icon--jef" }, h(IconWrench, { width: "16", height: "16" })),
+          h(
+            "div",
+            { className: "director-sidebar-item-text" },
+            h("strong", null, "Jefatura"),
+            h("span", null, "Talleres y Grillas")
+          ),
+          h("span", { className: "director-sidebar-item-arrow" }, "➔")
+        ),
+        h(
+          "a",
+          { href: "#/jefatura", className: "director-sidebar-sub-btn" },
+          h(IconWrench, { width: "15", height: "15" }),
+          h("span", null, "Talleres")
+        )
       )
     ),
 
-    // Hero Banner Directivo
+    // Dashboard a la Derecha (No centrado, ocupando el espacio restante)
     h(
-      "div",
-      { className: "director-hero-banner" },
+      "section",
+      { className: "director-dashboard-wrapper" },
+
+      // Barra Superior Institucional (Sin contenedor blanco de fondo)
       h(
         "div",
-        { className: "director-hero-left" },
+        { className: "director-top-bar" },
         h(
           "div",
-          { className: "director-hero-icon-box" },
-          h(IconAward, { className: "director-hero-icon" })
+          { className: "director-top-title-wrap" },
+          h("span", { className: "director-badge-main" }, "Dirección General"),
+          h("span", { className: "badge-institucion" }, "E.E.S.T N°1 Monte Grande")
         ),
         h(
           "div",
-          null,
-          h("span", { className: "director-hero-date" }, fechaHoy.charAt(0).toUpperCase() + fechaHoy.slice(1)),
+          { className: "alumnos-top-badges" },
+          h("span", { className: "badge-ciclo" }, `Ciclo Lectivo ${new Date().getFullYear()}`),
+          h("span", { className: "badge-ciclo badge-ciclo--status" }, "● Turno Activo")
+        )
+      ),
+
+      // Hero Banner Directivo
+      h(
+        "div",
+        { className: "director-hero-banner" },
+        h(
+          "div",
+          { className: "director-hero-left" },
           h(
-            "h1",
-            { className: "director-hero-title" },
-            `Panel Ejecutivo de Dirección`
+            "div",
+            { className: "director-hero-icon-box" },
+            h(IconAward, { className: "director-hero-icon" })
           ),
           h(
-            "p",
-            { className: "director-hero-subtitle" },
-            `Bienvenido/a, ${usuario.nombre || "Director"}. Supervisión general de secretaría, personal, preceptoría y server.`
+            "div",
+            null,
+            h("span", { className: "director-hero-date" }, fechaHoy.charAt(0).toUpperCase() + fechaHoy.slice(1)),
+            h(
+              "h1",
+              { className: "director-hero-title" },
+              `Panel Ejecutivo de Dirección`
+            ),
+            h(
+              "p",
+              { className: "director-hero-subtitle" },
+              `Bienvenido/a, ${usuario.nombre || "Director"}. Supervisión general de secretaría, personal, preceptoría y server.`
+            )
+          )
+        ),
+        h(
+          "div",
+          { className: "director-hero-actions" },
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-director-hero-primary",
+              onClick: () => setModalNuevoAbierto(true)
+            },
+            h(IconPlus, null),
+            h("span", null, "Crear Nuevo Perfil")
+          ),
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-director-hero-secondary",
+              onClick: () => setPestanaActiva("personal")
+            },
+            h(IconUsers, null),
+            h("span", null, "Ver Personal")
           )
         )
       ),
+
+      // Navegación de Pestañas (con íconos SVG)
       h(
         "div",
-        { className: "director-hero-actions" },
-        h(
-          "button",
+        { className: "director-tabs-nav" },
+        [
+          { id: "general", label: "Tablero General", icon: IconChart },
+          { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
+          { id: "supervision", label: "Supervisión de Áreas", icon: IconSchool },
           {
-            type: "button",
-            className: "btn-director-hero-primary",
-            onClick: () => setModalNuevoAbierto(true)
+            id: "pedidos",
+            label: "Habilitar Pedidos",
+            icon: IconClipboard,
+            badge: pedidosPendientesCount > 0 ? pedidosPendientesCount : null
           },
-          h(IconPlus, null),
-          h("span", null, "Crear Nuevo Perfil")
-        ),
-        h(
-          "button",
-          {
-            type: "button",
-            className: "btn-director-hero-secondary",
-            onClick: () => setPestanaActiva("personal")
-          },
-          h(IconUsers, null),
-          h("span", null, "Ver Personal")
-        )
-      )
-    ),
-
-    // Navegación de Pestañas (con íconos SVG)
-    h(
-      "div",
-      { className: "director-tabs-nav" },
-      [
-        { id: "general", label: "Tablero General y KPIs", icon: IconChart },
-        { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
-        { id: "supervision", label: "Supervisión de Áreas", icon: IconSchool },
-        { id: "alertas", label: "Alertas Institucionales", icon: IconAlert }
-      ].map((tab) =>
-        h(
-          "button",
-          {
-            key: tab.id,
-            type: "button",
-            className: `director-tab-btn ${pestanaActiva === tab.id ? "director-tab-btn--active" : ""}`,
-            onClick: () => setPestanaActiva(tab.id)
-          },
-          h(tab.icon, { width: "15", height: "15" }),
-          h("span", null, tab.label)
-        )
-      )
-    ),
-
-    cargando
-      ? h(LoadingState, { mensaje: "Cargando métricas y datos institucionales..." })
-      : null,
-
-    // ==========================================
-    // PESTAÑA 1: TABLERO GENERAL Y KPIS
-    // ==========================================
-    !cargando && pestanaActiva === "general"
-      ? h(
-          "div",
-          { className: "director-section-content" },
-
-          // Grid de KPIs Ejecutivos
+          { id: "alertas", label: "Alertas", icon: IconAlert }
+        ].map((tab) =>
           h(
+            "button",
+            {
+              key: tab.id,
+              type: "button",
+              className: `director-tab-btn ${pestanaActiva === tab.id ? "director-tab-btn--active" : ""}`,
+              onClick: () => setPestanaActiva(tab.id)
+            },
+            h(tab.icon, { width: "15", height: "15" }),
+            h("span", null, tab.label),
+            tab.badge
+              ? h("span", { className: "director-tab-badge-amber" }, tab.badge)
+              : null
+          )
+        )
+      ),
+
+      cargando
+        ? h(LoadingState, { mensaje: "Cargando métricas y datos institucionales..." })
+        : null,
+
+      // ==========================================
+      // PESTAÑA 1: TABLERO GENERAL (Restaurado a ancho completo en el dashboard)
+      // ==========================================
+      !cargando && pestanaActiva === "general"
+        ? h(
             "div",
-            { className: "director-kpis-grid" },
+            { className: "director-section-content" },
 
-            // KPI 1: Matrícula de Alumnos
+            // Grid de KPIs Ejecutivos (4 en línea ocupando todo el ancho)
             h(
               "div",
-              { className: "director-kpi-card director-kpi-card--blue" },
-              h(
-                "div",
-                { className: "director-kpi-card__header" },
-                h("span", { className: "director-kpi-label" }, "Matrícula General de Alumnos"),
-                h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
-              ),
-              h("div", { className: "director-kpi-value" }, resumen?.alumnos?.totalActivos ?? 840),
-              h(
-                "div",
-                { className: "director-kpi-footer" },
-                h("span", null, `Mañana: ${resumen?.alumnos?.turnoManana ?? 450} alumnos`),
-                h("span", null, `·`),
-                h("span", null, `Tarde: ${resumen?.alumnos?.turnoTarde ?? 390} alumnos`)
-              )
-            ),
+              { className: "director-kpis-grid" },
 
-            // KPI 2: Plantel de Personal
-            h(
-              "div",
-              { className: "director-kpi-card director-kpi-card--purple" },
+              // KPI 1: Alumnos
               h(
                 "div",
-                { className: "director-kpi-card__header" },
-                h("span", { className: "director-kpi-label" }, "Personal Registrado"),
-                h("span", { className: "director-kpi-badge director-kpi-badge--purple" }, "7 Roles")
-              ),
-              h("div", { className: "director-kpi-value" }, resumen?.personal?.totalUsuarios ?? personal.length),
-              h(
-                "div",
-                { className: "director-kpi-footer" },
-                h("span", null, `${resumen?.personal?.activos ?? personal.length} usuarios activos`),
+                { className: "director-kpi-card director-kpi-card--blue" },
                 h(
-                  "button",
-                  {
-                    type: "button",
-                    className: "director-kpi-link-btn",
-                    onClick: () => setModalNuevoAbierto(true)
-                  },
-                  "+ Crear Perfil"
+                  "div",
+                  { className: "director-kpi-card__header" },
+                  h("span", { className: "director-kpi-label" }, "Alumnos"),
+                  h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
+                ),
+                h("div", { className: "director-kpi-value" }, resumen?.alumnos?.totalActivos ?? 840),
+                h(
+                  "div",
+                  { className: "director-kpi-footer" },
+                  h("span", null, `Mañana: ${resumen?.alumnos?.turnoManana ?? 450} alumnos`),
+                  h("span", null, `·`),
+                  h("span", null, `Tarde: ${resumen?.alumnos?.turnoTarde ?? 390} alumnos`)
+                )
+              ),
+
+              // KPI 2: Personal
+              h(
+                "div",
+                { className: "director-kpi-card director-kpi-card--purple" },
+                h(
+                  "div",
+                  { className: "director-kpi-card__header" },
+                  h("span", { className: "director-kpi-label" }, "Personal"),
+                  h("span", { className: "director-kpi-badge director-kpi-badge--purple" }, "7 Roles")
+                ),
+                h("div", { className: "director-kpi-value" }, resumen?.personal?.totalUsuarios ?? personal.length),
+                h(
+                  "div",
+                  { className: "director-kpi-footer" },
+                  h("span", null, `${resumen?.personal?.activos ?? personal.length} usuarios activos`),
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      className: "director-kpi-link-btn",
+                      onClick: () => setModalNuevoAbierto(true)
+                    },
+                    "+ Crear Perfil"
+                  )
+                )
+              ),
+
+              // KPI 3: Asistencias
+              h(
+                "div",
+                { className: "director-kpi-card director-kpi-card--emerald" },
+                h(
+                  "div",
+                  { className: "director-kpi-card__header" },
+                  h("span", { className: "director-kpi-label" }, "Asistencias"),
+                  h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, "Turno Mañana")
+                ),
+                h("div", { className: "director-kpi-value" }, `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`),
+                h(
+                  "div",
+                  { className: "director-kpi-footer" },
+                  h("span", null, `${resumen?.asistencia?.presentesHoy ?? 791} presentes`),
+                  h("span", null, `·`),
+                  h("span", { className: "text-rose-600 font-semibold" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} alertas faltas`)
+                )
+              ),
+
+              // KPI 4: Pañol
+              h(
+                "div",
+                { className: "director-kpi-card director-kpi-card--amber" },
+                h(
+                  "div",
+                  { className: "director-kpi-card__header" },
+                  h("span", { className: "director-kpi-label" }, "Pañol"),
+                  h("span", { className: "director-kpi-badge director-kpi-badge--amber" }, "Recursos")
+                ),
+                h("div", { className: "director-kpi-value" }, `${resumen?.serverPañol?.totalItems ?? 24} ítems`),
+                h(
+                  "div",
+                  { className: "director-kpi-footer" },
+                  h("span", { className: "text-amber-700 font-medium" }, `${resumen?.serverPañol?.solicitudesPendientes ?? 2} solicitudes pend.`),
+                  h("span", null, `·`),
+                  h("span", { className: "text-rose-600 font-medium" }, `${resumen?.serverPañol?.sinStock ?? 2} sin stock`)
                 )
               )
             ),
 
-            // KPI 3: Asistencia Institucional
+            // Accesos Rápidos de Supervisión Directiva (con íconos SVG)
             h(
               "div",
-              { className: "director-kpi-card director-kpi-card--emerald" },
-              h(
-                "div",
-                { className: "director-kpi-card__header" },
-                h("span", { className: "director-kpi-label" }, "Asistencia Promedio Hoy"),
-                h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, "Turno Mañana")
-              ),
-              h("div", { className: "director-kpi-value" }, `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`),
-              h(
-                "div",
-                { className: "director-kpi-footer" },
-                h("span", null, `${resumen?.asistencia?.presentesHoy ?? 791} presentes`),
-                h("span", null, `·`),
-                h("span", { className: "text-rose-600 font-semibold" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} alertas faltas`)
-              )
-            ),
+              { className: "director-supervision-cards-grid" },
 
-            // KPI 4: Server, Pañol y Recursos
-            h(
-              "div",
-              { className: "director-kpi-card director-kpi-card--amber" },
+              // Tarjeta Secretaría
               h(
                 "div",
-                { className: "director-kpi-card__header" },
-                h("span", { className: "director-kpi-label" }, "Estado de Pañol y Server"),
-                h("span", { className: "director-kpi-badge director-kpi-badge--amber" }, "Recursos")
+                { className: "director-access-box" },
+                h(
+                  "div",
+                  { className: "director-access-box__header" },
+                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--sec" }, h(IconClipboard, { width: "20", height: "20", className: "text-sky-600" })),
+                  h("h3", { className: "director-access-title" }, "Secretaría Académica")
+                ),
+                h("p", { className: "director-access-desc" }, "Gestión de legajos de alumnos, certificados analíticos, libro matriz y constancias."),
+                h(
+                  "div",
+                  { className: "director-access-actions" },
+                  h(
+                    "a",
+                    { href: "#/secretaria", className: "director-btn-navy" },
+                    "Ir a Secretaría"
+                  )
+                )
               ),
-              h("div", { className: "director-kpi-value" }, `${resumen?.serverPañol?.totalItems ?? 24} ítems`),
+
+              // Tarjeta Preceptoría
               h(
                 "div",
-                { className: "director-kpi-footer" },
-                h("span", { className: "text-amber-700 font-medium" }, `${resumen?.serverPañol?.solicitudesPendientes ?? 2} solicitudes pend.`),
-                h("span", null, `·`),
-                h("span", { className: "text-rose-600 font-medium" }, `${resumen?.serverPañol?.sinStock ?? 2} sin stock`)
-              )
-            )
-          ),
-
-          // Accesos Rápidos de Supervisión Directiva (con íconos SVG)
-          h(
-            "div",
-            { className: "director-supervision-cards-grid" },
-
-            // Tarjeta Secretaría
-            h(
-              "div",
-              { className: "director-access-box" },
-              h(
-                "div",
-                { className: "director-access-box__header" },
-                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--sec" }, h(IconClipboard, { width: "20", height: "20", className: "text-sky-600" })),
-                h("h3", { className: "director-access-title" }, "Secretaría Académica")
+                { className: "director-access-box" },
+                h(
+                  "div",
+                  { className: "director-access-box__header" },
+                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--prec" }, h(IconClock, { width: "20", height: "20", className: "text-purple-600" })),
+                  h("h3", { className: "director-access-title" }, "Preceptoría y Asistencia")
+                ),
+                h("p", { className: "director-access-desc" }, "Supervisión de inasistencias diarias, libro de aula, alertas de ausencias y seguimiento."),
+                h(
+                  "div",
+                  { className: "director-access-actions" },
+                  h(
+                    "a",
+                    { href: "#/preceptoria", className: "director-btn-navy" },
+                    "Ir a Preceptoría"
+                  )
+                )
               ),
-              h("p", { className: "director-access-desc" }, "Gestión de legajos de alumnos, certificados analíticos, libro matriz y constancias."),
-              h(
-                "div",
-                { className: "director-access-actions" },
-                h("a", { href: "#/secretaria", className: "director-access-link" }, "Ir al Tablero de Secretaría ➔"),
-                h("a", { href: "#/alumnos", className: "director-access-sublink" }, "Ver Listado de Alumnos")
-              )
-            ),
 
-            // Tarjeta Preceptoría
-            h(
-              "div",
-              { className: "director-access-box" },
+              // Tarjeta Server
               h(
                 "div",
-                { className: "director-access-box__header" },
-                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--prec" }, h(IconClock, { width: "20", height: "20", className: "text-purple-600" })),
-                h("h3", { className: "director-access-title" }, "Preceptoría y Asistencia")
+                { className: "director-access-box" },
+                h(
+                  "div",
+                  { className: "director-access-box__header" },
+                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--srv" }, h(IconServer, { width: "20", height: "20", className: "text-emerald-600" })),
+                  h("h3", { className: "director-access-title" }, "Server")
+                ),
+                h("p", { className: "director-access-desc" }, "Control de stock de materiales, equipamiento técnico, reservas de laboratorios y solicitudes."),
+                h(
+                  "div",
+                  { className: "director-access-actions" },
+                  h(
+                    "a",
+                    { href: "#/server", className: "director-btn-navy" },
+                    "Ir a Server"
+                  )
+                )
               ),
-              h("p", { className: "director-access-desc" }, "Supervisión de inasistencias diarias, libro de aula, alertas de ausencias y seguimiento."),
-              h(
-                "div",
-                { className: "director-access-actions" },
-                h("a", { href: "#/preceptoria", className: "director-access-link" }, "Ir a Preceptoría ➔"),
-                h("a", { href: "#/cursos", className: "director-access-sublink" }, "Directorio de Cursos")
-              )
-            ),
 
-            // Tarjeta Server y Pañol
-            h(
-              "div",
-              { className: "director-access-box" },
+              // Tarjeta Jefatura de Área
               h(
                 "div",
-                { className: "director-access-box__header" },
-                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--srv" }, h(IconServer, { width: "20", height: "20", className: "text-emerald-600" })),
-                h("h3", { className: "director-access-title" }, "Server y Pañol de Taller")
-              ),
-              h("p", { className: "director-access-desc" }, "Control de stock de materiales, equipamiento técnico, reservas de laboratorios y solicitudes."),
-              h(
-                "div",
-                { className: "director-access-actions" },
-                h("a", { href: "#/server", className: "director-access-link" }, "Ir al Panel de Server ➔"),
-                h("a", { href: "#/inventario", className: "director-access-sublink" }, "Catálogo de Inventario")
-              )
-            ),
-
-            // Tarjeta Jefatura de Área
-            h(
-              "div",
-              { className: "director-access-box" },
-              h(
-                "div",
-                { className: "director-access-box__header" },
-                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--jef" }, h(IconWrench, { width: "20", height: "20", className: "text-amber-600" })),
-                h("h3", { className: "director-access-title" }, "Jefatura de Área y Talleres")
-              ),
-              h("p", { className: "director-access-desc" }, "Grilla horaria de talleres, distribución de espacios y seguimiento de materias técnicas."),
-              h(
-                "div",
-                { className: "director-access-actions" },
-                h("a", { href: "#/jefatura", className: "director-access-link" }, "Ir a Grilla de Jefatura ➔")
+                { className: "director-access-box" },
+                h(
+                  "div",
+                  { className: "director-access-box__header" },
+                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--jef" }, h(IconWrench, { width: "20", height: "20", className: "text-amber-600" })),
+                  h("h3", { className: "director-access-title" }, "Jefatura de Área y Talleres")
+                ),
+                h("p", { className: "director-access-desc" }, "Grilla horaria de talleres, distribución de espacios y seguimiento de materias técnicas."),
+                h(
+                  "div",
+                  { className: "director-access-actions" },
+                  h(
+                    "a",
+                    { href: "#/jefatura", className: "director-btn-navy" },
+                    "Ir a Jefatura"
+                  )
+                )
               )
             )
           )
-        )
-      : null,
+        : null,
 
     // =========================================================================
     // PESTAÑA 2: GESTIÓN DE PERSONAL Y PERFILES (CON CREACIÓN Y ASIGNACIÓN DE ROLES)
@@ -975,6 +1147,22 @@ export default function DirectorDashboardView() {
         )
       : null,
 
+    // =========================================================================
+    // PESTAÑA 5: HABILITACIÓN DE PEDIDOS (SERVER, SECRETARÍA, PRECEPTORÍA)
+    // =========================================================================
+    !cargando && pestanaActiva === "pedidos"
+      ? h(
+          "div",
+          { className: "director-section-content" },
+          h(HabilitarPedidosSection, {
+            pedidos,
+            alAprobar: handleAprobarPedido,
+            alRechazar: handleRechazarPedido,
+            alCrearPrueba: handleCrearPedidoPrueba
+          })
+        )
+      : null,
+
     // Modal para Crear Nuevo Perfil con Asignación de Roles
     h(NuevoPerfilModal, {
       abierto: modalNuevoAbierto,
@@ -989,5 +1177,6 @@ export default function DirectorDashboardView() {
       alCerrar: () => setUsuarioEditandoRoles(null),
       alRolesActualizados: handleRolesActualizados
     })
-  );
+  )
+);
 }

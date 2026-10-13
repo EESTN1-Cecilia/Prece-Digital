@@ -246,5 +246,227 @@ export const DirectorService = {
       method: "PATCH",
       body: JSON.stringify({ estado: nuevoEstado })
     });
+  },
+
+  // =========================================================================
+  // GESTIÓN Y HABILITACIÓN DE PEDIDOS (SERVER, SECRETARÍA, PRECEPTORÍA)
+  // =========================================================================
+
+  /**
+   * Obtiene la lista de pedidos que requieren habilitación y autorización de Dirección.
+   */
+  async listarPedidos() {
+    const STORAGE_KEY = "prece_pedidos_director";
+    try {
+      const guardado = localStorage.getItem(STORAGE_KEY);
+      if (guardado) {
+        return JSON.parse(guardado);
+      }
+    } catch {
+      // Ignorar error de storage
+    }
+
+    const iniciales = [
+      {
+        id: "ped-1",
+        codigo: "PED-2026-041",
+        sector: "Server",
+        tipo: "actualizacion_planillas",
+        titulo: "Actualización de Planilla de Calificaciones - 4° 1° Computación",
+        solicitante: "Hernán Gómez",
+        rolSolicitante: "Responsable de Server",
+        fecha: "Hoy, 10:45 hs",
+        archivo: "Planilla_Calificaciones_4to1ra_2Trimestre.xlsx",
+        alcance: "4° 1° Computación (Turno Mañana)",
+        impacto: "64 calificaciones · 32 alumnos",
+        detalle: "Reemplazo de calificaciones parciales y promedios del segundo trimestre según planilla cargada desde el servidor escolar. Los datos permanecen bloqueados y no se actualizarán en el sistema hasta que Dirección los apruebe.",
+        estado: "pendiente",
+        aprobadoEn: null,
+        aprobadoPor: null,
+        datosPlanilla: [
+          { alumno: "Acosta Sofía", materia: "Programación II", anterior: "7 (Siete)", nueva: "9 (Nueve)", estado: "Modificada" },
+          { alumno: "Benítez Julián", materia: "Bases de Datos", anterior: "5 (Cinco)", nueva: "7 (Siete)", estado: "Modificada" },
+          { alumno: "Castro Mateo", materia: "Redes y Telecom.", anterior: "Pendiente", nueva: "8 (Ocho)", estado: "Nueva" },
+          { alumno: "Díaz Camila", materia: "Sistemas Operativos", anterior: "6 (Seis)", nueva: "8 (Ocho)", estado: "Modificada" },
+          { alumno: "Flores Lucas", materia: "Laboratorio III", anterior: "4 (Cuatro)", nueva: "7 (Siete)", estado: "Modificada" }
+        ]
+      },
+      {
+        id: "ped-2",
+        codigo: "PED-2026-042",
+        sector: "Server",
+        tipo: "inventario_hardware",
+        titulo: "Baja de Inventario y Reasignación de Lote de Netbooks (Carro 2)",
+        solicitante: "Lucas Romero",
+        rolSolicitante: "Soporte Técnico de Server",
+        fecha: "Hoy, 09:15 hs",
+        archivo: "Acta_Baja_Hardware_Lote08.pdf",
+        alcance: "Laboratorio 2 · Carro Móvil B",
+        impacto: "8 equipos dados de baja · 8 reasignaciones",
+        detalle: "Baja por rotura irreparable de placa madre en 8 netbooks escolares y destino a banco de repuestos técnicos para talleres de electrónica. Requiere autorización directiva.",
+        estado: "pendiente",
+        aprobadoEn: null,
+        aprobadoPor: null,
+        datosPlanilla: [
+          { alumno: "Carro 2 - Netbook #12", materia: "Placa Madre Quemada", anterior: "Activo / En Servicio", nueva: "Baja Definitiva", estado: "Baja" },
+          { alumno: "Carro 2 - Netbook #15", materia: "Pantalla Dañada", anterior: "Activo / En Servicio", nueva: "Baja Definitiva", estado: "Baja" },
+          { alumno: "Carro 2 - Netbook #22", materia: "Falla de Encendido", anterior: "Activo / En Servicio", nueva: "Baja Definitiva", estado: "Baja" }
+        ]
+      },
+      {
+        id: "ped-3",
+        codigo: "PED-2026-039",
+        sector: "Secretaría",
+        tipo: "libro_matriz",
+        titulo: "Rectificación de Folio y Calificación en Libro Matriz",
+        solicitante: "Mariana López",
+        rolSolicitante: "Secretaría Académica",
+        fecha: "Ayer, 16:30 hs",
+        archivo: "Resolucion_Equivalencia_2026.pdf",
+        alcance: "Ciclo Superior · Egresados 2025",
+        impacto: "2 actas analíticas rectificadas",
+        detalle: "Reapertura de acta de examen por resolución de equivalencia ministerial aprobada para la alumna Gómez Rocío. Requiere firma y habilitación del Director.",
+        estado: "pendiente",
+        aprobadoEn: null,
+        aprobadoPor: null,
+        datosPlanilla: [
+          { alumno: "Gómez Rocío", materia: "Química Aplicada", anterior: "Previa Pendiente", nueva: "Aprobada por Equivalencia (8)", estado: "Rectificada" }
+        ]
+      },
+      {
+        id: "ped-4",
+        codigo: "PED-2026-035",
+        sector: "Preceptoría",
+        tipo: "justificacion_asistencia",
+        titulo: "Justificación Extraordinaria por Licencia Médica Prolongada",
+        solicitante: "Carlos Ramos",
+        rolSolicitante: "Jefe de Preceptores",
+        fecha: "10 de Octubre, 11:20 hs",
+        archivo: "Certificado_Medico_Avalado.pdf",
+        alcance: "2° 1° · Turno Mañana",
+        impacto: "14 inasistencias justificadas",
+        detalle: "Dispensa reglamentaria con reincorporación y plan de continuidad pedagógica domiciliaria del estudiante Benítez Julián.",
+        estado: "aprobado",
+        aprobadoEn: "10/10/2026 14:10 hs",
+        aprobadoPor: "Dirección General",
+        datosPlanilla: [
+          { alumno: "Benítez Julián", materia: "Inasistencias 15/09 al 02/10", anterior: "Injustificadas (14)", nueva: "Justificadas por Dispensa", estado: "Aprobado" }
+        ]
+      }
+    ];
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
+    } catch {
+      // Ignorar error
+    }
+    return iniciales;
+  },
+
+  /**
+   * Habilita y aprueba un pedido, permitiendo que la actualización se aplique.
+   */
+  async aprobarPedido(pedidoId) {
+    const STORAGE_KEY = "prece_pedidos_director";
+    const lista = await this.listarPedidos();
+    const ahora = new Intl.DateTimeFormat("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date());
+
+    const actualizada = lista.map((p) => {
+      if (p.id === pedidoId) {
+        return {
+          ...p,
+          estado: "aprobado",
+          aprobadoEn: `${ahora} hs`,
+          aprobadoPor: "Dirección General"
+        };
+      }
+      return p;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Ignorar error
+    }
+    return actualizada;
+  },
+
+  /**
+   * Rechaza un pedido, impidiendo que los cambios se sincronicen o actualicen.
+   */
+  async rechazarPedido(pedidoId, motivo = "Rechazado por Dirección") {
+    const STORAGE_KEY = "prece_pedidos_director";
+    const lista = await this.listarPedidos();
+    const ahora = new Intl.DateTimeFormat("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date());
+
+    const actualizada = lista.map((p) => {
+      if (p.id === pedidoId) {
+        return {
+          ...p,
+          estado: "rechazado",
+          rechazadoEn: `${ahora} hs`,
+          motivoRechazo: motivo
+        };
+      }
+      return p;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Ignorar error
+    }
+    return actualizada;
+  },
+
+  /**
+   * Simula la creación de un nuevo pedido de actualización desde Server.
+   */
+  async crearPedidoPrueba(sector = "Server") {
+    const STORAGE_KEY = "prece_pedidos_director";
+    const lista = await this.listarPedidos();
+    const numero = Math.floor(Math.random() * 800) + 100;
+    const nuevo = {
+      id: `ped-${Date.now()}`,
+      codigo: `PED-2026-${numero}`,
+      sector,
+      tipo: "actualizacion_planillas",
+      titulo: `Actualización de Planilla de Cursos y Alumnos - 5° 2° (${sector})`,
+      solicitante: "Lucas Gómez",
+      rolSolicitante: `Operador Técnico · ${sector}`,
+      fecha: "Hace instantes",
+      archivo: `Planilla_Actualizacion_${sector}_5to2da.xlsx`,
+      alcance: "5° 2° Informática · Turno Tarde",
+      impacto: "58 registros modificados · 29 alumnos",
+      detalle: "Solicitud de sincronización de nueva planilla de notas y equivalencias de taller cargada en Server. Requiere aprobación directiva para sobrescribir.",
+      estado: "pendiente",
+      aprobadoEn: null,
+      aprobadoPor: null,
+      datosPlanilla: [
+        { alumno: "Martínez Juan", materia: "Modelos y Sistemas", anterior: "6 (Seis)", nueva: "8 (Ocho)", estado: "Modificada" },
+        { alumno: "Ríos Valentina", materia: "Seguridad Informática", anterior: "Pendiente", nueva: "9 (Nueve)", estado: "Nueva" },
+        { alumno: "Vargas Franco", materia: "Prácticas Profesionalizantes", anterior: "7 (Siete)", nueva: "10 (Diez)", estado: "Modificada" }
+      ]
+    };
+
+    const actualizada = [nuevo, ...lista];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Ignorar error
+    }
+    return actualizada;
   }
 };
