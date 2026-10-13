@@ -2,8 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 260 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
-Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 287 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -81,14 +80,14 @@ Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/students/:studentId/observations` | `observations.write` |
 | POST | `/api/v1/students/:studentId/transfers` | `students.write` |
 | POST | `/api/v1/students/:studentId/certificate` | `documents.write` |
+| GET | `/api/v1/students/:studentId/particular-conditions` | `particular-conditions.read` |
+| POST | `/api/v1/students/:studentId/particular-conditions` | `particular-conditions.write` |
 | POST | `/api/v1/students/:studentId/promover` | `course-changes.write` |
 | POST | `/api/v1/students/:studentId/cambio-curso` | `course-changes.write` |
 | POST | `/api/v1/students/:studentId/cambio-division` | `course-changes.write` |
 | GET | `/api/v1/students/:studentId/book-registry/exists` | `book-registry.read` |
 | GET | `/api/v1/students/:studentId/book-registry` | `book-registry.read` |
 | POST | `/api/v1/students/:studentId/book-registry` | `book-registry.write` |
-| GET | `/api/v1/students/:studentId/particular-conditions` | `particular-conditions.read` |
-| POST | `/api/v1/students/:studentId/particular-conditions` | `particular-conditions.write` |
 | POST | `/api/v1/students/:studentId/tutors` | `students.write` |
 | GET | `/api/v1/students/:studentId/tutors` | `students.read` |
 
@@ -116,12 +115,12 @@ Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones/resumen` | `observations.read` |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones` | `observations.read` |
+| GET | `/api/v1/alumnos/:alumnoId/condiciones/resumen` | `particular-conditions.read` |
+| GET | `/api/v1/alumnos/:alumnoId/condiciones` | `particular-conditions.read` |
 | GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos` | `course-changes.read` |
 | GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos/ultimo` | `course-changes.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-curso` | `course-changes.read` |
 | GET | `/api/v1/alumnos/:alumnoId/libro-matriz` | `book-registry.read` |
-| GET | `/api/v1/alumnos/:alumnoId/condiciones/resumen` | `particular-conditions.read` |
-| GET | `/api/v1/alumnos/:alumnoId/condiciones` | `particular-conditions.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/situacion-academica/:materiaId` | `academic-records.read` |
 | GET | `/api/v1/alumnos/:alumnoId/historial-academico` | `academic-records.read` |
@@ -154,6 +153,16 @@ Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | POST | `/api/v1/alerts/:alertId/dismiss` | `students.write` |
 
+## particular-conditions
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/particular-conditions/catalogos` | `particular-conditions.read` |
+| GET | `/api/v1/particular-conditions` | `particular-conditions.read` |
+| GET | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.read` |
+| PATCH | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.write` |
+| POST | `/api/v1/particular-conditions/:conditionId/finalizar` | `particular-conditions.write` |
+
 ## movimientos-cursos
 
 | Metodo | Ruta | Permiso |
@@ -164,6 +173,7 @@ Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/movimientos-cursos/masivos` | `course-changes.write` |
 | GET | `/api/v1/movimientos-cursos` | `course-changes.read` |
 | GET | `/api/v1/movimientos-cursos/:movimientoId` | `course-changes.read` |
+
 ## book-registry
 
 | Metodo | Ruta | Permiso |
@@ -173,15 +183,6 @@ Total: 257 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/book-registry/:registryId/historial` | `book-registry.read` |
 | GET | `/api/v1/book-registry/:registryId` | `book-registry.read` |
 | PATCH | `/api/v1/book-registry/:registryId` | `book-registry.write` |
-## particular-conditions
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| GET | `/api/v1/particular-conditions/catalogos` | `particular-conditions.read` |
-| GET | `/api/v1/particular-conditions` | `particular-conditions.read` |
-| GET | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.read` |
-| PATCH | `/api/v1/particular-conditions/:conditionId` | `particular-conditions.write` |
-| POST | `/api/v1/particular-conditions/:conditionId/finalizar` | `particular-conditions.write` |
 
 ## tutors
 
