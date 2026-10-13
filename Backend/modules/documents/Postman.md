@@ -639,6 +639,30 @@ Permisos: `absences.read`, `absences.write`, `absences.manage`.
   - **Estados:** `abierta`, `en_revision`, `resuelta`, `cerrada`.
 - `GET` lista · `GET /:incidentId` · `PATCH /:incidentId`.
 
+### Eventos de ausencia y notificaciones (`/api/v1/absence-events`)
+Cuando se registra una ausencia activa, el backend detecta la actividad afectada, genera un evento y notifica a través del sistema general de notificaciones. Los destinatarios se resuelven siempre en el servidor (el frontend nunca los elige).
+
+**Reglas de destinatarios:**
+- Preceptoría (rol `preceptor`) de la escuela de la ausencia: siempre.
+- Dirección (rol `director`) de la misma escuela: solo para tipos `medica`, `personal`, `injustificada`.
+- Una notificación por destinatario y evento (sin duplicados). Los eventos se conservan aunque luego se anule la ausencia o se reasigne el grupo.
+
+- `POST /api/v1/absence-events` · `absences.write` genera el evento a partir de una ausencia válida. **Idempotente**: si el evento ya existe devuelve 200 con `created: false` y no duplica notificaciones.
+  ```json
+  { "absenceId": "abs_..." }
+  ```
+  **Respuesta 201/200:** `{ "data": { "event": { ... }, "absence": { ... }, "affectedClass": { ... }, "notifications": [ ... ], "created": true|false } }`
+
+- `GET /api/v1/absence-events` · `absences.read` lista eventos (filtros: `absenceId`, `teacherId`, `courseId`, `divisionId`, `subjectId`, `spaceId`, `date`, `startDate`, `endDate`, `status`).
+- `GET /api/v1/absence-events/by-absence/:absenceId` · `absences.read`.
+- `GET /api/v1/absence-events/:eventId` · `absences.read` devuelve el evento enriquecido (docente, espacio, asignación, reasignación vigente y cantidad de notificaciones).
+- `GET /api/v1/absence-events/:eventId/affected-classes` · `absences.read` (clases afectadas con estado de clase y espacio actual, reflejando reasignaciones).
+- `GET /api/v1/absence-events/:eventId/class-state` · `absences.read` (`sin_clase` con ausencia activa, `con_clase` si fue anulada).
+- `GET /api/v1/absence-events/:eventId/space-availability` · `absences.read` (espacio liberado para el día y horario de la clase afectada).
+- `GET /api/v1/absence-events/:eventId/notifications` · `absences.read` (notificaciones generadas para el evento).
+
+**Errores:** 404 evento/ausencia/docente/asignación/espacio inexistente · 409 ausencia no activa · 422 asignación que no corresponde al docente.
+
 ---
 
 ## 8. Talleres
@@ -841,6 +865,108 @@ Permisos: `curriculum.read`, `curriculum.write`, `curriculum.manage`.
   - **Estados:** `pendiente`, `en_progreso`, `completada`, `cancelada` (al completarla fija `completedDate`).
 - `GET` lista (filtros: `planId`, `status`, `type`) · `GET /:activityId` · `PATCH /:activityId`.
 
+### Avance curricular (`/api/v1/curriculum/materias`, `/disenos`, `/contenidos`, `/seguimientos`, `/avance`)
+El avance de un contenido se deriva siempre del último seguimiento: no se puede
+fijar `progress` ni `status` manualmente sobre un contenido (`422`).
+
+Materias (escritura con `academics.write`):
+- `POST /api/v1/curriculum/materias` — `{ "name", "code", "schoolId" }` (código único por escuela, `409` si se repite).
+- `GET /api/v1/curriculum/materias` (filtro: `includeInactive`) · `GET /:subjectId` · `PATCH /:subjectId`.
+
+Diseños (escritura con `curriculum.manage`):
+- `POST /api/v1/curriculum/disenos` — `{ "subjectId", "year", "courseId", "divisionId", "name", "objectives", "status", "schoolId" }`.
+  - **Estados:** `borrador`, `vigente`, `archivado` (uno por materia + año + curso, `409` si se repite; año entre 2000 y 2100).
+- `GET /api/v1/curriculum/disenos` (filtros: `subjectId`, `courseId`, `year`, `status`) · `GET /:designId` · `PATCH /:designId`.
+
+Contenidos (escritura con `curriculum.write`):
+- `POST /api/v1/curriculum/contenidos` — `{ "designId", "name", "description", "teacherId", "order" }`.
+  - **Estados:** `no_iniciado`, `en_desarrollo`, `parcialmente_desarrollado`, `desarrollado`, `no_desarrollado`, `reprogramado`.
+  - El docente debe estar activo y asociado a la materia y curso del diseño (`422`). Nombre único por diseño (`409`).
+- `GET /api/v1/curriculum/contenidos` (filtros: `designId`, `subjectId`, `teacherId`, `courseId`, `status`, `pendiente`, `year`).
+- `GET /api/v1/curriculum/contenidos/pendientes` — contenidos en `no_iniciado` / `no_desarrollado`.
+- `GET /:contentId` · `GET /:contentId/seguimientos` · `GET /:contentId/historial` · `PATCH /:contentId`.
+
+Seguimientos (escritura con `curriculum.track.write`):
+- `POST /api/v1/curriculum/seguimientos` — `{ "contentId", "status", "progress", "note", "date" }` (fecha en `YYYY-MM-DD`).
+  - El avance del contenido se sincroniza con el último seguimiento. Un docente solo registra seguimientos de los contenidos a su cargo (`403`).
+- `GET /api/v1/curriculum/seguimientos` (filtros: `contentId`, `designId`, `subjectId`, `teacherId`, `status`, `year`).
+- `GET /:trackingId` · `PATCH /:trackingId`.
+
+Avance (lectura con `curriculum.read`):
+- `GET /api/v1/curriculum/avance/materia` · `/avance/curso` · `/avance/docente` · `/avance/periodo` · `/avance/pendientes`.
+  - Cada reporte expone `total`, `pendientes`, `desarrollados`, `enProceso` y `promedio`, con `resumen` global.
+
+---
+
+## 14. Planificaciones Docentes
+
+Base: `/api/v1/teacher-plans`. Permisos: `planning.read`, `planning.write`, `planning.review`, `planning.manage`.
+
+### Creación y edición
+- `POST /api/v1/teacher-plans` (**201**): `{ "title", "teacherId", "subjectId", "courseId", "divisionId", "year", "period", "contents", "activities", "observations", "schoolId" }`.
+  - Requeridos: `title`, `teacherId`, `subjectId`, `courseId`, `year` (entero entre 2000 y 2100).
+  - El docente debe estar activo y asociado a esa materia, curso y división (`422`); un docente solo crea a su nombre (`403`).
+  - Combinación `teacherId + subjectId + courseId + divisionId + year` única (`409`).
+  - **Períodos:** `anual`, `primer_cuatrimestre`, `segundo_cuatrimestre`, `primer_trimestre`, `segundo_trimestre`, `tercer_trimestre`.
+  - `contents[]`: `{ "name", "description", "estimatedHours" }` · `activities[]`: `{ "name", "type", "description", "date" }`.
+  - **Tipos de actividad:** `clase`, `taller`, `evaluacion`, `tarea`, `proyecto`, `informe`, `otra`.
+  - Siempre nace en `borrador`.
+- `PATCH /:planId` — actualiza `title`, `period`, `contents`, `activities`, `observations`. No admite cambios de asociación ni de estado (`422`).
+  - En `aprobada` o `finalizada` el contenido solo se edita con `planning.manage` (`403`); `archivada` es inmutable (`409`).
+
+### Estados
+`PATCH /:planId/status` — `{ "status", "comment" }`. Transiciones:
+`borrador → en_revision|archivada` · `en_revision → borrador|aprobada|observada|archivada` · `observada → borrador|en_revision|archivada` ·
+`aprobada → finalizada|archivada` · `finalizada → archivada` · `archivada → ninguna`.
+- El permiso se evalúa por estado destino: `planning.write` (`en_revision`), `planning.review` (`aprobada`, `observada`, `finalizada`), `planning.manage` (`archivada`).
+- Repetir el estado actual devuelve `409`; `observada` exige `comment` (`422`).
+- `DELETE /:planId` (`planning.manage`) archiva sin borrar el historial.
+
+### Consulta
+- `GET /api/v1/teacher-plans` (filtros: `teacherId`, `subjectId`, `courseId`, `divisionId`, `year`, `period`, `status`; orden: `orden`, `direccion`; paginación: `pagina`, `porPagina`).
+  - Respuesta: `data`, `filtros` y `paginacion` (`total`, `pagina`, `porPagina`, `totalPaginas`).
+  - Un docente sin `planning.review` ni `planning.manage` solo lista sus propias planificaciones.
+- `GET /api/v1/teacher-plans/by-teacher/:teacherId` · `by-subject/:subjectId` · `by-course/:courseId` · `by-period/:year`.
+- `GET /:planId` · `GET /:planId/status` (estado, `allowedTransitions` con su permiso, `canEditContent`) · `GET /:planId/history`.
+
+### Integración curricular
+- `GET /:planId/curriculum-comparison` — cruza lo planificado con los contenidos del seguimiento curricular del mismo `subjectId`, `courseId`, `divisionId` y `year`, emparejando nombres sin acentos ni mayúsculas.
+  - Devuelve `planificados` (con su `seguimiento` o `null`), `sinPlanificar` y `resumen` con `conSeguimiento`, `sinSeguimiento`, `contenidosCurriculum` y `promedioAvance`.
+
+---
+
+## 15. Control de Planificación
+
+Base: `/api/v1/planning-controls`. Solo lectura con `planning.read`; registro, modificación y
+transiciones con `planning.review` (la transición a `finalizada` exige `planning.manage`).
+El responsable (`reviewedBy`) y la auditoría se toman siempre de la sesión.
+
+### Registro (escritura con `planning.review`)
+- `POST /api/v1/planning-controls` (**201**): `{ "planningId", "contents", "curriculumMatch", "observations", "status", "reviewDate" }`.
+  - Requeridos: `planningId` y `contents[]`. La planificación debe existir (`404`), ser de la escuela del usuario (`403`), tener docente activo (`422`) y contar con diseño curricular vigente para su materia, curso, división y año (`422`).
+  - **Estados:** `pendiente`, `en_revision`, `aprobada`, `aprobada_con_observaciones`, `requiere_correccion`, `finalizada`. Se crea en `pendiente` o `en_revision`.
+  - **Correspondencia con el diseño:** `total`, `parcial`, `no_coincide`, `no_evaluado`.
+  - `contents[]`: `{ "name", "description", "plannedContentName", "curriculumContentId", "evaluated" }`.
+    - `plannedContentName` debe existir en la planificación y `curriculumContentId` en el diseño vigente, con nombre coincidente (`422`).
+    - `total` exige todos los contenidos evaluados y vinculados; `parcial` exige al menos uno evaluado y observaciones; `no_coincide` y `requiere_correccion` exigen observaciones (`422`).
+  - `reviewDate` en `YYYY-MM-DD`, nunca futura (`422`). No se admiten dos controles `pendiente` o `en_revision` para la misma planificación (`409`).
+- `PATCH /api/v1/planning-controls/:controlId` — actualiza `contents`, `curriculumMatch`, `observations` y `reviewDate`; no cambia estado ni reasigna la planificación (`422`). Un control `finalizada` no admite cambios (`409`).
+- `PATCH /api/v1/planning-controls/:controlId/status` — `{ "status", "observations", "comment" }`.
+  - Transiciones: `pendiente → en_revision` · `en_revision → aprobada | aprobada_con_observaciones | requiere_correccion` · `requiere_correccion → en_revision` · `aprobada | aprobada_con_observaciones → finalizada` · `finalizada → ninguna`.
+  - Repetir estado devuelve `409`; `aprobada_con_observaciones` y `requiere_correccion` exigen observaciones (`422`).
+
+### Consultas (lectura con `planning.read`)
+- `GET /api/v1/planning-controls` (filtros combinables: `planningId`, `teacherId`, `subjectId`, `courseId`, `divisionId`, `year`, `period`, `status`, `curriculumMatch`, `pendiente`; orden: `orden`, `direccion`; paginación: `pagina`, `porPagina`). Respuesta con `data`, `filtros` y `paginacion`.
+- `GET /api/v1/planning-controls/pending` — controles `pendiente` y `en_revision`.
+- `GET /api/v1/planning-controls/by-teacher/:teacherId` · `by-subject/:subjectId` · `by-course/:courseId` · `by-period/:year` · `by-status/:status`.
+- `GET /api/v1/planning-controls/:controlId` — incluye `planningTitle`, `planningStatus`, `teacher`, `subjectName`, `allowedTransitions` e `historyCount`.
+- `GET /api/v1/planning-controls/planning/:planId` — control vigente de la planificación (`404` si aún no tiene controles).
+- `GET /api/v1/planning-controls/planning/:planId/history` — historial de revisiones de la planificación.
+- `GET /api/v1/planning-controls/:controlId/history` — auditoría del control (`creacion`, `actualizacion`, `cambio_estado` con `changes`, `comment`, `performedBy`).
+
+El estado del control es independiente del estado de la planificación: registrar o mover un control
+nunca modifica `planificaciones_docentes.estado`.
+
 ---
 
 ## Roles y permisos
@@ -853,9 +979,9 @@ Roles disponibles:
 | `director` | Todos los permisos |
 | `secretario` | Lectura de la mayoría; gestión de estudiantes y documentos |
 | `preceptor` | Asistencias, estudiantes, lectura académica/espaacios |
-| `docente` | Asistencias, calificaciones, sus materias |
-| `jefe_area` | Horarios, docentes, ausencias, talleres, curriculum (lectura/escritura) |
-| `server` | Espacios, horarios, inventario, solicitudes, reservas (gestión completa) |
+| `docente` | Asistencias, calificaciones, sus materias; seguimiento de sus contenidos (`curriculum.track.write`); sus planificaciones (`planning.write`) |
+| `jefe_area` | Horarios, docentes, ausencias, talleres, curriculum (lectura/escritura), seguimiento y revisión de planificaciones y sus controles |
+| `server` | Espacios, horarios, inventario, solicitudes, reservas (gestión completa), curriculum y planificaciones (gestión completa) |
 
 ---
 

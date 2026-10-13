@@ -11,12 +11,16 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
+import * as absenceEventsController from "../modules/absence-events/absence-events.controller.mjs";
 import * as workshopsController from "../modules/workshops/workshops.controller.mjs";
 import * as inventoryController from "../modules/inventory/inventory.controller.mjs";
 import * as requestsController from "../modules/requests/requests.controller.mjs";
 import * as reservationsController from "../modules/reservations/reservations.controller.mjs";
 import * as notificationsController from "../modules/notifications/notifications.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
+import * as seguimientoController from "../modules/seguimiento/seguimiento.controller.mjs";
+import * as planificacionesController from "../modules/planificaciones/planificaciones.controller.mjs";
+import * as controlPlanificacionesController from "../modules/control-planificaciones/control-planificaciones.controller.mjs";
 import * as groupsController from "../modules/groups/groups.controller.mjs";
 import * as reassignmentsController from "../modules/reassignments/reassignments.controller.mjs";
 import * as authorizationController from "../controllers/authorization.controller.mjs";
@@ -109,6 +113,15 @@ export const apiRoutes = [
   { method: "DELETE", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.annulAbsence },
 
   { method: "PATCH", path: "/api/v1/absence-liberations/:availabilityId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateAvailabilityStatus },
+
+  { method: "GET", path: "/api/v1/absence-events", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.listAbsenceEvents },
+  { method: "POST", path: "/api/v1/absence-events", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absenceEventsController.createAbsenceEvent },
+  { method: "GET", path: "/api/v1/absence-events/by-absence/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getEventByAbsence },
+  { method: "GET", path: "/api/v1/absence-events/:eventId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getAbsenceEvent },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/class-state", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getClassState },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/space-availability", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getSpaceAvailability },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/affected-classes", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getAffectedClasses },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/notifications", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getEventNotifications },
 
   { method: "POST", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createIncident },
   { method: "GET", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listIncidents },
@@ -205,7 +218,65 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/curriculum/activities", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.createActivity },
   { method: "GET", path: "/api/v1/curriculum/activities", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.listActivities },
   { method: "GET", path: "/api/v1/curriculum/activities/:activityId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.getActivity },
-  { method: "PATCH", path: "/api/v1/curriculum/activities/:activityId", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.updateActivity }
+  { method: "PATCH", path: "/api/v1/curriculum/activities/:activityId", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.updateActivity },
+
+  { method: "POST", path: "/api/v1/curriculum/materias", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: seguimientoController.createSubject },
+  { method: "GET", path: "/api/v1/curriculum/materias", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listSubjects },
+  { method: "GET", path: "/api/v1/curriculum/materias/:subjectId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getSubject },
+  { method: "PATCH", path: "/api/v1/curriculum/materias/:subjectId", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: seguimientoController.updateSubject },
+
+  { method: "POST", path: "/api/v1/curriculum/disenos", middlewares: [verifyToken, required(P.CURRICULUM_MANAGE)], handler: seguimientoController.createDesign },
+  { method: "GET", path: "/api/v1/curriculum/disenos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listDesigns },
+  { method: "GET", path: "/api/v1/curriculum/disenos/:designId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getDesign },
+  { method: "PATCH", path: "/api/v1/curriculum/disenos/:designId", middlewares: [verifyToken, required(P.CURRICULUM_MANAGE)], handler: seguimientoController.updateDesign },
+
+  { method: "POST", path: "/api/v1/curriculum/contenidos", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: seguimientoController.createContent },
+  { method: "GET", path: "/api/v1/curriculum/contenidos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listContents },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/pendientes", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listPendingContents },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/:contentId/seguimientos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listContentTrackings },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/:contentId/historial", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getContentHistory },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/:contentId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getContent },
+  { method: "PATCH", path: "/api/v1/curriculum/contenidos/:contentId", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: seguimientoController.updateContent },
+
+  { method: "POST", path: "/api/v1/curriculum/seguimientos", middlewares: [verifyToken, required(P.CURRICULUM_TRACK_WRITE)], handler: seguimientoController.createTracking },
+  { method: "GET", path: "/api/v1/curriculum/seguimientos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listTrackings },
+  { method: "GET", path: "/api/v1/curriculum/seguimientos/:trackingId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getTracking },
+  { method: "PATCH", path: "/api/v1/curriculum/seguimientos/:trackingId", middlewares: [verifyToken, required(P.CURRICULUM_TRACK_WRITE)], handler: seguimientoController.updateTracking },
+
+  { method: "GET", path: "/api/v1/curriculum/avance/materia", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avanceMateria },
+  { method: "GET", path: "/api/v1/curriculum/avance/curso", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avanceCurso },
+  { method: "GET", path: "/api/v1/curriculum/avance/docente", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avanceDocente },
+  { method: "GET", path: "/api/v1/curriculum/avance/periodo", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avancePeriodo },
+  { method: "GET", path: "/api/v1/curriculum/avance/pendientes", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avancePendientes },
+
+  { method: "POST", path: "/api/v1/teacher-plans", middlewares: [verifyToken, required(P.PLANNING_WRITE)], handler: planificacionesController.createPlanning },
+  { method: "GET", path: "/api/v1/teacher-plans", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlannings },
+  { method: "GET", path: "/api/v1/teacher-plans/by-teacher/:teacherId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsByTeacher },
+  { method: "GET", path: "/api/v1/teacher-plans/by-subject/:subjectId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsBySubject },
+  { method: "GET", path: "/api/v1/teacher-plans/by-course/:courseId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsByCourse },
+  { method: "GET", path: "/api/v1/teacher-plans/by-period/:year", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsByPeriod },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId/status", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanningStatus },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId/history", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanningHistory },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId/curriculum-comparison", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanningCurriculumComparison },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanning },
+  { method: "PATCH", path: "/api/v1/teacher-plans/:planId", middlewares: [verifyToken, required(P.PLANNING_WRITE)], handler: planificacionesController.updatePlanning },
+  { method: "PATCH", path: "/api/v1/teacher-plans/:planId/status", middlewares: [verifyToken, required(P.PLANNING_WRITE)], handler: planificacionesController.changePlanningStatus },
+  { method: "DELETE", path: "/api/v1/teacher-plans/:planId", middlewares: [verifyToken, required(P.PLANNING_MANAGE)], handler: planificacionesController.archivePlanning },
+
+  { method: "POST", path: "/api/v1/planning-controls", middlewares: [verifyToken, required(P.PLANNING_REVIEW)], handler: controlPlanificacionesController.createControl },
+  { method: "GET", path: "/api/v1/planning-controls", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControls },
+  { method: "GET", path: "/api/v1/planning-controls/pending", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listPendingControls },
+  { method: "GET", path: "/api/v1/planning-controls/by-teacher/:teacherId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByTeacher },
+  { method: "GET", path: "/api/v1/planning-controls/by-subject/:subjectId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsBySubject },
+  { method: "GET", path: "/api/v1/planning-controls/by-course/:courseId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByCourse },
+  { method: "GET", path: "/api/v1/planning-controls/by-period/:year", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByPeriod },
+  { method: "GET", path: "/api/v1/planning-controls/by-status/:status", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByStatus },
+  { method: "GET", path: "/api/v1/planning-controls/planning/:planId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getControlByPlanning },
+  { method: "GET", path: "/api/v1/planning-controls/planning/:planId/history", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getPlanningControlHistory },
+  { method: "GET", path: "/api/v1/planning-controls/:controlId/history", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getControlAudit },
+  { method: "GET", path: "/api/v1/planning-controls/:controlId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getControl },
+  { method: "PATCH", path: "/api/v1/planning-controls/:controlId", middlewares: [verifyToken, required(P.PLANNING_REVIEW)], handler: controlPlanificacionesController.updateControl },
+  { method: "PATCH", path: "/api/v1/planning-controls/:controlId/status", middlewares: [verifyToken, required(P.PLANNING_REVIEW)], handler: controlPlanificacionesController.changeControlStatus }
 ];
 
 function tokenize(path) {

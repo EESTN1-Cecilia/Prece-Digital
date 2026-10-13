@@ -3,6 +3,7 @@ import spacesRepository from "../spaces/spaces.repository.mjs";
 import teachersRepository from "../teachers/teachers.repository.mjs";
 import schedulesRepository from "../schedules/schedules.repository.mjs";
 import reservationsRepository from "../reservations/reservations.repository.mjs";
+import absenceEventsService from "../absence-events/absence-events.service.mjs";
 import { HttpError } from "../../utils/http-error.mjs";
 
 export const ABSENCE_TYPES = ["injustificada", "justificada", "medica", "personal", "capacitacion", "otra"];
@@ -180,11 +181,17 @@ const absencesService = {
       createdBy: user.id
     });
 
+    let absenceEvent = null;
+    if (absence.status === "activa") {
+      absenceEvent = absenceEventsService.createAbsenceEvent({ absenceId: absence.id }, user);
+    }
+
     return {
       statusCode: 201,
       body: {
         data: absence,
         availability: absencesRepository.findAvailabilityByAbsenceId(absence.id),
+        event: absenceEvent?.body.data ?? null,
         meta: {
           teacher: { id: teacher.id },
           space: { id: space.id, name: space.name, code: space.code },
@@ -312,6 +319,7 @@ const absencesService = {
     });
 
     const absence = absencesRepository.updateAbsence(id, patch, user);
+    absenceEventsService.onAbsenceUpdated(absence);
     return {
       statusCode: 200,
       body: {
@@ -326,6 +334,7 @@ const absencesService = {
     if (!absence) {
       throw new HttpError(404, "not_found", "Ausencia no encontrada");
     }
+    absenceEventsService.onAbsenceAnnuled(absence);
     return { statusCode: 200, body: { data: absence } };
   },
 
@@ -334,6 +343,7 @@ const absencesService = {
     if (!absence) {
       throw new HttpError(404, "not_found", "Ausencia no encontrada");
     }
+    absenceEventsService.onAbsenceReactivated(absence);
     return { statusCode: 200, body: { data: absence } };
   },
 
