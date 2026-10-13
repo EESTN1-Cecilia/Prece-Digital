@@ -529,6 +529,70 @@ CREATE TABLE seguimientos_inasistencia (
 ) ENGINE=InnoDB;
 
 -- =====================================================================================
+-- MÓDULO: LIBRO MATRIZ DIGITAL
+-- Tablas: libro_matriz
+-- =====================================================================================
+
+-- Libro Matriz digital: un registro por alumno con numero de libro y folio y los
+-- datos administrativos adicionales definidos por la institucion. No hay borrado
+-- fisico: el estado `archivado` da de baja logica y el registro se conserva. La
+-- combinacion libro + folio es unica y el responsable es el usuario autenticado.
+CREATE TABLE libro_matriz (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  numero_libro          VARCHAR(30)  NOT NULL,
+  numero_folio          VARCHAR(30)  NOT NULL,
+  fecha_registro        DATE         NOT NULL COMMENT 'Fecha de registro o apertura del Libro Matriz',
+  estado                ENUM('activo','archivado') NOT NULL DEFAULT 'activo',
+  datos_adicionales     JSON         NULL COMMENT 'Campos administrativos definidos por la institucion',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registro el Libro Matriz',
+  historial             JSON         NULL COMMENT 'Estado anterior en cada modificacion, para no perder informacion',
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED  NULL,
+  actualizado_en        DATETIME     NULL,
+  actualizado_por       INT UNSIGNED  NULL,
+  UNIQUE KEY uq_lm_estudiante (estudiante_id),
+  UNIQUE KEY uq_lm_libro_folio (numero_libro, numero_folio),
+  KEY idx_lm_fecha  (fecha_registro),
+  KEY idx_lm_estado (estado),
+  CONSTRAINT fk_lm_escuela      FOREIGN KEY (escuela_id)          REFERENCES escuelas(id),
+  CONSTRAINT fk_lm_estudiante   FOREIGN KEY (estudiante_id)       REFERENCES estudiantes(id),
+  CONSTRAINT fk_lm_responsable  FOREIGN KEY (usuario_responsable) REFERENCES usuarios(id),
+  CONSTRAINT fk_lm_creado_por   FOREIGN KEY (creado_por)          REFERENCES usuarios(id),
+  CONSTRAINT fk_lm_actualizado  FOREIGN KEY (actualizado_por)     REFERENCES usuarios(id)
+-- MÓDULO: CONDICIONES PARTICULARES DE ALUMNOS
+-- Tablas: condiciones_particulares
+-- =====================================================================================
+
+-- Condiciones informadas sobre un alumno (salud, accesibilidad, adaptaciones,
+-- situaciones familiares, etc.). Pueden estar activas o finalizadas; al finalizar
+-- se conservan fecha y responsable, y el registro completo queda para consulta
+-- historica. El responsable de cada operacion es siempre el usuario autenticado.
+CREATE TABLE condiciones_particulares (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  descripcion           VARCHAR(1000) NOT NULL,
+  fecha_inicio          DATE          NOT NULL COMMENT 'Fecha de registro o inicio de la condicion',
+  estado                ENUM('activa','finalizada') NOT NULL DEFAULT 'activa',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registro la condicion',
+  fecha_finalizacion    DATE          NULL COMMENT 'Fecha en que la condicion se dio por finalizada',
+  finalizado_por        INT UNSIGNED  NULL COMMENT 'Usuario autenticado que finalizo la condicion',
+  historial             JSON          NULL COMMENT 'Estado anterior en cada modificacion, para no perder informacion',
+  creado_en             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED  NULL,
+  actualizado_en        DATETIME      NULL,
+  actualizado_por       INT UNSIGNED  NULL,
+  KEY idx_cond_estudiante (estudiante_id, estado),
+  KEY idx_cond_fecha      (fecha_inicio),
+  KEY idx_cond_estado     (estado),
+  CONSTRAINT fk_cond_escuela      FOREIGN KEY (escuela_id)          REFERENCES escuelas(id),
+  CONSTRAINT fk_cond_estudiante   FOREIGN KEY (estudiante_id)       REFERENCES estudiantes(id),
+  CONSTRAINT fk_cond_responsable  FOREIGN KEY (usuario_responsable) REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_finalizado   FOREIGN KEY (finalizado_por)      REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_creado_por   FOREIGN KEY (creado_por)          REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_actualizado  FOREIGN KEY (actualizado_por)     REFERENCES usuarios(id)
 -- MÓDULO: OBSERVACIONES DE ALUMNOS
 -- Tablas: observaciones, observaciones_seguimiento
 -- =====================================================================================
