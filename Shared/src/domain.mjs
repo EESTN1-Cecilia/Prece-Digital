@@ -15,6 +15,8 @@ export const modules = [
   { id: "students", name: "Estudiantes", description: "Legajo, datos personales, observaciones, pases y constancias." },
   { id: "observations", name: "Observaciones", description: "Observaciones de preceptoria, secretaria y equipo docente sobre alumnos." },
   { id: "course-changes", name: "Promoción y cambio de curso", description: "Promociones y cambios de curso o división de alumnos, individuales o masivos, con historial academico." },
+  { id: "book-registry", name: "Libro Matriz", description: "Libro Matriz digital de los alumnos y su historial de modificaciones." },
+  { id: "particular-conditions", name: "Condiciones particulares", description: "Condiciones informadas sobre un alumno y su historial de vigencia." },
   { id: "attendance", name: "Asistencia", description: "Registro y consulta de asistencias." },
   { id: "attendance-alerts", name: "Alertas por inasistencia", description: "Deteccion de inasistencias consecutivas y avisos a las familias." },
   { id: "attendance-followups", name: "Seguimiento de inasistencias", description: "Intervenciones de la institucion ante inasistencias de alumnos." },
