@@ -18,6 +18,7 @@ import * as authController from "../modules/auth/auth.controller.mjs";
 import * as usersController from "../modules/auth/users.controller.mjs";
 import * as studentsController from "../modules/students/students.controller.mjs";
 import * as bookRegistryController from "../modules/book-registry/book-registry.controller.mjs";
+import * as particularConditionsController from "../modules/particular-conditions/particular-conditions.controller.mjs";
 import * as observationsController from "../modules/observations/observations.controller.mjs";
 import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
