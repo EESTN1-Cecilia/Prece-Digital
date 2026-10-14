@@ -40,6 +40,7 @@ export const DirectorService = {
         totalActivos: 840,
         turnoManana: 450,
         turnoTarde: 390,
+        turnoTaller: 525,
         divisiones: 32,
         promedioPorDivision: 26,
         alumnosEnRiesgo: 12
@@ -119,8 +120,10 @@ export const DirectorService = {
         if (Array.isArray(dashSec.porTurno)) {
           const tm = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("mañ"));
           const tt = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tard"));
+          const tall = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tall"));
           if (tm) resumen.alumnos.turnoManana = tm.cantidad;
           if (tt) resumen.alumnos.turnoTarde = tt.cantidad;
+          if (tall) resumen.alumnos.turnoTaller = tall.cantidad;
         }
         if (Array.isArray(dashSec.alertas)) {
           resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;
@@ -246,5 +249,905 @@ export const DirectorService = {
       method: "PATCH",
       body: JSON.stringify({ estado: nuevoEstado })
     });
+  },
+
+  // =========================================================================
+  // GESTIÓN Y HABILITACIÓN DE PEDIDOS (SERVER, SECRETARÍA, PRECEPTORÍA)
+  // =========================================================================
+
+  /**
+   * Obtiene la lista de pedidos que requieren habilitación y autorización de Dirección.
+   */
+  async listarPedidos() {
+    const STORAGE_KEY = "prece_pedidos_director";
+    try {
+      const guardado = localStorage.getItem(STORAGE_KEY);
+      if (guardado) {
+        return JSON.parse(guardado);
+      }
+    } catch {
+      // Ignorar error de storage
+    }
+
+    const iniciales = [
+      {
+        id: "ped-1",
+        codigo: "PED-2026-041",
+        sector: "Server",
+        tipo: "actualizacion_planillas",
+        titulo: "Actualización de Planilla de Calificaciones - 4° 1° Computación",
+        solicitante: "Hernán Gómez",
+        rolSolicitante: "Responsable de Server",
+        fecha: "Hoy, 10:45 hs",
+        archivo: "Planilla_Calificaciones_4to1ra_2Trimestre.xlsx",
+        alcance: "4° 1° Computación (Turno Mañana)",
+        impacto: "64 calificaciones · 32 alumnos",
+        detalle: "Reemplazo de calificaciones parciales y promedios del segundo trimestre según planilla cargada desde el servidor escolar. Los datos permanecen bloqueados y no se actualizarán en el sistema hasta que Dirección los apruebe.",
+        estado: "pendiente",
+        aprobadoEn: null,
+        aprobadoPor: null,
+        datosPlanilla: [
+          { alumno: "Acosta Sofía", materia: "Programación II", anterior: "7 (Siete)", nueva: "9 (Nueve)", estado: "Modificada" },
+          { alumno: "Benítez Julián", materia: "Bases de Datos", anterior: "5 (Cinco)", nueva: "7 (Siete)", estado: "Modificada" },
+          { alumno: "Castro Mateo", materia: "Redes y Telecom.", anterior: "Pendiente", nueva: "8 (Ocho)", estado: "Nueva" },
+          { alumno: "Díaz Camila", materia: "Sistemas Operativos", anterior: "6 (Seis)", nueva: "8 (Ocho)", estado: "Modificada" },
+          { alumno: "Flores Lucas", materia: "Laboratorio III", anterior: "4 (Cuatro)", nueva: "7 (Siete)", estado: "Modificada" }
+        ]
+      },
+      {
+        id: "ped-2",
+        codigo: "PED-2026-042",
+        sector: "Server",
+        tipo: "inventario_hardware",
+        titulo: "Baja de Inventario y Reasignación de Lote de Netbooks (Carro 2)",
+        solicitante: "Lucas Romero",
+        rolSolicitante: "Soporte Técnico de Server",
+        fecha: "Hoy, 09:15 hs",
+        archivo: "Acta_Baja_Hardware_Lote08.pdf",
+        alcance: "Laboratorio 2 · Carro Móvil B",
+        impacto: "8 equipos dados de baja · 8 reasignaciones",
+        detalle: "Baja por rotura irreparable de placa madre en 8 netbooks escolares y destino a banco de repuestos técnicos para talleres de electrónica. Requiere autorización directiva.",
+        estado: "pendiente",
+        aprobadoEn: null,
+        aprobadoPor: null,
+        datosPlanilla: [
+          { alumno: "Carro 2 - Netbook #12", materia: "Placa Madre Quemada", anterior: "Activo / En Servicio", nueva: "Baja Definitiva", estado: "Baja" },
+          { alumno: "Carro 2 - Netbook #15", materia: "Pantalla Dañada", anterior: "Activo / En Servicio", nueva: "Baja Definitiva", estado: "Baja" },
+          { alumno: "Carro 2 - Netbook #22", materia: "Falla de Encendido", anterior: "Activo / En Servicio", nueva: "Baja Definitiva", estado: "Baja" }
+        ]
+      },
+      {
+        id: "ped-3",
+        codigo: "PED-2026-039",
+        sector: "Secretaría",
+        tipo: "libro_matriz",
+        titulo: "Rectificación de Folio y Calificación en Libro Matriz",
+        solicitante: "Mariana López",
+        rolSolicitante: "Secretaría Académica",
+        fecha: "Ayer, 16:30 hs",
+        archivo: "Resolucion_Equivalencia_2026.pdf",
+        alcance: "Ciclo Superior · Egresados 2025",
+        impacto: "2 actas analíticas rectificadas",
+        detalle: "Reapertura de acta de examen por resolución de equivalencia ministerial aprobada para la alumna Gómez Rocío. Requiere firma y habilitación del Director.",
+        estado: "pendiente",
+        aprobadoEn: null,
+        aprobadoPor: null,
+        datosPlanilla: [
+          { alumno: "Gómez Rocío", materia: "Química Aplicada", anterior: "Previa Pendiente", nueva: "Aprobada por Equivalencia (8)", estado: "Rectificada" }
+        ]
+      },
+      {
+        id: "ped-4",
+        codigo: "PED-2026-035",
+        sector: "Preceptoría",
+        tipo: "justificacion_asistencia",
+        titulo: "Justificación Extraordinaria por Licencia Médica Prolongada",
+        solicitante: "Carlos Ramos",
+        rolSolicitante: "Jefe de Preceptores",
+        fecha: "10 de Octubre, 11:20 hs",
+        archivo: "Certificado_Medico_Avalado.pdf",
+        alcance: "2° 1° · Turno Mañana",
+        impacto: "14 inasistencias justificadas",
+        detalle: "Dispensa reglamentaria con reincorporación y plan de continuidad pedagógica domiciliaria del estudiante Benítez Julián.",
+        estado: "aprobado",
+        aprobadoEn: "10/10/2026 14:10 hs",
+        aprobadoPor: "Dirección General",
+        datosPlanilla: [
+          { alumno: "Benítez Julián", materia: "Inasistencias 15/09 al 02/10", anterior: "Injustificadas (14)", nueva: "Justificadas por Dispensa", estado: "Aprobado" }
+        ]
+      }
+    ];
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
+    } catch {
+      // Ignorar error
+    }
+    return iniciales;
+  },
+
+  /**
+   * Habilita y aprueba un pedido, permitiendo que la actualización se aplique.
+   */
+  async aprobarPedido(pedidoId) {
+    const STORAGE_KEY = "prece_pedidos_director";
+    const lista = await this.listarPedidos();
+    const ahora = new Intl.DateTimeFormat("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date());
+
+    const actualizada = lista.map((p) => {
+      if (p.id === pedidoId) {
+        return {
+          ...p,
+          estado: "aprobado",
+          aprobadoEn: `${ahora} hs`,
+          aprobadoPor: "Dirección General"
+        };
+      }
+      return p;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Ignorar error
+    }
+    return actualizada;
+  },
+
+  /**
+   * Rechaza un pedido, impidiendo que los cambios se sincronicen o actualicen.
+   */
+  async rechazarPedido(pedidoId, motivo = "Rechazado por Dirección") {
+    const STORAGE_KEY = "prece_pedidos_director";
+    const lista = await this.listarPedidos();
+    const ahora = new Intl.DateTimeFormat("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date());
+
+    const actualizada = lista.map((p) => {
+      if (p.id === pedidoId) {
+        return {
+          ...p,
+          estado: "rechazado",
+          rechazadoEn: `${ahora} hs`,
+          motivoRechazo: motivo
+        };
+      }
+      return p;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Ignorar error
+    }
+    return actualizada;
+  },
+
+  /**
+   * Simula la creación de un nuevo pedido de actualización desde Server.
+   */
+  async crearPedidoPrueba(sector = "Server") {
+    const STORAGE_KEY = "prece_pedidos_director";
+    const lista = await this.listarPedidos();
+    const numero = Math.floor(Math.random() * 800) + 100;
+    const nuevo = {
+      id: `ped-${Date.now()}`,
+      codigo: `PED-2026-${numero}`,
+      sector,
+      tipo: "actualizacion_planillas",
+      titulo: `Actualización de Planilla de Cursos y Alumnos - 5° 2° (${sector})`,
+      solicitante: "Lucas Gómez",
+      rolSolicitante: `Operador Técnico · ${sector}`,
+      fecha: "Hace instantes",
+      archivo: `Planilla_Actualizacion_${sector}_5to2da.xlsx`,
+      alcance: "5° 2° Informática · Turno Tarde",
+      impacto: "58 registros modificados · 29 alumnos",
+      detalle: "Solicitud de sincronización de nueva planilla de notas y equivalencias de taller cargada en Server. Requiere aprobación directiva para sobrescribir.",
+      estado: "pendiente",
+      aprobadoEn: null,
+      aprobadoPor: null,
+      datosPlanilla: [
+        { alumno: "Martínez Juan", materia: "Modelos y Sistemas", anterior: "6 (Seis)", nueva: "8 (Ocho)", estado: "Modificada" },
+        { alumno: "Ríos Valentina", materia: "Seguridad Informática", anterior: "Pendiente", nueva: "9 (Nueve)", estado: "Nueva" },
+        { alumno: "Vargas Franco", materia: "Prácticas Profesionalizantes", anterior: "7 (Siete)", nueva: "10 (Diez)", estado: "Modificada" }
+      ]
+    };
+
+    const actualizada = [nuevo, ...lista];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Ignorar error
+    }
+    return actualizada;
+  },
+
+  // =========================================================================
+  // GESTIÓN DE ASIGNACIONES: PRECEPTORES Y PROFESORES A CURSOS
+  // =========================================================================
+
+  /**
+   * Obtiene el listado de las 27 divisiones institucionales con sus preceptores asignados.
+   */
+  async listarAsignacionesPreceptores() {
+    const STORAGE_KEY = "prece_asignaciones_preceptores";
+    try {
+      const guardado = localStorage.getItem(STORAGE_KEY);
+      if (guardado) {
+        return JSON.parse(guardado);
+      }
+    } catch {
+      // Ignorar error de storage
+    }
+
+    const DIVISIONES_DEF = [
+      { anio: 1, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 1, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 1, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
+      { anio: 1, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
+      { anio: 1, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 2, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 2, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 2, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
+      { anio: 2, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
+      { anio: 2, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 3, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 3, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 3, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
+      { anio: 3, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
+      { anio: 3, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
+      { anio: 4, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
+      { anio: 4, division: "2", turno: "Tarde", orientacion: "Técnico en Informática" },
+      { anio: 4, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
+      { anio: 4, division: "4", turno: "Tarde", orientacion: "Técnico en Programación" },
+      { anio: 5, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
+      { anio: 5, division: "2", turno: "Tarde", orientacion: "Técnico en Informática" },
+      { anio: 5, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
+      { anio: 5, division: "4", turno: "Tarde", orientacion: "Técnico en Programación" },
+      { anio: 6, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
+      { anio: 6, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
+      { anio: 7, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
+      { anio: 7, division: "2", turno: "Tarde", orientacion: "Técnico en Programación" }
+    ];
+
+    const iniciales = DIVISIONES_DEF.map((d) => {
+      const id = `${d.anio}-${d.division}`;
+      // Asignar por defecto 1° 1° y 2° 1° para reflejar 2 de 27 asignadas como en la maqueta
+      if (d.anio === 1 && d.division === "1") {
+        return {
+          id,
+          anio: d.anio,
+          curso: `${d.anio}°`,
+          division: `División ${d.division}`,
+          numDivision: d.division,
+          turno: d.turno,
+          orientacion: d.orientacion,
+          preceptor: {
+            id: "usr-preceptor-1",
+            nombre: "Preceptor 1° A",
+            email: "preceptor@prece.local",
+            avatar: "P"
+          },
+          estado: "asignado",
+          actualizadoEn: "2026-03-02"
+        };
+      }
+      if (d.anio === 2 && d.division === "1") {
+        return {
+          id,
+          anio: d.anio,
+          curso: `${d.anio}°`,
+          division: `División ${d.division}`,
+          numDivision: d.division,
+          turno: d.turno,
+          orientacion: d.orientacion,
+          preceptor: {
+            id: "usr-preceptor-2",
+            nombre: "Carlos Ramos",
+            email: "cramos@prece.local",
+            avatar: "C"
+          },
+          estado: "asignado",
+          actualizadoEn: "2026-03-02"
+        };
+      }
+      return {
+        id,
+        anio: d.anio,
+        curso: `${d.anio}°`,
+        division: `División ${d.division}`,
+        numDivision: d.division,
+        turno: d.turno,
+        orientacion: d.orientacion,
+        preceptor: null,
+        estado: "sin_asignar",
+        actualizadoEn: null
+      };
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
+    } catch {
+      // Silencioso
+    }
+
+    return iniciales;
+  },
+
+  /**
+   * Guarda o reasigna un preceptor para una división específica.
+   */
+  async guardarAsignacionPreceptor(divisionId, preceptorData) {
+    const STORAGE_KEY = "prece_asignaciones_preceptores";
+    const lista = await this.listarAsignacionesPreceptores();
+    const actualizada = lista.map((item) => {
+      if (item.id === divisionId) {
+        return {
+          ...item,
+          preceptor: {
+            id: preceptorData.id || `prec-${Date.now()}`,
+            nombre: preceptorData.nombreCompleto || preceptorData.nombre || "Preceptor Asignado",
+            email: preceptorData.email || "preceptor@prece.local",
+            avatar: (preceptorData.nombreCompleto || preceptorData.nombre || "P").charAt(0).toUpperCase()
+          },
+          estado: "asignado",
+          actualizadoEn: new Date().toISOString().split("T")[0]
+        };
+      }
+      return item;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Silencioso
+    }
+
+    return actualizada;
+  },
+
+  /**
+   * Quita la asignación de preceptor de una división.
+   */
+  async quitarAsignacionPreceptor(divisionId) {
+    const STORAGE_KEY = "prece_asignaciones_preceptores";
+    const lista = await this.listarAsignacionesPreceptores();
+    const actualizada = lista.map((item) => {
+      if (item.id === divisionId) {
+        return {
+          ...item,
+          preceptor: null,
+          estado: "sin_asignar",
+          actualizadoEn: new Date().toISOString().split("T")[0]
+        };
+      }
+      return item;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Silencioso
+    }
+
+    return actualizada;
+  },
+
+  /**
+   * Obtiene el listado de materias y cátedras con sus profesores asignados.
+   */
+  async listarAsignacionesProfesores() {
+    const STORAGE_KEY = "prece_asignaciones_profesores";
+    try {
+      const guardado = localStorage.getItem(STORAGE_KEY);
+      if (guardado) {
+        return JSON.parse(guardado);
+      }
+    } catch {
+      // Ignorar error de storage
+    }
+
+    const iniciales = [
+      {
+        id: "cat-1",
+        anio: 1,
+        curso: "1°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Matemática",
+        area: "Ciencias Exactas",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-1",
+          nombre: "Docente Matemática",
+          email: "docente@prece.local",
+          avatar: "D"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-2",
+        anio: 1,
+        curso: "1°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Prácticas del Lenguaje",
+        area: "Lengua y Comunicación",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-2",
+          nombre: "Prof. María Villatoro",
+          email: "mvillatoro@prece.local",
+          avatar: "M"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-3",
+        anio: 1,
+        curso: "1°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Ciencias Sociales",
+        area: "Ciencias Sociales",
+        turno: "Mañana",
+        cargaHoraria: "3 hs semanales",
+        profesor: {
+          id: "usr-doc-3",
+          nombre: "Prof. Lucía Ríos",
+          email: "lrios@prece.local",
+          avatar: "L"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-4",
+        anio: 1,
+        curso: "1°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Ciencias Naturales",
+        area: "Ciencias Naturales",
+        turno: "Mañana",
+        cargaHoraria: "3 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-5",
+        anio: 1,
+        curso: "1°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Educación Física",
+        area: "Deportes",
+        turno: "Mañana",
+        cargaHoraria: "2 hs semanales",
+        profesor: {
+          id: "usr-doc-4",
+          nombre: "Prof. Humberto Sosa",
+          email: "hsosa@prece.local",
+          avatar: "H"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-6",
+        anio: 1,
+        curso: "1°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Procedimientos Técnicos (Taller)",
+        area: "Técnica",
+        turno: "Mañana",
+        cargaHoraria: "6 hs semanales",
+        profesor: {
+          id: "usr-doc-5",
+          nombre: "Prof. Esteban Gómez",
+          email: "egomez@prece.local",
+          avatar: "E"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-7",
+        anio: 1,
+        curso: "1°",
+        division: "División 2",
+        numDivision: "2",
+        materia: "Matemática",
+        area: "Ciencias Exactas",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-1",
+          nombre: "Docente Matemática",
+          email: "docente@prece.local",
+          avatar: "D"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-8",
+        anio: 1,
+        curso: "1°",
+        division: "División 2",
+        numDivision: "2",
+        materia: "Prácticas del Lenguaje",
+        area: "Lengua y Comunicación",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-2",
+          nombre: "Prof. María Villatoro",
+          email: "mvillatoro@prece.local",
+          avatar: "M"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-9",
+        anio: 1,
+        curso: "1°",
+        division: "División 2",
+        numDivision: "2",
+        materia: "Ciencias Sociales",
+        area: "Ciencias Sociales",
+        turno: "Mañana",
+        cargaHoraria: "3 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-10",
+        anio: 1,
+        curso: "1°",
+        division: "División 3",
+        numDivision: "3",
+        materia: "Matemática",
+        area: "Ciencias Exactas",
+        turno: "Tarde",
+        cargaHoraria: "4 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-11",
+        anio: 2,
+        curso: "2°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Matemática",
+        area: "Ciencias Exactas",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-1",
+          nombre: "Docente Matemática",
+          email: "docente@prece.local",
+          avatar: "D"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-12",
+        anio: 2,
+        curso: "2°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Física y Química",
+        area: "Ciencias Naturales",
+        turno: "Mañana",
+        cargaHoraria: "3 hs semanales",
+        profesor: {
+          id: "usr-doc-3",
+          nombre: "Prof. Lucía Ríos",
+          email: "lrios@prece.local",
+          avatar: "L"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-13",
+        anio: 2,
+        curso: "2°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Historia",
+        area: "Ciencias Sociales",
+        turno: "Mañana",
+        cargaHoraria: "2 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-14",
+        anio: 3,
+        curso: "3°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Biología",
+        area: "Ciencias Naturales",
+        turno: "Mañana",
+        cargaHoraria: "3 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-15",
+        anio: 4,
+        curso: "4°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Programación I",
+        area: "Informática",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-1",
+          nombre: "Docente Matemática",
+          email: "docente@prece.local",
+          avatar: "D"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-16",
+        anio: 4,
+        curso: "4°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Sistemas Operativos",
+        area: "Informática",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-6",
+          nombre: "Prof. Andrea Ferreyra",
+          email: "aferreyra@prece.local",
+          avatar: "A"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-17",
+        anio: 4,
+        curso: "4°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Aplicaciones Web",
+        area: "Informática",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-18",
+        anio: 4,
+        curso: "4°",
+        division: "División 3",
+        numDivision: "3",
+        materia: "Algoritmos y Estructura de Datos",
+        area: "Programación",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-6",
+          nombre: "Prof. Andrea Ferreyra",
+          email: "aferreyra@prece.local",
+          avatar: "A"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-19",
+        anio: 4,
+        curso: "4°",
+        division: "División 3",
+        numDivision: "3",
+        materia: "Bases de Datos",
+        area: "Programación",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-20",
+        anio: 5,
+        curso: "5°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Redes y Telecomunicaciones",
+        area: "Informática",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      },
+      {
+        id: "cat-21",
+        anio: 5,
+        curso: "5°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Programación II",
+        area: "Informática",
+        turno: "Mañana",
+        cargaHoraria: "4 hs semanales",
+        profesor: {
+          id: "usr-doc-1",
+          nombre: "Docente Matemática",
+          email: "docente@prece.local",
+          avatar: "D"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-22",
+        anio: 6,
+        curso: "6°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Prácticas Profesionalizantes I",
+        area: "Técnica Profesional",
+        turno: "Mañana",
+        cargaHoraria: "8 hs semanales",
+        profesor: {
+          id: "usr-doc-5",
+          nombre: "Prof. Esteban Gómez",
+          email: "egomez@prece.local",
+          avatar: "E"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-23",
+        anio: 7,
+        curso: "7°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Prácticas Profesionalizantes II",
+        area: "Técnica Profesional",
+        turno: "Mañana",
+        cargaHoraria: "10 hs semanales",
+        profesor: {
+          id: "usr-doc-5",
+          nombre: "Prof. Esteban Gómez",
+          email: "egomez@prece.local",
+          avatar: "E"
+        },
+        estado: "asignado"
+      },
+      {
+        id: "cat-24",
+        anio: 7,
+        curso: "7°",
+        division: "División 1",
+        numDivision: "1",
+        materia: "Emprendimientos Productivos",
+        area: "Economía y Gestión",
+        turno: "Mañana",
+        cargaHoraria: "3 hs semanales",
+        profesor: null,
+        estado: "sin_asignar"
+      }
+    ];
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
+    } catch {
+      // Silencioso
+    }
+
+    return iniciales;
+  },
+
+  /**
+   * Guarda o reasigna un profesor a una materia/cátedra específica.
+   */
+  async guardarAsignacionProfesor(catedraId, profesorData) {
+    const STORAGE_KEY = "prece_asignaciones_profesores";
+    const lista = await this.listarAsignacionesProfesores();
+    const actualizada = lista.map((item) => {
+      if (item.id === catedraId) {
+        return {
+          ...item,
+          profesor: {
+            id: profesorData.id || `doc-${Date.now()}`,
+            nombre: profesorData.nombreCompleto || profesorData.nombre || "Docente Asignado",
+            email: profesorData.email || "docente@prece.local",
+            avatar: (profesorData.nombreCompleto || profesorData.nombre || "D").charAt(0).toUpperCase()
+          },
+          estado: "asignado",
+          cargaHoraria: profesorData.cargaHoraria || item.cargaHoraria || "4 hs semanales"
+        };
+      }
+      return item;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Silencioso
+    }
+
+    return actualizada;
+  },
+
+  /**
+   * Quita la asignación de profesor de una materia/cátedra.
+   */
+  async quitarAsignacionProfesor(catedraId) {
+    const STORAGE_KEY = "prece_asignaciones_profesores";
+    const lista = await this.listarAsignacionesProfesores();
+    const actualizada = lista.map((item) => {
+      if (item.id === catedraId) {
+        return {
+          ...item,
+          profesor: null,
+          estado: "sin_asignar"
+        };
+      }
+      return item;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Silencioso
+    }
+
+    return actualizada;
+  },
+
+  /**
+   * Agrega una nueva cátedra/materia a la grilla de asignaciones.
+   */
+  async crearAsignacionProfesor(datos) {
+    const STORAGE_KEY = "prece_asignaciones_profesores";
+    const lista = await this.listarAsignacionesProfesores();
+    const nuevo = {
+      id: `cat-${Date.now()}`,
+      anio: parseInt(datos.anio, 10) || 1,
+      curso: `${datos.anio}°`,
+      division: `División ${datos.division || 1}`,
+      numDivision: String(datos.division || 1),
+      materia: datos.materia || "Materia Nueva",
+      area: datos.area || "Formación General",
+      turno: datos.turno || "Mañana",
+      cargaHoraria: datos.cargaHoraria || "4 hs semanales",
+      profesor: datos.profesor ? {
+        id: datos.profesor.id || `doc-${Date.now()}`,
+        nombre: datos.profesor.nombreCompleto || datos.profesor.nombre,
+        email: datos.profesor.email || "docente@prece.local",
+        avatar: (datos.profesor.nombreCompleto || datos.profesor.nombre || "D").charAt(0).toUpperCase()
+      } : null,
+      estado: datos.profesor ? "asignado" : "sin_asignar"
+    };
+
+    const actualizada = [nuevo, ...lista];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+    } catch {
+      // Silencioso
+    }
+
+    return actualizada;
   }
 };
+
