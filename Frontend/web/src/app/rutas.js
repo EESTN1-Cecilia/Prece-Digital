@@ -46,8 +46,10 @@ import InventarioListView from "../modules/server/inventario/inventario-list-vie
 import MaterialFormView from "../modules/server/inventario/material-form-view.js";
 import MaterialDetalleView from "../modules/server/inventario/material-detalle-view.js";
 import PlanificacionesListView from "../modules/planificaciones/planificaciones-list-view.js";
+import PlanificacionesRevisionListView from "../modules/planificaciones/planificaciones-revision-list-view.js";
 import PlanificacionDetalleView from "../modules/planificaciones/planificacion-detalle-view.js";
 import PlanificacionFormView from "../modules/planificaciones/planificacion-form-view.js";
+import PlanificacionRevisionView from "../modules/planificaciones/planificacion-revision-view.js";
 import PlanificacionesDocenteView from "../modules/planificaciones/planificaciones-docente-view.js";
 import PlanificacionesMateriaView from "../modules/planificaciones/planificaciones-materia-view.js";
 import PlanificacionesCursoView from "../modules/planificaciones/planificaciones-curso-view.js";
@@ -196,8 +198,8 @@ export const RUTAS = [
     permisos: [PERMISOS.inventoryLeer],
     enMenu: true
   },
-  /* Planificaciones docentes: las rutas fijas (nueva, docentes, materias,
-     cursos) van antes que "#/planificaciones/:id". Escribir se habilita con
+  /* Planificaciones docentes: las rutas fijas (nueva, revision, docentes,
+     materias, cursos) van antes que "#/planificaciones/:id". Escribir se habilita con
      teaching-plans.write; el backend acota al docente a lo propio.
      El listado va primero solo para que encabece la seccion del menu: tiene
      un segmento y no compite con las demas. */
@@ -219,6 +221,16 @@ export const RUTAS = [
     icono: "clipboard",
     padre: "#/planificaciones",
     permisos: [PERMISOS.planificacionesEscribir],
+    enMenu: true
+  },
+  {
+    patron: "#/planificaciones/revision",
+    titulo: "Revisión de planificaciones",
+    vista: PlanificacionesRevisionListView,
+    seccion: "Planificaciones",
+    icono: "clipboard",
+    padre: "#/planificaciones",
+    permisos: [PERMISOS.planificacionesGestionar],
     enMenu: true
   },
   {
@@ -269,6 +281,13 @@ export const RUTAS = [
     vista: PlanificacionFormView,
     padre: "#/planificaciones/:id",
     permisos: [PERMISOS.planificacionesEscribir]
+  },
+  {
+    patron: "#/planificaciones/:id/revision",
+    titulo: "Revisar planificación",
+    vista: PlanificacionRevisionView,
+    padre: "#/planificaciones/revision",
+    permisos: [PERMISOS.planificacionesGestionar]
   },
   {
     patron: "#/planificaciones/:id",

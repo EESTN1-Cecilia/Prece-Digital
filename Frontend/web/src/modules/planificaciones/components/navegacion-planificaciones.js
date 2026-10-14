@@ -5,6 +5,7 @@ import { h } from "../../../layouts/site-layout.js";
 
 const ENTRADAS = [
   { id: "listado", titulo: "Todas", href: "#/planificaciones" },
+  { id: "revision", titulo: "Revisión", href: "#/planificaciones/revision" },
   { id: "docentes", titulo: "Por docente", href: "#/planificaciones/docentes" },
   { id: "materias", titulo: "Por materia", href: "#/planificaciones/materias" },
   { id: "cursos", titulo: "Por curso", href: "#/planificaciones/cursos" }

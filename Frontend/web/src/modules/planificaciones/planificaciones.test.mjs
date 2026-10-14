@@ -16,6 +16,7 @@ import {
   opcionesDeFiltros,
   opcionesEnCascada,
   ordenParaApi,
+  priorizarRevision,
   separarErrores,
   tonoDeEstado,
   validarGenerales
@@ -146,6 +147,17 @@ test("la consulta del listado traduce el orden de la tabla a la API", () => {
 
   const consulta = consultaListado({ busqueda: " rios ", filtros: { estado: "borrador" }, pagina: 2, porPagina: 10, orden: { columna: "creadoEn", direccion: "asc" } });
   assert.deepEqual(consulta, { q: "rios", estado: "borrador", orden: "creado", pagina: 2, porPagina: 10 });
+});
+
+test("la revision prioriza estados pendientes sin ocultar los demas", () => {
+  const ordenadas = priorizarRevision([
+    { id: "a", estado: "aprobada", actualizadoEn: "2026-03-14T00:00:00.000Z" },
+    { id: "b", estado: "observada", actualizadoEn: "2026-03-11T00:00:00.000Z" },
+    { id: "c", estado: "presentada", actualizadoEn: "2026-03-10T00:00:00.000Z" },
+    { id: "d", estado: "en_revision", actualizadoEn: "2026-03-12T00:00:00.000Z" }
+  ]);
+
+  assert.deepEqual(ordenadas.map((plan) => plan.id), ["c", "d", "b", "a"]);
 });
 
 test("los filtros activos muestran el nombre legible de cada valor", () => {

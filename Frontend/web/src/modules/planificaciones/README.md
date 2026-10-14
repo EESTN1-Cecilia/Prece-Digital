@@ -11,7 +11,9 @@ planificaciones-helpers.js         logica pura: cascada, filtros, orden, formula
 planificaciones.test.mjs           pruebas de los helpers (npm test desde web/)
 use-planificaciones.js             hooks: catalogos + opciones, consulta generica con reintento
 planificaciones-list-view.js       #/planificaciones
+planificaciones-revision-list-view.js #/planificaciones/revision, bandeja de Jefatura
 planificacion-detalle-view.js      #/planificaciones/:id
+planificacion-revision-view.js     #/planificaciones/:id/revision, cambio de estado
 planificacion-form-view.js         #/planificaciones/nueva y #/planificaciones/:id/editar
 planificaciones-docente-view.js    #/planificaciones/docentes[/:docenteId]
 planificaciones-materia-view.js    #/planificaciones/materias[/:materiaId]
@@ -37,7 +39,7 @@ Estilos: `styles/planificaciones/planificaciones.css` (prefijo `planif-`).
 - **Relaciones**: el formulario arma la cascada Ciclo lectivo → Curso → División → Materia →
   Docente → Período con `opcionesEnCascada`. Cambiar un nivel limpia los siguientes. El backend
   vuelve a validar la combinación.
-- **Acciones**: la tabla y el detalle muestran lo que trae `planificacion.acciones`
+- **Acciones**: la tabla, el detalle y la revisión muestran lo que trae `planificacion.acciones`
   (`ver`, `editar`, `presentar`, `revisar`). El frontend no reconstruye reglas de estado.
 - **Permisos**: `teaching-plans.read` para ver, `teaching-plans.write` para cargar/modificar.
   Un docente solo ve lo propio porque la API ya filtra; ocultar un botón no autoriza nada.
@@ -51,13 +53,9 @@ Estilos: `styles/planificaciones/planificaciones.css` (prefijo `planif-`).
 
 Quedan preparados para seguir trabajando sin tocar lo existente:
 
-- **Revisión de Jefatura**: el backend ya expone `POST /api/v1/planificaciones/:planificacionId/estado`
-  y cada planificación trae `transiciones`. Falta la pantalla: usar
-  `PlanificacionesService.cambiarEstado(id, { estado, motivo })` y mostrar la acción cuando
-  `acciones` incluya `revisar`. El motivo es obligatorio para `observada` y `rechazada`
-  (`catalogos.estadosConMotivo`).
 - **Comparación con el diseño curricular**: el contenido hoy es texto por sección
   (`catalogos.secciones`). Una estructura de unidades/contenidos con identificadores
-  curriculares requiere ampliar el modelo del backend antes que la interfaz.
+  curriculares requiere ampliar el modelo del backend antes que la interfaz. La revisión
+  de Jefatura actual no compara contra diseño curricular.
 - **Columnas del listado**: `COLUMNAS_LISTADO` en `tabla-planificaciones.js`; una consulta nueva
   elige columnas por id sin duplicar definiciones.

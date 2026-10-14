@@ -82,6 +82,28 @@ function validarPagina(query, errores) {
   }
 }
 
+function validarFechaFiltro(query, campo, errores) {
+  const valor = query[campo];
+
+  if (valor === undefined || valor === "") {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(valor))) {
+    errores.push({ field: campo, message: `${campo} debe tener formato AAAA-MM-DD.` });
+    return null;
+  }
+
+  const fecha = new Date(`${valor}T00:00:00.000Z`);
+
+  if (Number.isNaN(fecha.getTime()) || fecha.toISOString().slice(0, 10) !== valor) {
+    errores.push({ field: campo, message: `${campo} debe ser una fecha valida.` });
+    return null;
+  }
+
+  return String(valor);
+}
+
 /* ---------------- Contexto de autorizacion ------------------------------- */
 
 /* Un usuario con rol docente (sin ser ademas admin, director o jefatura) queda
@@ -214,6 +236,10 @@ function seccionesCompletas(contenido) {
   return SECCIONES_VALIDAS.filter((seccion) => typeof contenido?.[seccion] === "string" && contenido[seccion].trim()).length;
 }
 
+function cantidadObservaciones(historial = []) {
+  return historial.filter((entrada) => entrada.estadoNuevo === "observada").length;
+}
+
 /* `detalle` agrega el contenido y el historial; los listados no los necesitan. */
 function publicPlanificacion(registro, ctx, { detalle = false } = {}) {
   const docente = teachersRepository.findDocenteById(registro.docenteId);
@@ -243,6 +269,7 @@ function publicPlanificacion(registro, ctx, { detalle = false } = {}) {
     fechaRevision: registro.fechaRevision ?? null,
     revisor: usuarioRef(registro.revisadoPor),
     motivoRevision: registro.motivoRevision ?? null,
+    cantidadObservaciones: cantidadObservaciones(registro.historialEstados),
     creadoEn: registro.creadoEn,
     actualizadoEn: registro.actualizadoEn,
     creadoPor: usuarioRef(registro.creadoPor),
@@ -669,6 +696,11 @@ const planificacionesService = {
       errores.push({ field: "q", message: `La busqueda no puede superar los ${LIMITES.busqueda} caracteres.` });
     }
 
+    const fechaPresentacionDesde = validarFechaFiltro(query, "fechaPresentacionDesde", errores);
+    const fechaPresentacionHasta = validarFechaFiltro(query, "fechaPresentacionHasta", errores);
+    const fechaRevisionDesde = validarFechaFiltro(query, "fechaRevisionDesde", errores);
+    const fechaRevisionHasta = validarFechaFiltro(query, "fechaRevisionHasta", errores);
+
     const orden = query.orden || ORDEN_POR_DEFECTO;
 
     if (!ORDENES[orden]) {
@@ -696,6 +728,22 @@ const planificacionesService = {
 
     if (query.anio) {
       lista = lista.filter((plan) => plan.curso?.anio === Number(query.anio));
+    }
+
+    if (fechaPresentacionDesde) {
+      lista = lista.filter((plan) => plan.fechaPresentacion && plan.fechaPresentacion.slice(0, 10) >= fechaPresentacionDesde);
+    }
+
+    if (fechaPresentacionHasta) {
+      lista = lista.filter((plan) => plan.fechaPresentacion && plan.fechaPresentacion.slice(0, 10) <= fechaPresentacionHasta);
+    }
+
+    if (fechaRevisionDesde) {
+      lista = lista.filter((plan) => plan.fechaRevision && plan.fechaRevision.slice(0, 10) >= fechaRevisionDesde);
+    }
+
+    if (fechaRevisionHasta) {
+      lista = lista.filter((plan) => plan.fechaRevision && plan.fechaRevision.slice(0, 10) <= fechaRevisionHasta);
     }
 
     const buscado = normalizarTexto(query.q);
@@ -730,6 +778,10 @@ const planificacionesService = {
         estado: query.estado || null,
         anioLectivo: query.anioLectivo || null,
         periodo: query.periodo || null,
+        fechaPresentacionDesde: query.fechaPresentacionDesde || null,
+        fechaPresentacionHasta: query.fechaPresentacionHasta || null,
+        fechaRevisionDesde: query.fechaRevisionDesde || null,
+        fechaRevisionHasta: query.fechaRevisionHasta || null,
         orden
       })
     };

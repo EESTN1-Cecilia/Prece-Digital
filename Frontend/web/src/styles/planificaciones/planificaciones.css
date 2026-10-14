@@ -68,6 +68,17 @@
   min-width: 0;
 }
 
+.planif-fechas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+  margin: 12px 0 0;
+}
+
+.planif-fechas .ui-campo {
+  margin: 0;
+}
+
 .planif-chips {
   display: flex;
   flex-wrap: wrap;
@@ -327,6 +338,41 @@
   overflow-wrap: anywhere;
 }
 
+/* Revision */
+
+.planif-revision-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 22px;
+  align-items: start;
+}
+
+.planif-revision-layout__principal {
+  min-width: 0;
+}
+
+.planif-revision-panel {
+  position: sticky;
+  top: 16px;
+  margin: 20px 0 0;
+  padding: 16px;
+  border: 1px solid var(--ui-borde);
+  border-radius: var(--ui-radio);
+  background: #f8f9fc;
+}
+
+.planif-revision-panel h2 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 18px;
+}
+
+.planif-revision-panel__form {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0 0;
+}
+
 /* Formulario */
 
 .planif-form__bloque + .planif-form__bloque {
@@ -347,8 +393,13 @@
 
 @media (max-width: 900px) {
   .planif-ficha,
-  .planif-detalle {
+  .planif-detalle,
+  .planif-revision-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planif-revision-panel {
+    position: static;
   }
 }
 
@@ -364,6 +415,10 @@
   .planif-filtros {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px 10px;
+  }
+
+  .planif-fechas {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .planif-consulta__selector {

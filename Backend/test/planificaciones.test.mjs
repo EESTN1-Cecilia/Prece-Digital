@@ -134,6 +134,15 @@ test("combina filtros por estado, turno, anio de curso y ciclo lectivo", async (
   assert.deepEqual(cuerpo.data.map((plan) => plan.id), ["pla-3"]);
 });
 
+test("filtra por fechas de presentacion y revision y expone cantidad de observaciones", async () => {
+  const presentadas = await pedir("GET", "/api/v1/planificaciones?fechaPresentacionDesde=2026-03-03&fechaPresentacionHasta=2026-03-05", "admin");
+  assert.deepEqual(presentadas.cuerpo.data.map((plan) => plan.id).sort(), ["pla-2", "pla-4", "pla-5"]);
+
+  const revisadas = await pedir("GET", "/api/v1/planificaciones?fechaRevisionDesde=2026-03-11&fechaRevisionHasta=2026-03-12", "admin");
+  assert.deepEqual(revisadas.cuerpo.data.map((plan) => plan.id).sort(), ["pla-2", "pla-5"]);
+  assert.equal(revisadas.cuerpo.data.find((plan) => plan.id === "pla-2").cantidadObservaciones, 1);
+});
+
 test("busca por docente, materia, division e ID sin importar tildes", async () => {
   assert.deepEqual((await pedir("GET", "/api/v1/planificaciones?q=rios", "admin")).cuerpo.data.map((plan) => plan.id), ["pla-5"]);
   assert.equal((await pedir("GET", "/api/v1/planificaciones?q=matematica", "admin")).cuerpo.paginacion.total, 3);

@@ -34,7 +34,7 @@ alta responde 403.
 
 ### Planificaciones
 
-- GET /api/v1/planificaciones — listar con búsqueda `q` (ID, docente, materia, curso, división), filtros (`docenteId`, `materiaId`, `anio`, `cursoId`, `divisionId`, `turno`, `estado`, `anioLectivo`, `periodo`), `orden` y paginación (`pagina`, `porPagina`)
+- GET /api/v1/planificaciones — listar con búsqueda `q` (ID, docente, materia, curso, división), filtros (`docenteId`, `materiaId`, `anio`, `cursoId`, `divisionId`, `turno`, `estado`, `anioLectivo`, `periodo`, `fechaPresentacionDesde`, `fechaPresentacionHasta`, `fechaRevisionDesde`, `fechaRevisionHasta`), `orden` y paginación (`pagina`, `porPagina`). Cada fila incluye `cantidadObservaciones` calculada desde el historial de estados.
 - POST /api/v1/planificaciones — cargar (queda en `borrador`)
 - GET /api/v1/planificaciones/:planificacionId — detalle con contenido e historial
 - PATCH /api/v1/planificaciones/:planificacionId — modificar datos generales o secciones (solo en `borrador` u `observada`)
@@ -57,3 +57,9 @@ Las tres aceptan `anioLectivo`, `periodo` y `estado`.
 
 Los listados responden `{ data, filtros, paginacion }`; los recursos simples, `{ data }`.
 Las operaciones protegidas responden 401 sin token y 403 sin permisos.
+
+## Pendientes
+
+- Comparación con diseño curricular: el contenido hoy es texto libre por sección,
+  sin identificadores curriculares. Antes de comparar contra un diseño, hay que
+  ampliar el modelo para relacionar unidades/contenidos con el catálogo curricular.

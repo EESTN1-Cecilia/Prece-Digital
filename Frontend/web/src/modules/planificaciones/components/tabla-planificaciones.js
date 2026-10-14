@@ -25,7 +25,8 @@ const COLUMNAS = {
   estado: { id: "estado", titulo: "Estado", ordenable: true, celda: (plan) => h(EstadoPlanificacion, { estado: plan.estado }) },
   fechaPresentacion: { id: "fechaPresentacion", titulo: "Presentación", celda: (plan) => fechaCorta(plan.fechaPresentacion) },
   fechaRevision: { id: "fechaRevision", titulo: "Revisión", celda: (plan) => fechaCorta(plan.fechaRevision) },
-  revisor: { id: "revisor", titulo: "Responsable de revisión", celda: (plan) => plan.revisor?.nombre ?? "—" }
+  revisor: { id: "revisor", titulo: "Responsable de revisión", celda: (plan) => plan.revisor?.nombre ?? "—" },
+  cantidadObservaciones: { id: "cantidadObservaciones", titulo: "Observaciones", celda: (plan) => plan.cantidadObservaciones ?? "—" }
 };
 
 export const COLUMNAS_LISTADO = Object.keys(COLUMNAS);
@@ -67,6 +68,13 @@ export function TablaPlanificaciones({
         : null,
       disponibles.includes("presentar") && onPresentar
         ? h(Boton, { key: "presentar", variante: "primario", tamano: "chico", onClick: () => onPresentar(plan) }, "Presentar")
+        : null,
+      disponibles.includes("revisar")
+        ? h(
+            BotonEnlace,
+            { key: "revisar", variante: "primario", tamano: "chico", href: `#/planificaciones/${encodeURIComponent(plan.id)}/revision` },
+            "Revisar"
+          )
         : null
     ];
   };

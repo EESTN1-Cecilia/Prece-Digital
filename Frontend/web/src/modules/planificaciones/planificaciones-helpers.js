@@ -37,6 +37,8 @@ const NOMBRES_ESTADO = {
   rechazada: "Rechazada"
 };
 
+export const ESTADOS_REVISION_PRIORITARIOS = ["presentada", "corregida", "en_revision", "observada"];
+
 export function nombreDeEstado(estado) {
   if (!estado) {
     return "—";
@@ -334,8 +336,34 @@ export const FILTROS_VACIOS = {
   turno: "",
   estado: "",
   anioLectivo: "",
-  periodo: ""
+  periodo: "",
+  fechaPresentacionDesde: "",
+  fechaPresentacionHasta: "",
+  fechaRevisionDesde: "",
+  fechaRevisionHasta: ""
 };
+
+export const FILTROS_REVISION_VACIOS = {
+  ...FILTROS_VACIOS,
+  estado: ""
+};
+
+/* Los estados que requieren mirada de Jefatura quedan primero. Si hay estados
+   finales en el resultado, siguen visibles debajo para no esconder datos. */
+export function priorizarRevision(planificaciones = []) {
+  const prioridad = new Map(ESTADOS_REVISION_PRIORITARIOS.map((estado, indice) => [estado, indice]));
+
+  return [...planificaciones].sort((a, b) => {
+    const prioridadA = prioridad.has(a.estado) ? prioridad.get(a.estado) : ESTADOS_REVISION_PRIORITARIOS.length;
+    const prioridadB = prioridad.has(b.estado) ? prioridad.get(b.estado) : ESTADOS_REVISION_PRIORITARIOS.length;
+
+    if (prioridadA !== prioridadB) {
+      return prioridadA - prioridadB;
+    }
+
+    return String(b.actualizadoEn ?? "").localeCompare(String(a.actualizadoEn ?? ""));
+  });
+}
 
 /* Columna de la tabla -> valor de `orden` de la API. */
 const ORDEN_API = {
@@ -380,7 +408,11 @@ const ETIQUETAS_FILTROS = {
   turno: "Turno",
   estado: "Estado",
   anioLectivo: "Ciclo lectivo",
-  periodo: "Período"
+  periodo: "Período",
+  fechaPresentacionDesde: "Presentación desde",
+  fechaPresentacionHasta: "Presentación hasta",
+  fechaRevisionDesde: "Revisión desde",
+  fechaRevisionHasta: "Revisión hasta"
 };
 
 /* Chips de filtros activos con el nombre legible de cada valor. */
