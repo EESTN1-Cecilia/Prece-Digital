@@ -16,11 +16,11 @@
 /* ---------------- Estados ------------------------------------------------ */
 
 export const ESTADOS = [
-  { valor: "borrador", descripcion: "En elaboracion por el docente" },
-  { valor: "presentada", descripcion: "Presentada, pendiente de revision" },
-  { valor: "en_revision", descripcion: "En revision por Jefatura" },
+  { valor: "borrador", descripcion: "En elaboración por el docente" },
+  { valor: "presentada", descripcion: "Presentada, pendiente de revisión" },
+  { valor: "en_revision", descripcion: "En revisión por Jefatura" },
   { valor: "observada", descripcion: "Con observaciones a corregir por el docente" },
-  { valor: "corregida", descripcion: "Corregida por el docente, pendiente de nueva revision" },
+  { valor: "corregida", descripcion: "Corregida por el docente, pendiente de nueva revisión" },
   { valor: "aprobada", descripcion: "Aprobada por Jefatura" },
   { valor: "rechazada", descripcion: "Rechazada por Jefatura" }
 ];
@@ -54,15 +54,15 @@ export const ESTADOS_SIN_UNICIDAD = ["rechazada"];
 /* ---------------- Secciones de contenido --------------------------------- */
 
 export const SECCIONES = [
-  { valor: "fundamentacion", descripcion: "Fundamentacion" },
+  { valor: "fundamentacion", descripcion: "Fundamentación" },
   { valor: "objetivos", descripcion: "Objetivos" },
   { valor: "contenidos", descripcion: "Contenidos" },
-  { valor: "estrategias", descripcion: "Estrategias y metodologia" },
+  { valor: "estrategias", descripcion: "Estrategias y metodología" },
   { valor: "actividades", descripcion: "Actividades" },
   { valor: "recursos", descripcion: "Recursos" },
-  { valor: "evaluacion", descripcion: "Evaluacion y criterios" },
+  { valor: "evaluacion", descripcion: "Evaluación y criterios" },
   { valor: "cronograma", descripcion: "Cronograma" },
-  { valor: "bibliografia", descripcion: "Bibliografia" },
+  { valor: "bibliografia", descripcion: "Bibliografía" },
   { valor: "observaciones", descripcion: "Observaciones" }
 ];
 

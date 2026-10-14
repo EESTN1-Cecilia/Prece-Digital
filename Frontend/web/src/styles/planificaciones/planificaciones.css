@@ -57,8 +57,10 @@
 .planif-filtros .ui-filtro {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 4px;
   min-width: 0;
+  text-align: left;
 }
 
 .planif-filtros .ui-filtro select {
@@ -331,6 +333,10 @@
   margin-top: 18px;
 }
 
+.planif-form__bloque .data-nota {
+  margin: 0 0 12px;
+}
+
 .planif-form__secciones {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -356,7 +362,8 @@
   }
 
   .planif-filtros {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 10px;
   }
 
   .planif-consulta__selector {

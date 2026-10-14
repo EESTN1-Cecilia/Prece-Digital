@@ -7,7 +7,7 @@
 
 import { h } from "../../../layouts/site-layout.js";
 import { Boton, BotonEnlace, Tabla } from "../../../components/ui/index.js";
-import { fecha, fechaCorta } from "../../../utils/formato.js";
+import { fechaCorta } from "../../../utils/formato.js";
 import { etiquetaCurso } from "../planificaciones-helpers.js";
 import { EstadoPlanificacion } from "./estado-planificacion.js";
 
@@ -20,8 +20,8 @@ const COLUMNAS = {
   division: { id: "division", titulo: "División", celda: (plan) => plan.division?.nombre ?? "—" },
   turno: { id: "turno", titulo: "Turno", celda: (plan) => plan.turnoNombre ?? "—" },
   periodo: { id: "periodo", titulo: "Período", ordenable: true, celda: (plan) => plan.periodo?.etiqueta ?? "—" },
-  creadoEn: { id: "creadoEn", titulo: "Creación", ordenable: true, celda: (plan) => fecha(plan.creadoEn) },
-  actualizadoEn: { id: "actualizadoEn", titulo: "Última modificación", ordenable: true, celda: (plan) => fecha(plan.actualizadoEn) },
+  creadoEn: { id: "creadoEn", titulo: "Creación", ordenable: true, celda: (plan) => fechaCorta(plan.creadoEn) },
+  actualizadoEn: { id: "actualizadoEn", titulo: "Última modificación", ordenable: true, celda: (plan) => fechaCorta(plan.actualizadoEn) },
   estado: { id: "estado", titulo: "Estado", ordenable: true, celda: (plan) => h(EstadoPlanificacion, { estado: plan.estado }) },
   fechaPresentacion: { id: "fechaPresentacion", titulo: "Presentación", celda: (plan) => fechaCorta(plan.fechaPresentacion) },
   fechaRevision: { id: "fechaRevision", titulo: "Revisión", celda: (plan) => fechaCorta(plan.fechaRevision) },
