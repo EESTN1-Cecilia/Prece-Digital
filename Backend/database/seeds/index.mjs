@@ -3,6 +3,7 @@ import { seedStudents } from "./students.seed.mjs";
 import { seedAcademic } from "./academic.seed.mjs";
 import { seedTeachers } from "./teachers.seed.mjs";
 import { seedGrades } from "./grades.seed.mjs";
+import { seedPlanificaciones } from "./planificaciones.seed.mjs";
 import { seedAcademicRecords } from "./academic-records.seed.mjs";
 import { seedAttendanceFollowups } from "./attendance-followups.seed.mjs";
 import { seedBookRegistry } from "./book-registry.seed.mjs";
@@ -23,6 +24,7 @@ export async function seedDesarrollo() {
   seedAcademic();
   seedTeachers();
   seedGrades();
+  seedPlanificaciones();
   seedAcademicRecords();
   seedInasistencias();
   seedTutores();

@@ -33,6 +33,7 @@ export const modules = [
   { id: "reservations", name: "Reservas", description: "Reservas de espacios y recursos." },
   { id: "notifications", name: "Notificaciones", description: "Notificaciones del sistema." },
   { id: "curriculum", name: "Curriculum", description: "Seguimiento curricular." },
+  { id: "teaching-plans", name: "Planificaciones docentes", description: "Planificaciones de cada docente por materia, curso, division y periodo, con su estado de presentacion y revision." },
   { id: "academics", name: "Estructura academica", description: "Ciclos, orientaciones, cursos y divisiones." },
   { id: "academic-records", name: "Situacion academica", description: "Materias pendientes, recursadas e intensificadas." },
   { id: "audit", name: "Auditoria", description: "Historial de cambios, accesos, exportaciones y errores." }

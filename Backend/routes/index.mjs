@@ -25,6 +25,7 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as gradesController from "../modules/grades/grades.controller.mjs";
+import * as planificacionesController from "../modules/planificaciones/planificaciones.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
 import * as attendanceAlertsController from "../modules/attendance-alerts/attendance-alerts.controller.mjs";
 import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
@@ -50,6 +51,18 @@ function required(permission) {
   }
 
   return authorize({ permission });
+}
+
+/* Igual que required(), pero sin comparar el alcance de la asignacion
+   (schoolId, divisionId, ...) contra los datos del pedido. Solo para modulos
+   cuyo servicio ya acota el alcance por su cuenta: planificaciones lo resuelve
+   por el legajo del docente y sus asignaciones de materia. */
+function requiredConAlcanceEnServicio(permission) {
+  if (!permission) {
+    throw new Error("Ruta con permiso inexistente: revisar PERMISSIONS en config/permissions.config.mjs");
+  }
+
+  return authorize({ permission, skipScope: true });
 }
 
 export const apiRoutes = [
@@ -219,6 +232,23 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacionesDeAlumno },
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/calificaciones/resumen", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getResumenDeAlumno },
   { method: "GET", path: "/api/v1/docentes/:docenteId/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCalificacionesDeDocente },
+
+  /* Planificaciones docentes: los literales (catalogos, opciones, por-*) van
+     antes que /planificaciones/:planificacionId porque el router gana con la
+     primera coincidencia. Escribir (alta, modificacion y presentacion) usa
+     teaching-plans.write; la revision de Jefatura, teaching-plans.manage. El
+     alcance del docente lo acota el servicio (requiredConAlcanceEnServicio). */
+  { method: "GET", path: "/api/v1/planificaciones/catalogos", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_READ)], handler: planificacionesController.getCatalogos },
+  { method: "GET", path: "/api/v1/planificaciones/opciones", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_READ)], handler: planificacionesController.getOpciones },
+  { method: "GET", path: "/api/v1/planificaciones/por-docente/:docenteId", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_READ)], handler: planificacionesController.getPorDocente },
+  { method: "GET", path: "/api/v1/planificaciones/por-materia/:materiaId", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_READ)], handler: planificacionesController.getPorMateria },
+  { method: "GET", path: "/api/v1/planificaciones/por-curso/:cursoId", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_READ)], handler: planificacionesController.getPorCurso },
+  { method: "POST", path: "/api/v1/planificaciones", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_WRITE)], handler: planificacionesController.createPlanificacion },
+  { method: "GET", path: "/api/v1/planificaciones", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_READ)], handler: planificacionesController.listPlanificaciones },
+  { method: "GET", path: "/api/v1/planificaciones/:planificacionId", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_READ)], handler: planificacionesController.getPlanificacion },
+  { method: "PATCH", path: "/api/v1/planificaciones/:planificacionId", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_WRITE)], handler: planificacionesController.updatePlanificacion },
+  { method: "POST", path: "/api/v1/planificaciones/:planificacionId/presentar", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_WRITE)], handler: planificacionesController.presentarPlanificacion },
+  { method: "POST", path: "/api/v1/planificaciones/:planificacionId/estado", middlewares: [verifyToken, requiredConAlcanceEnServicio(P.TEACHING_PLANS_MANAGE)], handler: planificacionesController.cambiarEstado },
 
   { method: "POST", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_WRITE)], handler: spacesController.createBuilding },
   { method: "GET", path: "/api/v1/buildings", middlewares: [verifyToken, required(P.SPACES_READ)], handler: spacesController.listBuildings },

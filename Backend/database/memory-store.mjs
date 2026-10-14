@@ -43,5 +43,7 @@ export function resetStore() {
   if (store.observations) store.observations.clear();
   if (store.observationFollowups) store.observationFollowups.clear();
   if (store.observationsAudit) store.observationsAudit.length = 0;
+  if (store.planificaciones) store.planificaciones.clear();
+  if (store.planificacionesAudit) store.planificacionesAudit.length = 0;
 }
 

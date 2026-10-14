@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 287 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 298 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -280,6 +280,22 @@ Total: 287 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
 | GET | `/api/v1/docentes/:docenteId/calificaciones` | `grades.read` |
+
+## planificaciones
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/planificaciones/catalogos` | `teaching-plans.read` |
+| GET | `/api/v1/planificaciones/opciones` | `teaching-plans.read` |
+| GET | `/api/v1/planificaciones/por-docente/:docenteId` | `teaching-plans.read` |
+| GET | `/api/v1/planificaciones/por-materia/:materiaId` | `teaching-plans.read` |
+| GET | `/api/v1/planificaciones/por-curso/:cursoId` | `teaching-plans.read` |
+| POST | `/api/v1/planificaciones` | `teaching-plans.write` |
+| GET | `/api/v1/planificaciones` | `teaching-plans.read` |
+| GET | `/api/v1/planificaciones/:planificacionId` | `teaching-plans.read` |
+| PATCH | `/api/v1/planificaciones/:planificacionId` | `teaching-plans.write` |
+| POST | `/api/v1/planificaciones/:planificacionId/presentar` | `teaching-plans.write` |
+| POST | `/api/v1/planificaciones/:planificacionId/estado` | `teaching-plans.manage` |
 
 ## buildings
 
