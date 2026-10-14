@@ -51,3 +51,43 @@ export function evaluateAccess(user, { permission, roles, context = {}, skipScop
     matching
   };
 }
+
+/* ============================================================================
+   Punto único para derivar identidad -> roles -> permisos.
+
+   Los permisos del usuario nunca salen del cliente: se calculan en el backend a
+   partir de sus asignaciones (roles) y del catálogo central de permisos.
+   ============================================================================ */
+
+export function rolesDelUsuario(user) {
+  return [...new Set((user.assignments ?? []).map((assignment) => assignment.role))];
+}
+
+export function permisosDelUsuario(user) {
+  return [...new Set(rolesDelUsuario(user).flatMap((role) => permissionsForRole(role)))];
+}
+
+export function dividirPermiso(codigo) {
+  const match = /^([^.:]+)[.:]([^.:]+)$/.exec(codigo ?? "");
+
+  return match ? { modulo: match[1], accion: match[2] } : null;
+}
+
+/* Agrupa los permisos del usuario por modulo y accion, para consumo de la
+   interfaz (solo usabilidad; la seguridad siempre la valida el backend). */
+export function resumenPermisos(user) {
+  const resumen = {};
+
+  for (const codigo of permisosDelUsuario(user)) {
+    const partes = dividirPermiso(codigo);
+
+    if (!partes) {
+      continue;
+    }
+
+    resumen[partes.modulo] ??= {};
+    resumen[partes.modulo][partes.accion] = true;
+  }
+
+  return resumen;
+}

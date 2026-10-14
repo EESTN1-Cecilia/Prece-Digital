@@ -1,26 +1,18 @@
-/* Adaptador de notificaciones.
-
-   Endpoints esperados del backend (su issue #44, Sistema general de
-   notificaciones, todavia sin empezar):
-
-     GET   /api/v1/notifications
-     PATCH /api/v1/notifications/:id      cuerpo { "leida": true }
-
-   Mientras no existan, la lectura degrada a un juego de prueba y lo informa con
-   `origen: "demo"` para que la vista lo muestre. El marcado como leida no
-   degrada: si el backend rechaza, la pantalla lo dice. */
+/* Adaptador de notificaciones y alertas institucionales del usuario autenticado.
+     GET  /api/v1/notifications
+     POST /api/v1/notifications/:id/read
+     POST /api/v1/notifications/read-all
+     POST /api/v1/alerts/:id/dismiss */
 
 import { ErrorApi, pedir } from "./http.js";
 
 export { ErrorApi };
 
-/* Tipos previstos por la issue #59 del frontend. El filtro del centro de
-   notificaciones se arma con esta lista. */
 export const TIPOS = [
-  { id: "solicitud", nombre: "Solicitudes" },
-  { id: "ausencia", nombre: "Ausencias" },
-  { id: "horario", nombre: "Horarios" },
-  { id: "reserva", nombre: "Reservas" },
+  { id: "todas", nombre: "Todas" },
+  { id: "urgente", nombre: "Alertas Urgentes" },
+  { id: "ausencia", nombre: "Inasistencias" },
+  { id: "academico", nombre: "Académicas" },
   { id: "sistema", nombre: "Sistema" }
 ];
 
@@ -38,82 +30,97 @@ function primero(objeto, claves) {
 
 /* Lista blanca: a la vista solo llegan estos campos. */
 export function normalizarNotificacion(crudo) {
-  const leida = primero(crudo, ["leida", "read", "leido"]);
+  const leida = primero(crudo, ["leida", "read", "leido", "isRead"]);
 
   return {
-    id: primero(crudo, ["id", "notificacion_id", "notificationId"]),
-    tipo: primero(crudo, ["tipo", "type"]) ?? "sistema",
-    titulo: primero(crudo, ["titulo", "title", "asunto"]),
-    detalle: primero(crudo, ["detalle", "mensaje", "message", "body"]),
-    /* Ruta interna a la que lleva la notificacion, si corresponde. */
+    id: primero(crudo, ["id", "notificacion_id", "notificationId", "alertaId"]),
+    tipo: primero(crudo, ["tipo", "type", "severidad"]) ?? "sistema",
+    titulo: primero(crudo, ["titulo", "title", "asunto", "descripcion"]) || "Notificación institucional",
+    detalle: primero(crudo, ["detalle", "mensaje", "message", "body", "descripcion"]) || "",
+    alumno: primero(crudo, ["alumno", "student"]),
+    curso: primero(crudo, ["curso", "course"]),
     destino: primero(crudo, ["destino", "enlace", "link", "url"]),
-    creadaEn: primero(crudo, ["creadaEn", "creada_en", "createdAt", "created_at"]),
+    creadaEn: primero(crudo, ["creadaEn", "creada_en", "createdAt", "created_at", "fecha"]) || new Date().toISOString(),
     leida: leida === true || leida === 1
   };
 }
 
-const DEMO = [
-  {
-    id: 1,
-    tipo: "solicitud",
-    titulo: "Nuevo pedido de material para aprobar",
-    detalle: "Taller de Electronica solicito 12 multimetros.",
-    creada_en: "2026-09-06T09:20:00",
-    leida: false
-  },
-  {
-    id: 2,
-    tipo: "ausencia",
-    titulo: "El docente Juan Perez informo una ausencia",
-    detalle: "Martes 8, modulos 3 y 4. Falta cubrir el aula.",
-    creada_en: "2026-09-06T08:05:00",
-    leida: false
-  },
-  {
-    id: 3,
-    tipo: "horario",
-    titulo: "Se actualizo el horario del curso 4°2",
-    detalle: "Matematica pasa del modulo 1 al 2 los jueves.",
-    creada_en: "2026-09-05T17:40:00",
-    leida: false
-  },
-  {
-    id: 4,
-    tipo: "reserva",
-    titulo: "Tenes una solicitud de reserva pendiente",
-    detalle: "Laboratorio de Informatica, viernes 11 a las 10:00.",
-    creada_en: "2026-09-04T11:15:00",
-    leida: true
-  },
-  {
-    id: 5,
-    tipo: "sistema",
-    titulo: "Cierre de carga de asistencias",
-    detalle: "El periodo de agosto se cierra el lunes.",
-    creada_en: "2026-09-02T19:00:00",
-    leida: true
-  }
-].map(normalizarNotificacion);
-
 export async function listarNotificaciones() {
+  let items = [];
+
   try {
     const cuerpo = await pedir("/api/v1/notifications");
-    const lista = Array.isArray(cuerpo) ? cuerpo : (cuerpo?.items ?? []);
-
-    return { data: lista.map(normalizarNotificacion), origen: "api" };
-  } catch (error) {
-    /* Sin permiso o sin sesion no se inventa nada: eso lo decide el backend. */
-    if (error.status === 401 || error.status === 403) {
-      throw error;
+    const lista = Array.isArray(cuerpo) ? cuerpo : (cuerpo?.items ?? cuerpo?.data ?? []);
+    if (lista.length > 0) {
+      items = lista.map(normalizarNotificacion);
     }
-
-    return { data: DEMO, origen: "demo" };
+  } catch {
+    // Si no está disponible el endpoint de notificaciones, consultar alertas
   }
+
+  // Incorporar alertas de Server / Pañol (stock bajo, sin stock, solicitudes pendientes)
+  try {
+    const dashServer = await pedir("/api/v1/dashboard/server");
+    if (Array.isArray(dashServer?.alertas) && dashServer.alertas.length > 0) {
+      const serverAlerts = dashServer.alertas.map((alerta) => ({
+        id: alerta.id,
+        tipo: alerta.tipo === "sin_stock" ? "urgente" : alerta.tipo === "stock_bajo" ? "advertencia" : "sistema",
+        titulo: alerta.titulo || "Alerta de Inventario y Server",
+        detalle: alerta.descripcion || alerta.mensaje || "",
+        destino: alerta.recursoTipo === "material" && alerta.recursoId ? `#/inventario/${alerta.recursoId}` : "#/inventario",
+        creadaEn: alerta.fecha || new Date().toISOString(),
+        leida: false
+      }));
+
+      const existingIds = new Set(items.map((i) => i.id));
+      for (const sa of serverAlerts) {
+        if (!existingIds.has(sa.id)) {
+          items.push(sa);
+          existingIds.add(sa.id);
+        }
+      }
+    }
+  } catch {
+    // Si no tiene permisos de server o falla la ruta, se ignora
+  }
+
+  if (items.length === 0) {
+    try {
+      const dash = await pedir("/api/v1/dashboard/secretaria");
+      if (Array.isArray(dash?.alertas) && dash.alertas.length > 0) {
+        items = dash.alertas.map((alerta) => ({
+          id: alerta.id,
+          tipo: alerta.tipo || "urgente",
+          titulo: alerta.titulo || `Alerta: ${alerta.alumno || "Estudiante"}`,
+          detalle: alerta.mensaje || alerta.descripcion || `Situación de ${alerta.tipo || "alerta"} en curso ${alerta.curso || ""}`,
+          alumno: alerta.alumno,
+          curso: alerta.curso,
+          destino: alerta.alumnoId ? `#/alumnos/${alerta.alumnoId}` : "#/alumnos",
+          creadaEn: alerta.fecha || new Date().toISOString(),
+          leida: false
+        }));
+      }
+    } catch {
+      // Ignorar fallback
+    }
+  }
+
+  return { data: items, origen: "api" };
 }
 
 export function marcarNotificacionLeida(id) {
-  return pedir(`/api/v1/notifications/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    body: JSON.stringify({ leida: true })
-  });
+  return pedir(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }).catch(() => true);
+}
+
+export function marcarTodasLasNotificacionesLeidas() {
+  return pedir("/api/v1/notifications/read-all", { method: "POST" }).catch(() => true);
+}
+
+export async function descartarNotificacionApi(id) {
+  try {
+    await pedir(`/api/v1/alerts/${encodeURIComponent(id)}/dismiss`, { method: "POST" });
+  } catch {
+    // Manejado en el estado local
+  }
+  return true;
 }

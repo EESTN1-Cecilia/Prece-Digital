@@ -2,7 +2,7 @@
 
 Módulo para organizar las materias, los diseños curriculares y los contenidos,
 y registrar el avance real de cada contenido con la participación de los
-docentes. Las rutas se exponen bajo `/api/v1/curriculum/*`.
+docentes. Las rutas se exponen bajo el prefijo `curriculum` del modulo.
 
 ## Entidades
 
@@ -30,7 +30,7 @@ momento en que se crea o modifica un seguimiento.
 - `academics.write` / `academics.read`: alta y edición de materias.
 - `curriculum.manage`: alta y edición de diseños.
 - `curriculum.write`: alta y edición de contenidos.
-- `curriculum.track.write`: registrar y modificar seguimientos (docentes,
+- `curriculum.track`: registrar y modificar seguimientos (docentes,
   jefes de área y server).
 - `curriculum.read`: todas las consultas y los reportes de avance.
 
@@ -70,10 +70,10 @@ Contenidos:
 - `PATCH /api/v1/curriculum/contenidos/:contentId` · `curriculum.write`
 
 Seguimientos:
-- `POST /api/v1/curriculum/seguimientos` · `curriculum.track.write`
+- `POST /api/v1/curriculum/seguimientos` · `curriculum.track`
 - `GET /api/v1/curriculum/seguimientos` · `curriculum.read`
 - `GET /api/v1/curriculum/seguimientos/:trackingId` · `curriculum.read`
-- `PATCH /api/v1/curriculum/seguimientos/:trackingId` · `curriculum.track.write`
+- `PATCH /api/v1/curriculum/seguimientos/:trackingId` · `curriculum.track`
 
 Avance:
 - `GET /api/v1/curriculum/avance/materia` · `curriculum.read`

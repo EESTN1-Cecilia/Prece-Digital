@@ -1,3 +1,25 @@
+-- =====================================================================================
+-- PRECE DIGITAL - Script de creación de base de datos
+-- Motor: MySQL (XAMPP) | Engine: InnoDB | Charset: utf8mb4
+--
+-- Convenciones aplicadas:
+--  - Todo dato persistente se asocia a una escuela (escuela_id) -> proyecto multiinstitución
+--    (ver Shared/docs/architecture.md del repo).
+--  - Se corrigieron nombres de tabla pedidos con errores de tipeo / caracteres no válidos
+--    para identificadores MySQL:
+--      años_divisiones            -> anios_divisiones
+--      vlasificacione_parciales   -> calificaciones_parciales
+--      calificaciones_cuatrimestrales (se mantiene, tenía error de tipeo "calificacione")
+--  - Nombres de tabla y campo en snake_case, en español, según venías usando.
+--  - Los roles se precargan con el catálogo real que ya está definido en
+--    Shared/src/domain.mjs del repo (super-admin, system-admin, director, etc.)
+--
+-- IMPORTANTE: varios campos son una propuesta razonable a partir de lo que describen
+-- los README de cada módulo del repo. Si tu docente/superior ya definió una estructura
+-- de legajo, escalas de calificación, o matriz de permisos específica, esos campos
+-- puntuales conviene validarlos antes de cargar datos reales.
+-- =====================================================================================
+
 CREATE DATABASE IF NOT EXISTS prece_digital
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -6,6 +28,12 @@ USE prece_digital;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- =====================================================================================
+-- MÓDULO: IDENTIDAD Y ACCESO
+-- Tablas: escuela, usuario/docente, roles, usuario_roles
+-- =====================================================================================
+
+-- Instituciones (soporta multiinstitución desde el modelo)
 CREATE TABLE escuelas (
   id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre          VARCHAR(150)  NOT NULL,
@@ -20,6 +48,7 @@ CREATE TABLE escuelas (
   actualizado_en  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+-- Usuarios del sistema (incluye docentes, directivos, preceptores, etc.)
 CREATE TABLE usuarios (
   id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   escuela_id      INT UNSIGNED NOT NULL COMMENT 'Escuela "base" del usuario',
@@ -38,6 +67,7 @@ CREATE TABLE usuarios (
   CONSTRAINT fk_usuarios_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
 ) ENGINE=InnoDB;
 
+-- Catálogo de roles del sistema
 CREATE TABLE roles (
   id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   codigo       VARCHAR(40)   NOT NULL COMMENT 'Identificador estable, ej: teacher, director',
@@ -46,6 +76,7 @@ CREATE TABLE roles (
   UNIQUE KEY uq_roles_codigo (codigo)
 ) ENGINE=InnoDB;
 
+-- Módulos funcionales del sistema. Sobre ellos se definen los permisos.
 CREATE TABLE modulos (
   id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   codigo       VARCHAR(40)  NOT NULL COMMENT 'Identificador estable, ej: identity',
@@ -54,6 +85,7 @@ CREATE TABLE modulos (
   UNIQUE KEY uq_modulos_codigo (codigo)
 ) ENGINE=InnoDB;
 
+-- Catálogo de permisos del sistema: un permiso es "<modulo>:<accion>"
 CREATE TABLE permisos (
   id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   codigo       VARCHAR(80)  NOT NULL COMMENT 'Identificador estable, ej: identity:read',
@@ -64,6 +96,7 @@ CREATE TABLE permisos (
   KEY ix_permisos_modulo (modulo)
 ) ENGINE=InnoDB;
 
+-- Relación rol <-> permiso: define qué puede hacer cada rol
 CREATE TABLE rol_permisos (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   rol_id      INT UNSIGNED NOT NULL,
@@ -74,6 +107,7 @@ CREATE TABLE rol_permisos (
   CONSTRAINT fk_rp_permiso FOREIGN KEY (permiso_id) REFERENCES permisos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Relación usuario <-> rol, con alcance (escuela) para permisos por institución
 CREATE TABLE usuario_roles (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   usuario_id  INT UNSIGNED NOT NULL,
@@ -87,6 +121,11 @@ CREATE TABLE usuario_roles (
   CONSTRAINT fk_ur_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
 ) ENGINE=InnoDB;
 
+-- =====================================================================================
+-- MÓDULO: ESTRUCTURA ACADÉMICA
+-- Tablas: ciclos_lectivos, anios_divisiones, materias, grupos_taller, asignaciones_docentes
+-- =====================================================================================
+
 CREATE TABLE ciclos_lectivos (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   escuela_id    INT UNSIGNED NOT NULL,
@@ -99,6 +138,10 @@ CREATE TABLE ciclos_lectivos (
   CONSTRAINT fk_ciclo_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
 ) ENGINE=InnoDB;
 
+-- Orientaciones / especialidades del ciclo superior.
+-- En el Ciclo Básico (1° a 3°) no aplica orientación: es común a todos los estudiantes.
+-- A partir de 4° el estudiante cursa en una de las orientaciones (ej: Técnico en Informática,
+-- Técnico en Programación).
 CREATE TABLE orientaciones (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   escuela_id  INT UNSIGNED NOT NULL,
@@ -109,6 +152,15 @@ CREATE TABLE orientaciones (
   CONSTRAINT fk_orient_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
 ) ENGINE=InnoDB;
 
+-- Años/divisiones (ej: "4° 3"), por ciclo lectivo.
+-- Escuela técnica de doble turno: cada división tiene un turno de AULA y, por regla,
+-- un turno de TALLER opuesto al de aula (si aula es mañana, taller es tarde, y viceversa).
+-- ÚNICA EXCEPCIÓN: en 7° año aula y taller se dictan en el mismo turno (queda un solo turno).
+-- Esta regla se modela con una columna calculada (turno_taller) para no depender de cargarla
+-- bien a mano; si la política cambia en el futuro, se ajusta acá en un solo lugar.
+-- La división es un número, no necesariamente correlativo (ej: 1,2,3,4,6 en el Ciclo Básico),
+-- y se repite entre orientaciones en 4°-7° (ej. 4°1 de Informática y 4°3 de Programación
+-- son divisiones distintas aunque numéricamente cercanas), por eso NO se usa ENUM A-F.
 CREATE TABLE anios_divisiones (
   id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   escuela_id         INT UNSIGNED NOT NULL,
@@ -155,6 +207,7 @@ CREATE TABLE grupos_taller (
   CONSTRAINT fk_gt_materia FOREIGN KEY (materia_id) REFERENCES materias(id)
 ) ENGINE=InnoDB;
 
+-- Asignación de un docente a una materia / división / taller en un ciclo lectivo
 CREATE TABLE asignaciones_docentes (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   escuela_id          INT UNSIGNED NOT NULL,
@@ -174,6 +227,101 @@ CREATE TABLE asignaciones_docentes (
   CONSTRAINT fk_asig_aniodiv   FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id),
   CONSTRAINT fk_asig_taller    FOREIGN KEY (grupo_taller_id) REFERENCES grupos_taller(id)
 ) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- MÓDULO: DOCENTES
+-- Tablas: docentes, docentes_asignaciones_materias, docentes_asignaciones_cursos
+--
+-- El módulo de gestión de docentes guarda el perfil del docente y sus asociaciones
+-- con la estructura académica (materias y cursos/divisiones) por período lectivo,
+-- con historial de cambios y baja lógica. Se diferencia de `asignaciones_docentes`
+-- (módulo de estructura académica), que queda como relación histórica usada por
+-- asistencias y calificaciones.
+-- =====================================================================================
+
+-- Perfil del docente. La identidad y el acceso siguen en usuarios (usuario_id);
+-- este registro agrega datos personales, título, especialidades y estado.
+CREATE TABLE docentes (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id       INT UNSIGNED NOT NULL,
+  usuario_id       INT UNSIGNED NULL COMMENT 'Cuenta de acceso asociada (opcional)',
+  apellido         VARCHAR(100) NOT NULL,
+  nombre           VARCHAR(100) NOT NULL,
+  tipo_documento   ENUM('dni','lc','le','ci','pasaporte') NOT NULL DEFAULT 'dni',
+  documento        VARCHAR(12)  NOT NULL,
+  email            VARCHAR(150) NOT NULL,
+  telefono         VARCHAR(30)  NULL,
+  titulo           VARCHAR(150) NULL,
+  especialidades   JSON         NULL COMMENT 'Lista de especialidades declaradas',
+  estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+  activo           TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '0 cuando estado=inactivo (compatibilidad)',
+  creado_por       INT UNSIGNED NULL,
+  actualizado_por  INT UNSIGNED NULL,
+  creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  fecha_baja       DATETIME     NULL,
+  UNIQUE KEY uq_docente_documento (escuela_id, documento),
+  UNIQUE KEY uq_docente_email (escuela_id, email),
+  CONSTRAINT fk_docente_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_docente_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Materias que dicta un docente, con su alcance (curso/división) y período lectivo.
+CREATE TABLE docentes_asignaciones_materias (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id       INT UNSIGNED NOT NULL,
+  docente_id       INT UNSIGNED NOT NULL,
+  materia_id       INT UNSIGNED NOT NULL,
+  anio_division_id INT UNSIGNED NULL COMMENT 'Alcance curso/división; NULL = sin alcance puntual',
+  anio_lectivo     SMALLINT UNSIGNED NOT NULL,
+  cuatrimestre     TINYINT UNSIGNED NULL COMMENT 'NULL = período anual',
+  horas_semanales  SMALLINT UNSIGNED NULL,
+  observaciones    VARCHAR(500) NULL,
+  estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+  activo           TINYINT(1)   NOT NULL DEFAULT 1,
+  historial        JSON         NULL COMMENT 'Estado anterior en cada modificación, para no perder información',
+  creado_por       INT UNSIGNED NULL,
+  actualizado_por  INT UNSIGNED NULL,
+  creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  fecha_baja       DATETIME     NULL,
+  UNIQUE KEY uq_asigm_docente (docente_id, materia_id, anio_division_id, anio_lectivo, cuatrimestre),
+  CONSTRAINT fk_asigm_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_asigm_docente FOREIGN KEY (docente_id) REFERENCES docentes(id),
+  CONSTRAINT fk_asigm_materia FOREIGN KEY (materia_id) REFERENCES materias(id),
+  CONSTRAINT fk_asigm_aniodiv FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id)
+) ENGINE=InnoDB;
+
+-- Cursos/divisiones a los que queda vinculado un docente, con su rol y período lectivo.
+CREATE TABLE docentes_asignaciones_cursos (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id       INT UNSIGNED NOT NULL,
+  docente_id       INT UNSIGNED NOT NULL,
+  anio_division_id INT UNSIGNED NOT NULL,
+  rol_asignacion   ENUM('titular','suplente','ayudante') NOT NULL DEFAULT 'titular',
+  anio_lectivo     SMALLINT UNSIGNED NOT NULL,
+  cuatrimestre     TINYINT UNSIGNED NULL COMMENT 'NULL = período anual',
+  observaciones    VARCHAR(500) NULL,
+  estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
+  activo           TINYINT(1)   NOT NULL DEFAULT 1,
+  historial        JSON         NULL COMMENT 'Estado anterior en cada modificación, para no perder información',
+  creado_por       INT UNSIGNED NULL,
+  actualizado_por  INT UNSIGNED NULL,
+  creado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  fecha_baja       DATETIME     NULL,
+  UNIQUE KEY uq_asigc_docente (docente_id, anio_division_id, rol_asignacion, anio_lectivo, cuatrimestre),
+  CONSTRAINT fk_asigc_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_asigc_docente FOREIGN KEY (docente_id) REFERENCES docentes(id),
+  CONSTRAINT fk_asigc_aniodiv FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- MÓDULO: ESTUDIANTES
+-- Tablas: estudiantes, contacto_responsable, estudiante_contacto, datos_salud, pases,
+--         asistencias_diarias, asistencias_materia, conflictos_asistencia,
+--         justificativos_asistencia
+-- =====================================================================================
 
 CREATE TABLE estudiantes (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -197,6 +345,8 @@ CREATE TABLE estudiantes (
   CONSTRAINT fk_est_aniodiv   FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id)
 ) ENGINE=InnoDB;
 
+-- Inscripcion de estudiantes a grupos/talleres: permite obtener listados por grupo y por taller
+-- La condicion del alumno queda en estudiantes.condicion (se actualiza segun trayectoria).
 CREATE TABLE inscripciones_taller (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id       INT UNSIGNED NOT NULL,
@@ -210,6 +360,7 @@ CREATE TABLE inscripciones_taller (
   CONSTRAINT fk_it_aniodiv    FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id)
 ) ENGINE=InnoDB;
 
+-- Personas responsables/contacto (padre, madre, tutor, etc.), reutilizables entre hermanos
 CREATE TABLE contacto_responsable (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre      VARCHAR(100) NOT NULL,
@@ -221,6 +372,7 @@ CREATE TABLE contacto_responsable (
   creado_en   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+-- Relación N:M entre estudiantes y sus contactos responsables
 CREATE TABLE estudiante_contacto (
   id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id           INT UNSIGNED NOT NULL,
@@ -233,6 +385,7 @@ CREATE TABLE estudiante_contacto (
   CONSTRAINT fk_ec_contacto   FOREIGN KEY (contacto_id) REFERENCES contacto_responsable(id)
 ) ENGINE=InnoDB;
 
+-- Datos de salud del legajo (dato sensible: no debe quedar disponible offline)
 CREATE TABLE datos_salud (
   id                          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id               INT UNSIGNED NOT NULL,
@@ -250,6 +403,7 @@ CREATE TABLE datos_salud (
   CONSTRAINT fk_ds_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id)
 ) ENGINE=InnoDB;
 
+-- Pases entre instituciones
 CREATE TABLE pases (
   id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id         INT UNSIGNED NOT NULL,
@@ -267,6 +421,7 @@ CREATE TABLE pases (
   CONSTRAINT fk_pase_usuario    FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+-- Asistencia institucional (diaria)
 CREATE TABLE asistencias_diarias (
   id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id     INT UNSIGNED NOT NULL,
@@ -283,6 +438,7 @@ CREATE TABLE asistencias_diarias (
   CONSTRAINT fk_asisd_usuario    FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+-- Asistencia por materia
 CREATE TABLE asistencias_materia (
   id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id           INT UNSIGNED NOT NULL,
@@ -298,6 +454,7 @@ CREATE TABLE asistencias_materia (
   CONSTRAINT fk_asism_usuario    FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+-- Conflictos de asistencia (ej: discrepancias entre registro diario y por materia, o de sincronización)
 CREATE TABLE conflictos_asistencia (
   id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id           INT UNSIGNED NOT NULL,
@@ -316,6 +473,7 @@ CREATE TABLE conflictos_asistencia (
   CONSTRAINT fk_ca_usuario    FOREIGN KEY (resuelto_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+-- Justificativos de inasistencia
 CREATE TABLE justificativos_asistencia (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id       INT UNSIGNED NOT NULL,
@@ -331,6 +489,367 @@ CREATE TABLE justificativos_asistencia (
   CONSTRAINT fk_ja_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id),
   CONSTRAINT fk_ja_presentado FOREIGN KEY (presentado_por) REFERENCES usuarios(id),
   CONSTRAINT fk_ja_aprobado   FOREIGN KEY (aprobado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Seguimiento de inasistencias: catalogo de tipos de accion
+CREATE TABLE tipos_accion_seguimiento (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  codigo        VARCHAR(40)  NOT NULL COMMENT 'Identificador del tipo, ej: llamado_familia',
+  descripcion   VARCHAR(160) NOT NULL,
+  activo        TINYINT(1)   NOT NULL DEFAULT 1,
+  creado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_tipo_accion_seg (codigo)
+) ENGINE=InnoDB;
+
+-- Seguimiento de inasistencias: acciones de la institucion ante una inasistencia
+-- No modifica ni reemplaza el registro de la inasistencia: solo documenta la intervencion
+CREATE TABLE seguimientos_inasistencia (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  fecha                 DATE         NOT NULL COMMENT 'Fecha en que se realizo la accion',
+  tipo_accion           VARCHAR(40)  NOT NULL COMMENT 'Codigo de tipos_accion_seguimiento',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que realizo o registro la accion',
+  observaciones         VARCHAR(500) NOT NULL,
+  historial             JSON         NULL COMMENT 'Estado anterior en cada modificacion, para no perder informacion',
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED NULL,
+  actualizado_en        DATETIME     NULL,
+  actualizado_por       INT UNSIGNED NULL,
+  KEY idx_seg_estudiante (estudiante_id, fecha),
+  KEY idx_seg_fecha      (fecha),
+  KEY idx_seg_tipo       (tipo_accion),
+  KEY idx_seg_resp       (usuario_responsable),
+  CONSTRAINT fk_seg_escuela      FOREIGN KEY (escuela_id)           REFERENCES escuelas(id),
+  CONSTRAINT fk_seg_estudiante   FOREIGN KEY (estudiante_id)        REFERENCES estudiantes(id),
+  CONSTRAINT fk_seg_tipo         FOREIGN KEY (tipo_accion)          REFERENCES tipos_accion_seguimiento(codigo),
+  CONSTRAINT fk_seg_responsable  FOREIGN KEY (usuario_responsable)  REFERENCES usuarios(id),
+  CONSTRAINT fk_seg_creado_por   FOREIGN KEY (creado_por)           REFERENCES usuarios(id),
+  CONSTRAINT fk_seg_actualizado  FOREIGN KEY (actualizado_por)      REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- MÓDULO: LIBRO MATRIZ DIGITAL
+-- Tablas: libro_matriz
+-- =====================================================================================
+
+-- Libro Matriz digital: un registro por alumno con numero de libro y folio y los
+-- datos administrativos adicionales definidos por la institucion. No hay borrado
+-- fisico: el estado `archivado` da de baja logica y el registro se conserva. La
+-- combinacion libro + folio es unica y el responsable es el usuario autenticado.
+CREATE TABLE libro_matriz (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  numero_libro          VARCHAR(30)  NOT NULL,
+  numero_folio          VARCHAR(30)  NOT NULL,
+  fecha_registro        DATE         NOT NULL COMMENT 'Fecha de registro o apertura del Libro Matriz',
+  estado                ENUM('activo','archivado') NOT NULL DEFAULT 'activo',
+  datos_adicionales     JSON         NULL COMMENT 'Campos administrativos definidos por la institucion',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registro el Libro Matriz',
+  historial             JSON         NULL COMMENT 'Estado anterior en cada modificacion, para no perder informacion',
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED  NULL,
+  actualizado_en        DATETIME     NULL,
+  actualizado_por       INT UNSIGNED  NULL,
+  UNIQUE KEY uq_lm_estudiante (estudiante_id),
+  UNIQUE KEY uq_lm_libro_folio (numero_libro, numero_folio),
+  KEY idx_lm_fecha  (fecha_registro),
+  KEY idx_lm_estado (estado),
+  CONSTRAINT fk_lm_escuela      FOREIGN KEY (escuela_id)          REFERENCES escuelas(id),
+  CONSTRAINT fk_lm_estudiante   FOREIGN KEY (estudiante_id)       REFERENCES estudiantes(id),
+  CONSTRAINT fk_lm_responsable  FOREIGN KEY (usuario_responsable) REFERENCES usuarios(id),
+  CONSTRAINT fk_lm_creado_por   FOREIGN KEY (creado_por)          REFERENCES usuarios(id),
+  CONSTRAINT fk_lm_actualizado  FOREIGN KEY (actualizado_por)     REFERENCES usuarios(id)
+-- MÓDULO: CONDICIONES PARTICULARES DE ALUMNOS
+-- Tablas: condiciones_particulares
+-- =====================================================================================
+
+-- Condiciones informadas sobre un alumno (salud, accesibilidad, adaptaciones,
+-- situaciones familiares, etc.). Pueden estar activas o finalizadas; al finalizar
+-- se conservan fecha y responsable, y el registro completo queda para consulta
+-- historica. El responsable de cada operacion es siempre el usuario autenticado.
+CREATE TABLE condiciones_particulares (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  descripcion           VARCHAR(1000) NOT NULL,
+  fecha_inicio          DATE          NOT NULL COMMENT 'Fecha de registro o inicio de la condicion',
+  estado                ENUM('activa','finalizada') NOT NULL DEFAULT 'activa',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registro la condicion',
+  fecha_finalizacion    DATE          NULL COMMENT 'Fecha en que la condicion se dio por finalizada',
+  finalizado_por        INT UNSIGNED  NULL COMMENT 'Usuario autenticado que finalizo la condicion',
+  historial             JSON          NULL COMMENT 'Estado anterior en cada modificacion, para no perder informacion',
+  creado_en             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED  NULL,
+  actualizado_en        DATETIME      NULL,
+  actualizado_por       INT UNSIGNED  NULL,
+  KEY idx_cond_estudiante (estudiante_id, estado),
+  KEY idx_cond_fecha      (fecha_inicio),
+  KEY idx_cond_estado     (estado),
+  CONSTRAINT fk_cond_escuela      FOREIGN KEY (escuela_id)          REFERENCES escuelas(id),
+  CONSTRAINT fk_cond_estudiante   FOREIGN KEY (estudiante_id)       REFERENCES estudiantes(id),
+  CONSTRAINT fk_cond_responsable  FOREIGN KEY (usuario_responsable) REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_finalizado   FOREIGN KEY (finalizado_por)      REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_creado_por   FOREIGN KEY (creado_por)          REFERENCES usuarios(id),
+  CONSTRAINT fk_cond_actualizado  FOREIGN KEY (actualizado_por)     REFERENCES usuarios(id)
+-- MÓDULO: OBSERVACIONES DE ALUMNOS
+-- Tablas: observaciones, observaciones_seguimiento
+-- =====================================================================================
+
+-- Observaciones: novedades que un sector registra sobre un alumno.
+-- El responsable es siempre el usuario autenticado que registra la observación; el
+-- cliente no lo decide. Cada modificación conserva el estado anterior en `historial`.
+CREATE TABLE observaciones (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  fecha                 DATE         NOT NULL COMMENT 'Fecha de la observación',
+  tipo                  ENUM('Académica','Convivencia','Asistencia','Administrativa','Pedagógica') NOT NULL,
+  descripcion           VARCHAR(500) NOT NULL,
+  sector                VARCHAR(80)  NULL COMMENT 'Sector que registra la observación',
+  estado                ENUM('Activa','Modificada','Histórica') NOT NULL DEFAULT 'Activa',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registró la observación',
+  historial             JSON         NULL COMMENT 'Estado anterior en cada modificación, para no perder información',
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED NULL,
+  actualizado_en        DATETIME     NULL,
+  actualizado_por       INT UNSIGNED NULL,
+  KEY idx_obs_estudiante (estudiante_id, fecha),
+  KEY idx_obs_fecha      (fecha),
+  KEY idx_obs_tipo       (tipo),
+  KEY idx_obs_estado     (estado),
+  CONSTRAINT fk_obs_escuela      FOREIGN KEY (escuela_id)           REFERENCES escuelas(id),
+  CONSTRAINT fk_obs_estudiante   FOREIGN KEY (estudiante_id)        REFERENCES estudiantes(id),
+  CONSTRAINT fk_obs_responsable  FOREIGN KEY (usuario_responsable)  REFERENCES usuarios(id),
+  CONSTRAINT fk_obs_creado_por   FOREIGN KEY (creado_por)           REFERENCES usuarios(id),
+  CONSTRAINT fk_obs_actualizado  FOREIGN KEY (actualizado_por)      REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Acciones de seguimiento sobre una observación.
+-- No modifican la observación: solo documentan la intervención asociada.
+CREATE TABLE observaciones_seguimiento (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  observacion_id        INT UNSIGNED NOT NULL,
+  escuela_id            INT UNSIGNED NOT NULL,
+  fecha                 DATE         NOT NULL COMMENT 'Fecha en que se realizó la acción',
+  accion                VARCHAR(200) NOT NULL,
+  observaciones         VARCHAR(500) NULL,
+  estado                ENUM('pendiente','realizada','cancelada') NOT NULL DEFAULT 'pendiente',
+  fecha_cierre          DATE         NULL COMMENT 'Fecha en que la acción quedó resuelta',
+  usuario_responsable   INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que registró la acción',
+  historial             JSON         NULL,
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_por            INT UNSIGNED NULL,
+  actualizado_en        DATETIME     NULL,
+  actualizado_por       INT UNSIGNED NULL,
+  KEY idx_oseg_observacion (observacion_id, fecha),
+  KEY idx_oseg_estado      (estado),
+  CONSTRAINT fk_oseg_observacion FOREIGN KEY (observacion_id)       REFERENCES observaciones(id),
+  CONSTRAINT fk_oseg_escuela     FOREIGN KEY (escuela_id)           REFERENCES escuelas(id),
+  CONSTRAINT fk_oseg_responsable FOREIGN KEY (usuario_responsable)  REFERENCES usuarios(id),
+  CONSTRAINT fk_oseg_creado_por  FOREIGN KEY (creado_por)           REFERENCES usuarios(id),
+  CONSTRAINT fk_oseg_actualizado FOREIGN KEY (actualizado_por)      REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- MÓDULO: ALERTAS POR INASISTENCIA CONSECUTIVA
+-- Tablas: configuraciones_alertas_ausencia, inasistencias, alertas_ausencia,
+--         eventos_notificacion, evaluaciones_alertas
+-- =====================================================================================
+
+-- Configuración institucional de la detección: una fila por escuela
+CREATE TABLE configuraciones_alertas_ausencia (
+  escuela_id                    INT UNSIGNED NOT NULL PRIMARY KEY,
+  habilitada                    TINYINT(1)   NOT NULL DEFAULT 1,
+  dias_consecutivos             SMALLINT UNSIGNED NOT NULL DEFAULT 3
+    COMMENT 'Días lectivos seguidos que generan la alerta',
+  tipos_contabilizados          JSON         NOT NULL
+    COMMENT 'Tipos que cuentan para la racha, ej: ["ausente"]',
+  justificadas_generan_alerta   TINYINT(1)   NOT NULL DEFAULT 0,
+  justificadas_reinician_racha  TINYINT(1)   NOT NULL DEFAULT 1,
+  prioridad_notificacion        ENUM('baja','normal','alta') NOT NULL DEFAULT 'alta',
+  canales                       JSON         NOT NULL
+    COMMENT 'Canales de aviso, ej: ["notificacion_interna"]',
+  dias_no_habiles               JSON         NULL
+    COMMENT 'Feriados y feriados puente; sábados y domingos ya se excluyen',
+  umbral_alerta_inasistencias   SMALLINT UNSIGNED NOT NULL DEFAULT 15
+    COMMENT 'Referencia institucional; no interviene en la racha',
+  creado_en                     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en                DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Inasistencias: el insumo de la detección
+CREATE TABLE inasistencias (
+  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id         INT UNSIGNED NOT NULL,
+  estudiante_id      INT UNSIGNED NOT NULL,
+  fecha              DATE         NOT NULL,
+  tipo               ENUM('ausente','tarde','media_falta') NOT NULL DEFAULT 'ausente',
+  justificada        TINYINT(1)   NOT NULL DEFAULT 0,
+  motivo             VARCHAR(500) NULL
+    COMMENT 'Obligatorio cuando la inasistencia está justificada',
+  observaciones      VARCHAR(500) NULL,
+  baja_en            DATETIME     NULL COMMENT 'Baja lógica: el registro nunca se borra',
+  baja_motivo        VARCHAR(500) NULL,
+  baja_por           INT UNSIGNED NULL,
+  registrado_por     INT UNSIGNED NOT NULL,
+  creado_en          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  actualizado_por    INT UNSIGNED NULL,
+  -- Una inasistencia vigente por alumno y día. MySQL trata los NULL de un índice
+  -- único como distintos, así que la baja lógica se modela con una columna
+  -- generada: 1 mientras está activa, NULL cuando fue dada de baja.
+  activa TINYINT(1) GENERATED ALWAYS AS (IF(baja_en IS NULL, 1, NULL)) STORED,
+  UNIQUE KEY uq_inasistencia_alumno_fecha (estudiante_id, fecha, activa),
+  KEY ix_inasistencias_alumno (estudiante_id, fecha),
+  KEY ix_inasistencias_escuela (escuela_id, fecha),
+  CONSTRAINT fk_inasistencias_escuela      FOREIGN KEY (escuela_id)    REFERENCES escuelas(id),
+  CONSTRAINT fk_inasistencias_estudiante   FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id),
+  CONSTRAINT fk_inasistencias_registrador  FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Alertas: las situaciones detectadas
+CREATE TABLE alertas_ausencia (
+  id                          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id                   INT UNSIGNED NOT NULL,
+  estudiante_id                INT UNSIGNED NOT NULL,
+  condicion                    VARCHAR(40)  NOT NULL DEFAULT 'inasistencias_consecutivas',
+  clave                        VARCHAR(191) NOT NULL
+    COMMENT 'Idempotencia: escuela|alumno|condicion|desde|hasta|umbral',
+  cantidad_inasistencias       SMALLINT UNSIGNED NOT NULL,
+  dias_consecutivos_exigidos   SMALLINT UNSIGNED NOT NULL,
+  periodo_desde                DATE         NOT NULL,
+  periodo_hasta                DATE         NOT NULL,
+  dias                         JSON         NOT NULL COMMENT 'Días lectivos del periodo',
+  inasistencia_ids             JSON         NULL,
+  inasistencias                JSON         NULL COMMENT 'Snapshot de cada inasistencia',
+  detectada_en                 DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_deteccion              DATE         NOT NULL,
+  generada_en                  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  generada_por                 INT UNSIGNED NULL COMMENT 'NULL si corre el proceso periódico',
+  disparador                   ENUM('registro_inasistencia','modificacion_inasistencia','baja_inasistencia','periodica')
+                                NOT NULL DEFAULT 'periodica',
+  configuracion_aplicada       JSON         NOT NULL
+    COMMENT 'Regla con la que se detectó, aunque después la escuela la cambie',
+  estado                       ENUM('activa','en_revision','resuelta','descartada') NOT NULL DEFAULT 'activa',
+  observaciones                 VARCHAR(500) NULL,
+  seguimiento_id               INT UNSIGNED NULL
+    COMMENT 'Referencia opcional a la intervención que resolvió la alerta',
+  evento_id                    INT UNSIGNED NULL,
+  notificaciones_ids           JSON         NULL,
+  historial                    JSON         NULL COMMENT 'Estados anteriores de la alerta',
+  resuelta_en                  DATETIME     NULL,
+  resuelta_por                 INT UNSIGNED NULL,
+  actualizado_en               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  actualizado_por              INT UNSIGNED NULL,
+  UNIQUE KEY uq_alerta_clave (clave),
+  KEY ix_alertas_alumno (estudiante_id, periodo_hasta),
+  KEY ix_alertas_escuela_estado (escuela_id, estado),
+  CONSTRAINT fk_alertas_escuela     FOREIGN KEY (escuela_id)     REFERENCES escuelas(id),
+  CONSTRAINT fk_alertas_estudiante  FOREIGN KEY (estudiante_id)  REFERENCES estudiantes(id),
+  CONSTRAINT fk_alertas_generada_por FOREIGN KEY (generada_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Eventos: el contrato de salida hacia el sistema general de notificaciones
+CREATE TABLE eventos_notificacion (
+  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  alerta_id          INT UNSIGNED NOT NULL,
+  escuela_id         INT UNSIGNED NOT NULL,
+  estudiante_id      INT UNSIGNED NOT NULL,
+  tipo_evento        VARCHAR(60)  NOT NULL DEFAULT 'alerta.inasistencia_consecutiva',
+  destinatarios      JSON         NOT NULL COMMENT 'Ids de los usuarios a notificar',
+  tipo_notificacion  VARCHAR(40)  NOT NULL DEFAULT 'ausencia',
+  mensaje            VARCHAR(500) NOT NULL,
+  prioridad          ENUM('baja','normal','alta') NOT NULL DEFAULT 'alta',
+  canales            JSON         NOT NULL,
+  estado_envio       ENUM('pendiente','enviado') NOT NULL DEFAULT 'pendiente',
+  datos              JSON         NULL,
+  clave              VARCHAR(191) NOT NULL COMMENT 'Misma clave que la alerta',
+  generado_en        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  enviado_en         DATETIME     NULL,
+  notificacion_ids   JSON         NULL,
+  UNIQUE KEY uq_evento_clave (clave),
+  KEY ix_eventos_alerta (alerta_id),
+  CONSTRAINT fk_eventos_alerta  FOREIGN KEY (alerta_id)    REFERENCES alertas_ausencia(id),
+  CONSTRAINT fk_eventos_escuela FOREIGN KEY (escuela_id)   REFERENCES escuelas(id)
+) ENGINE=InnoDB;
+
+-- Evaluaciones: la traza de las corridas del proceso periódico
+CREATE TABLE evaluaciones_alertas (
+  id                              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id                       INT UNSIGNED NOT NULL,
+  disparador                       ENUM('registro_inasistencia','modificacion_inasistencia','baja_inasistencia','periodica')
+                                    NOT NULL DEFAULT 'periodica',
+  ejecutada_por                   INT UNSIGNED NULL,
+  iniciada_en                     DATETIME     NOT NULL,
+  finalizada_en                   DATETIME     NULL,
+  alumnos_evaluados               INT UNSIGNED NOT NULL DEFAULT 0,
+  periodos_detectados             INT UNSIGNED NOT NULL DEFAULT 0,
+  alertas_creadas                 INT UNSIGNED NOT NULL DEFAULT 0,
+  alertas_omitidas_por_duplicado  INT UNSIGNED NOT NULL DEFAULT 0,
+  KEY ix_evaluaciones_escuela (escuela_id, iniciada_en),
+  CONSTRAINT fk_evaluaciones_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
+) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- MÓDULO: CALIFICACIONES
+-- Tablas: calificaciones_parciales, calificaciones_cuatrimestrales,
+--         instancias_intensificacion, solicitudes_reapertura
+-- =====================================================================================
+
+-- =====================================================================================
+-- MÓDULO: PROMOCIÓN Y CAMBIO DE CURSO
+-- Tablas: movimientos_curso, operaciones_masivas_movimientos
+-- =====================================================================================
+
+-- Movimiento de curso/división de un alumno. Es inmutable: se crea y se consulta,
+-- nunca se modifica ni se borra, para que el historial académico no se sobrescriba.
+-- Guarda la ubicación anterior y la nueva, el tipo de movimiento, el período
+-- académico y el usuario responsable (siempre el autenticado).
+CREATE TABLE movimientos_curso (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  estudiante_id         INT UNSIGNED NOT NULL,
+  curso_anterior        TINYINT UNSIGNED NOT NULL,
+  division_anterior     VARCHAR(10)  NOT NULL,
+  curso_nuevo           TINYINT UNSIGNED NOT NULL,
+  division_nueva        VARCHAR(10)  NOT NULL,
+  tipo                  ENUM('promocion','cambio_curso','cambio_division','otro') NOT NULL,
+  anio                  SMALLINT     NOT NULL COMMENT 'Período académico (año lectivo)',
+  cuatrimestre          TINYINT      NULL,
+  fecha                 DATE         NOT NULL COMMENT 'Fecha en que se realizó el cambio',
+  motivo                VARCHAR(500) NULL,
+  registrado_por        INT UNSIGNED NOT NULL COMMENT 'Usuario autenticado que realizó la operación',
+  operacion_id          INT UNSIGNED NULL COMMENT 'Operación masiva que originó el movimiento',
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_mc_movimiento (id),
+  KEY idx_mc_estudiante (estudiante_id),
+  KEY idx_mc_destino   (curso_nuevo, division_nueva),
+  KEY idx_mc_periodo   (anio, cuatrimestre),
+  KEY idx_mc_fecha     (fecha),
+  CONSTRAINT fk_mc_escuela      FOREIGN KEY (escuela_id)      REFERENCES escuelas(id),
+  CONSTRAINT fk_mc_estudiante   FOREIGN KEY (estudiante_id)   REFERENCES estudiantes(id),
+  CONSTRAINT fk_mc_usuario      FOREIGN KEY (registrado_por)  REFERENCES usuarios(id),
+  CONSTRAINT fk_mc_operacion    FOREIGN KEY (operacion_id)    REFERENCES operaciones_masivas_movimientos(id)
+) ENGINE=InnoDB;
+
+-- Operación masiva de promociones/cambios: agrupa los movimientos de una misma
+-- carga y conserva el detalle por alumno (exitosos y fallidos) y el responsable.
+CREATE TABLE operaciones_masivas_movimientos (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id            INT UNSIGNED NOT NULL,
+  tipo                  ENUM('promocion','cambio_curso','cambio_division','otro') NOT NULL,
+  anio                  SMALLINT     NOT NULL,
+  cuatrimestre          TINYINT      NULL,
+  fecha                 DATE         NOT NULL,
+  motivo                VARCHAR(500) NULL,
+  detalle               JSON         NULL COMMENT 'Resumen por alumno: exitosos y fallidos',
+  registrado_por        INT UNSIGNED NOT NULL,
+  creado_en             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_omm_escuela (escuela_id, creado_en),
+  CONSTRAINT fk_omm_escuela FOREIGN KEY (escuela_id)     REFERENCES escuelas(id),
+  CONSTRAINT fk_omm_usuario FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE calificaciones_parciales (
@@ -367,6 +886,7 @@ CREATE TABLE calificaciones_cuatrimestrales (
   CONSTRAINT fk_cc_usuario    FOREIGN KEY (cerrado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+-- Instancias de intensificación / apoyo (ej: diciembre, febrero, mesas de examen)
 CREATE TABLE instancias_intensificacion (
   id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id     INT UNSIGNED NOT NULL,
@@ -384,6 +904,7 @@ CREATE TABLE instancias_intensificacion (
   CONSTRAINT fk_ii_docente    FOREIGN KEY (docente_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+-- Solicitudes de reapertura de una calificación ya cerrada
 CREATE TABLE solicitudes_reapertura (
   id                          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   tabla_origen                ENUM('parcial','cuatrimestral') NOT NULL,
@@ -400,6 +921,11 @@ CREATE TABLE solicitudes_reapertura (
   CONSTRAINT fk_sr_solicitante  FOREIGN KEY (solicitado_por) REFERENCES usuarios(id),
   CONSTRAINT fk_sr_aprobador    FOREIGN KEY (aprobado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
+
+-- =====================================================================================
+-- MÓDULO: AUDITORÍA
+-- Tablas: auditoria_logs, lotes_importacion, notificaciones, tickets_soporte
+-- =====================================================================================
 
 CREATE TABLE auditoria_logs (
   id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -419,6 +945,22 @@ CREATE TABLE auditoria_logs (
   CONSTRAINT fk_al_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id)
 ) ENGINE=InnoDB;
 
+-- Log de errores del servidor (fallos esperados e inesperados).
+-- No almacena cuerpo de la petición ni cabeceras: solo método, ruta, código y mensaje.
+CREATE TABLE logs_errores (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id      INT UNSIGNED NULL COMMENT 'Usuario autenticado al momento del fallo, si lo hay',
+  fecha           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  metodo          VARCHAR(10)  NULL,
+  ruta            VARCHAR(255) NULL,
+  tipo            ENUM('esperado','inesperado') NOT NULL DEFAULT 'inesperado',
+  code            VARCHAR(80)  NULL,
+  message         TEXT         NULL,
+  ip              VARCHAR(45)  NULL,
+  CONSTRAINT fk_le_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Lotes de importación de Excel (con soporte de reversión, según mvp-scope.md)
 CREATE TABLE lotes_importacion (
   id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   escuela_id            INT UNSIGNED NOT NULL,
@@ -468,7 +1010,20 @@ CREATE TABLE tickets_soporte (
   CONSTRAINT fk_ts_asignado FOREIGN KEY (asignado_a) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+INSERT INTO tipos_accion_seguimiento (codigo, descripcion) VALUES
+  ('llamado_familia',        'Llamado telefonico a la familia del alumno'),
+  ('comunicacion_familia',   'Comunicacion con padre, madre o tutor'),
+  ('notificacion',           'Notificacion enviada a la familia o a la institucion'),
+  ('comunicacion_cuaderno',  'Comunicacion registrada mediante el cuaderno del alumno'),
+  ('entrevista',             'Entrevista o reunion con la familia, el alumno u otro responsable'),
+  ('otra_medida',            'Otra medida tomada por la institucion');
+
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- =====================================================================================
+-- SEED: catálogo de roles
+-- Tomado tal cual de Shared/src/domain.mjs del repo (no inventado)
+-- =====================================================================================
 
 INSERT INTO roles (codigo, nombre, descripcion) VALUES
   ('super-admin',          'Superadministrador',                 'Alcance global sobre todas las escuelas'),
@@ -479,6 +1034,18 @@ INSERT INTO roles (codigo, nombre, descripcion) VALUES
   ('preceptor',            'Preceptoría',                        'Alcance: escuela, curso, turno, período'),
   ('teacher',              'Docencia',                           'Alcance: escuela, curso, materia, período'),
   ('attendance-operator',  'Responsable operativo de asistencia','Alcance: escuela, curso, turno, período');
+
+
+-- =====================================================================================
+-- SEED: catálogo de permisos y asignación por rol
+-- Un permiso es "<modulo>:<accion>". Los módulos son los del sistema y las acciones,
+-- las definidas para la autorización: consultar, crear, modificar, eliminar, aprobar
+-- y cargar información.
+--
+-- IMPORTANTE: la matriz de abajo es una propuesta de trabajo. La matriz definitiva por
+-- rol y alcance figura como pendiente de validación institucional en
+-- Shared/docs/mvp-scope.md; conviene revisarla antes de cargar datos reales.
+-- =====================================================================================
 
 INSERT INTO modulos (codigo, nombre, descripcion) VALUES
   ('identity',           'Identidad y acceso',    'Usuarios, roles, permisos por alcance y sesiones auditadas'),
@@ -513,37 +1080,45 @@ INSERT INTO permisos (codigo, modulo, accion, descripcion) VALUES
   ('files:read',                'files',              'read',    'Consultar plantillas y documentos'),
   ('files:upload',              'files',              'upload',  'Importar planillas y documentos'),
   ('files:approve',             'files',              'approve', 'Aprobar importaciones y exportaciones'),
-  ('audit:read',                'audit',              'read',    'Consultar el historial de auditoría');
+  ('audit:read',                'audit',              'read',    'Consultar el historial de auditoría'),
+  ('audit:export',              'audit',              'export',  'Exportar reportes de auditoría');
 
+-- super-admin: todos los permisos
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r CROSS JOIN permisos p WHERE r.codigo = 'super-admin';
 
+-- system-admin: identidad completa y lectura del resto
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
-  ON p.modulo = 'identity' OR p.accion = 'read'
+  ON p.modulo = 'identity' OR p.accion = 'read' OR p.codigo = 'audit:export'
 WHERE r.codigo = 'system-admin';
 
+-- director: lectura general, aprobaciones y auditoría
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
-  ON p.accion IN ('read', 'approve')
+  ON p.accion IN ('read', 'approve', 'export')
 WHERE r.codigo = 'director';
 
+-- secretaría: estudiantes y estructura académica, más lectura general
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
   ON p.modulo IN ('students', 'academic-structure') OR p.accion = 'read'
 WHERE r.codigo = 'secretary';
 
+-- jefatura de área: calificaciones y documentos, más lectura general
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
   ON p.modulo IN ('grades', 'files') OR p.accion = 'read'
 WHERE r.codigo = 'area-lead';
 
+-- preceptoría: asistencia completa, más lectura de estudiantes y estructura
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
   ON p.modulo = 'attendance'
   OR (p.accion = 'read' AND p.modulo IN ('students', 'academic-structure', 'grades'))
 WHERE r.codigo = 'preceptor';
 
+-- docencia: carga de asistencia y calificaciones de sus materias
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
   ON p.codigo IN ('attendance:read', 'attendance:create', 'attendance:update',
@@ -552,10 +1127,19 @@ SELECT r.id, p.id FROM roles r JOIN permisos p
                   'files:read', 'files:upload')
 WHERE r.codigo = 'teacher';
 
+-- responsable operativo de asistencia: solo asistencia
 INSERT INTO rol_permisos (rol_id, permiso_id)
 SELECT r.id, p.id FROM roles r JOIN permisos p
   ON p.modulo = 'attendance' OR p.codigo IN ('students:read', 'academic-structure:read')
 WHERE r.codigo = 'attendance-operator';
+
+-- =====================================================================================
+-- SEED OPCIONAL: escuela, ciclo lectivo, orientaciones y estructura real de cursos
+-- Basado en lo que confirmaste (EEST N°1 Montegrande, doble turno, 7 años,
+-- Ciclo Básico 1°-3° + orientaciones Informática y Programación de 4° a 7°).
+-- Editá el nombre de la escuela y el año del ciclo lectivo si hace falta.
+-- Comentá/borrá este bloque si preferís cargar la escuela y el ciclo a mano.
+-- =====================================================================================
 
 INSERT INTO escuelas (nombre, activa)
 VALUES ('EEST N°1 Montegrande', 1);
@@ -571,6 +1155,9 @@ INSERT INTO orientaciones (escuela_id, nombre, codigo) VALUES
 SET @orient_informatica = (SELECT id FROM orientaciones WHERE escuela_id = @escuela_id AND codigo = 'informatica');
 SET @orient_programacion = (SELECT id FROM orientaciones WHERE escuela_id = @escuela_id AND codigo = 'programacion');
 
+-- Ciclo Básico: 1° a 3°, divisiones 1, 2, 3, 4 y 6 (sin orientación).
+-- turno_aula es el turno "base" de cada división; turno_taller se calcula solo (columna generada).
+-- AJUSTAR turno_aula división por división según corresponda en la realidad de la escuela.
 INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division, turno_aula, orientacion_id) VALUES
   (@escuela_id, @ciclo_id, 1, '1', 'mañana', NULL),
   (@escuela_id, @ciclo_id, 1, '2', 'mañana', NULL),
@@ -588,6 +1175,8 @@ INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division
   (@escuela_id, @ciclo_id, 3, '4', 'tarde',  NULL),
   (@escuela_id, @ciclo_id, 3, '6', 'mañana', NULL);
 
+-- Técnico en Informática: 4°1, 4°2, 5°1, 5°2, 6°1, 7°1
+-- En 7° el turno_aula elegido ES el único turno (aula y taller coinciden, por la columna generada).
 INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division, turno_aula, orientacion_id) VALUES
   (@escuela_id, @ciclo_id, 4, '1', 'mañana', @orient_informatica),
   (@escuela_id, @ciclo_id, 4, '2', 'tarde',  @orient_informatica),
@@ -596,6 +1185,7 @@ INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division
   (@escuela_id, @ciclo_id, 6, '1', 'mañana', @orient_informatica),
   (@escuela_id, @ciclo_id, 7, '1', 'mañana', @orient_informatica);
 
+-- Técnico en Programación: 4°3, 4°4, 5°3, 5°4, 6°3, 7°2
 INSERT INTO anios_divisiones (escuela_id, ciclo_lectivo_id, anio_curso, division, turno_aula, orientacion_id) VALUES
   (@escuela_id, @ciclo_id, 4, '3', 'mañana', @orient_programacion),
   (@escuela_id, @ciclo_id, 4, '4', 'tarde',  @orient_programacion),

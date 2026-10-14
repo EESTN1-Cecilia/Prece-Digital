@@ -1,3 +1,16 @@
+import { modules as domainModules, roles as domainRoles, permiso as armarPermiso } from "../../Shared/src/domain.mjs";
+import { getStore } from "../database/memory-store.mjs";
+
+/* Catalogo central de autorizacion del backend.
+
+   Un permiso es siempre "<modulo>.<accion>" (por ejemplo "students.read"). Los
+   modulos y roles salen de Shared/src/domain.mjs; aca se define que puede hacer
+   cada rol. Los permisos de un usuario son la union de los de sus roles.
+
+   PUT /api/v1/authorization/roles/:codigo/permissions puede reemplazar los
+   permisos de un rol en tiempo de ejecucion: el cambio vive en el store y
+   permissionsForRole() lo respeta. */
+
 export const ROLES = {
   ADMIN: "admin",
   DIRECTOR: "director",
@@ -13,10 +26,26 @@ export const SCOPE_KEYS = ["schoolId", "courseId", "divisionId", "subjectId", "s
 export const PERMISSIONS = {
   USERS_READ: "users.read",
   USERS_DEACTIVATE: "users.deactivate",
+  IDENTITY_READ: "identity.read",
+  IDENTITY_CREATE: "identity.create",
+  IDENTITY_UPDATE: "identity.update",
   STUDENTS_READ: "students.read",
   STUDENTS_WRITE: "students.write",
+  OBSERVATIONS_READ: "observations.read",
+  OBSERVATIONS_WRITE: "observations.write",
+  COURSE_CHANGES_READ: "course-changes.read",
+  COURSE_CHANGES_WRITE: "course-changes.write",
+  BOOK_REGISTRY_READ: "book-registry.read",
+  BOOK_REGISTRY_WRITE: "book-registry.write",
+  PARTICULAR_CONDITIONS_READ: "particular-conditions.read",
+  PARTICULAR_CONDITIONS_WRITE: "particular-conditions.write",
   ATTENDANCE_READ: "attendance.read",
   ATTENDANCE_WRITE: "attendance.write",
+  ATTENDANCE_ALERTS_READ: "attendance-alerts.read",
+  ATTENDANCE_ALERTS_WRITE: "attendance-alerts.write",
+  ATTENDANCE_ALERTS_CONFIGURE: "attendance-alerts.configure",
+  ATTENDANCE_FOLLOWUPS_READ: "attendance-followups.read",
+  ATTENDANCE_FOLLOWUPS_WRITE: "attendance-followups.write",
   GRADES_READ: "grades.read",
   GRADES_WRITE: "grades.write",
   SCHOOLS_READ: "schools.read",
@@ -37,6 +66,7 @@ export const PERMISSIONS = {
   ABSENCES_MANAGE: "absences.manage",
   WORKSHOPS_READ: "workshops.read",
   WORKSHOPS_WRITE: "workshops.write",
+  WORKSHOPS_MANAGE: "workshops.manage",
   INVENTORY_READ: "inventory.read",
   INVENTORY_WRITE: "inventory.write",
   INVENTORY_MANAGE: "inventory.manage",
@@ -48,14 +78,16 @@ export const PERMISSIONS = {
   RESERVATIONS_MANAGE: "reservations.manage",
   NOTIFICATIONS_READ: "notifications.read",
   NOTIFICATIONS_WRITE: "notifications.write",
-  NOTIFICATIONS_MANAGE: "notifications.manage",
   CURRICULUM_READ: "curriculum.read",
   CURRICULUM_WRITE: "curriculum.write",
   CURRICULUM_MANAGE: "curriculum.manage",
-  CURRICULUM_TRACK_WRITE: "curriculum.track.write",
   ACADEMICS_READ: "academics.read",
   ACADEMICS_WRITE: "academics.write",
   ACADEMICS_MANAGE: "academics.manage",
+  ACADEMIC_RECORDS_READ: "academic-records.read",
+  ACADEMIC_RECORDS_WRITE: "academic-records.write",
+  ACADEMIC_RECORDS_MANAGE: "academic-records.manage",
+  CURRICULUM_TRACK_WRITE: "curriculum.track",
   GROUPS_READ: "groups.read",
   GROUPS_WRITE: "groups.write",
   GROUPS_MANAGE: "groups.manage",
@@ -65,7 +97,10 @@ export const PERMISSIONS = {
   PLANNING_READ: "planning.read",
   PLANNING_WRITE: "planning.write",
   PLANNING_REVIEW: "planning.review",
-  PLANNING_MANAGE: "planning.manage"
+  PLANNING_MANAGE: "planning.manage",
+  NOTIFICATIONS_MANAGE: "notifications.manage",
+  AUDIT_READ: "audit.read",
+  AUDIT_EXPORT: "audit.export"
 };
 
 const ALL_PERMISSIONS = Object.values(PERMISSIONS);
@@ -75,8 +110,19 @@ export const ROLE_PERMISSIONS = {
   [ROLES.DIRECTOR]: ALL_PERMISSIONS,
   [ROLES.SECRETARIO]: [
     PERMISSIONS.USERS_READ,
+    PERMISSIONS.IDENTITY_READ,
+    PERMISSIONS.OBSERVATIONS_READ,
+    PERMISSIONS.OBSERVATIONS_WRITE,
+    PERMISSIONS.COURSE_CHANGES_READ,
+    PERMISSIONS.COURSE_CHANGES_WRITE,
+    PERMISSIONS.BOOK_REGISTRY_READ,
+    PERMISSIONS.BOOK_REGISTRY_WRITE,
+    PERMISSIONS.PARTICULAR_CONDITIONS_READ,
+    PERMISSIONS.PARTICULAR_CONDITIONS_WRITE,
     PERMISSIONS.STUDENTS_READ,
     PERMISSIONS.STUDENTS_WRITE,
+    PERMISSIONS.ATTENDANCE_ALERTS_READ,
+    PERMISSIONS.ATTENDANCE_FOLLOWUPS_READ,
     PERMISSIONS.SCHOOLS_READ,
     PERMISSIONS.DOCUMENTS_READ,
     PERMISSIONS.DOCUMENTS_WRITE,
@@ -93,12 +139,23 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.NOTIFICATIONS_READ,
     PERMISSIONS.CURRICULUM_READ,
     PERMISSIONS.ACADEMICS_READ,
+    PERMISSIONS.ACADEMIC_RECORDS_READ,
     PERMISSIONS.PLANNING_READ
   ],
   [ROLES.PRECEPTOR]: [
     PERMISSIONS.STUDENTS_READ,
+    PERMISSIONS.OBSERVATIONS_READ,
+    PERMISSIONS.OBSERVATIONS_WRITE,
+    PERMISSIONS.COURSE_CHANGES_READ,
+    PERMISSIONS.BOOK_REGISTRY_READ,
+    PERMISSIONS.PARTICULAR_CONDITIONS_READ,
+    PERMISSIONS.PARTICULAR_CONDITIONS_WRITE,
     PERMISSIONS.ATTENDANCE_READ,
     PERMISSIONS.ATTENDANCE_WRITE,
+    PERMISSIONS.ATTENDANCE_ALERTS_READ,
+    PERMISSIONS.ATTENDANCE_ALERTS_WRITE,
+    PERMISSIONS.ATTENDANCE_FOLLOWUPS_READ,
+    PERMISSIONS.ATTENDANCE_FOLLOWUPS_WRITE,
     PERMISSIONS.SCHOOLS_READ,
     PERMISSIONS.DOCUMENTS_READ,
     PERMISSIONS.DOCUMENTS_WRITE,
@@ -116,12 +173,19 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.RESERVATIONS_READ,
     PERMISSIONS.RESERVATIONS_WRITE,
     PERMISSIONS.NOTIFICATIONS_READ,
-    PERMISSIONS.ACADEMICS_READ
+    PERMISSIONS.ACADEMICS_READ,
+    PERMISSIONS.ACADEMIC_RECORDS_READ
   ],
   [ROLES.DOCENTE]: [
     PERMISSIONS.STUDENTS_READ,
+    PERMISSIONS.OBSERVATIONS_READ,
+    PERMISSIONS.COURSE_CHANGES_READ,
+    PERMISSIONS.BOOK_REGISTRY_READ,
+    PERMISSIONS.PARTICULAR_CONDITIONS_READ,
     PERMISSIONS.ATTENDANCE_READ,
     PERMISSIONS.ATTENDANCE_WRITE,
+    PERMISSIONS.ATTENDANCE_ALERTS_READ,
+    PERMISSIONS.ATTENDANCE_FOLLOWUPS_READ,
     PERMISSIONS.GRADES_READ,
     PERMISSIONS.GRADES_WRITE,
     PERMISSIONS.SCHOOLS_READ,
@@ -131,33 +195,33 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.WORKSHOPS_READ,
     PERMISSIONS.GROUPS_READ,
     PERMISSIONS.REASSIGNMENTS_READ,
-    PERMISSIONS.REQUESTS_READ,
     PERMISSIONS.REQUESTS_WRITE,
     PERMISSIONS.RESERVATIONS_READ,
     PERMISSIONS.NOTIFICATIONS_READ,
     PERMISSIONS.ACADEMICS_READ,
-    PERMISSIONS.CURRICULUM_READ,
+    PERMISSIONS.ACADEMIC_RECORDS_READ,
     PERMISSIONS.CURRICULUM_TRACK_WRITE,
     PERMISSIONS.PLANNING_READ,
     PERMISSIONS.PLANNING_WRITE
   ],
   [ROLES.JEFE_AREA]: [
+    PERMISSIONS.OBSERVATIONS_READ,
+    PERMISSIONS.OBSERVATIONS_WRITE,
+    PERMISSIONS.COURSE_CHANGES_READ,
+    PERMISSIONS.PARTICULAR_CONDITIONS_READ,
     PERMISSIONS.SCHEDULES_READ,
     PERMISSIONS.SCHEDULES_WRITE,
     PERMISSIONS.TEACHERS_READ,
     PERMISSIONS.TEACHERS_WRITE,
+    PERMISSIONS.ATTENDANCE_FOLLOWUPS_READ,
     PERMISSIONS.ABSENCES_READ,
     PERMISSIONS.ABSENCES_WRITE,
+    PERMISSIONS.ATTENDANCE_ALERTS_READ,
     PERMISSIONS.WORKSHOPS_READ,
     PERMISSIONS.WORKSHOPS_WRITE,
-    PERMISSIONS.GROUPS_READ,
-    PERMISSIONS.GROUPS_WRITE,
-    PERMISSIONS.REASSIGNMENTS_READ,
-    PERMISSIONS.REASSIGNMENTS_WRITE,
     PERMISSIONS.CURRICULUM_READ,
     PERMISSIONS.CURRICULUM_WRITE,
     PERMISSIONS.CURRICULUM_MANAGE,
-    PERMISSIONS.CURRICULUM_TRACK_WRITE,
     PERMISSIONS.STUDENTS_READ,
     PERMISSIONS.SCHOOLS_READ,
     PERMISSIONS.NOTIFICATIONS_READ,
@@ -166,9 +230,17 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.REQUESTS_WRITE,
     PERMISSIONS.RESERVATIONS_READ,
     PERMISSIONS.RESERVATIONS_WRITE,
+    PERMISSIONS.GROUPS_READ,
+    PERMISSIONS.GROUPS_WRITE,
+    PERMISSIONS.REASSIGNMENTS_READ,
+    PERMISSIONS.REASSIGNMENTS_WRITE,
+    PERMISSIONS.CURRICULUM_TRACK_WRITE,
     PERMISSIONS.ACADEMICS_READ,
     PERMISSIONS.ACADEMICS_WRITE,
     PERMISSIONS.ACADEMICS_MANAGE,
+    PERMISSIONS.ACADEMIC_RECORDS_READ,
+    PERMISSIONS.ACADEMIC_RECORDS_WRITE,
+    PERMISSIONS.ACADEMIC_RECORDS_MANAGE,
     PERMISSIONS.PLANNING_READ,
     PERMISSIONS.PLANNING_WRITE,
     PERMISSIONS.PLANNING_REVIEW,
@@ -187,6 +259,9 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.ABSENCES_READ,
     PERMISSIONS.ABSENCES_WRITE,
     PERMISSIONS.ABSENCES_MANAGE,
+    /* La cuenta de servicio corre la evaluacion periodica de alertas. */
+    PERMISSIONS.ATTENDANCE_ALERTS_READ,
+    PERMISSIONS.ATTENDANCE_ALERTS_WRITE,
     PERMISSIONS.INVENTORY_READ,
     PERMISSIONS.INVENTORY_WRITE,
     PERMISSIONS.INVENTORY_MANAGE,
@@ -199,14 +274,15 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.NOTIFICATIONS_READ,
     PERMISSIONS.NOTIFICATIONS_WRITE,
     PERMISSIONS.NOTIFICATIONS_MANAGE,
-    PERMISSIONS.WORKSHOPS_READ,
-    PERMISSIONS.WORKSHOPS_WRITE,
     PERMISSIONS.GROUPS_READ,
     PERMISSIONS.GROUPS_WRITE,
     PERMISSIONS.GROUPS_MANAGE,
     PERMISSIONS.REASSIGNMENTS_READ,
     PERMISSIONS.REASSIGNMENTS_WRITE,
     PERMISSIONS.REASSIGNMENTS_MANAGE,
+    PERMISSIONS.WORKSHOPS_READ,
+    PERMISSIONS.WORKSHOPS_WRITE,
+    PERMISSIONS.WORKSHOPS_MANAGE,
     PERMISSIONS.CURRICULUM_READ,
     PERMISSIONS.CURRICULUM_WRITE,
     PERMISSIONS.CURRICULUM_MANAGE,
@@ -214,6 +290,9 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.ACADEMICS_READ,
     PERMISSIONS.ACADEMICS_WRITE,
     PERMISSIONS.ACADEMICS_MANAGE,
+    PERMISSIONS.ACADEMIC_RECORDS_READ,
+    PERMISSIONS.ACADEMIC_RECORDS_WRITE,
+    PERMISSIONS.ACADEMIC_RECORDS_MANAGE,
     PERMISSIONS.PLANNING_READ,
     PERMISSIONS.PLANNING_WRITE,
     PERMISSIONS.PLANNING_REVIEW,
@@ -221,6 +300,85 @@ export const ROLE_PERMISSIONS = {
   ]
 };
 
+/* Permisos vigentes de un rol: los reemplazados en tiempo de ejecucion (si los hay)
+   o los definidos arriba. */
 export function permissionsForRole(role) {
-  return ROLE_PERMISSIONS[role] ?? [];
+  const reemplazo = getStore().rolePermissions.get(role);
+  return reemplazo ? [...reemplazo] : [...(ROLE_PERMISSIONS[role] ?? [])];
+}
+
+export function replaceRolePermissions(role, permisos) {
+  getStore().rolePermissions.set(role, [...new Set(permisos)].sort());
+  return permissionsForRole(role);
+}
+
+/* Todos los permisos que existen: la matriz de roles solo acepta estos codigos. */
+export function catalogoPermisos() {
+  return [...new Set(Object.values(PERMISSIONS))].sort();
+}
+
+/* ============================================================================
+   Catálogo central de autorización.
+
+   Un permiso se expresa como "<modulo>.<accion>". Las acciones canónicas son:
+   lectura, creación, modificación, eliminación, aprobación y carga. Por
+   compatibilidad se mantienen los códigos legados "write" (crear+modificar+cargar)
+   y "manage" (eliminar+aprobar), además de códigos puntuales como "users.deactivate".
+
+   Para agregar un rol nuevo solo hace falta una entrada en ROL_CATALOGO y su lista
+   en ROLE_PERMISSIONS; ningún controlador ni middleware debe cambiar.
+   ============================================================================ */
+
+export const ACCIONES = {
+  READ: "read",
+  CREATE: "create",
+  UPDATE: "update",
+  DELETE: "delete",
+  APPROVE: "approve",
+  UPLOAD: "upload",
+  WRITE: "write",
+  MANAGE: "manage"
+};
+
+export const MODULOS = Object.fromEntries(domainModules.map((modulo) => [modulo.id, modulo.name]));
+
+/* Construye el código de un permiso: permiso("students", "create") -> "students.create". */
+export function permiso(modulo, accion) {
+  return armarPermiso(modulo, accion);
+}
+
+/* Traduce una acción (canónica o legada) a sus acciones canónicas equivalentes. */
+export function accionesCanonicas(accion) {
+  switch (accion) {
+    case ACCIONES.READ:
+      return [ACCIONES.READ];
+    case ACCIONES.CREATE:
+      return [ACCIONES.CREATE];
+    case ACCIONES.UPDATE:
+      return [ACCIONES.UPDATE];
+    case ACCIONES.DELETE:
+      return [ACCIONES.DELETE];
+    case ACCIONES.APPROVE:
+      return [ACCIONES.APPROVE];
+    case ACCIONES.UPLOAD:
+      return [ACCIONES.UPLOAD];
+    case ACCIONES.WRITE:
+      return [ACCIONES.CREATE, ACCIONES.UPDATE, ACCIONES.UPLOAD];
+    case ACCIONES.MANAGE:
+      return [ACCIONES.DELETE, ACCIONES.APPROVE];
+    default:
+      return [accion];
+  }
+}
+
+export function permisoValido(codigo) {
+  return typeof codigo === "string" && /^[a-z][a-z-]*\.[a-z]+$/.test(codigo);
+}
+
+export const ROL_CATALOGO = Object.fromEntries(
+  domainRoles.map((rol) => [rol.id, { codigo: rol.id, nombre: rol.name, descripcion: rol.description }])
+);
+
+export function catalogoRoles() {
+  return Object.values(ROL_CATALOGO);
 }

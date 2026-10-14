@@ -5,7 +5,7 @@
    global y las cargas que bloquean el arranque.
 
    Antes cada vista llamaba a `useSesion()` por su cuenta y disparaba su propio
-   GET /api/v1/me: cuatro pedidos para el mismo dato y cuatro copias que podian
+   GET /api/v1/auth/me: cuatro pedidos para el mismo dato y cuatro copias que podian
    quedar desincronizadas. Ahora el pedido se hace una vez, aca.
 
    Lo que NO va en el estado global: filtros de una tabla, texto de un input,
@@ -20,9 +20,9 @@
 import React, { createContext, useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
 const h = React.createElement;
-import { EVENTO_SESION_EXPIRADA, guardarToken, reiniciarSesionExpirada } from "../services/http.js";
-import { obtenerSesion, sesionDemo } from "../services/identity-api.js";
-import { listarNotificaciones, marcarNotificacionLeida } from "../services/notificaciones-api.js";
+import { EVENTO_SESION_EXPIRADA, reiniciarSesionExpirada } from "../services/http.js";
+import { cerrarSesionRemota, iniciarSesion as iniciarSesionApi, obtenerSesion } from "../services/identity-api.js";
+import { descartarNotificacionApi, listarNotificaciones, marcarNotificacionLeida, marcarTodasLasNotificacionesLeidas } from "../services/notificaciones-api.js";
 
 export const ContextoEstado = createContext(null);
 
@@ -51,8 +51,7 @@ export const ESTADO_INICIAL = {
     roles: [],
     permisos: [],
     alcances: [],
-    origen: null,
-    perfilDemo: null
+    origen: null
   },
   notificaciones: {
     items: [],
@@ -74,8 +73,7 @@ function normalizarSesion(datos, origen) {
     roles: datos?.usuario?.roles ?? [],
     permisos: datos?.permisos ?? [],
     alcances: datos?.alcances ?? [],
-    origen,
-    perfilDemo: datos?.perfilDemo ?? null
+    origen
   };
 }
 
@@ -87,11 +85,11 @@ export function reducir(estado, accion) {
       return accion.silencioso
         ? { ...estado, revalidando: true }
         : {
-            ...estado,
-            fase: FASE.inicializando,
-            revalidando: false,
-            sesion: { ...estado.sesion, estado: SESION.cargando }
-          };
+          ...estado,
+          fase: FASE.inicializando,
+          revalidando: false,
+          sesion: { ...estado.sesion, estado: SESION.cargando }
+        };
 
     case "sesion/lista":
       return {
@@ -128,16 +126,21 @@ export function reducir(estado, accion) {
         notificaciones: { ...estado.notificaciones, cargando: true, error: null }
       };
 
-    case "notificaciones/listas":
+    case "notificaciones/listas": {
+      const items = Array.isArray(accion.items)
+        ? [...accion.items.filter((i) => !i.leida), ...accion.items.filter((i) => i.leida)]
+        : [];
+
       return {
         ...estado,
         notificaciones: {
-          items: accion.items,
+          items,
           cargando: false,
           error: null,
           origen: accion.origen
         }
       };
+    }
 
     case "notificaciones/error":
       return {
@@ -145,14 +148,43 @@ export function reducir(estado, accion) {
         notificaciones: { ...estado.notificaciones, cargando: false, error: accion.error }
       };
 
-    case "notificaciones/leida":
+    case "notificaciones/leida": {
+      const nuevaLeida = accion.leida !== undefined ? Boolean(accion.leida) : true;
+      const itemObjetivo = estado.notificaciones.items.find((item) => item.id === accion.id);
+      if (!itemObjetivo) return estado;
+
+      const itemActualizado = { ...itemObjetivo, leida: nuevaLeida };
+      const otrosItems = estado.notificaciones.items.filter((item) => item.id !== accion.id);
+
+      let nuevosItems;
+      if (nuevaLeida) {
+        // Al marcar como leída: las no leídas quedan arriba, las leídas anteriores en su orden,
+        // y la recién marcada se envía al fondo del todo.
+        const noLeidas = otrosItems.filter((item) => !item.leida);
+        const leidas = otrosItems.filter((item) => item.leida);
+        nuevosItems = [...noLeidas, ...leidas, itemActualizado];
+      } else {
+        // Al desmarcar como no leída: vuelve al bloque de no leídas
+        const noLeidas = otrosItems.filter((item) => !item.leida);
+        const leidas = otrosItems.filter((item) => item.leida);
+        nuevosItems = [itemActualizado, ...noLeidas, ...leidas];
+      }
+
       return {
         ...estado,
         notificaciones: {
           ...estado.notificaciones,
-          items: estado.notificaciones.items.map((item) =>
-            item.id === accion.id ? { ...item, leida: true } : item
-          )
+          items: nuevosItems
+        }
+      };
+    }
+
+    case "notificaciones/descartar":
+      return {
+        ...estado,
+        notificaciones: {
+          ...estado.notificaciones,
+          items: estado.notificaciones.items.filter((item) => item.id !== accion.id)
         }
       };
 
@@ -199,10 +231,29 @@ export function ProveedorEstado({ children }) {
   const cargarSesion = useCallback(async ({ silencioso = false } = {}) => {
     despachar({ tipo: "sesion/cargando", silencioso });
 
-    const { data, origen } = await obtenerSesion();
+    try {
+      const { data, origen } = await obtenerSesion();
 
-    if (vigente.current) {
-      despachar({ tipo: "sesion/lista", datos: data, origen });
+      if (!vigente.current) {
+        return;
+      }
+
+      if (data) {
+        despachar({ tipo: "sesion/lista", datos: data, origen });
+      } else {
+        despachar({ tipo: "sesion/anonima" });
+      }
+    } catch (error) {
+      if (!vigente.current) {
+        return;
+      }
+
+      if (error?.esSesionExpirada) {
+        despachar({ tipo: "sesion/expirada" });
+      } else {
+        despachar({ tipo: "sesion/anonima" });
+        despachar({ tipo: "error-global/mostrar", error });
+      }
     }
   }, []);
 
@@ -263,18 +314,29 @@ export function ProveedorEstado({ children }) {
     () => ({
       refrescarSesion: cargarSesion,
 
-      cerrarSesion() {
-        guardarToken(null);
-        reiniciarSesionExpirada();
-        despachar({ tipo: "sesion/anonima" });
-        window.location.hash = "#/login";
+      async iniciarSesion(credenciales) {
+        despachar({ tipo: "carga/iniciar", clave: "login" });
+
+        try {
+          const { data, origen } = await iniciarSesionApi(credenciales);
+          despachar({ tipo: "sesion/lista", datos: data, origen });
+          despachar({ tipo: "error-global/limpiar" });
+          return data;
+        } finally {
+          despachar({ tipo: "carga/terminar", clave: "login" });
+        }
       },
 
-      /* Solo mientras GET /api/v1/me no exista: permite mirar las pantallas con
-         distintos permisos sin tocar codigo. */
-      cambiarPerfilDemo(perfilId) {
-        despachar({ tipo: "sesion/lista", datos: sesionDemo(perfilId), origen: "demo" });
+      async cerrarSesion() {
+        try {
+          await cerrarSesionRemota();
+        } finally {
+          reiniciarSesionExpirada();
+          despachar({ tipo: "sesion/anonima" });
+          window.location.hash = "#/login";
+        }
       },
+
 
       refrescarNotificaciones: cargarNotificaciones,
 
@@ -290,8 +352,34 @@ export function ProveedorEstado({ children }) {
         }
       },
 
-      marcarTodasLeidas() {
+      async marcarTodasLeidas() {
         despachar({ tipo: "notificaciones/todas-leidas" });
+
+        try {
+          await marcarTodasLasNotificacionesLeidas();
+        } catch (error) {
+          despachar({ tipo: "notificaciones/error", error });
+        }
+      },
+
+      async alternarLeida(id, valor) {
+        despachar({ tipo: "notificaciones/leida", id, leida: valor });
+        try {
+          if (valor) {
+            await marcarNotificacionLeida(id);
+          }
+        } catch (error) {
+          despachar({ tipo: "notificaciones/error", error });
+        }
+      },
+
+      async descartarNotificacion(id) {
+        despachar({ tipo: "notificaciones/descartar", id });
+        try {
+          await descartarNotificacionApi(id);
+        } catch {
+          // Descartado localmente
+        }
       },
 
       mostrarErrorGlobal(error) {
@@ -311,7 +399,7 @@ export function ProveedorEstado({ children }) {
         despachar({ tipo: "carga/terminar", clave });
       }
     }),
-    [cargarSesion, cargarNotificaciones]
+    [cargarSesion, cargarNotificaciones, iniciarSesionApi]
   );
 
   const valor = useMemo(() => ({ estado, acciones }), [estado, acciones]);

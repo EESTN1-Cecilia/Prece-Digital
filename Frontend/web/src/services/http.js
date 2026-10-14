@@ -118,9 +118,9 @@ export function camposDeError(cuerpo) {
   const entradas = Array.isArray(crudo)
     ? crudo.map((item) => [item?.campo ?? item?.field, item?.mensaje ?? item?.message])
     : Object.entries(crudo).map(([campo, valor]) => [
-        campo,
-        typeof valor === "string" ? valor : (valor?.mensaje ?? valor?.message)
-      ]);
+      campo,
+      typeof valor === "string" ? valor : (valor?.mensaje ?? valor?.message)
+    ]);
 
   const campos = Object.fromEntries(
     entradas.filter(([campo, mensaje]) => campo && esMensajeApto(mensaje))
@@ -144,6 +144,7 @@ export function registrar(error, contexto) {
    el token viaja en la cabecera Authorization. Guardarlo y renovarlo es tarea del
    modulo de autenticacion; aca solo se lee para firmar cada solicitud. */
 const CLAVE_TOKEN = "prece.token";
+const CLAVE_REFRESH_TOKEN = "prece.refreshToken";
 
 export function guardarToken(token) {
   try {
@@ -165,6 +166,36 @@ export function leerToken() {
   }
 }
 
+export function guardarRefreshToken(token) {
+  try {
+    if (token) {
+      window.localStorage.setItem(CLAVE_REFRESH_TOKEN, token);
+    } else {
+      window.localStorage.removeItem(CLAVE_REFRESH_TOKEN);
+    }
+  } catch {
+    /* Navegador sin almacenamiento disponible: la sesion dura lo que la pestania. */
+  }
+}
+
+export function leerRefreshToken() {
+  try {
+    return window.localStorage.getItem(CLAVE_REFRESH_TOKEN);
+  } catch {
+    return null;
+  }
+}
+
+export function guardarCredenciales({ accessToken, refreshToken } = {}) {
+  guardarToken(accessToken ?? null);
+  guardarRefreshToken(refreshToken ?? null);
+  reiniciarSesionExpirada();
+}
+
+export function limpiarCredenciales() {
+  guardarToken(null);
+  guardarRefreshToken(null);
+}
 let sesionYaInvalidada = false;
 
 function invalidarSesion() {
@@ -174,7 +205,7 @@ function invalidarSesion() {
 
   /* Una sola notificacion aunque varias pantallas reciban 401 a la vez. */
   sesionYaInvalidada = true;
-  guardarToken(null);
+  limpiarCredenciales();
   window.dispatchEvent(new CustomEvent(EVENTO_SESION_EXPIRADA));
 }
 
@@ -217,21 +248,22 @@ function errorDeRespuesta(respuesta, cuerpo, recurso) {
   });
 }
 
-/* `opciones` acepta lo mismo que fetch, mas:
+/* Unico cliente HTTP del frontend: todas las llamadas a la API pasan por aca.
+
+   `opciones` acepta lo mismo que fetch, mas:
      recurso: texto para el mensaje de 404 ("el usuario solicitado")
-     tiempoLimite: milisegundos antes de cortar la solicitud */
+     tiempoLimite: milisegundos antes de cortar la solicitud
+     crudo: devuelve el cuerpo completo ({ data, paginacion, ... }) en lugar de `data` */
 export async function pedir(ruta, opciones = {}) {
-  const { recurso, tiempoLimite = TIEMPO_LIMITE, ...resto } = opciones;
+  const { recurso, tiempoLimite = TIEMPO_LIMITE, crudo = false, ...resto } = opciones;
   const metodo = resto.method ?? "GET";
   let respuesta;
 
   const token = leerToken();
 
   try {
-    /* Sin `credentials`: la autenticacion es por token en la cabecera, asi que el
-       Access-Control-Allow-Origin: * que devuelve hoy el backend alcanza para leer.
-       Las escrituras siguen bloqueadas hasta que el backend responda OPTIONS
-       (su issue #70) permitiendo Authorization y Content-Type. */
+    /* Sin `credentials`: la autenticacion es por token en la cabecera. El backend
+       responde el preflight (OPTIONS) permitiendo Authorization y Content-Type. */
     respuesta = await fetch(`${env.apiBaseUrl}${ruta}`, {
       signal: AbortSignal.timeout(tiempoLimite),
       ...resto,
@@ -253,7 +285,7 @@ export async function pedir(ruta, opciones = {}) {
 
     registrar(error, { metodo, ruta });
 
-    if (error.esSesionExpirada) {
+    if (error.esSesionExpirada && token) {
       invalidarSesion();
     }
 
@@ -261,5 +293,5 @@ export async function pedir(ruta, opciones = {}) {
   }
 
   const cuerpo = await respuesta.json().catch(() => ({}));
-  return cuerpo?.data ?? cuerpo;
+  return crudo ? cuerpo : (cuerpo?.data ?? cuerpo);
 }

@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
-import test, { after, before, beforeEach } from "node:test";
+import test, { after, before } from "node:test";
 import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { userRepository } from "../database/repositories/user.repository.mjs";
 import { signAccessToken } from "../modules/auth/token.service.mjs";
-import { setTestPool } from "../database/client.mjs";
 
 const PUERTO = 3997;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -47,10 +46,6 @@ after(async () => {
   await new Promise((listo) => servidor.close(listo));
 });
 
-beforeEach(() => {
-  setTestPool(null);
-});
-
 async function pedir(ruta, token, opciones) {
   const cabeceras = { ...opciones?.headers, ...(token ? { authorization: `Bearer ${token}` } : {}) };
   const respuesta = await fetch(`${base}${ruta}`, { ...opciones, headers: cabeceras });
@@ -75,14 +70,14 @@ test("un POST a /inventory sin token devuelve 401", async () => {
   const { status, cuerpo } = await pedirJson("/api/v1/inventory", null, { name: "X", category: "material" });
 
   assert.equal(status, 401);
-  assert.equal(cuerpo.error.code, "missing_token");
+  assert.equal(cuerpo.error.code, "MISSING_TOKEN");
 });
 
 test("un rol sin INVENTORY_READ no puede listar materiales (403)", async () => {
   const { status, cuerpo } = await pedir("/api/v1/inventory", tokenDe(SIN_PERMISO_USER));
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("un rol sin INVENTORY_WRITE no puede crear materiales (403)", async () => {
@@ -502,7 +497,7 @@ test("un rol sin INVENTORY_MANAGE no puede ajustar stock (403)", async () => {
   });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("la verificacion de stock reconstruye el historial y es consistente", async () => {

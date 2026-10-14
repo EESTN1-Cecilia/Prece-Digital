@@ -19,14 +19,15 @@ export async function seedAuthData() {
     return;
   }
 
-  const [adminHash, directorHash, docenteHash, preceptorHash, inactiveHash, jefeAreaHash, serverHash] = await Promise.all([
+  const [adminHash, directorHash, docenteHash, preceptorHash, inactiveHash, jefeAreaHash, serverHash, secretarioHash] = await Promise.all([
     hashPassword("Admin123!"),
     hashPassword("Director123!"),
     hashPassword("Docente123!"),
     hashPassword("Preceptor123!"),
     hashPassword("Inactivo123!"),
     hashPassword("JefeArea123!"),
-    hashPassword("Server123!")
+    hashPassword("Server123!"),
+    hashPassword("Secretaria123!")
   ]);
 
   userRepository.create({
@@ -97,5 +98,19 @@ export async function seedAuthData() {
     passwordHash: serverHash,
     displayName: "Server",
     assignments: [{ role: ROLES.SERVER, schoolId: "esc-1" }]
+  });
+
+  userRepository.create({
+    email: "secretaria@prece.local",
+    passwordHash: secretarioHash,
+    displayName: "Secretaría",
+    assignments: [{ role: ROLES.SECRETARIO, schoolId: "esc-1" }]
+  });
+
+  userRepository.create({
+    email: "secretario@prece.local",
+    passwordHash: secretarioHash,
+    displayName: "Secretaría General",
+    assignments: [{ role: ROLES.SECRETARIO, schoolId: "esc-1" }]
   });
 }

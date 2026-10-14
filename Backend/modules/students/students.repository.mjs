@@ -1,238 +1,220 @@
-import { getDatabasePool } from "../../database/client.mjs";
+import { getStore } from "../../database/memory-store.mjs";
 
+/* Repositorio de alumnos: unica fuente de datos de alumnos del backend.
 
+   Lo usan el CRUD y los listados de este modulo y, como referencia, los modulos
+   academic, academic-records y tutors (no guardan copias propias de alumnos).
+   Tambien guarda lo que cuelga del legajo: pases, constancias emitidas y
+   alertas descartadas. Las observaciones viven en el modulo observations.
 
+   Persiste en el store en memoria (database/memory-store.mjs), como el resto de
+   los modulos. */
 
-
-
-const CAMPOS_ALUMNO = `
-  e.id AS alumno_id,
-  e.nombre,
-  e.apellido,
-  e.dni,
-  e.condicion,
-  e.activo AS alumno_activo,
-  ad.id AS anio_division_id,
-  ad.anio_curso,
-  ad.division,
-  ad.turno_aula,
-  ad.turno_taller,
-  o.nombre AS orientacion,
-  cl.id AS ciclo_lectivo_id,
-  cl.anio AS periodo,
-  e.escuela_id
-`;
-
-function joinsBase() {
-  return `
-    FROM estudiantes e
-    JOIN anios_divisiones ad ON ad.id = e.anio_division_id
-    LEFT JOIN orientaciones o ON o.id = ad.orientacion_id
-    JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
-  `;
+function generarId() {
+  return `alu_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-const ORDEN_POR = {
-  apellido: "e.apellido, e.nombre",
-  apellido_desc: "e.apellido DESC, e.nombre DESC",
-  nombre: "e.nombre, e.apellido",
-  nombre_desc: "e.nombre DESC, e.apellido DESC",
-  dni: "e.dni",
-  dni_desc: "e.dni DESC",
-  curso: "ad.anio_curso, ad.division, e.apellido",
-  curso_desc: "ad.anio_curso DESC, ad.division DESC, e.apellido DESC"
+function clonar(registro) {
+  return { ...registro, contacto: registro.contacto ? { ...registro.contacto } : null };
+}
+
+function comparar(a, b) {
+  const x = String(a ?? "");
+  const y = String(b ?? "");
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+
+function comparador(orden) {
+  const descendente = orden.endsWith("_desc");
+  const campo = descendente ? orden.slice(0, -5) : orden;
+  const secundario =
+    campo === "apellido" ? "nombre" : campo === "nombre" ? "apellido" : campo === "curso" ? "division" : null;
+  const direccion = descendente ? -1 : 1;
+
+  return (a, b) => {
+    const primero = comparar(a[campo], b[campo]) * direccion;
+    if (primero !== 0 || !secundario) {
+      return primero;
+    }
+    return comparar(a[secundario], b[secundario]) * direccion;
+  };
+}
+
+const studentRepository = {
+  init() {
+    const store = getStore();
+    store.students ??= new Map();
+    store.studentsAudit ??= [];
+    store.studentTransfers ??= new Map();
+    store.studentCertificates ??= new Map();
+    store.dismissedAlerts ??= new Set();
+  },
+
+  create(datos) {
+    this.init();
+    const ahora = new Date().toISOString();
+    const registro = {
+      id: datos.id ?? generarId(),
+      escuelaId: datos.escuelaId,
+      nombre: datos.nombre,
+      apellido: datos.apellido,
+      dni: datos.dni,
+      fechaNacimiento: datos.fechaNacimiento ?? null,
+      genero: datos.genero ?? null,
+      nacionalidad: datos.nacionalidad ?? null,
+      provincia: datos.provincia ?? null,
+      localidad: datos.localidad ?? null,
+      codigoPostal: datos.codigoPostal ?? null,
+      direccion: datos.direccion ?? null,
+      email: datos.email ?? null,
+      telefono: datos.telefono ?? null,
+      contacto: datos.contacto ?? null,
+      curso: datos.curso ?? null,
+      division: datos.division ?? null,
+      turno: datos.turno ?? null,
+      orientacion: datos.orientacion ?? null,
+      condicion: datos.condicion ?? null,
+      tallerId: datos.tallerId ?? null,
+      grupoTaller: datos.grupoTaller ?? null,
+      isActive: true,
+      fechaAlta: datos.fechaAlta ?? new Date().toISOString().slice(0, 10),
+      fechaBaja: null,
+      creadoEn: ahora,
+      actualizadoEn: ahora
+    };
+    getStore().students.set(registro.id, registro);
+    return clonar(registro);
+  },
+
+  findById(id) {
+    this.init();
+    const registro = getStore().students.get(id);
+    return registro ? clonar(registro) : null;
+  },
+
+  findByDni(dni) {
+    this.init();
+    for (const registro of getStore().students.values()) {
+      if (registro.dni === dni) {
+        return clonar(registro);
+      }
+    }
+    return null;
+  },
+
+  /* Filtra y ordena. La paginacion la aplica el service para poder calcular el
+     total sobre el mismo conjunto ya filtrado (por ejemplo junto al filtro de edad). */
+  search({ escuelaId, criterios, orden }) {
+    this.init();
+    return [...getStore().students.values()]
+      .filter((registro) => registro.escuelaId === escuelaId)
+      .filter((registro) => this.cumple(registro, criterios))
+      .sort(comparador(orden));
+  },
+
+  cumple(registro, criterios) {
+    if (criterios.estado === "activo" && !registro.isActive) return false;
+    if (criterios.estado === "inactivo" && registro.isActive) return false;
+    if (criterios.dni && registro.dni !== criterios.dni) return false;
+    if (criterios.apellido && !registro.apellido.toLowerCase().includes(criterios.apellido)) return false;
+    if (criterios.nombre && !registro.nombre.toLowerCase().includes(criterios.nombre)) return false;
+    if (criterios.curso != null && registro.curso !== criterios.curso) return false;
+    if (criterios.division && registro.division !== criterios.division) return false;
+    if (criterios.condicion && registro.condicion !== criterios.condicion) return false;
+    if (criterios.turno && registro.turno !== criterios.turno) return false;
+    if (criterios.q) {
+      const texto = `${registro.apellido} ${registro.nombre} ${registro.nombre} ${registro.apellido} ${registro.dni}`.toLowerCase();
+      if (!texto.includes(criterios.q)) return false;
+    }
+    return true;
+  },
+
+  update(id, cambios) {
+    this.init();
+    const registro = getStore().students.get(id);
+    if (!registro) return null;
+    Object.assign(registro, cambios, { actualizadoEn: new Date().toISOString() });
+    return clonar(registro);
+  },
+
+  /* Desactivacion = baja logica: el registro y su historial se conservan. */
+  deactivate(id, fechaBaja) {
+    this.init();
+    const registro = getStore().students.get(id);
+    if (!registro) return null;
+    registro.isActive = false;
+    registro.fechaBaja = fechaBaja ?? new Date().toISOString().slice(0, 10);
+    registro.actualizadoEn = new Date().toISOString();
+    return clonar(registro);
+  },
+
+  /* Traza local de auditoria para operaciones sensibles (creacion, modificacion,
+     desactivacion). Queda lista para integrarse a la auditoria transversal. */
+  registrarAuditoria({ accion, usuarioId, registroId, valorAnterior, valorNuevo }) {
+    this.init();
+    getStore().studentsAudit.push({
+      id: `aud_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      accion,
+      usuarioId,
+      registroId,
+      valorAnterior: valorAnterior ?? null,
+      valorNuevo: valorNuevo ?? null,
+      fecha: new Date().toISOString()
+    });
+  },
+
+  listarTraza(registroId) {
+    this.init();
+    return getStore().studentsAudit.filter((entrada) => entrada.registroId === registroId);
+  },
+
+  /* Traza de todos los alumnos, de la mas reciente a la mas antigua. */
+  listarTrazaGeneral() {
+    this.init();
+    return [...getStore().studentsAudit].reverse();
+  },
+
+  all() {
+    this.init();
+    return [...getStore().students.values()].map(clonar);
+  },
+
+  /* ---------------- Pases ---------------- */
+
+  crearPase(datos) {
+    this.init();
+    const registro = { id: `pase_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, ...datos, creadoEn: new Date().toISOString() };
+    getStore().studentTransfers.set(registro.id, registro);
+    return { ...registro };
+  },
+
+  listarPases({ alumnoId } = {}) {
+    this.init();
+    return [...getStore().studentTransfers.values()]
+      .filter((registro) => !alumnoId || registro.alumnoId === alumnoId)
+      .map((registro) => ({ ...registro }));
+  },
+
+  /* ---------------- Constancias ---------------- */
+
+  registrarConstancia(datos) {
+    this.init();
+    const registro = { id: `cert_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, ...datos, emitidaEn: new Date().toISOString() };
+    getStore().studentCertificates.set(registro.id, registro);
+    return { ...registro };
+  },
+
+  /* ---------------- Alertas ---------------- */
+
+  descartarAlerta(alertaId) {
+    this.init();
+    getStore().dismissedAlerts.add(alertaId);
+  },
+
+  alertaDescartada(alertaId) {
+    this.init();
+    return getStore().dismissedAlerts.has(alertaId);
+  }
 };
 
-export function ordenValido(orden) {
-  return Boolean(ORDEN_POR[orden]);
-}
-
-export function ordenSql(orden) {
-  return ORDEN_POR[orden] ?? ORDEN_POR.apellido;
-}
-
-
-
-
-
-function agregarFiltros(condiciones, params, filtros) {
-  if (filtros.soloActivos) {
-    condiciones.push("e.activo = 1");
-  }
-
-  if (filtros.condicion) {
-    condiciones.push("e.condicion = ?");
-    params.push(filtros.condicion);
-  }
-
-  if (filtros.periodo) {
-    condiciones.push("cl.anio = ?");
-    params.push(filtros.periodo);
-  }
-}
-
-
-
-
-
-export async function contextoCursoEscuela(escuelaId, anioCurso, periodo) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["ad.escuela_id = ?", "ad.anio_curso = ?"];
-  const params = [escuelaId, anioCurso];
-
-  if (periodo) {
-    condiciones.push("cl.anio = ?");
-    params.push(periodo);
-  }
-
-  const [filas] = await databasePool.query(
-    `SELECT ad.anio_curso, cl.anio AS periodo, cl.id AS ciclo_lectivo_id
-       FROM anios_divisiones ad
-       JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
-      WHERE ${condiciones.join(" AND ")}
-      GROUP BY ad.anio_curso, cl.anio, cl.id
-      ORDER BY cl.anio DESC
-      LIMIT 1`,
-    params
-  );
-
-  return filas[0] ?? null;
-}
-
-export async function contextoDivision(escuelaId, anioDivisionId) {
-  const databasePool = getDatabasePool();
-  const [filas] = await databasePool.query(
-    `SELECT ad.anio_curso, ad.division, ad.turno_aula, ad.turno_taller,
-            o.nombre AS orientacion, cl.anio AS periodo, cl.id AS ciclo_lectivo_id
-       FROM anios_divisiones ad
-       LEFT JOIN orientaciones o ON o.id = ad.orientacion_id
-       JOIN ciclos_lectivos cl ON cl.id = ad.ciclo_lectivo_id
-      WHERE ad.id = ? AND ad.escuela_id = ?
-      LIMIT 1`,
-    [anioDivisionId, escuelaId]
-  );
-
-  return filas[0] ?? null;
-}
-
-
-
-
-
-export async function listarPorCurso({ escuelaId, anioCurso, soloActivos, condicion, periodo, orden, limite, offset }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "ad.anio_curso = ?"];
-  const params = [escuelaId, anioCurso];
-
-  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
-
-  const [filas] = await databasePool.query(
-    `SELECT ${CAMPOS_ALUMNO}
-     ${joinsBase()}
-     WHERE ${condiciones.join(" AND ")}
-     ORDER BY ${ordenSql(orden)}
-     LIMIT ? OFFSET ?`,
-    [...params, limite, offset]
-  );
-
-  return filas;
-}
-
-export async function totalPorCurso({ escuelaId, anioCurso, soloActivos, condicion, periodo }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "ad.anio_curso = ?"];
-  const params = [escuelaId, anioCurso];
-
-  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
-
-  const [filas] = await databasePool.query(
-    `SELECT COUNT(*) AS total
-     ${joinsBase()}
-     WHERE ${condiciones.join(" AND ")}`,
-    params
-  );
-
-  return filas[0].total;
-}
-
-export async function listarPorDivision({ escuelaId, anioDivisionId, soloActivos, condicion, periodo, orden, limite, offset }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "ad.id = ?"];
-  const params = [escuelaId, anioDivisionId];
-
-  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
-
-  const [filas] = await databasePool.query(
-    `SELECT ${CAMPOS_ALUMNO}
-     ${joinsBase()}
-     WHERE ${condiciones.join(" AND ")}
-     ORDER BY ${ordenSql(orden)}
-     LIMIT ? OFFSET ?`,
-    [...params, limite, offset]
-  );
-
-  return filas;
-}
-
-export async function totalPorDivision({ escuelaId, anioDivisionId, soloActivos, condicion, periodo }) {
-  const databasePool = getDatabasePool();
-  const condiciones = ["e.escuela_id = ?", "ad.id = ?"];
-  const params = [escuelaId, anioDivisionId];
-
-  agregarFiltros(condiciones, params, { soloActivos, condicion, periodo });
-
-  const [filas] = await databasePool.query(
-    `SELECT COUNT(*) AS total
-     ${joinsBase()}
-     WHERE ${condiciones.join(" AND ")}`,
-    params
-  );
-
-  return filas[0].total;
-}
-
-
-
-
-
-export async function listarPorIds({ escuelaId, ids, soloActivos, condicion, orden, limite, offset }) {
-  if (!ids.length) return [];
-
-  const databasePool = getDatabasePool();
-  const placeholders = ids.map(() => "?").join(",");
-  const condiciones = ["e.escuela_id = ?", `e.id IN (${placeholders})`];
-  const params = [escuelaId, ...ids];
-
-  agregarFiltros(condiciones, params, { soloActivos, condicion });
-
-  const [filas] = await databasePool.query(
-    `SELECT ${CAMPOS_ALUMNO}
-     ${joinsBase()}
-     WHERE ${condiciones.join(" AND ")}
-     ORDER BY ${ordenSql(orden)}
-     LIMIT ? OFFSET ?`,
-    [...params, limite, offset]
-  );
-
-  return filas;
-}
-
-export async function totalPorIds({ escuelaId, ids, soloActivos, condicion }) {
-  if (!ids.length) return 0;
-
-  const databasePool = getDatabasePool();
-  const placeholders = ids.map(() => "?").join(",");
-  const condiciones = ["e.escuela_id = ?", `e.id IN (${placeholders})`];
-  const params = [escuelaId, ...ids];
-
-  agregarFiltros(condiciones, params, { soloActivos, condicion });
-
-  const [filas] = await databasePool.query(
-    `SELECT COUNT(*) AS total
-     ${joinsBase()}
-     WHERE ${condiciones.join(" AND ")}`,
-    params
-  );
-
-  return filas[0].total;
-}
+export default studentRepository;

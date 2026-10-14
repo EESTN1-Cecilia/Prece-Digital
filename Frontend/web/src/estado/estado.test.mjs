@@ -123,22 +123,40 @@ test("las notificaciones pasan por carga, listado y error", () => {
   assert.equal(fallo.notificaciones.error.mensaje, "sin conexion");
 });
 
-test("marcar una notificacion no toca a las demas", () => {
+test("marcar una notificacion la manda al fondo de la lista conservando el orden de las demas", () => {
   const listas = reducir(ESTADO_INICIAL, {
     tipo: "notificaciones/listas",
     items: [
       { id: 1, leida: false },
-      { id: 2, leida: false }
+      { id: 2, leida: false },
+      { id: 3, leida: false }
     ],
     origen: "api"
   });
 
-  const estado = reducir(listas, { tipo: "notificaciones/leida", id: 1 });
+  // Marcar id: 1 como leída -> id: 1 pasa al fondo
+  const estado1 = reducir(listas, { tipo: "notificaciones/leida", id: 1 });
+  assert.deepEqual(
+    estado1.notificaciones.items.map((i) => ({ id: i.id, leida: i.leida })),
+    [
+      { id: 2, leida: false },
+      { id: 3, leida: false },
+      { id: 1, leida: true }
+    ]
+  );
 
-  assert.equal(estado.notificaciones.items[0].leida, true);
-  assert.equal(estado.notificaciones.items[1].leida, false);
+  // Marcar id: 2 como leída -> id: 2 pasa al fondo, quedando debajo de id: 1
+  const estado2 = reducir(estado1, { tipo: "notificaciones/leida", id: 2 });
+  assert.deepEqual(
+    estado2.notificaciones.items.map((i) => ({ id: i.id, leida: i.leida })),
+    [
+      { id: 3, leida: false },
+      { id: 1, leida: true },
+      { id: 2, leida: true }
+    ]
+  );
 
-  const todas = reducir(estado, { tipo: "notificaciones/todas-leidas" });
+  const todas = reducir(estado2, { tipo: "notificaciones/todas-leidas" });
   assert.ok(todas.notificaciones.items.every((item) => item.leida));
 });
 

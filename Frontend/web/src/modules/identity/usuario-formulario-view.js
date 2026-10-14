@@ -14,7 +14,7 @@ import {
 } from "../../components/ui/index.js";
 import {
   actualizarUsuario,
-  areasDemo,
+  areasDisponibles,
   crearUsuario,
   listarRoles,
   obtenerUsuario,
@@ -234,7 +234,7 @@ export default function UsuarioFormularioView({ id }) {
         h(
           "datalist",
           { id: "areas-conocidas" },
-          areasDemo().map((area) => h("option", { key: area, value: area }))
+          areasDisponibles().map((area) => h("option", { key: area, value: area }))
         ),
         h(Select, {
           etiqueta: "Estado",

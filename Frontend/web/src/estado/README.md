@@ -5,7 +5,7 @@ la sesión, sus roles y permisos, las notificaciones, el error global y las carg
 bloquean el arranque.
 
 Antes cada vista llamaba a `useSesion()` por su cuenta y disparaba su propio
-`GET /api/v1/me`: cuatro pedidos para el mismo dato y cuatro copias que podían quedar
+`GET /api/v1/auth/me`: cuatro pedidos para el mismo dato y cuatro copias que podían quedar
 desincronizadas. Ahora el pedido se hace una vez.
 
 ```js
@@ -42,7 +42,7 @@ decidir; su tabla y su guardia están en [`src/app`](../app/README.md).
 ### `useSesion()`
 
 `usuario`, `roles`, `permisos`, `alcances`, `origen`, `cargando`, `autenticado`,
-`expirada`, `revalidando`, más `refrescar()`, `cerrarSesion()` y `cambiarPerfilDemo()`.
+`expirada`, `revalidando`, más `refrescar()` y `cerrarSesion()`.
 
 `cerrarSesion()` borra el token, limpia el estado y vuelve al login.
 
@@ -118,14 +118,13 @@ Los permisos de este estado sirven para ocultar o deshabilitar controles y armar
 implica que la acción esté autorizada, y las respuestas `401` y `403` se muestran igual
 cuando llegan.
 
-## Pendiente del backend
+## Datos que consume
 
-- `GET /api/v1/me` está en el PR #78 del backend, todavía sin mergear. Mientras tanto la
-  sesión degrada a un perfil de prueba y lo avisa en pantalla.
-- Las notificaciones esperan el sistema general del backend (su issue #44, sin empezar).
-  `services/notificaciones-api.js` ya consume `GET /api/v1/notifications` y degrada a un
-  juego de prueba.
-- El inicio de sesión real depende del endpoint de login (issue #61 del frontend).
+- Sesión: `GET /api/v1/auth/me` (una vez al arrancar y al volver a la pestaña).
+- Notificaciones: `GET /api/v1/notifications`, `POST /api/v1/notifications/:notificationId/read`
+  y `POST /api/v1/notifications/read-all`.
+- `useUsuarioActual()` arma nombre, rol principal, escuela y ciclo lectivo para las vistas
+  a partir de la sesión real.
 
 ## Pruebas
 

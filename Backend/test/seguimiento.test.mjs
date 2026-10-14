@@ -120,7 +120,7 @@ test("un POST a /curriculum/materias sin token devuelve 401", async () => {
   const { status, cuerpo } = await pedirJson("/api/v1/curriculum/materias", null, { name: "Matematica", code: "MAT" });
 
   assert.equal(status, 401);
-  assert.equal(cuerpo.error.code, "missing_token");
+  assert.equal(cuerpo.error.code, "MISSING_TOKEN");
 });
 
 test("el secretario no puede crear materias (403)", async () => {
@@ -131,7 +131,7 @@ test("el secretario no puede crear materias (403)", async () => {
   });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("el server crea una materia", async () => {
@@ -196,7 +196,7 @@ test("el secretario no puede crear diseños (403)", async () => {
   });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("un diseño con materia inexistente devuelve 404", async () => {
@@ -415,7 +415,7 @@ test("el secretario no puede registrar seguimientos (403)", async () => {
   });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("un docente que no está a cargo del contenido no puede seguirlo (403)", async () => {

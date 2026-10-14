@@ -4,7 +4,6 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { userRepository } from "../database/repositories/user.repository.mjs";
 import { signAccessToken } from "../modules/auth/token.service.mjs";
-import { setTestPool } from "../database/client.mjs";
 import spacesRepository from "../modules/spaces/spaces.repository.mjs";
 import teachersRepository from "../modules/teachers/teachers.repository.mjs";
 import schedulesRepository from "../modules/schedules/schedules.repository.mjs";
@@ -171,14 +170,14 @@ test("un POST a /absence-events sin token devuelve 401", async () => {
   const { status, cuerpo } = await pedirJson("/api/v1/absence-events", null, { absenceId: "abs_x" });
 
   assert.equal(status, 401);
-  assert.equal(cuerpo.error.code, "missing_token");
+  assert.equal(cuerpo.error.code, "MISSING_TOKEN");
 });
 
 test("un rol con solo lectura no puede generar eventos (403)", async () => {
   const { status, cuerpo } = await pedirJson("/api/v1/absence-events", tokenDe(DOCENTE), { absenceId: "abs_x" });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("la creacion de una ausencia valida genera el evento y notifica a preceptoria", async () => {

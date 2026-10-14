@@ -11,7 +11,7 @@ import { ACCESO, coincidePatron, construirRuta, decidirAcceso } from "../app/nav
 
 /* Secciones del menu, en el orden en que se muestran. Una ruta sin seccion
    declarada cae en "General". */
-const ORDEN_SECCIONES = ["General", "Identidad y acceso"];
+const ORDEN_SECCIONES = ["General", "Server", "Identidad y acceso"];
 
 function ordenDeSeccion(nombre) {
   const posicion = ORDEN_SECCIONES.indexOf(nombre);

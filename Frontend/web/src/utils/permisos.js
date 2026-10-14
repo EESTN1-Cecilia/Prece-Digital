@@ -1,25 +1,42 @@
-/* Modelo de autorizacion: un permiso es "<modulo>:<accion>", donde el modulo sale del
-   catalogo real del backend (GET /api/v1/modules) y la accion del catalogo ACCIONES,
-   definido en la issue #13 del backend (lectura, creacion, modificacion, eliminacion,
-   aprobacion y carga).
+/* Modelo de autorizacion del frontend: un permiso es "<modulo>.<accion>", igual
+   que en el backend (Backend/config/permissions.config.mjs). La funcion
+   `permiso()` y los modulos salen de Shared/src/domain.mjs.
 
    El frontend solo usa los permisos para ocultar o deshabilitar controles.
-   La validacion definitiva la hace siempre el backend en cada request: un boton visible
-   no implica que la accion este autorizada. */
+   La validacion definitiva la hace siempre el backend en cada request: un boton
+   visible no implica que la accion este autorizada. */
 
-export function permiso(modulo, accion) {
-  return `${modulo}:${accion}`;
-}
+import { permiso } from "../../../../Shared/src/domain.mjs";
 
-/* Usuarios y roles viven en el mismo modulo del backend ("identity"). La matriz fina
-   por recurso esta pendiente de validacion (Shared/docs/mvp-scope.md). */
+export { permiso };
+
 export const PERMISOS = {
-  usuariosLeer: permiso("identity", "read"),
+  usuariosLeer: permiso("users", "read"),
   usuariosCrear: permiso("identity", "create"),
   usuariosEditar: permiso("identity", "update"),
   rolesLeer: permiso("identity", "read"),
-  rolesEditar: permiso("identity", "update")
+  rolesEditar: permiso("identity", "update"),
+  alumnosLeer: permiso("students", "read"),
+  alumnosCrear: permiso("students", "write"),
+  alumnosEditar: permiso("students", "write"),
+  observacionesLeer: permiso("observations", "read"),
+  observacionesCrear: permiso("observations", "write"),
+  academicosLeer: permiso("academics", "read"),
+  horariosLeer: permiso("schedules", "read"),
+  inventoryLeer: permiso("inventory", "read"),
+  inventoryCrear: permiso("inventory", "write"),
+  inventoryEditar: permiso("inventory", "write"),
+  inventoryGestionar: permiso("inventory", "manage"),
+  requestsLeer: permiso("requests", "read"),
+  requestsCrear: permiso("requests", "write"),
+  requestsGestionar: permiso("requests", "manage"),
+  reservationsLeer: permiso("reservations", "read"),
+  reservationsCrear: permiso("reservations", "write"),
+  reservationsGestionar: permiso("reservations", "manage"),
+  notificationsLeer: permiso("notifications", "read"),
+  auditLeer: permiso("audit", "read")
 };
+
 
 export function puede(sesion, permisoBuscado) {
   const permisos = sesion?.permisos;
@@ -28,10 +45,10 @@ export function puede(sesion, permisoBuscado) {
     return false;
   }
 
-  return permisos.includes("*") || permisos.includes(permisoBuscado);
+  return permisos.includes(permisoBuscado);
 }
 
-/* Alcances declarados por el rol (school, course, area, subject, shift, period).
+/* Alcances declarados por las asignaciones del usuario (schoolId, courseId, ...).
    Sirve para avisar cuando el permiso existe pero el alcance limita el resultado. */
 export function alcances(sesion) {
   return sesion?.alcances ?? [];

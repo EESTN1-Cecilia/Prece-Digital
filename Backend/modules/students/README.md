@@ -1,78 +1,124 @@
 # Students
 
-Modulo de listados de alumnos por curso, division, grupo y taller.
+Modulo para estudiantes, contactos responsables, trayectoria academica, pases y datos de legajo.
 
-## Arquitectura
+## Gestion de alumnos (CRUD)
 
-- **Alumnos (datos personales)**: MySQL (`estudiantes`, `anios_divisiones`, `orientaciones`, `ciclos_lectivos`).
-- **Cursos y divisiones**: MySQL (`anios_divisiones`, `ciclos_lectivos`).
-- **Grupos**: modulo in-memory `groups` (prefijo `grp_`).
-- **Talleres**: modulo in-memory `workshops` (prefijo `wrk_`).
+Operaciones sobre el legajo de alumnos (`students.controller` → `students.service` → `students.repository`), protegidas
+con `verifyToken` + `authorize`. Requieren `students.read` para lectura y `students.write`
+para crear, modificar o desactivar; el cliente nunca decide los permisos.
 
-Los listados por **grupo** y **taller** resuelven los miembros del grupo/taller en memoria
-y luego buscan los datos personales del alumno en MySQL via `listarPorIds`.
+| Operación | Método y ruta | Permiso |
+| --- | --- | --- |
+| Crear alumno | `POST /api/v1/students` | `students.write` |
+| Consultar por id | `GET /api/v1/students/:studentId` | `students.read` |
+| Listar / buscar | `GET /api/v1/students` | `students.read` |
+| Modificar | `PATCH /api/v1/students/:studentId` | `students.write` |
+| Desactivar | `DELETE /api/v1/students/:studentId` | `students.write` |
 
-## Endpoints
+### Datos del alumno
 
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| GET | `/api/v1/students/listas/curso` | Alumnos de un curso (1-7) |
-| GET | `/api/v1/students/listas/division` | Alumnos de una division especifica |
-| GET | `/api/v1/students/listas/grupo` | Alumnos de un grupo in-memory |
-| GET | `/api/v1/students/listas/taller` | Alumnos de un taller in-memory |
+`nombre`, `apellido`, `dni` (obligatorios); `fechaNacimiento`, `genero`, `nacionalidad`,
+`provincia`, `localidad`, `codigoPostal`, `direccion`, `email`, `telefono`, `contacto`
+(responsable/tutor: nombre, apellido, parentesco, telefono, email), `curso`, `division`,
+`condicion` (regular/irregular), `estado` (activo/inactivo), `fechaAlta`, `fechaBaja`.
 
-Todos requieren `verifyToken` + `STUDENTS_READ`.
+- La edad **no se almacena**: se calcula desde `fechaNacimiento` en cada respuesta.
+- `turno` y `orientacion` se derivan del catálogo de la escuela (`catalogo.mjs`, espejo de
+  `anios_divisiones` en schema.sql) a partir de `curso` + `division`. Si el cliente los
+  enviara igualmente, el backend los ignora/deriva: el turno de la división manda.
 
-### Parametros comunes
+### Búsqueda y filtros
 
-| Parametro | Tipo | Descripcion |
-|-----------|------|-------------|
-| `soloActivos` | boolean | Solo alumnos activos |
-| `condicion` | string | `regular` o `irregular` |
-| `periodo` | number | Anio del ciclo lectivo (ej: 2026) |
-| `orden` | string | `apellido`, `nombre`, `dni` (+ `_desc`) |
-| `pagina` | number | Pagina (default: 1) |
-| `porPagina` | number | Items por pagina (default: 20, max: 100) |
+`GET /api/v1/students` acepta, combinables entre sí:
 
-### Parametros especificos
+- `dni` (exacto), `apellido` y `nombre` (búsqueda parcial, case-insensitive).
+- `curso`, `division`, `condicion`, `estado` (`activo` por defecto; `inactivo` o `todos`).
+- `edad` (calculada desde `fechaNacimiento`).
+- `orden` (`apellido`, `apellido_desc`, `nombre`, `nombre_desc`, `dni`, `dni_desc`,
+  `curso`, `curso_desc`).
+- Paginación: `pagina` (default 1) y `porPagina` (default 20, máximo 100).
 
-- **Curso**: `anioCurso` (1-7, obligatorio)
-- **Division**: `anioDivisionId` (id numerico, obligatorio)
-- **Grupo**: `groupId` (id string `grp_*`, obligatorio)
-- **Taller**: `workshopId` (id string `wrk_*`, obligatorio)
-
-## Formato de respuesta
+Respuesta:
 
 ```json
 {
-  "data": [
-    {
-      "id": "1",
-      "nombre": "Ana",
-      "apellido": "Garcia",
-      "dni": "11111111",
-      "curso": 4,
-      "division": "1",
-      "grupo": { "id": "grp_xxx", "nombre": "Grupo A" },
-      "taller": { "id": "wrk_xxx", "nombre": "Taller Mecanica" },
-      "estado": "activo",
-      "condicion": "regular"
-    }
-  ],
-  "contexto": {
-    "tipo": "curso",
-    "curso": { "anio": 4 },
-    "division": null,
-    "grupo": null,
-    "taller": null,
-    "periodoAcademico": 2026,
-    "fechaConsulta": "2026-09-16T12:00:00.000Z"
-  },
-  "filtros": { "soloActivos": true, "orden": "apellido", "pagina": 1, "porPagina": 20 },
-  "paginacion": { "total": 45, "pagina": 1, "porPagina": 20, "totalPaginas": 3 }
+  "data": [ ... ],
+  "filtros": { "dni": null, "apellido": "lop", "orden": "apellido" },
+  "paginacion": {
+    "total": 2, "pagina": 1, "porPagina": 20, "totalPaginas": 1,
+    "tieneAnterior": false, "tieneSiguiente": false
+  }
 }
 ```
 
-## Migraciones
+Todos los parámetros se validan en el backend; valores inválidos devuelven `422` sin tocar
+el almacenamiento.
 
-- `001_listados_alumnos.sql`: columna `condicion` en `estudiantes`, tabla `inscripciones_taller`.
+### Validaciones y consistencia
+
+- Campos obligatorios y formatos: DNI numérico de 7 a 9 dígitos, email y teléfono con
+  formato, fecha de nacimiento válida y no futura, condición regular/irregular.
+- DNI único: un segundo alumno con el mismo DNI devuelve `409 Conflict`.
+- Curso y división se validan juntos y deben existir en el catálogo de la escuela
+  (`422` en caso contrario).
+- En la modificación solo se aceptan los campos del legajo; el resto se ignora (sanitizado).
+- Los parámetros de búsqueda/ordenamiento están en listas permitidas: no permiten ejecutar
+  consultas arbitrarias.
+
+### Baja lógica
+
+`DELETE` desactiva el alumno (`estado: inactivo`, se fija `fechaBaja`). El registro y su
+historial académico se conservan: nunca se elimina físicamente. Los alumnos inactivos se
+excluyen de los listados por defecto y siguen siendo consultables por su identificador.
+
+### Auditoría
+
+Las operaciones sensibles (crear, modificar, desactivar) quedan registradas con actor,
+acción, valor anterior y nuevo en `store.studentsAudit` (via `students.repository.registrarAuditoria`).
+Es una traza local del módulo, preparada para integrarse a la auditoría transversal del
+backend cuando esté disponible.
+## Fuente única de alumnos
+
+`students.repository.mjs` es la única fuente de alumnos del backend. Los módulos `academic`,
+`academic-records` y `tutors` la usan como referencia (no guardan copias). El seed canónico
+es `database/seeds/students.seed.mjs` (ids `alu-1` a `alu-32`).
+
+## Listados
+
+| Operación | Método y ruta | Parámetros |
+| --- | --- | --- |
+| Por curso | `GET /api/v1/students/listas/curso` | `anioCurso` (1-7) |
+| Por división | `GET /api/v1/students/listas/division` | `anioCurso`, `division` |
+| Por taller | `GET /api/v1/students/listas/taller` | `tallerId` (id de `/api/v1/workshops`) |
+| Por grupo de taller | `GET /api/v1/students/listas/grupo` | `tallerId`, `grupo` |
+| Directorio de divisiones | `GET /api/v1/students/divisions` | — |
+
+Todos aceptan `orden`, `soloActivos`, `pagina` y `porPagina`. El alumno se asigna a un taller
+con los campos `tallerId` y `grupoTaller` del legajo.
+
+`GET /api/v1/students` acepta además `q` (texto en apellido, nombre o DNI) y `turno`
+(`mañana`/`tarde`).
+
+## Legajo
+
+| Operación | Método y ruta | Permiso |
+| --- | --- | --- |
+| Ficha resumida | `GET /api/v1/students/:studentId/summary` | `students.read` |
+| Perfil completo | `GET /api/v1/students/:studentId/profile` | `students.read` |
+| Observaciones del alumno | `GET /api/v1/students/:studentId/observations` | `observations.read` |
+| Nueva observación | `POST /api/v1/students/:studentId/observations` | `observations.write` |
+| Todas las observaciones | `GET /api/v1/observations` | `observations.read` |
+| Iniciar pase | `POST /api/v1/students/:studentId/transfers` | `students.write` |
+| Constancia de alumno regular | `POST /api/v1/students/:studentId/certificate` | `documents.write` |
+| Tablero de secretaría | `GET /api/v1/dashboard/secretaria` | `students.read` |
+| Descartar alerta | `POST /api/v1/alerts/:alertId/dismiss` | `students.write` |
+
+Observación: `{ "tipo", "descripcion", "sector", "fecha", "estado" }`. Tipos: Académica,
+Convivencia, Asistencia, Administrativa, Pedagógica. Estados: Activa, Modificada, Histórica.
+El responsable es siempre el usuario autenticado.
+
+Pase: `{ "motivo", "colegioDestino" }`.
+
+Asistencia todavía no tiene módulo: resumen, perfil y tablero devuelven inasistencias en
+cero con `disponible: false`.

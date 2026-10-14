@@ -1,34 +1,69 @@
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
-import { evaluateAccess, extractContext } from "./permission.service.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
+import { permissionsForRole } from "../../config/permissions.config.mjs";
+import { evaluateAccess, extractContext, resumenPermisos } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
+import { obtenerIpCliente, registrarFalloLogin, registrarLoginExitoso, revisarLogin } from "./login-throttle.service.mjs";
 
 const dummyHashPromise = bcrypt.hash("__dummy_password__", 10);
+
+function rolesFromAssignments(assignments = []) {
+  return [...new Set(assignments.map((assignment) => assignment.role))];
+}
+
+function permissionsFromRoles(roles = []) {
+  return [...new Set(roles.flatMap((role) => permissionsForRole(role)))];
+}
+
+function scopesFromAssignments(assignments = []) {
+  return [...new Set(assignments.flatMap((assignment) => Object.keys(assignment).filter((key) => key !== "role")))];
+}
+
+function sessionData(user) {
+  const publicUser = userRepository.publicView(user);
+  const roles = rolesFromAssignments(publicUser.assignments);
+
+  return {
+    ...publicUser,
+    user: publicUser,
+    usuario: publicUser,
+    roles,
+    permisos: permissionsFromRoles(roles),
+    alcances: scopesFromAssignments(publicUser.assignments)
+  };
+}
 
 function sessionPayload(user, accessToken, refreshToken) {
   return {
     accessToken,
     refreshToken,
     tokenType: "Bearer",
-    user: userRepository.publicView(user)
+    ...sessionData(user)
   };
 }
 
 export const authService = {
-  async login({ email, password }) {
+  async login({ email, password, request }) {
     if (!email || !password) {
-      throw new HttpError(400, "invalid_credentials_payload", "Email y contraseña son obligatorios");
+      throw errorHttp(400, "INVALID_CREDENTIALS_PAYLOAD", "Email y contraseña son obligatorios");
     }
+
+    const ip = obtenerIpCliente(request);
+    revisarLogin(email, ip);
 
     const user = userRepository.findByEmail(email, { includeInactive: true });
     const hash = user?.passwordHash ?? (await dummyHashPromise);
     const matches = await bcrypt.compare(password, hash);
 
     if (!user || !matches || !user.isActive) {
-      throw new HttpError(401, "invalid_credentials", "Credenciales inválidas o cuenta desactivada");
+      /* El fallo se cuenta por IP siempre, y por cuenta solo cuando la cuenta
+         existe, para no permitir bloquear emails inexistentes. */
+      registrarFalloLogin(email, ip, { trackEmail: Boolean(user) });
+      throw errorHttp(401, "INVALID_CREDENTIALS", "Credenciales inválidas o cuenta desactivada");
     }
 
+    registrarLoginExitoso(email);
     return sessionPayload(user, signAccessToken(user), createRefreshToken(user.id));
   },
 
@@ -38,7 +73,7 @@ export const authService = {
 
     if (!user) {
       revokeUserSessions(rotated.userId);
-      throw new HttpError(401, "account_inactive", "La cuenta no está activa");
+      throw errorHttp(401, "ACCOUNT_INACTIVE", "La cuenta no está activa");
     }
 
     return sessionPayload(user, signAccessToken(user), rotated.refreshToken);
@@ -46,7 +81,7 @@ export const authService = {
 
   logout(refreshToken) {
     if (!refreshToken) {
-      throw new HttpError(400, "refresh_token_required", "El refresh token es obligatorio para cerrar sesión");
+      throw errorHttp(400, "REFRESH_TOKEN_REQUIRED", "El refresh token es obligatorio para cerrar sesión");
     }
 
     revokeRefreshToken(refreshToken);
@@ -54,18 +89,31 @@ export const authService = {
   },
 
   me(user) {
-    return userRepository.publicView(user);
+    return sessionData(user);
   },
 
-  listUsers() {
-    return userRepository.list({ includeInactive: true }).map((user) => userRepository.publicView(user));
+  /* Roles, permisos y resumen por modulo del usuario autenticado. Se calculan en
+     el backend a partir del catalogo: la interfaz no puede agregarlos. */
+  permissions(user) {
+    const roles = rolesFromAssignments(user.assignments);
+
+    return {
+      roles,
+      permisos: permissionsFromRoles(roles),
+      resumen: resumenPermisos(user)
+    };
   },
+
 
   deactivateUser(actor, targetUserId, contextSource) {
     const target = userRepository.findById(targetUserId, { includeInactive: true });
 
     if (!target) {
-      throw new HttpError(404, "user_not_found", "Usuario no encontrado");
+      throw errorHttp(404, "USER_NOT_FOUND", "Usuario no encontrado");
+    }
+
+    if (actor?.id && actor.id === target.id) {
+      throw errorHttp(403, "FORBIDDEN", "No puede modificar su propia cuenta");
     }
 
     const context = extractContext(contextSource);
@@ -75,7 +123,7 @@ export const authService = {
     });
 
     if (!access.allowed) {
-      throw new HttpError(403, "forbidden", "No tiene permiso para desactivar esta cuenta en el alcance indicado");
+      throw errorHttp(403, "FORBIDDEN", "No tiene permiso para desactivar esta cuenta en el alcance indicado");
     }
 
     const updated = userRepository.deactivate(target.id);

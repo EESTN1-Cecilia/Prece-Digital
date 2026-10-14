@@ -1,0 +1,785 @@
+/* ==========================================================================
+   ESTILOS OFICIALES: BOLETÍN DIGITAL DE CALIFICACIONES (1° A 7° AÑO)
+   ========================================================================== */
+
+/* 1. Backdrop del Modal */
+.boletin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 999999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+}
+
+/* 2. Contenedor Principal del Modal */
+.boletin-modal-container {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 1100px;
+  max-height: 94vh;
+  margin: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #cbd5e1;
+  position: relative;
+  animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 3. Header del Modal (Colores institucionales planos y sólidos, sin gradientes ni brillos) */
+.boletin-modal-header {
+  background: var(--navy, #222a4c);
+  color: #ffffff;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.boletin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.boletin-header-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.boletin-header-icon-box svg {
+  width: 20px;
+  height: 20px;
+}
+
+.boletin-header-title {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+}
+
+.boletin-header-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boletin-header-subtitle .pill-student-dni {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1.5px 6.5px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.boletin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Botones del Header (Sin gradientes, sin brillo, colores estándar de la aplicación) */
+.btn-boletin-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.btn-boletin-action svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.btn-boletin-action--print {
+  background: #ffffff;
+  color: var(--navy, #222a4c);
+  border: 1px solid #cbd5e1;
+}
+
+.btn-boletin-action--print:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.btn-boletin-action--excel {
+  background: #166534;
+  color: #ffffff;
+  border: 1px solid #15803d;
+}
+
+.btn-boletin-action--excel:hover {
+  background: #14532d;
+  border-color: #166534;
+}
+
+.btn-boletin-action--save {
+  background: #15803d;
+  color: #ffffff;
+  border: 1px solid #16a34a;
+}
+
+.btn-boletin-action--save:hover {
+  background: #166534;
+  border-color: #15803d;
+}
+
+.boletin-modal-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.14s ease;
+  margin-left: 2px;
+}
+
+.boletin-modal-close-btn:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+/* 4. Barra de Navegación de Años (1° a 7° Año) */
+.boletin-nav-bar {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.boletin-years-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.boletin-years-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.boletin-year-tab {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: none;
+}
+
+.boletin-year-tab:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.boletin-year-tab--active {
+  background: #ffffff !important;
+  color: var(--navy, #222a4c) !important;
+  border-color: var(--navy, #222a4c) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.boletin-year-cycle-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(100, 116, 139, 0.12);
+}
+
+.boletin-year-tab--active .boletin-year-cycle-badge {
+  background: rgba(34, 42, 76, 0.12);
+  color: var(--navy, #222a4c);
+}
+
+.boletin-orientacion-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.boletin-orientacion-select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+.boletin-orientacion-select:focus {
+  border-color: var(--navy, #222a4c);
+}
+
+/* 5. Área de Scroll del Contenido */
+.boletin-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 20px;
+  background: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 6. Tarjeta Física del Boletín (Diseño Oficial de la Escuela según Matriz.xlsx) */
+.boletin-paper-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 960px;
+  border: 2px solid #000000;
+  padding: 20px;
+  box-sizing: border-box;
+  color: #000000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  position: relative;
+  margin: 0 auto;
+  overflow-x: hidden;
+}
+
+/* Encabezado Institucional del Boletín */
+.boletin-school-header {
+  text-align: center;
+  border-bottom: 2px solid #000000;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.boletin-school-ministry {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #111111;
+  margin: 0 0 2px 0;
+}
+
+.boletin-school-name {
+  font-size: 15px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #000000;
+  margin: 0 0 2px 0;
+}
+
+.boletin-school-doc-title {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--navy, #222a4c);
+  letter-spacing: 0.6px;
+  margin: 4px 0 0 0;
+}
+
+/* Grilla de Datos del Alumno - Ancho 100% y alineación exacta */
+.boletin-student-data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 12px;
+  border: 1.5px solid #000000;
+  padding: 8px 12px;
+  margin: 0 0 12px 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.boletin-data-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11.5px;
+  min-width: 0;
+}
+
+.boletin-data-label {
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.boletin-data-value {
+  font-weight: 700;
+  color: #000000;
+  border-bottom: 1px dotted #555;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boletin-data-value input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 700;
+  outline: none;
+  padding: 0;
+  color: #000000;
+}
+
+/* Tabla Principal de Calificaciones - table-layout fixed y ancho 100% estricto sin sobresalir */
+.boletin-grades-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  border: 2px solid #000000;
+  margin: 0 0 12px 0;
+  font-size: 11px;
+  background: #ffffff;
+  box-sizing: border-box !important;
+}
+
+.boletin-grades-table th,
+.boletin-grades-table td {
+  border: 1px solid #000000;
+  padding: 3px 4px;
+  box-sizing: border-box !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.boletin-grades-table thead th {
+  background: #f1f5f9;
+  color: #000000;
+  font-weight: 800;
+  text-align: center;
+  font-size: 10px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  padding: 5px 3px !important;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.boletin-category-row {
+  background: #e2e8f0;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: #000000;
+  letter-spacing: 0.3px;
+  padding: 5px 8px !important;
+}
+
+.boletin-subject-name {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #000000;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.boletin-grade-cell {
+  text-align: center;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 1px !important;
+}
+
+.boletin-grade-input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 24px;
+  text-align: center;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #000000;
+  outline: none;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-sizing: border-box !important;
+}
+
+.boletin-grade-input:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.boletin-grade-input:focus {
+  background: #eff6ff;
+  border-color: var(--navy, #222a4c);
+  color: var(--navy, #222a4c);
+}
+
+.boletin-grade-input.grade--approved {
+  color: #15803d;
+}
+
+.boletin-grade-input.grade--disapproved {
+  color: #b91c1c;
+}
+
+/* Fila de Inasistencias y Promedio General */
+.boletin-summary-row td {
+  background: #f8fafc;
+  font-weight: 800;
+  padding: 5px 6px;
+  box-sizing: border-box !important;
+}
+
+.boletin-summary-inasistencias {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.boletin-inasistencias-input {
+  width: 44px !important;
+  min-width: 0 !important;
+  height: 22px;
+  text-align: center;
+  font-weight: 800;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box !important;
+}
+
+.boletin-promedio-general-val {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: var(--navy, #222a4c);
+  text-align: center;
+}
+
+/* Tabla de Materias Pendientes - Exactamente contenida sin sobresalir */
+.boletin-pendientes-section {
+  margin: 12px 0 0 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.boletin-pendientes-title {
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #000000;
+  margin: 0 0 6px 0;
+  letter-spacing: 0.3px;
+}
+
+.boletin-pendientes-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  border: 2px solid #000000;
+  font-size: 11px;
+  box-sizing: border-box !important;
+}
+
+.boletin-pendientes-table th,
+.boletin-pendientes-table td {
+  border: 1px solid #000000;
+  padding: 3px 4px;
+  box-sizing: border-box !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.boletin-pendientes-table thead th {
+  background: #f1f5f9;
+  font-weight: 800;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.boletin-input-table-pending {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  outline: none;
+  text-align: center;
+  padding: 0;
+  box-sizing: border-box !important;
+}
+
+.boletin-input-table-pending:focus {
+  background: #eff6ff;
+}
+
+/* Área de Firmas */
+.boletin-signatures-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin: 55px 0 12px 0;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.boletin-signature-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.boletin-signature-line {
+  width: 82%;
+  border-top: 1.5px solid #000000;
+  margin-bottom: 6px;
+}
+
+.boletin-signature-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #000000;
+}
+
+.boletin-signature-sub {
+  font-size: 9px;
+  color: #555555;
+}
+
+/* Cartel de guardado */
+.boletin-toast-save {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  background: #15803d;
+  color: #ffffff;
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  animation: fadeInDown 0.18s ease;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   BOTÓN EN EL PERFIL / FICHA DEL ALUMNO (Sin gradiente, sin brillo, estilo plano)
+   ========================================================================== */
+.btn-boletin-digital-styled {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--navy, #222a4c);
+  color: #ffffff;
+  border: 1.5px solid var(--navy, #222a4c);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.btn-boletin-digital-styled:hover {
+  background: var(--indigo-dark, #354382);
+  border-color: var(--indigo-dark, #354382);
+  box-shadow: none;
+}
+
+.btn-boletin-digital-styled:active {
+  background: var(--navy, #222a4c);
+  box-shadow: none;
+}
+
+.btn-action-outline.btn-action-boletin {
+  color: var(--navy, #222a4c);
+  font-weight: 700;
+}
+
+.btn-action-outline.btn-action-boletin:hover:not(.disabled) {
+  border-color: var(--navy, #222a4c);
+  background: #f1f5f9;
+  color: var(--navy, #222a4c);
+}
+
+.btn-boletin-digital-styled .btn-boletin-icon {
+  width: 16px;
+  height: 16px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   ESTILOS DE IMPRESIÓN OFICIAL (A4 PERFECTO)
+   ========================================================================== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .boletin-modal-backdrop {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .boletin-modal-container {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    position: static !important;
+  }
+
+  .boletin-modal-header,
+  .boletin-nav-bar,
+  .boletin-modal-close-btn,
+  .btn-boletin-action,
+  .boletin-toast-save {
+    display: none !important;
+  }
+
+  .boletin-modal-body {
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .boletin-paper-card,
+  .boletin-paper-card * {
+    visibility: visible !important;
+  }
+
+  .boletin-paper-card {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: 2px solid #000000 !important;
+    box-shadow: none !important;
+    padding: 8mm 10mm !important;
+    margin: 0 !important;
+    page-break-inside: avoid !important;
+  }
+
+  .boletin-grade-input,
+  .boletin-input-table-pending,
+  .boletin-inasistencias-input,
+  .boletin-data-value input {
+    border: none !important;
+    background: transparent !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+}

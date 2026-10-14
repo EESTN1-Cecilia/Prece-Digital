@@ -1,10 +1,10 @@
 import workshopsRepository from "./workshops.repository.mjs";
-import { HttpError } from "../../utils/http-error.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
 
 function validateRequired(fields, data) {
   for (const field of fields) {
     if (!data[field]) {
-      throw new HttpError(400, "validation_error", `El campo ${field} es requerido`);
+      throw errorHttp(422, "VALIDATION_ERROR", `El campo ${field} es requerido`);
     }
   }
 }
@@ -16,7 +16,7 @@ const workshopsService = {
     data.groupType = groupType;
     const validGroupTypes = ["completo", "par", "impar", "personalizado"];
     if (!validGroupTypes.includes(data.groupType)) {
-      throw new HttpError(400, "validation_error", `Tipo de grupo inválido. Tipos válidos: ${validGroupTypes.join(", ")}`);
+      throw errorHttp(422, "VALIDATION_ERROR", `Tipo de grupo inválido. Tipos válidos: ${validGroupTypes.join(", ")}`);
     }
     const workshop = workshopsRepository.create({
       ...data,
@@ -28,7 +28,7 @@ const workshopsService = {
   getById(id) {
     const workshop = workshopsRepository.findById(id);
     if (!workshop) {
-      throw new HttpError(404, "not_found", "Taller no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Taller no encontrado");
     }
     return { statusCode: 200, body: { data: workshop } };
   },
@@ -48,12 +48,12 @@ const workshopsService = {
     if (data.groupType) {
       const validGroupTypes = ["completo", "par", "impar", "personalizado"];
       if (!validGroupTypes.includes(data.groupType)) {
-        throw new HttpError(400, "validation_error", `Tipo de grupo inválido. Tipos válidos: ${validGroupTypes.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Tipo de grupo inválido. Tipos válidos: ${validGroupTypes.join(", ")}`);
       }
     }
     const workshop = workshopsRepository.update(id, data);
     if (!workshop) {
-      throw new HttpError(404, "not_found", "Taller no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Taller no encontrado");
     }
     return { statusCode: 200, body: { data: workshop } };
   },
@@ -61,7 +61,7 @@ const workshopsService = {
   deactivate(id) {
     const workshop = workshopsRepository.deactivate(id);
     if (!workshop) {
-      throw new HttpError(404, "not_found", "Taller no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Taller no encontrado");
     }
     return { statusCode: 200, body: { data: workshop } };
   },
@@ -70,7 +70,7 @@ const workshopsService = {
     validateRequired(["workshopId", "date", "startTime", "endTime", "schoolId"], data);
     const workshop = workshopsRepository.findById(data.workshopId);
     if (!workshop) {
-      throw new HttpError(404, "not_found", "Taller no encontrado");
+      throw errorHttp(404, "NOT_FOUND", "Taller no encontrado");
     }
     const session = workshopsRepository.createSession({
       ...data,
@@ -82,7 +82,7 @@ const workshopsService = {
   getSession(id) {
     const session = workshopsRepository.findSessionById(id);
     if (!session) {
-      throw new HttpError(404, "not_found", "Sesión no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Sesión no encontrada");
     }
     return { statusCode: 200, body: { data: session } };
   },
@@ -103,12 +103,12 @@ const workshopsService = {
     if (data.status) {
       const validStatuses = ["programada", "en_curso", "completada", "cancelada"];
       if (!validStatuses.includes(data.status)) {
-        throw new HttpError(400, "validation_error", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
+        throw errorHttp(422, "VALIDATION_ERROR", `Estado inválido. Estados válidos: ${validStatuses.join(", ")}`);
       }
     }
     const session = workshopsRepository.updateSession(id, data);
     if (!session) {
-      throw new HttpError(404, "not_found", "Sesión no encontrada");
+      throw errorHttp(404, "NOT_FOUND", "Sesión no encontrada");
     }
     return { statusCode: 200, body: { data: session } };
   }

@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
-import test, { after, before, beforeEach } from "node:test";
+import test, { after, before } from "node:test";
 import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { userRepository } from "../database/repositories/user.repository.mjs";
 import { signAccessToken } from "../modules/auth/token.service.mjs";
-import { setTestPool } from "../database/client.mjs";
 
 const PUERTO = 3995;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -45,10 +44,6 @@ before(async () => {
 
 after(async () => {
   await new Promise((listo) => servidor.close(listo));
-});
-
-beforeEach(() => {
-  setTestPool(null);
 });
 
 async function pedir(ruta, token, opciones) {
@@ -95,7 +90,7 @@ test("un POST a /material-requests sin token devuelve 401", async () => {
   });
 
   assert.equal(status, 401);
-  assert.equal(cuerpo.error.code, "missing_token");
+  assert.equal(cuerpo.error.code, "MISSING_TOKEN");
 });
 
 test("un rol sin permisos no puede crear solicitudes (403)", async () => {
@@ -105,7 +100,7 @@ test("un rol sin permisos no puede crear solicitudes (403)", async () => {
   });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("crear solicitud sin materiales devuelve 422", async () => {
@@ -187,7 +182,7 @@ test("un rol sin REQUESTS_MANAGE no puede aprobar (403)", async () => {
   );
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "forbidden");
+  assert.equal(cuerpo.error.code, "FORBIDDEN");
 });
 
 test("el solicitante puede cancelar una solicitud pendiente y el historial se conserva", async () => {

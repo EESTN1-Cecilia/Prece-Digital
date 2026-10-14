@@ -38,6 +38,24 @@ export function registerMovement({ params, body, user }) {
   return inventoryService.registerMovement(params.itemId, body, user);
 }
 
+const TIPOS_LEGACY = {
+  ingreso: "alta",
+  egreso: "baja",
+  transferencia: "prestamo"
+};
+
+export function createMovementLegacy({ body, user }) {
+  return inventoryService.registerMovement(
+    body.itemId,
+    {
+      ...body,
+      type: TIPOS_LEGACY[body.type] ?? body.type,
+      reason: body.notes ?? body.reason ?? null
+    },
+    user
+  );
+}
+
 export function registerAdjust({ params, body, user }) {
   return inventoryService.registerAdjust(params.itemId, body, user);
 }
@@ -59,4 +77,8 @@ export function listMovements({ url, user }) {
 export function getItemHistory({ params, url, user }) {
   const query = Object.fromEntries(url.searchParams.entries());
   return inventoryService.getItemHistory(params.itemId, query, user);
+}
+
+export function tableroServer({ user }) {
+  return inventoryService.tableroServer(user);
 }

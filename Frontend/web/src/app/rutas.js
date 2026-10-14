@@ -23,13 +23,30 @@
                       (encabezado y pie) en lugar del layout de la aplicacion */
 
 import DashboardView from "../modules/dashboard/dashboard-view.js";
+import DirectorDashboardView from "../modules/director/director-dashboard-view.js";
+import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
+import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
+import ServerDashboardView from "../modules/server/server-dashboard-view.js";
+import CursosListView from "../modules/schools/cursos-list-view.js";
+import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
+import AlumnosListView from "../modules/students/alumnos-list-view.js";
+import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
+import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
+import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
+import AsistenciasView from "../modules/attendance/asistencias-view.js";
+import NotificacionesView from "../modules/notifications/notificaciones-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
 import UsuarioDetalleView from "../modules/identity/usuario-detalle-view.js";
 import UsuarioFormularioView from "../modules/identity/usuario-formulario-view.js";
 import RolesView from "../modules/identity/roles-view.js";
+import PerfilView from "../modules/identity/perfil-view.js";
+import InventarioListView from "../modules/server/inventario/inventario-list-view.js";
+import MaterialFormView from "../modules/server/inventario/material-form-view.js";
+import MaterialDetalleView from "../modules/server/inventario/material-detalle-view.js";
 import { PERMISOS } from "../utils/permisos.js";
+import InicioView from "./inicio.js";
 
 export const RUTAS = [
   {
@@ -48,9 +65,212 @@ export const RUTAS = [
   {
     patron: "#/inicio",
     titulo: "Inicio",
-    vista: DashboardView,
+    vista: InicioView,
     seccion: "General",
     icono: "clipboard",
+    enMenu: true
+  },
+  {
+    patron: "#/director",
+    titulo: "Tablero de Dirección",
+    vista: DirectorDashboardView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    permisos: [PERMISOS.usuariosLeer, PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/inicio-director",
+    titulo: "Tablero de Dirección",
+    vista: DirectorDashboardView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.usuariosLeer]
+  },
+  {
+    patron: "#/preceptoria",
+    titulo: "Tablero de preceptoria",
+    vista: DashboardView,
+    seccion: "General",
+    icono: "attendance",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/secretaria",
+    titulo: "Tablero de secretaria",
+    vista: SecretariaDashboardView,
+    seccion: "General",
+    icono: "students",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosEditar],
+    enMenu: true
+  },
+  {
+    patron: "#/jefatura",
+    titulo: "Grilla de jefatura",
+    vista: JefaturaDashboardView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    permisos: [PERMISOS.academicosLeer, PERMISOS.horariosLeer],
+    todosLosPermisos: true,
+    enMenu: true
+  },
+  {
+    patron: "#/inicio-secretaria",
+    titulo: "Tablero de secretaria",
+    vista: SecretariaDashboardView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosEditar]
+  },
+  {
+    patron: "#/asistencias/:cursoId",
+    titulo: "Planilla de Asistencia",
+    vista: AsistenciasView,
+    padre: "#/asistencias",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/asistencias",
+    titulo: "Planilla de Asistencias",
+    vista: AsistenciasView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/server",
+    titulo: "Tablero de Server",
+    vista: ServerDashboardView,
+    seccion: "Server",
+    icono: "filter",
+    padre: "#/inicio",
+    permisos: [PERMISOS.inventoryLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/inicio-server",
+    titulo: "Tablero de Server",
+    vista: ServerDashboardView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.inventoryLeer]
+  },
+  {
+    patron: "#/inventario/nuevo",
+    titulo: "Registrar material",
+    vista: MaterialFormView,
+    padre: "#/inventario",
+    permisos: [PERMISOS.inventoryCrear]
+  },
+  {
+    patron: "#/inventario/:id/editar",
+    titulo: "Modificar material",
+    vista: MaterialFormView,
+    padre: "#/inventario/:id",
+    permisos: [PERMISOS.inventoryEditar]
+  },
+  {
+    patron: "#/inventario/:id",
+    titulo: "Detalle del material",
+    vista: MaterialDetalleView,
+    padre: "#/inventario",
+    permisos: [PERMISOS.inventoryLeer]
+  },
+  {
+    patron: "#/inventario",
+    titulo: "Inventario",
+    vista: InventarioListView,
+    seccion: "Server",
+    icono: "clipboard",
+    padre: "#/server",
+    permisos: [PERMISOS.inventoryLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/preceptoria/observaciones",
+    titulo: "Observaciones",
+    vista: ObservacionesView,
+    seccion: "General",
+    icono: "activity",
+    padre: "#/inicio",
+    permisos: [PERMISOS.observacionesLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/notificaciones",
+    titulo: "Notificaciones y Alertas",
+    vista: NotificacionesView,
+    seccion: "General",
+    icono: "alert",
+    padre: "#/inicio"
+  },
+  {
+    patron: "#/alumnos/cargar",
+    titulo: "Cargar alumno",
+    vista: CargarAlumnoView,
+    padre: "#/alumnos",
+    permisos: [PERMISOS.alumnosCrear]
+  },
+  {
+    patron: "#/alumnos/nuevo",
+    titulo: "Cargar alumno",
+    vista: CargarAlumnoView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/alumnos",
+    permisos: [PERMISOS.alumnosCrear],
+    enMenu: true
+  },
+  {
+    patron: "#/alumnos/buscar",
+    titulo: "Listado de Alumnos",
+    vista: AlumnosListView,
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/alumnos/:id/perfil",
+    titulo: "Perfil completo del alumno",
+    vista: AlumnoPerfilView,
+    padre: "#/alumnos/:id",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/alumnos/:id/ficha",
+    titulo: "Ficha del alumno",
+    vista: AlumnoResumenView,
+    padre: "#/alumnos",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/alumnos/:id",
+    titulo: "Ficha del alumno",
+    vista: AlumnoResumenView,
+    padre: "#/alumnos",
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/alumnos",
+    titulo: "Alumnos",
+    vista: AlumnosListView,
+    seccion: "General",
+    icono: "people",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/cursos",
+    titulo: "Cursos",
+    vista: CursosListView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
   {
@@ -100,6 +320,18 @@ export const RUTAS = [
     padre: "#/inicio",
     permisos: [PERMISOS.rolesLeer],
     enMenu: true
+  },
+  {
+    patron: "#/perfil",
+    titulo: "Mi Perfil",
+    vista: PerfilView,
+    padre: "#/inicio"
+  },
+  {
+    patron: "#/configuracion",
+    titulo: "Configuración de perfil",
+    vista: PerfilView,
+    padre: "#/inicio"
   }
 ];
 

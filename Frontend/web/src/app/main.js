@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { h, SiteLayout } from "../layouts/site-layout.js";
-import { AppLayout } from "../layouts/app-layout.js";
 import { CargandoPantalla, ErrorGlobal } from "../components/ui/index.js";
 import { PaginaNoEncontrada } from "./pagina-no-encontrada.js";
 import { AccesoDenegado } from "./acceso-denegado.js";
@@ -9,8 +8,10 @@ import { ACCESO, decidirAcceso, resolverRuta } from "./navegacion.js";
 import { RUTAS, RUTA_LOGIN } from "./rutas.js";
 import { ProveedorEstado, useCarga, useErrorGlobal, useSesion } from "../estado/index.js";
 
+/* Ruta actual sin la query (#/alumnos?curso=1 -> #/alumnos). */
 function rutaActual() {
-  return window.location.hash === "" ? "#/inicio" : window.location.hash;
+  const hash = window.location.hash || "#/inicio";
+  return hash.split("?")[0];
 }
 
 /* Guardia de navegacion.
@@ -32,25 +33,20 @@ function Guardia({ ruta }) {
   }, [decision.tipo, ruta]);
 
   switch (decision.tipo) {
-    /* Todavia no se sabe quien entra: no se dibuja ni se redirige nada, para no
-       mostrar por un instante una pantalla protegida ni mandar al login a
-       alguien que si tiene sesion. */
     case ACCESO.esperar:
     case ACCESO.login:
       return h(CargandoPantalla, { texto: "Verificando tu acceso..." });
 
     case ACCESO.denegado:
-      return h(AccesoDenegado, {
-        titulo: resultado.ruta.titulo,
-        permiso: decision.permiso
-      });
+      return h(AccesoDenegado, { titulo: resultado.ruta.titulo, permiso: decision.permiso });
 
     case ACCESO.noEncontrada:
       return h(PaginaNoEncontrada);
 
     default: {
       const { ruta: definicion, parametros } = resultado;
-      return h(definicion.vista, { ...definicion.propiedades, ...parametros });
+      /* `ruta.parametros` se mantiene por compatibilidad con las vistas de alumnos. */
+      return h(definicion.vista, { ...definicion.propiedades, ...parametros, ruta: { parametros } });
     }
   }
 }
@@ -71,19 +67,11 @@ function App() {
     return () => window.removeEventListener("hashchange", alCambiar);
   }, []);
 
-  /* Las rutas publicas (login, activar cuenta) usan el layout del sitio, con su
-     encabezado y su pie; el resto de la aplicacion usa el layout con menu
-     lateral. La eleccion sale de la misma tabla de rutas. */
-  const resultado = resolverRuta(ruta, RUTAS);
-  const Layout = resultado?.ruta?.publica ? SiteLayout : AppLayout;
-
   return h(
-    Layout,
+    SiteLayout,
     { ruta },
     errorGlobal ? h(ErrorGlobal, { error: errorGlobal, onCerrar: limpiar }) : null,
-    inicializando
-      ? h(CargandoPantalla, { texto: "Iniciando Prece Digital..." })
-      : h(Guardia, { ruta })
+    inicializando ? h(CargandoPantalla, { texto: "Iniciando Prece Digital..." }) : h(Guardia, { ruta })
   );
 }
 

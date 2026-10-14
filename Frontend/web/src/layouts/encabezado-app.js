@@ -98,9 +98,9 @@ function Notificaciones() {
           : "Notificaciones: ninguna sin leer",
         onClick: () => setAbierto((valor) => !valor)
       },
-      h(IconoFigma, { className: "notificaciones-boton__icono", nombre: "support" }),
+      h(IconoFigma, { className: "notificaciones-boton__icono", nombre: "alert" }),
       noLeidas
-        ? h("span", { className: "notificaciones-boton__marca" }, noLeidas > 9 ? "9+" : noLeidas)
+        ? h("span", { className: "notificaciones-boton__marca" }, noLeidas > 99 ? "99+" : noLeidas)
         : null
     ),
     abierto
@@ -126,7 +126,7 @@ function Notificaciones() {
           h(
             "ul",
             { className: "panel__lista" },
-            ultimas.map((item) =>
+            ultimas.slice(0, 3).map((item) =>
               h(
                 "li",
                 { key: item.id, className: item.leida ? "panel__item" : "panel__item--nueva" },
@@ -155,6 +155,23 @@ function Notificaciones() {
                   )
                 )
               )
+            )
+          ),
+          h(
+            "div",
+            { className: "panel__pie-acciones" },
+            h(
+              Boton,
+              {
+                variante: "contorno",
+                tamano: "chico",
+                ancho: true,
+                onClick: () => {
+                  setAbierto(false);
+                  window.location.hash = "#/notificaciones";
+                }
+              },
+              "Ver todas las notificaciones ➔"
             )
           )
         )
@@ -211,7 +228,20 @@ function MenuUsuario() {
           ),
           h(
             "div",
-            { className: "panel__pie-acciones" },
+            { className: "panel__pie-acciones", style: { display: "flex", flexDirection: "column", gap: "6px" } },
+            h(
+              Boton,
+              {
+                variante: "primario",
+                tamano: "chico",
+                ancho: true,
+                onClick: () => {
+                  setAbierto(false);
+                  window.location.hash = "#/perfil";
+                }
+              },
+              "Mi Perfil"
+            ),
             h(Boton, { variante: "contorno", tamano: "chico", ancho: true, onClick: cerrarSesion }, "Cerrar sesion")
           )
         )
