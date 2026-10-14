@@ -1,0 +1,53 @@
+USE prece_digital;
+
+CREATE TABLE IF NOT EXISTS planificaciones_docentes (
+  id             VARCHAR(40)      NOT NULL PRIMARY KEY,
+  titulo         VARCHAR(120)     NOT NULL,
+  docente_id     VARCHAR(40)      NOT NULL,
+  materia_id     VARCHAR(40)      NOT NULL,
+  curso_id       VARCHAR(40)      NOT NULL,
+  division_id    VARCHAR(40)      NULL,
+  anio           SMALLINT         NOT NULL,
+  periodo        ENUM('anual','primer_cuatrimestre','segundo_cuatrimestre','primer_trimestre','segundo_trimestre','tercer_trimestre') NULL,
+  contenidos     JSON             NULL,
+  actividades    JSON             NULL,
+  observaciones  TEXT             NULL,
+  estado         ENUM('borrador','en_revision','observada','aprobada','finalizada','archivada') NOT NULL DEFAULT 'borrador',
+  escuela_id     INT UNSIGNED     NOT NULL,
+  creado_por     INT UNSIGNED     NULL,
+  creado_en      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_por INT UNSIGNED    NULL,
+  actualizado_en DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  revisado_por   INT UNSIGNED     NULL,
+  revisado_en    DATETIME         NULL,
+  archivado_en   DATETIME         NULL,
+  UNIQUE KEY uq_tpl_docente_materia_curso_division_anio (docente_id, materia_id, curso_id, division_id, anio),
+  KEY ix_tpl_docente (docente_id),
+  KEY ix_tpl_materia (materia_id),
+  KEY ix_tpl_curso (curso_id),
+  KEY ix_tpl_periodo (anio, periodo),
+  KEY ix_tpl_estado (estado),
+  KEY ix_tpl_escuela (escuela_id),
+  CONSTRAINT fk_tpl_materia FOREIGN KEY (materia_id) REFERENCES curriculum_materias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tpl_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_tpl_creador FOREIGN KEY (creado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_tpl_actualizador FOREIGN KEY (actualizado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_tpl_revisor FOREIGN KEY (revisado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS historial_planificaciones (
+  id               VARCHAR(40)    NOT NULL PRIMARY KEY,
+  planificacion_id VARCHAR(40)    NOT NULL,
+  tipo             ENUM('creacion','modificacion','cambio_estado') NOT NULL,
+  estado_anterior  ENUM('borrador','en_revision','observada','aprobada','finalizada','archivada') NULL,
+  estado_nuevo     ENUM('borrador','en_revision','observada','aprobada','finalizada','archivada') NULL,
+  cambios          JSON           NULL,
+  comentario       TEXT           NULL,
+  realizado_por    INT UNSIGNED   NULL,
+  creado_en        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY ix_hpl_planificacion (planificacion_id),
+  KEY ix_hpl_tipo (tipo),
+  KEY ix_hpl_fecha (creado_en),
+  CONSTRAINT fk_hpl_planificacion FOREIGN KEY (planificacion_id) REFERENCES planificaciones_docentes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_hpl_realizado FOREIGN KEY (realizado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;

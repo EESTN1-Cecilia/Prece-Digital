@@ -17,6 +17,83 @@ function cloneDeep(value) {
   return value;
 }
 
+function aliasDocente(docente) {
+  if (!docente) {
+    return null;
+  }
+
+  return {
+    ...docente,
+    firstName: docente.nombre,
+    lastName: docente.apellido,
+    documentNumber: docente.documento,
+    documentType: docente.tipoDocumento,
+    phone: docente.telefono,
+    specializations: docente.especialidades,
+    schoolId: docente.escuelaId
+  };
+}
+
+function aliasAsignacion(asignacion) {
+  if (!asignacion) {
+    return null;
+  }
+
+  return {
+    ...asignacion,
+    teacherId: asignacion.docenteId,
+    subjectId: asignacion.materiaId,
+    courseId: asignacion.cursoId,
+    schoolId: asignacion.escuelaId
+  };
+}
+
+function aCamposDocente(data = {}) {
+  const cambios = { ...data };
+
+  if ("firstName" in cambios) {
+    cambios.nombre = cambios.firstName;
+    delete cambios.firstName;
+  }
+
+  if ("lastName" in cambios) {
+    cambios.apellido = cambios.lastName;
+    delete cambios.lastName;
+  }
+
+  if ("documentNumber" in cambios) {
+    cambios.documento = cambios.documentNumber;
+    delete cambios.documentNumber;
+  }
+
+  if ("documentType" in cambios) {
+    cambios.tipoDocumento = cambios.documentType;
+    delete cambios.documentType;
+  }
+
+  if ("phone" in cambios) {
+    cambios.telefono = cambios.phone;
+    delete cambios.phone;
+  }
+
+  if ("specializations" in cambios) {
+    cambios.especialidades = cambios.specializations;
+    delete cambios.specializations;
+  }
+
+  if ("schoolId" in cambios) {
+    cambios.escuelaId = cambios.schoolId;
+    delete cambios.schoolId;
+  }
+
+  if ("isActive" in cambios) {
+    cambios.estado = cambios.isActive === false ? "inactivo" : "activo";
+    delete cambios.isActive;
+  }
+
+  return cambios;
+}
+
 const teachersRepository = {
   init() {
     const store = getStore();
@@ -78,7 +155,44 @@ const teachersRepository = {
 
   /* Alias de compatibilidad con schedules y jefatura. */
   findById(id) {
-    return this.findDocenteById(id);
+    return aliasDocente(this.findDocenteById(id));
+  },
+
+  /* Aliases en ingles usados por los modulos de seguimiento/planificaciones. */
+  create(teacher = {}) {
+    const docente = this.createDocente(aCamposDocente(teacher));
+    return aliasDocente(docente);
+  },
+
+  list({ schoolId, includeInactive = false } = {}) {
+    const docentes = this.listDocentes({ escuelaId: schoolId });
+    const filtrados = includeInactive ? docentes : docentes.filter((docente) => docente.isActive);
+    return filtrados.map(aliasDocente);
+  },
+
+  update(id, data = {}) {
+    return aliasDocente(this.updateDocente(id, aCamposDocente(data)));
+  },
+
+  addSubject(teacherId, subjectData = {}) {
+    const asignacion = this.createAsignacionMateria({
+      docenteId: teacherId,
+      materiaId: subjectData.subjectId ?? subjectData.materiaId,
+      cursoId: subjectData.courseId ?? null,
+      divisionId: subjectData.divisionId ?? null,
+      escuelaId: subjectData.schoolId ?? subjectData.escuelaId,
+      anio: subjectData.anio ?? new Date().getFullYear(),
+      estado: "activo"
+    });
+    return aliasAsignacion(asignacion);
+  },
+
+  listSubjects({ teacherId, schoolId } = {}) {
+    return this.listAsignacionesMateria({
+      docenteId: teacherId,
+      escuelaId: schoolId,
+      estado: "activo"
+    }).map(aliasAsignacion);
   },
 
   findDocenteByDocumento(documento, escuelaId) {
