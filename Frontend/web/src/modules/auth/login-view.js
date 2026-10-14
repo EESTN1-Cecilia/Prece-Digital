@@ -307,6 +307,38 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
                   h("polyline", { points: "9 18 15 12 9 6" })
                 )
               )
+        ),
+
+        // Accesos rápidos institucionales
+        h(
+          "div",
+          { className: "login-quick-roles-container" },
+          h("span", { className: "login-quick-roles-label" }, "Ingreso Rápido de Prueba:"),
+          h(
+            "div",
+            { className: "login-quick-roles-list" },
+            [
+              { label: "Docente", email: "docente@prece.local", pass: "Docente123!" },
+              { label: "Preceptor", email: "preceptor@prece.local", pass: "Preceptor123!" },
+              { label: "Director", email: "director@prece.local", pass: "Director123!" },
+              { label: "Secretaría", email: "secretaria@prece.local", pass: "Secretaria123!" }
+            ].map((role) =>
+              h(
+                "button",
+                {
+                  key: role.label,
+                  type: "button",
+                  className: "login-quick-role-chip",
+                  onClick: () => {
+                    setDatos({ email: role.email, password: role.pass });
+                    setErrores({});
+                    setError(null);
+                  }
+                },
+                role.label
+              )
+            )
+          )
         )
       ),
 

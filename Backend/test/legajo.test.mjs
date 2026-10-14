@@ -120,7 +120,9 @@ test("tablero de secretaria con datos reales y alertas descartables", async () =
   assert.equal(status, 200);
   assert.equal(cuerpo.data.resumenAlumnos.total, 32);
   assert.equal(cuerpo.data.resumenAlumnos.inactivos, 1);
-  assert.ok(cuerpo.data.alumnosPorCurso.length > 0);
+  assert.equal(cuerpo.data.alumnosPorCurso.length, 31);
+  const totalAlumnosEnCursos = cuerpo.data.alumnosPorCurso.reduce((sum, c) => sum + c.cantidad, 0);
+  assert.equal(totalAlumnosEnCursos, 31);
   assert.ok(cuerpo.data.alertas.length > 0);
 
   const alerta = cuerpo.data.alertas[0];

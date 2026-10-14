@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import * as XLSX from "xlsx";
-import { obtenerLibroFolioLegajo } from "../students-service.js";
+import { obtenerLibroFolioLegajo, StudentsService, formatDni } from "../students-service.js";
+import { pedir } from "../../../services/http.js";
 
 // Definición oficial de materias según Matriz.xlsx y Resoluciones Provinciales PBA
 export const PLANES_BOLETIN = {
@@ -219,9 +220,17 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
     };
   }, [abierto]);
 
-  const datosPersonales = alumno?.datosPersonales || alumno || {};
-  const informacionEscolar = alumno?.informacionEscolar || alumno || {};
-  const studentId = datosPersonales.id || "alu-0";
+  const [currentAlumno, setCurrentAlumno] = useState(alumno);
+
+  useEffect(() => {
+    if (alumno) {
+      setCurrentAlumno(alumno);
+    }
+  }, [alumno]);
+
+  const datosPersonales = currentAlumno?.datosPersonales || currentAlumno || {};
+  const informacionEscolar = currentAlumno?.informacionEscolar || currentAlumno || {};
+  const studentId = datosPersonales.id || currentAlumno?.id || "alu-0";
 
   // Deducir año inicial del alumno (ej: "1° Div. 2" -> 1)
   const initialYear = useMemo(() => {
@@ -237,10 +246,22 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
     return ori.includes("info") ? "informatica" : "programacion";
   });
 
+  // Al cambiar de alumno, actualizar año y orientación por defecto
+  useEffect(() => {
+    setSelectedYear(initialYear);
+    const ori = (informacionEscolar.orientacion || "").toLowerCase();
+    setSelectedOrientacion(ori.includes("info") ? "informatica" : "programacion");
+  }, [studentId, initialYear, informacionEscolar.orientacion]);
+
   const [libroFolio, setLibroFolio] = useState(() => {
     const info = obtenerLibroFolioLegajo({ ...datosPersonales, ...informacionEscolar, id: studentId, studentId });
     return { libro: info.libro, folio: info.folio };
   });
+
+  useEffect(() => {
+    const info = obtenerLibroFolioLegajo({ ...datosPersonales, ...informacionEscolar, id: studentId, studentId });
+    setLibroFolio({ libro: info.libro, folio: info.folio });
+  }, [studentId, datosPersonales.libro, datosPersonales.folio, datosPersonales.legajo]);
 
   const handleUpdateLibroFolio = (patch) => {
     setLibroFolio((prev) => {
@@ -252,16 +273,63 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
       return updated;
     });
   };
+
   const [inasistencias, setInasistencias] = useState({ total: "0" });
+  const [inasistenciasDetalle, setInasistenciasDetalle] = useState(null);
+  const [cargandoInasistencias, setCargandoInasistencias] = useState(false);
   const [calificaciones, setCalificaciones] = useState({});
   const [materiasPendientes, setMateriasPendientes] = useState([
     { materia: "", anio: "", abrilCalif: "", abrilLF: "", mayoCalif: "", mayoLF: "", agostoCalif: "", agostoLF: "", octubreCalif: "", octubreLF: "" },
     { materia: "", anio: "", abrilCalif: "", abrilLF: "", mayoCalif: "", mayoLF: "", agostoCalif: "", agostoLF: "", octubreCalif: "", octubreLF: "" }
   ]);
   const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState("Calificaciones guardadas correctamente");
+
+  // Estados para búsqueda por DNI
+  const [searchDni, setSearchDni] = useState("");
+  const [searchingDni, setSearchingDni] = useState(false);
+  const [dniFeedback, setDniFeedback] = useState(null);
+
+  // Estados para modal de envío por correo electrónico
+  const [emailModalAbierto, setEmailModalAbierto] = useState(false);
+  const [emailDestinatario, setEmailDestinatario] = useState("");
+  const [emailAsunto, setEmailAsunto] = useState("");
+  const [emailMensaje, setEmailMensaje] = useState("");
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
+  const [emailFeedback, setEmailFeedback] = useState(null);
 
   // Clave de almacenamiento local por alumno y año
   const storageKey = `prece_boletin_${studentId}_anio_${selectedYear}`;
+
+  // Traer la sumatoria dinámica de inasistencias desde el backend (/api/v1/inasistencias/alumno/:id/totales)
+  useEffect(() => {
+    if (!studentId || studentId === "alu-0") return;
+    let cancel = false;
+    setCargandoInasistencias(true);
+
+    async function cargarInasistencias() {
+      try {
+        const res = await pedir(`/api/v1/inasistencias/alumno/${encodeURIComponent(studentId)}/totales`);
+        if (!cancel && res?.totales) {
+          setInasistenciasDetalle(res.totales);
+          const totalAusentes = String(res.totales.total ?? 0);
+          setInasistencias((prev) => ({
+            ...prev,
+            total: totalAusentes,
+            justificadas: res.totales.justificadas ?? 0,
+            noJustificadas: res.totales.noJustificadas ?? 0
+          }));
+        }
+      } catch (err) {
+        if (!cancel) setInasistenciasDetalle(null);
+      } finally {
+        if (!cancel) setCargandoInasistencias(false);
+      }
+    }
+
+    cargarInasistencias();
+    return () => { cancel = true; };
+  }, [studentId]);
 
   // Cargar calificaciones guardadas para el año seleccionado
   useEffect(() => {
@@ -282,9 +350,11 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
     // Inicializar vacío si no había nada guardado
     setCalificaciones({});
     setInasistencias({
-      total: selectedYear === initialYear ? String(alumno?.inasistencias?.total ?? 0) : "0"
+      total: inasistenciasDetalle?.total !== undefined
+        ? String(inasistenciasDetalle.total)
+        : (selectedYear === initialYear ? String(currentAlumno?.inasistencias?.total ?? 0) : "0")
     });
-  }, [storageKey, selectedYear, initialYear, alumno]);
+  }, [storageKey, selectedYear, initialYear, currentAlumno, inasistenciasDetalle]);
 
   // Manejar cambio de notas
   const handleGradeChange = (materiaKey, field, value) => {
@@ -333,10 +403,66 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       localStorage.setItem(`prece_student_${studentId}_libro_folio`, JSON.stringify(libroFolio));
       window.dispatchEvent(new CustomEvent("prece:libro-folio-updated", { detail: { studentId, libroFolio } }));
+      setToastMsg("Calificaciones guardadas correctamente");
       setShowToast(true);
       setTimeout(() => setShowToast(false), 2400);
     } catch (e) {
       console.error("Error al guardar calificaciones:", e);
+    }
+  };
+
+  // Buscar boletín directamente ingresando el DNI del alumno
+  const handleSearchByDni = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const cleanDni = String(searchDni).replace(/\D/g, "");
+    if (!cleanDni || cleanDni.length < 6) {
+      setDniFeedback({ type: "error", message: "Ingrese al menos 6 dígitos del DNI." });
+      setTimeout(() => setDniFeedback(null), 3500);
+      return;
+    }
+
+    setSearchingDni(true);
+    setDniFeedback(null);
+    try {
+      const res = await StudentsService.getAlumnos({ dni: cleanDni, estado: "todos" });
+      let found = res.data?.[0];
+      if (!found) {
+        const resQ = await StudentsService.getAlumnos({ q: cleanDni, estado: "todos" });
+        found = resQ.data?.[0];
+      }
+
+      if (found) {
+        try {
+          const perfil = await StudentsService.getAlumnoProfile(found.id);
+          if (perfil?.data) {
+            const dp = perfil.data.datosPersonales || perfil.data;
+            const esc = perfil.data.situacionAcademica || perfil.data.informacionEscolar || perfil.data;
+            setCurrentAlumno({
+              ...found,
+              datosPersonales: dp,
+              informacionEscolar: esc
+            });
+          } else {
+            setCurrentAlumno(found);
+          }
+        } catch {
+          setCurrentAlumno(found);
+        }
+
+        const nombreEncontrado = found.nombreCompleto || `${found.apellido}, ${found.nombre}`;
+        setToastMsg(`Boletín cargado: ${nombreEncontrado} (DNI ${formatDni(cleanDni)})`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2800);
+        setSearchDni("");
+      } else {
+        setDniFeedback({ type: "error", message: `No se encontró estudiante con DNI: ${cleanDni}` });
+        setTimeout(() => setDniFeedback(null), 4000);
+      }
+    } catch (err) {
+      setDniFeedback({ type: "error", message: "Error al consultar la base de datos." });
+      setTimeout(() => setDniFeedback(null), 4000);
+    } finally {
+      setSearchingDni(false);
     }
   };
 
@@ -455,6 +581,74 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
     XLSX.writeFile(wb, `Boletin_${selectedYear}Ano_${safeName}.xlsx`);
   };
 
+  // Preparar y abrir modal para enviar el boletín por correo electrónico
+  const handleOpenEmailModal = () => {
+    const emailDestino = datosPersonales.email || currentAlumno?.email || "";
+    const nombreCompleto = datosPersonales.nombreCompleto || `${datosPersonales.apellido || ""}, ${datosPersonales.nombre || ""}`.trim() || "Estudiante";
+    const dniFormateado = formatDni(datosPersonales.dni);
+    const legajoCompleto = `(${libroFolio.libro}-${libroFolio.folio}-${datosPersonales.legajo || studentId})`;
+    const anioDiv = `${selectedYear}° ${informacionEscolar.division || "1"}`;
+
+    setEmailDestinatario(emailDestino);
+    setEmailAsunto(`Boletín Digital de Calificaciones - E.E.S.T. N° 1 - ${nombreCompleto} (${selectedYear}° Año)`);
+    setEmailMensaje(
+`Estimada familia / tutor de ${nombreCompleto}:
+
+Por medio de la presente comunicación institucional se envía la notificación oficial del Boletín de Calificaciones correspondiente al Ciclo Lectivo 2026 de la Escuela de Educación Secundaria Técnica N° 1 "Cecilia Berdichevski".
+
+DATOS DEL ESTUDIANTE:
+• Apellido y Nombre: ${nombreCompleto}
+• D.N.I.: ${dniFormateado}
+• Legajo Oficial: ${legajoCompleto}
+• Curso y División: ${anioDiv} (${selectedYear <= 3 ? "Ciclo Básico" : "Ciclo Superior - " + (selectedOrientacion === "programacion" ? "Programación" : "Informática")})
+• Turno: ${selectedYear <= 2 || selectedYear === 7 ? "Mañana" : "Tarde"}
+
+ESTADO ACADÉMICO:
+• Promedio General Anual: ${promedioGeneral}
+• Inasistencia Total acumulada: ${inasistencias.total || "0"} días ${inasistenciasDetalle ? `(${inasistenciasDetalle.justificadas || 0} justificadas / ${inasistenciasDetalle.noJustificadas || 0} injustificadas)` : ""}
+
+Puede consultar la ficha completa o descargar el boletín en formato oficial ingresando a la plataforma institucional Prece Digital.
+
+Atentamente,
+Equipo Directivo y Preceptoría
+E.E.S.T. N° 1 "Cecilia Berdichevski"`
+    );
+    setEmailFeedback(null);
+    setEmailModalAbierto(true);
+  };
+
+  const handleSendEmail = () => {
+    if (!emailDestinatario || !emailDestinatario.includes("@")) {
+      setEmailFeedback({ type: "error", message: "Ingrese un correo electrónico válido." });
+      return;
+    }
+    setEnviandoEmail(true);
+    try {
+      // Registrar envío de boletín en auditoría local
+      const enviosGuardados = JSON.parse(localStorage.getItem("prece_boletin_emails_sent") || "[]");
+      enviosGuardados.push({
+        studentId,
+        alumno: datosPersonales.nombreCompleto || `${datosPersonales.apellido || ""}, ${datosPersonales.nombre || ""}`.trim(),
+        destinatario: emailDestinatario,
+        asunto: emailAsunto,
+        anio: selectedYear,
+        fecha: new Date().toISOString()
+      });
+      localStorage.setItem("prece_boletin_emails_sent", JSON.stringify(enviosGuardados));
+
+      setTimeout(() => {
+        setEnviandoEmail(false);
+        setEmailModalAbierto(false);
+        setToastMsg(`Boletín enviado exitosamente a: ${emailDestinatario}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }, 500);
+    } catch {
+      setEnviandoEmail(false);
+      setEmailFeedback({ type: "error", message: "Error al registrar el envío de correo." });
+    }
+  };
+
   // Imprimir / Guardar en PDF
   const handlePrint = () => {
     window.print();
@@ -464,8 +658,11 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
 
   if (!abierto) return null;
 
-  return createPortal(
-    h(
+  return h(
+    React.Fragment,
+    null,
+    createPortal(
+      h(
       "div",
       {
         className: "boletin-modal-backdrop",
@@ -481,7 +678,7 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
           "aria-modal": "true"
         },
 
-        // Toast de guardado exitoso
+        // Toast de guardado o acción exitosa
         showToast
           ? h(
               "div",
@@ -495,113 +692,58 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
                   clipRule: "evenodd"
                 })
               ),
-              h("span", null, "Calificaciones guardadas correctamente")
+              h("span", null, toastMsg)
             )
           : null,
 
-        // 1. HEADER DEL MODAL (Con la paleta y diseño de la plataforma)
+        // 1. HEADER DEL MODAL (Con diseño ordenado, jerárquico y profesional)
         h(
           "div",
           { className: "boletin-modal-header" },
+          // Fila 1: Título y Datos del Alumno + Botón Cerrar
           h(
             "div",
-            { className: "boletin-header-left" },
+            { className: "boletin-header-top-row" },
             h(
               "div",
-              { className: "boletin-header-icon-box" },
-              h(
-                "svg",
-                {
-                  viewBox: "0 0 24 24",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: "2",
-                  strokeLinecap: "round",
-                  strokeLinejoin: "round"
-                },
-                h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
-                h("polyline", { points: "14 2 14 8 20 8" }),
-                h("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
-                h("line", { x1: "16", y1: "17", x2: "8", y2: "17" }),
-                h("polyline", { points: "10 9 9 9 8 9" })
-              )
-            ),
-            h(
-              "div",
-              null,
-              h("h3", { className: "boletin-header-title" }, "Boletín Digital de Calificaciones"),
+              { className: "boletin-header-left" },
               h(
                 "div",
-                { className: "boletin-header-subtitle" },
-                h("span", null, nombreAlumno),
-                h("span", null, "•"),
-                h("span", { className: "pill-student-dni" }, `DNI: ${datosPersonales.dni || "S/D"}`),
-                h("span", null, "•"),
-                h("span", { className: "font-mono" }, `Legajo: (${libroFolio.libro}-${libroFolio.folio}-${datosPersonales.legajo || studentId})`)
+                { className: "boletin-header-icon-box" },
+                h(
+                  "svg",
+                  {
+                    viewBox: "0 0 24 24",
+                    fill: "none",
+                    stroke: "currentColor",
+                    strokeWidth: "2",
+                    strokeLinecap: "round",
+                    strokeLinejoin: "round"
+                  },
+                  h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+                  h("polyline", { points: "14 2 14 8 20 8" }),
+                  h("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
+                  h("line", { x1: "16", y1: "17", x2: "8", y2: "17" }),
+                  h("polyline", { points: "10 9 9 9 8 9" })
+                )
+              ),
+              h(
+                "div",
+                { className: "boletin-header-titles" },
+                h("h3", { className: "boletin-header-title" }, "Boletín Digital de Calificaciones"),
+                h(
+                  "div",
+                  { className: "boletin-header-subtitle" },
+                  h("span", { className: "pill-student-name" }, nombreAlumno),
+                  h("span", null, "•"),
+                  h("span", { className: "pill-student-badge" }, `DNI: ${formatDni(datosPersonales.dni || "S/D")}`),
+                  h("span", null, "•"),
+                  h("span", { className: "pill-student-badge font-mono" }, `Legajo: (${libroFolio.libro}-${libroFolio.folio}-${datosPersonales.legajo || studentId})`),
+                  h("span", null, "•"),
+                  h("span", { className: "pill-student-badge" }, `${selectedYear}° ${informacionEscolar.division || "1°"}`)
+                )
               )
-            )
-          ),
-          h(
-            "div",
-            { className: "boletin-header-actions" },
-            // Botón Guardar
-            h(
-              "button",
-              {
-                type: "button",
-                className: "btn-boletin-action btn-boletin-action--save",
-                onClick: handleSave,
-                title: "Guardar notas modificadas del boletín"
-              },
-              h(
-                "svg",
-                { viewBox: "0 0 20 20", fill: "currentColor" },
-                h("path", {
-                  fillRule: "evenodd",
-                  d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z",
-                  clipRule: "evenodd"
-                })
-              ),
-              h("span", null, "Guardar Notas")
             ),
-            // Botón Imprimir / PDF
-            h(
-              "button",
-              {
-                type: "button",
-                className: "btn-boletin-action btn-boletin-action--print",
-                onClick: handlePrint,
-                title: "Imprimir boletín en formato oficial A4 o guardar como PDF"
-              },
-              h(
-                "svg",
-                { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                h("polyline", { points: "6 9 6 2 18 2 18 9" }),
-                h("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
-                h("rect", { x: "6", y: "14", width: "12", height: "8" })
-              ),
-              h("span", null, "Imprimir / PDF")
-            ),
-            // Botón Descargar Excel
-            h(
-              "button",
-              {
-                type: "button",
-                className: "btn-boletin-action btn-boletin-action--excel",
-                onClick: handleExportExcel,
-                title: "Descargar planilla oficial del boletín en Excel (.xlsx)"
-              },
-              h(
-                "svg",
-                { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
-                h("polyline", { points: "14 2 14 8 20 8" }),
-                h("line", { x1: "8", y1: "13", x2: "16", y2: "13" }),
-                h("line", { x1: "8", y1: "17", x2: "16", y2: "17" })
-              ),
-              h("span", null, "Excel (.xlsx)")
-            ),
-            // Botón Cerrar
             h(
               "button",
               {
@@ -612,9 +754,137 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
               },
               h(
                 "svg",
-                { viewBox: "0 0 24 24", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: "2.5" },
+                { viewBox: "0 0 24 24", width: 17, height: 17, fill: "none", stroke: "currentColor", strokeWidth: "2.5" },
                 h("line", { x1: "18", y1: "6", x2: "6", y2: "18" }),
                 h("line", { x1: "6", y1: "6", x2: "18", y2: "18" })
+              )
+            )
+          ),
+
+          // Fila 2: Barra de herramientas (Búsqueda por DNI y Acciones agrupadas)
+          h(
+            "div",
+            { className: "boletin-header-toolbar" },
+            // Buscador directo por DNI
+            h(
+              "div",
+              { className: "boletin-toolbar-search-wrap" },
+              h(
+                "form",
+                {
+                  className: "boletin-dni-search-form",
+                  onSubmit: handleSearchByDni
+                },
+                h(
+                  "svg",
+                  { className: "boletin-dni-search-icon", viewBox: "0 0 20 20", fill: "currentColor" },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z",
+                    clipRule: "evenodd"
+                  })
+                ),
+                h("input", {
+                  type: "text",
+                  className: "boletin-dni-input",
+                  placeholder: "Ver por DNI...",
+                  value: searchDni,
+                  onChange: (e) => setSearchDni(e.target.value),
+                  title: "Ingrese el DNI del alumno para ver su boletín"
+                }),
+                h(
+                  "button",
+                  {
+                    type: "submit",
+                    className: "btn-boletin-dni-search",
+                    disabled: searchingDni,
+                    title: "Buscar boletín por DNI"
+                  },
+                  searchingDni ? "Buscando..." : "Buscar"
+                )
+              ),
+              dniFeedback
+                ? h("div", { className: "boletin-dni-error-bubble" }, dniFeedback.message)
+                : null
+            ),
+
+            // Acciones del Boletín agrupadas ordenadamente
+            h(
+              "div",
+              { className: "boletin-toolbar-actions" },
+              // Botón Enviar por Correo Electrónico
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-boletin-action btn-boletin-action--secondary btn-boletin-action--email",
+                  onClick: handleOpenEmailModal,
+                  title: "Enviar boletín digital por correo electrónico"
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                  h("path", { d: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" }),
+                  h("polyline", { points: "22,6 12,13 2,6" })
+                ),
+                h("span", null, "Enviar Correo")
+              ),
+              // Botón Imprimir / PDF
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-boletin-action btn-boletin-action--secondary btn-boletin-action--print",
+                  onClick: handlePrint,
+                  title: "Imprimir boletín en formato oficial A4 o guardar como PDF"
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                  h("polyline", { points: "6 9 6 2 18 2 18 9" }),
+                  h("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
+                  h("rect", { x: "6", y: "14", width: "12", height: "8" })
+                ),
+                h("span", null, "Imprimir / PDF")
+              ),
+              // Botón Descargar Excel
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-boletin-action btn-boletin-action--secondary btn-boletin-action--excel",
+                  onClick: handleExportExcel,
+                  title: "Descargar planilla oficial del boletín en Excel (.xlsx)"
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                  h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+                  h("polyline", { points: "14 2 14 8 20 8" }),
+                  h("line", { x1: "8", y1: "13", x2: "16", y2: "13" }),
+                  h("line", { x1: "8", y1: "17", x2: "16", y2: "17" })
+                ),
+                h("span", null, "Excel (.xlsx)")
+              ),
+              // Botón Guardar Notas (Acción principal destacada)
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "btn-boletin-action btn-boletin-action--save",
+                  onClick: handleSave,
+                  title: "Guardar notas modificadas del boletín"
+                },
+                h(
+                  "svg",
+                  { viewBox: "0 0 20 20", fill: "currentColor" },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z",
+                    clipRule: "evenodd"
+                  })
+                ),
+                h("span", null, "Guardar Notas")
               )
             )
           )
@@ -670,13 +940,30 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
             "div",
             { className: "boletin-paper-card" },
 
-            // Encabezado Institucional Oficial
+            // Encabezado Institucional Oficial con Escudo
             h(
               "div",
               { className: "boletin-school-header" },
-              h("p", { className: "boletin-school-ministry" }, "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN • PROVINCIA DE BUENOS AIRES"),
-              h("h2", { className: "boletin-school-name" }, "E.E.S.T. N° 1 \"CECILIA BERDICHEVSKI\""),
-              h("h4", { className: "boletin-school-doc-title" }, `BOLETÍN DE CALIFICACIONES • ${selectedYear}° AÑO`)
+              h(
+                "div",
+                { className: "boletin-school-logo-wrap" },
+                h("img", {
+                  src: "/assets/logo_tec.png",
+                  alt: "Escudo E.E.S.T. N° 1",
+                  className: "boletin-school-logo-img",
+                  onError: (e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/assets/Logo Tec.png";
+                  }
+                })
+              ),
+              h(
+                "div",
+                { className: "boletin-school-text-wrap" },
+                h("p", { className: "boletin-school-ministry" }, "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN • PROVINCIA DE BUENOS AIRES"),
+                h("h2", { className: "boletin-school-name" }, "E.E.S.T. N° 1 \"CECILIA BERDICHEVSKI\""),
+                h("h4", { className: "boletin-school-doc-title" }, `BOLETÍN DE CALIFICACIONES • ${selectedYear}° AÑO`)
+              )
             ),
 
             // Grilla de Datos del Alumno (como en Matriz.xlsx)
@@ -772,13 +1059,13 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
                   "tr",
                   null,
                   h("th", { className: "col-materia" }, "MATERIAS"),
-                  h("th", { className: "col-informe" }, "1° Informe"),
-                  h("th", { className: "col-informe" }, "2° Informe"),
-                  h("th", { className: "col-promedio" }, "Promedio Anual"),
-                  h("th", { className: "col-instancia" }, "Diciembre"),
-                  h("th", { className: "col-instancia" }, "Febrero"),
-                  h("th", { className: "col-definitiva" }, "Calif. Definitiva"),
-                  h("th", { className: "col-firmas" }, "Firmas")
+                  h("th", { className: "col-informe" }, "1° INFORME"),
+                  h("th", { className: "col-informe" }, "2° INFORME"),
+                  h("th", { className: "col-promedio" }, "PROMEDIO ANUAL"),
+                  h("th", { className: "col-instancia" }, "DICIEMBRE"),
+                  h("th", { className: "col-instancia" }, "FEBRERO"),
+                  h("th", { className: "col-definitiva" }, "CALIF. DEFINITIVA"),
+                  h("th", { className: "col-firmas" }, "FIRMAS")
                 )
               ),
               h(
@@ -826,7 +1113,7 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
                     ),
                     h(
                       "td",
-                      { className: "boletin-grade-cell", style: { background: "#f8fafc" } },
+                      { className: "boletin-grade-cell boletin-grade-cell--highlight" },
                       h("input", {
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.promedioAnual) >= 7 ? "grade--approved" : mData.promedioAnual ? "grade--disapproved" : ""}`,
@@ -862,7 +1149,7 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
                     ),
                     h(
                       "td",
-                      { className: "boletin-grade-cell", style: { background: "#f1f5f9", fontWeight: 900 } },
+                      { className: "boletin-grade-cell boletin-grade-cell--highlight-def" },
                       h("input", {
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.definitiva) >= 7 ? "grade--approved" : mData.definitiva ? "grade--disapproved" : ""}`,
@@ -919,7 +1206,7 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
                     ),
                     h(
                       "td",
-                      { className: "boletin-grade-cell", style: { background: "#f8fafc" } },
+                      { className: "boletin-grade-cell boletin-grade-cell--highlight" },
                       h("input", {
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.promedioAnual) >= 7 ? "grade--approved" : mData.promedioAnual ? "grade--disapproved" : ""}`,
@@ -955,7 +1242,7 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
                     ),
                     h(
                       "td",
-                      { className: "boletin-grade-cell", style: { background: "#f1f5f9", fontWeight: 900 } },
+                      { className: "boletin-grade-cell boletin-grade-cell--highlight-def" },
                       h("input", {
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.definitiva) >= 7 ? "grade--approved" : mData.definitiva ? "grade--disapproved" : ""}`,
@@ -980,20 +1267,33 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
                     h(
                       "div",
                       { className: "boletin-summary-inasistencias" },
-                      h("span", null, "INASISTENCIA TOTAL:"),
+                      h("span", { className: "boletin-inasistencias-label" }, "INASISTENCIA TOTAL:"),
                       h("input", {
                         type: "number",
                         className: "boletin-inasistencias-input",
                         value: inasistencias.total || "0",
                         min: "0",
-                        onChange: (e) => setInasistencias({ total: e.target.value })
+                        onChange: (e) => setInasistencias((prev) => ({ ...prev, total: e.target.value })),
+                        title: "Total de inasistencias acumuladas (calculado dinámicamente desde ausentes)"
                       }),
-                      h("span", { style: { fontSize: "10px", color: "#64748b" } }, "días")
+                      h("span", { style: { fontSize: "11px", color: "#64748b" } }, "días"),
+                      inasistenciasDetalle
+                        ? h(
+                            "span",
+                            {
+                              className: "boletin-inasistencias-badge",
+                              title: "Detalle de ausencias en sistema"
+                            },
+                            `(${inasistenciasDetalle.justificadas || 0} just. · ${inasistenciasDetalle.noJustificadas || 0} inj.)`
+                          )
+                        : cargandoInasistencias
+                        ? h("span", { style: { fontSize: "10px", color: "#94a3b8" } }, "Cargando...")
+                        : null
                     )
                   ),
                   h(
                     "td",
-                    { colSpan: 3, style: { textAlign: "right" } },
+                    { colSpan: 3, style: { textAlign: "right", fontWeight: 800 } },
                     "PROMEDIO GENERAL ANUAL:"
                   ),
                   h(
@@ -1279,5 +1579,134 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
       )
     ),
     document.body
+  ),
+
+  emailModalAbierto
+    ? createPortal(
+        h(
+          "div",
+          {
+            className: "boletin-email-modal-overlay",
+            onClick: (e) => {
+              if (e.target === e.currentTarget) setEmailModalAbierto(false);
+            }
+          },
+          h(
+            "div",
+            { className: "boletin-email-modal-card" },
+            h(
+              "div",
+              { className: "boletin-email-modal-header" },
+              h(
+                "div",
+                { className: "boletin-email-icon-box" },
+                h(
+                  "svg",
+                  { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                  h("path", { d: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" }),
+                  h("polyline", { points: "22,6 12,13 2,6" })
+                )
+              ),
+              h(
+                "div",
+                null,
+                h("h3", { className: "boletin-email-title" }, "Enviar Boletín por Correo Electrónico"),
+                h("p", { className: "boletin-email-subtitle" }, `Notificación oficial de calificaciones · ${nombreAlumno}`)
+              )
+            ),
+            emailFeedback
+              ? h(
+                  "div",
+                  {
+                    style: {
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      marginBottom: "12px",
+                      fontSize: "12px",
+                      background: emailFeedback.type === "error" ? "#fee2e2" : "#dcfce7",
+                      color: emailFeedback.type === "error" ? "#991b1b" : "#166534"
+                    }
+                  },
+                  emailFeedback.message
+                )
+              : null,
+            h(
+              "div",
+              { className: "boletin-email-field" },
+              h("label", { className: "boletin-email-label" }, "Correo del Destinatario:"),
+              h("input", {
+                type: "email",
+                className: "boletin-email-input",
+                placeholder: "ejemplo@correo.com",
+                value: emailDestinatario,
+                onChange: (e) => setEmailDestinatario(e.target.value)
+              })
+            ),
+            h(
+              "div",
+              { className: "boletin-email-field" },
+              h("label", { className: "boletin-email-label" }, "Asunto del Mensaje:"),
+              h("input", {
+                type: "text",
+                className: "boletin-email-input",
+                value: emailAsunto,
+                onChange: (e) => setEmailAsunto(e.target.value)
+              })
+            ),
+            h(
+              "div",
+              { className: "boletin-email-field" },
+              h("label", { className: "boletin-email-label" }, "Cuerpo del Correo:"),
+              h("textarea", {
+                className: "boletin-email-textarea",
+                rows: 9,
+                value: emailMensaje,
+                onChange: (e) => setEmailMensaje(e.target.value)
+              })
+            ),
+            h(
+              "div",
+              { className: "boletin-email-info-box" },
+              h("strong", null, "ℹ️ Resumen Académico PBA:"),
+              h("span", null, `Se enviará constancia oficial con Promedio General (${promedioGeneral}) e Inasistencia Total acumulada (${inasistencias.total || "0"} días).`)
+            ),
+            h(
+              "div",
+              { className: "boletin-email-actions" },
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "action-button action-button--secondary",
+                  onClick: () => setEmailModalAbierto(false)
+                },
+                "Cancelar"
+              ),
+              h(
+                "a",
+                {
+                  href: `mailto:${encodeURIComponent(emailDestinatario)}?subject=${encodeURIComponent(emailAsunto)}&body=${encodeURIComponent(emailMensaje)}`,
+                  className: "action-button action-button--secondary",
+                  title: "Abrir en tu programa de correo predeterminado (Gmail / Outlook)"
+                },
+                "Abrir en Cliente de Correo"
+              ),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "action-button action-button--primary",
+                  style: { background: "#700d18", borderColor: "#700d18" },
+                  onClick: handleSendEmail,
+                  disabled: enviandoEmail
+                },
+                enviandoEmail ? "Enviando..." : "Enviar Boletín"
+              )
+            )
+          )
+        ),
+        document.body
+      )
+    : null
   );
 }

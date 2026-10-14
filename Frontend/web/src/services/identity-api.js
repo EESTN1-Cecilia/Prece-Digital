@@ -243,7 +243,7 @@ function normalizarSesionAutenticada(datos = {}) {
   const roles = (datos.roles ?? usuario.roles).map(normalizarRol).filter((rol) => rol.id).map(conNombreDeRol);
 
   return {
-    usuario: { ...usuario, roles },
+    usuario: { ...usuario, roles, assignments: asignaciones },
     /* Los permisos los calcula siempre el backend. */
     permisos: datos.permisos ?? datos.permissions ?? [],
     alcances: datos.alcances ?? datos.scopes ?? alcancesDesdeAsignaciones(asignaciones)

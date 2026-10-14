@@ -581,6 +581,51 @@
   }
 }
 
+/* Accesos rápidos de rol / demostración */
+.login-quick-roles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0 4px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.login-quick-roles-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.login-quick-roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.login-quick-role-chip {
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 140ms ease;
+  font-family: inherit;
+}
+
+.login-quick-role-chip:hover {
+  background: var(--navy, #222a4c);
+  border-color: var(--navy, #222a4c);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 /* Pie de la tarjeta: Badge de seguridad */
 .login-card__footer {
   display: flex;
