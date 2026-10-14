@@ -7,6 +7,7 @@ import { DirectorService, ROLES_DISPONIBLES } from "./director-service.js";
 import { NuevoPerfilModal } from "./components/nuevo-perfil-modal.js";
 import { EditarRolesModal } from "./components/editar-roles-modal.js";
 import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.js";
+import { AsignacionesSection } from "./components/asignaciones-section.js";
 import { fecha } from "../../utils/formato.js";
 
 // Íconos auxiliares con dimensiones explícitas (Sin emojis)
@@ -136,7 +137,13 @@ export default function DirectorDashboardView() {
   const [personal, setPersonal] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'supervision' | 'pedidos' | 'alertas'
+  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'supervision' | 'pedidos' | 'alertas'
+  const [modoAsistencia, setModoAsistencia] = useState("porcentaje"); // 'porcentaje' | 'cantidad'
+
+  // Opciones de visualización (deshabilitar Server, Jefatura y Habilitar Pedidos sin borrar código)
+  const MOSTRAR_SERVER = false;
+  const MOSTRAR_JEFATURA = false;
+  const MOSTRAR_HABILITAR_PEDIDOS = false;
 
   // Filtros de personal
   const [busquedaPersonal, setBusquedaPersonal] = useState("");
@@ -276,11 +283,11 @@ export default function DirectorDashboardView() {
     // Toast de Notificación Flotante
     toastMensaje
       ? h(
-          "div",
-          { className: "director-toast" },
-          h(IconCheck, { className: "w-4 h-4 text-emerald-400" }),
-          h("span", null, toastMensaje)
-        )
+        "div",
+        { className: "director-toast" },
+        h(IconCheck, { className: "w-4 h-4 text-emerald-400" }),
+        h("span", null, toastMensaje)
+      )
       : null,
 
     // Panel Lateral a la Izquierda (Fuera del dashboard)
@@ -298,95 +305,105 @@ export default function DirectorDashboardView() {
         "nav",
         { className: "director-sidebar-nav-grouped" },
 
-        // --- Secretaría ---
-        h("div", { className: "director-sidebar-divider-label" }, "Secretaría"),
-        h(
-          "a",
-          { href: "#/secretaria", className: "director-sidebar-item director-sidebar-item--sec" },
-          h("div", { className: "director-sidebar-icon director-sidebar-icon--sec" }, h(IconClipboard, { width: "16", height: "16" })),
+        [
+          // --- Secretaría ---
+          h("div", { key: "side-div-sec", className: "director-sidebar-divider-label" }, "Secretaría"),
           h(
-            "div",
-            { className: "director-sidebar-item-text" },
-            h("strong", null, "Secretaría"),
-            h("span", null, "Legajos y Documentación")
+            "a",
+            { key: "side-link-sec", href: "#/secretaria", className: "director-sidebar-item director-sidebar-item--sec" },
+            h("div", { className: "director-sidebar-icon director-sidebar-icon--sec" }, h(IconClipboard, { width: "16", height: "16" })),
+            h(
+              "div",
+              { className: "director-sidebar-item-text" },
+              h("strong", null, "Secretaría"),
+              h("span", null, "Legajos y Documentación")
+            ),
+            h("span", { className: "director-sidebar-item-arrow" }, "➔")
           ),
-          h("span", { className: "director-sidebar-item-arrow" }, "➔")
-        ),
-        h(
-          "a",
-          { href: "#/alumnos", className: "director-sidebar-sub-btn" },
-          h(IconUsers, { width: "15", height: "15" }),
-          h("span", null, "Alumnos")
-        ),
-        h(
-          "a",
-          { href: "#/cursos", className: "director-sidebar-sub-btn" },
-          h(IconSchool, { width: "15", height: "15" }),
-          h("span", null, "Cursos")
-        ),
+          h(
+            "a",
+            { key: "side-link-alu", href: "#/alumnos", className: "director-sidebar-sub-btn" },
+            h(IconUsers, { width: "15", height: "15" }),
+            h("span", null, "Alumnos")
+          ),
+          h(
+            "a",
+            { key: "side-link-cur", href: "#/cursos", className: "director-sidebar-sub-btn" },
+            h(IconSchool, { width: "15", height: "15" }),
+            h("span", null, "Cursos")
+          ),
 
-        // --- Preceptoría ---
-        h("div", { className: "director-sidebar-divider-label" }, "Preceptoría"),
-        h(
-          "a",
-          { href: "#/preceptoria", className: "director-sidebar-item director-sidebar-item--prec" },
-          h("div", { className: "director-sidebar-icon director-sidebar-icon--prec" }, h(IconClock, { width: "16", height: "16" })),
+          // --- Preceptoría ---
+          h("div", { key: "side-div-prec", className: "director-sidebar-divider-label" }, "Preceptoría"),
           h(
-            "div",
-            { className: "director-sidebar-item-text" },
-            h("strong", null, "Preceptoría"),
-            h("span", null, "Asistencias y Cursos")
+            "a",
+            { key: "side-link-prec", href: "#/preceptoria", className: "director-sidebar-item director-sidebar-item--prec" },
+            h("div", { className: "director-sidebar-icon director-sidebar-icon--prec" }, h(IconClock, { width: "16", height: "16" })),
+            h(
+              "div",
+              { className: "director-sidebar-item-text" },
+              h("strong", null, "Preceptoría"),
+              h("span", null, "Asistencias y Cursos")
+            ),
+            h("span", { className: "director-sidebar-item-arrow" }, "➔")
           ),
-          h("span", { className: "director-sidebar-item-arrow" }, "➔")
-        ),
-        h(
-          "a",
-          { href: "#/asistencias", className: "director-sidebar-sub-btn" },
-          h(IconClock, { width: "15", height: "15" }),
-          h("span", null, "Asistencias")
-        ),
+          h(
+            "a",
+            { key: "side-link-asist", href: "#/asistencias", className: "director-sidebar-sub-btn" },
+            h(IconClock, { width: "15", height: "15" }),
+            h("span", null, "Asistencias")
+          ),
 
-        // --- Server ---
-        h("div", { className: "director-sidebar-divider-label" }, "Server"),
-        h(
-          "a",
-          { href: "#/server", className: "director-sidebar-item director-sidebar-item--srv" },
-          h("div", { className: "director-sidebar-icon director-sidebar-icon--srv" }, h(IconServer, { width: "16", height: "16" })),
-          h(
-            "div",
-            { className: "director-sidebar-item-text" },
-            h("strong", null, "Server"),
-            h("span", null, "Stock y Equipamiento")
-          ),
-          h("span", { className: "director-sidebar-item-arrow" }, "➔")
-        ),
-        h(
-          "a",
-          { href: "#/inventario", className: "director-sidebar-sub-btn" },
-          h(IconServer, { width: "15", height: "15" }),
-          h("span", null, "Inventario")
-        ),
+          // --- Server (deshabilitado según configuración) ---
+          ...(MOSTRAR_SERVER
+            ? [
+              h("div", { key: "side-div-srv", className: "director-sidebar-divider-label" }, "Server"),
+              h(
+                "a",
+                { key: "side-link-srv", href: "#/server", className: "director-sidebar-item director-sidebar-item--srv" },
+                h("div", { className: "director-sidebar-icon director-sidebar-icon--srv" }, h(IconServer, { width: "16", height: "16" })),
+                h(
+                  "div",
+                  { className: "director-sidebar-item-text" },
+                  h("strong", null, "Server"),
+                  h("span", null, "Stock y Equipamiento")
+                ),
+                h("span", { className: "director-sidebar-item-arrow" }, "➔")
+              ),
+              h(
+                "a",
+                { key: "side-link-inv", href: "#/inventario", className: "director-sidebar-sub-btn" },
+                h(IconServer, { width: "15", height: "15" }),
+                h("span", null, "Inventario")
+              )
+            ]
+            : []),
 
-        // --- Jefatura ---
-        h("div", { className: "director-sidebar-divider-label" }, "Jefatura"),
-        h(
-          "a",
-          { href: "#/jefatura", className: "director-sidebar-item director-sidebar-item--jef" },
-          h("div", { className: "director-sidebar-icon director-sidebar-icon--jef" }, h(IconWrench, { width: "16", height: "16" })),
-          h(
-            "div",
-            { className: "director-sidebar-item-text" },
-            h("strong", null, "Jefatura"),
-            h("span", null, "Talleres y Grillas")
-          ),
-          h("span", { className: "director-sidebar-item-arrow" }, "➔")
-        ),
-        h(
-          "a",
-          { href: "#/jefatura", className: "director-sidebar-sub-btn" },
-          h(IconWrench, { width: "15", height: "15" }),
-          h("span", null, "Talleres")
-        )
+          // --- Jefatura (deshabilitado según configuración) ---
+          ...(MOSTRAR_JEFATURA
+            ? [
+              h("div", { key: "side-div-jef", className: "director-sidebar-divider-label" }, "Jefatura"),
+              h(
+                "a",
+                { key: "side-link-jef", href: "#/jefatura", className: "director-sidebar-item director-sidebar-item--jef" },
+                h("div", { className: "director-sidebar-icon director-sidebar-icon--jef" }, h(IconWrench, { width: "16", height: "16" })),
+                h(
+                  "div",
+                  { className: "director-sidebar-item-text" },
+                  h("strong", null, "Jefatura"),
+                  h("span", null, "Talleres y Grillas")
+                ),
+                h("span", { className: "director-sidebar-item-arrow" }, "➔")
+              ),
+              h(
+                "a",
+                { key: "side-link-tal", href: "#/jefatura", className: "director-sidebar-sub-btn" },
+                h(IconWrench, { width: "15", height: "15" }),
+                h("span", null, "Talleres")
+              )
+            ]
+            : [])
+        ]
       )
     ),
 
@@ -437,7 +454,7 @@ export default function DirectorDashboardView() {
             h(
               "p",
               { className: "director-hero-subtitle" },
-              `Bienvenido/a, ${usuario.nombre || "Director"}. Supervisión general de secretaría, personal, preceptoría y server.`
+              `Bienvenido/a, ${usuario.nombre || "Director"}. Supervisión general de secretaría, personal y preceptoría.`
             )
           )
         ),
@@ -474,13 +491,18 @@ export default function DirectorDashboardView() {
         [
           { id: "general", label: "Tablero General", icon: IconChart },
           { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
+          { id: "asignaciones", label: "Asignaciones", icon: IconSchool },
           { id: "supervision", label: "Supervisión de Áreas", icon: IconSchool },
-          {
-            id: "pedidos",
-            label: "Habilitar Pedidos",
-            icon: IconClipboard,
-            badge: pedidosPendientesCount > 0 ? pedidosPendientesCount : null
-          },
+          ...(MOSTRAR_HABILITAR_PEDIDOS
+            ? [
+              {
+                id: "pedidos",
+                label: "Habilitar Pedidos",
+                icon: IconClipboard,
+                badge: pedidosPendientesCount > 0 ? pedidosPendientesCount : null
+              }
+            ]
+            : []),
           { id: "alertas", label: "Alertas", icon: IconAlert }
         ].map((tab) =>
           h(
@@ -509,83 +531,208 @@ export default function DirectorDashboardView() {
       // ==========================================
       !cargando && pestanaActiva === "general"
         ? h(
-            "div",
-            { className: "director-section-content" },
+          "div",
+          { className: "director-section-content" },
 
-            // Grid de KPIs Ejecutivos (4 en línea ocupando todo el ancho)
+          // Grid de KPIs Ejecutivos (4 en línea ocupando todo el ancho)
+          h(
+            "div",
+            { className: "director-kpis-grid" },
+
+            // KPI 1: Alumnos
             h(
               "div",
-              { className: "director-kpis-grid" },
-
-              // KPI 1: Alumnos
+              { className: "director-kpi-card director-kpi-card--blue" },
               h(
                 "div",
-                { className: "director-kpi-card director-kpi-card--blue" },
-                h(
-                  "div",
-                  { className: "director-kpi-card__header" },
-                  h("span", { className: "director-kpi-label" }, "Alumnos"),
-                  h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
-                ),
-                h("div", { className: "director-kpi-value" }, resumen?.alumnos?.totalActivos ?? 840),
-                h(
-                  "div",
-                  { className: "director-kpi-footer" },
-                  h("span", null, `Mañana: ${resumen?.alumnos?.turnoManana ?? 450} alumnos`),
-                  h("span", null, `·`),
-                  h("span", null, `Tarde: ${resumen?.alumnos?.turnoTarde ?? 390} alumnos`)
-                )
+                { className: "director-kpi-card__header" },
+                h("span", { className: "director-kpi-label" }, "Alumnos"),
+                h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
               ),
-
-              // KPI 2: Personal
+              h("div", { className: "director-kpi-value" }, resumen?.alumnos?.totalActivos ?? 840),
               h(
                 "div",
-                { className: "director-kpi-card director-kpi-card--purple" },
+                { className: "director-kpi-footer" },
+                h("span", null, `Mañana: ${resumen?.alumnos?.turnoManana ?? 450} alumnos`),
+                h("span", null, `·`),
+                h("span", null, `Tarde: ${resumen?.alumnos?.turnoTarde ?? 390} alumnos`)
+              )
+            ),
+
+            // KPI 2: Personal
+            h(
+              "div",
+              { className: "director-kpi-card director-kpi-card--purple" },
+              h(
+                "div",
+                { className: "director-kpi-card__header" },
+                h("span", { className: "director-kpi-label" }, "Personal"),
+                h("span", { className: "director-kpi-badge director-kpi-badge--purple" }, "7 Roles")
+              ),
+              h("div", { className: "director-kpi-value" }, resumen?.personal?.totalUsuarios ?? personal.length),
+              h(
+                "div",
+                { className: "director-kpi-footer" },
+                h("span", null, `${resumen?.personal?.activos ?? personal.length} usuarios activos`)
+              )
+            ),
+
+            // KPI 3: Asistencias (Ocupa 2 columnas con gráfico horizontal y selector % / num)
+            h(
+              "div",
+              { className: "director-kpi-card director-kpi-card--emerald director-kpi-card--wide" },
+              h(
+                "div",
+                { className: "director-kpi-asistencias-layout" },
+                // Lado izquierdo: Tasa global, badge con toggle, y alertas
                 h(
                   "div",
-                  { className: "director-kpi-card__header" },
-                  h("span", { className: "director-kpi-label" }, "Personal"),
-                  h("span", { className: "director-kpi-badge director-kpi-badge--purple" }, "7 Roles")
-                ),
-                h("div", { className: "director-kpi-value" }, resumen?.personal?.totalUsuarios ?? personal.length),
-                h(
-                  "div",
-                  { className: "director-kpi-footer" },
-                  h("span", null, `${resumen?.personal?.activos ?? personal.length} usuarios activos`),
+                  { className: "director-kpi-asistencias-left" },
                   h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "director-kpi-link-btn",
-                      onClick: () => setModalNuevoAbierto(true)
-                    },
-                    "+ Crear Perfil"
+                    "div",
+                    { className: "director-kpi-card__header" },
+                    h("span", { className: "director-kpi-label" }, "Asistencias"),
+                    h(
+                      "div",
+                      { className: "director-asistencia-header-right" },
+                      h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, "Promedio Hoy"),
+                      h(
+                        "div",
+                        { className: "director-asistencia-toggle-group", role: "group", "aria-label": "Modo de visualización" },
+                        h(
+                          "button",
+                          {
+                            type: "button",
+                            className: `director-asistencia-toggle-btn ${modoAsistencia === "cantidad" ? "director-asistencia-toggle-btn--active" : ""}`,
+                            onClick: () => setModoAsistencia("cantidad")
+                          },
+                          "num"
+                        ),
+                        h(
+                          "button",
+                          {
+                            type: "button",
+                            className: `director-asistencia-toggle-btn ${modoAsistencia === "porcentaje" ? "director-asistencia-toggle-btn--active" : ""}`,
+                            onClick: () => setModoAsistencia("porcentaje")
+                          },
+                          "%"
+                        )
+                      )
+                    )
+                  ),
+                  h(
+                    "div",
+                    { className: "director-kpi-value" },
+                    modoAsistencia === "porcentaje"
+                      ? `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`
+                      : `${resumen?.asistencia?.presentesHoy ?? 791}`
+                  ),
+                  h(
+                    "div",
+                    { className: "director-kpi-footer" },
+                    h(
+                      "span",
+                      null,
+                      modoAsistencia === "porcentaje"
+                        ? `${resumen?.asistencia?.presentesHoy ?? 791} presentes`
+                        : `de ${resumen?.alumnos?.totalActivos ?? 840} alumnos`
+                    ),
+                    h("span", null, `·`),
+                    h("span", { className: "text-rose-600 font-semibold" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} alertas faltas`)
                   )
-                )
-              ),
-
-              // KPI 3: Asistencias
-              h(
-                "div",
-                { className: "director-kpi-card director-kpi-card--emerald" },
-                h(
-                  "div",
-                  { className: "director-kpi-card__header" },
-                  h("span", { className: "director-kpi-label" }, "Asistencias"),
-                  h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, "Turno Mañana")
                 ),
-                h("div", { className: "director-kpi-value" }, `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`),
-                h(
-                  "div",
-                  { className: "director-kpi-footer" },
-                  h("span", null, `${resumen?.asistencia?.presentesHoy ?? 791} presentes`),
-                  h("span", null, `·`),
-                  h("span", { className: "text-rose-600 font-semibold" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} alertas faltas`)
-                )
-              ),
 
-              // KPI 4: Pañol
-              h(
+                // Lado derecho: Gráfico Horizontal con escala numérica/porcentaje ARRIBA
+                (() => {
+                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 840;
+                  // Datos de cada turno (porcentaje y cantidad de alumnos)
+                  const datosTurnos = [
+                    {
+                      label: "Mañana",
+                      porcentaje: 94.2,
+                      cantidad: 424,
+                      color: "#10b981",
+                      anchoPct: modoAsistencia === "porcentaje" ? 94.2 : Math.min(100, (424 / totalAlumnos) * 100 * 1.6)
+                    },
+                    {
+                      label: "Tarde",
+                      porcentaje: 92.8,
+                      cantidad: 362,
+                      color: "#3b82f6",
+                      anchoPct: modoAsistencia === "porcentaje" ? 92.8 : Math.min(100, (362 / totalAlumnos) * 100 * 1.6)
+                    },
+                    {
+                      label: "Taller",
+                      porcentaje: 96.4,
+                      cantidad: 505,
+                      color: "#f59e0b",
+                      anchoPct: modoAsistencia === "porcentaje" ? 96.4 : Math.min(100, (505 / totalAlumnos) * 100 * 1.6)
+                    }
+                  ];
+
+                  // Marcas del eje superior (0%, 50%, 100% o 0, 500, 840)
+                  const marcasEje = modoAsistencia === "porcentaje"
+                    ? ["0%", "50%", "100%"]
+                    : ["0", "500", String(totalAlumnos)];
+
+                  return h(
+                    "div",
+                    { className: "director-hchart-container" },
+                    // 1. Eje X superior con etiquetas de escala (0%, 50%, 100% o 0, 500, 840)
+                    h(
+                      "div",
+                      { className: "director-hchart-axis-x" },
+                      h("span", null, marcasEje[0]),
+                      h("span", null, marcasEje[1]),
+                      h("span", null, marcasEje[2])
+                    ),
+                    // 2. Área de trazado con líneas guía verticales detrás y barras
+                    h(
+                      "div",
+                      { className: "director-hchart-plot-area" },
+                      // 3 líneas guía verticales de fondo
+                      h(
+                        "div",
+                        { className: "director-hchart-grid-lines" },
+                        h("div", { className: "director-hchart-grid-line" }),
+                        h("div", { className: "director-hchart-grid-line" }),
+                        h("div", { className: "director-hchart-grid-line" })
+                      ),
+                      // Filas de barras horizontales
+                      datosTurnos.map((item) =>
+                        h(
+                          "div",
+                          { key: item.label, className: "director-hchart-row" },
+                          h("span", { className: "director-hchart-label" }, item.label),
+                          h(
+                            "div",
+                            { className: "director-hchart-track" },
+                            h("div", {
+                              className: "director-hchart-bar",
+                              style: {
+                                width: `${item.anchoPct}%`,
+                                backgroundColor: item.color
+                              }
+                            })
+                          ),
+                          h(
+                            "span",
+                            { className: "director-hchart-val" },
+                            modoAsistencia === "porcentaje"
+                              ? `${item.porcentaje}%`
+                              : `${item.cantidad}`
+                          )
+                        )
+                      )
+                    )
+                  );
+                })()
+              )
+            ),
+
+            // KPI 4: Pañol (deshabilitado si !MOSTRAR_SERVER)
+            MOSTRAR_SERVER
+              ? h(
                 "div",
                 { className: "director-kpi-card director-kpi-card--amber" },
                 h(
@@ -603,59 +750,61 @@ export default function DirectorDashboardView() {
                   h("span", { className: "text-rose-600 font-medium" }, `${resumen?.serverPañol?.sinStock ?? 2} sin stock`)
                 )
               )
-            ),
+              : null
+          ),
 
-            // Accesos Rápidos de Supervisión Directiva (con íconos SVG)
+          // Accesos Rápidos de Supervisión Directiva (con íconos SVG)
+          h(
+            "div",
+            { className: "director-supervision-cards-grid" },
+
+            // Tarjeta Secretaría
             h(
               "div",
-              { className: "director-supervision-cards-grid" },
-
-              // Tarjeta Secretaría
+              { className: "director-access-box" },
               h(
                 "div",
-                { className: "director-access-box" },
-                h(
-                  "div",
-                  { className: "director-access-box__header" },
-                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--sec" }, h(IconClipboard, { width: "20", height: "20", className: "text-sky-600" })),
-                  h("h3", { className: "director-access-title" }, "Secretaría Académica")
-                ),
-                h("p", { className: "director-access-desc" }, "Gestión de legajos de alumnos, certificados analíticos, libro matriz y constancias."),
-                h(
-                  "div",
-                  { className: "director-access-actions" },
-                  h(
-                    "a",
-                    { href: "#/secretaria", className: "director-btn-navy" },
-                    "Ir a Secretaría"
-                  )
-                )
+                { className: "director-access-box__header" },
+                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--sec" }, h(IconClipboard, { width: "20", height: "20", className: "text-sky-600" })),
+                h("h3", { className: "director-access-title" }, "Secretaría Académica")
               ),
-
-              // Tarjeta Preceptoría
+              h("p", { className: "director-access-desc" }, "Gestión de legajos de alumnos, certificados analíticos, libro matriz y constancias."),
               h(
                 "div",
-                { className: "director-access-box" },
+                { className: "director-access-actions" },
                 h(
-                  "div",
-                  { className: "director-access-box__header" },
-                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--prec" }, h(IconClock, { width: "20", height: "20", className: "text-purple-600" })),
-                  h("h3", { className: "director-access-title" }, "Preceptoría y Asistencia")
-                ),
-                h("p", { className: "director-access-desc" }, "Supervisión de inasistencias diarias, libro de aula, alertas de ausencias y seguimiento."),
-                h(
-                  "div",
-                  { className: "director-access-actions" },
-                  h(
-                    "a",
-                    { href: "#/preceptoria", className: "director-btn-navy" },
-                    "Ir a Preceptoría"
-                  )
+                  "a",
+                  { href: "#/secretaria", className: "director-btn-navy" },
+                  "Ir a Secretaría"
                 )
-              ),
+              )
+            ),
 
-              // Tarjeta Server
+            // Tarjeta Preceptoría
+            h(
+              "div",
+              { className: "director-access-box" },
               h(
+                "div",
+                { className: "director-access-box__header" },
+                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--prec" }, h(IconClock, { width: "20", height: "20", className: "text-purple-600" })),
+                h("h3", { className: "director-access-title" }, "Preceptoría y Asistencia")
+              ),
+              h("p", { className: "director-access-desc" }, "Supervisión de inasistencias diarias, libro de aula, alertas de ausencias y seguimiento."),
+              h(
+                "div",
+                { className: "director-access-actions" },
+                h(
+                  "a",
+                  { href: "#/preceptoria", className: "director-btn-navy" },
+                  "Ir a Preceptoría"
+                )
+              )
+            ),
+
+            // Tarjeta Server (deshabilitada si !MOSTRAR_SERVER)
+            MOSTRAR_SERVER
+              ? h(
                 "div",
                 { className: "director-access-box" },
                 h(
@@ -674,10 +823,12 @@ export default function DirectorDashboardView() {
                     "Ir a Server"
                   )
                 )
-              ),
+              )
+              : null,
 
-              // Tarjeta Jefatura de Área
-              h(
+            // Tarjeta Jefatura de Área (deshabilitada si !MOSTRAR_JEFATURA)
+            MOSTRAR_JEFATURA
+              ? h(
                 "div",
                 { className: "director-access-box" },
                 h(
@@ -697,15 +848,16 @@ export default function DirectorDashboardView() {
                   )
                 )
               )
-            )
+              : null
           )
+        )
         : null,
 
-    // =========================================================================
-    // PESTAÑA 2: GESTIÓN DE PERSONAL Y PERFILES (CON CREACIÓN Y ASIGNACIÓN DE ROLES)
-    // =========================================================================
-    !cargando && pestanaActiva === "personal"
-      ? h(
+      // =========================================================================
+      // PESTAÑA 2: GESTIÓN DE PERSONAL Y PERFILES (CON CREACIÓN Y ASIGNACIÓN DE ROLES)
+      // =========================================================================
+      !cargando && pestanaActiva === "personal"
+        ? h(
           "div",
           { className: "director-section-content" },
 
@@ -749,15 +901,15 @@ export default function DirectorDashboardView() {
                 }),
                 busquedaPersonal
                   ? h(
-                      "button",
-                      {
-                        type: "button",
-                        className: "search-clear-btn",
-                        onClick: () => setBusquedaPersonal(""),
-                        "aria-label": "Limpiar"
-                      },
-                      "✕"
-                    )
+                    "button",
+                    {
+                      type: "button",
+                      className: "search-clear-btn",
+                      onClick: () => setBusquedaPersonal(""),
+                      "aria-label": "Limpiar"
+                    },
+                    "✕"
+                  )
                   : null
               ),
 
@@ -794,136 +946,135 @@ export default function DirectorDashboardView() {
             // Tabla de Personal
             personalFiltrado.length === 0
               ? h(EmptyState, {
-                  mensaje: busquedaPersonal || filtroRol !== "todos" || filtroEstado !== "todos"
-                    ? "No hay personal que coincida con los filtros aplicados."
-                    : "No hay usuarios registrados en el sistema."
-                })
+                mensaje: busquedaPersonal || filtroRol !== "todos" || filtroEstado !== "todos"
+                  ? "No hay personal que coincida con los filtros aplicados."
+                  : "No hay usuarios registrados en el sistema."
+              })
               : h(
-                  "div",
-                  { className: "director-table-responsive" },
+                "div",
+                { className: "director-table-responsive" },
+                h(
+                  "table",
+                  { className: "director-table" },
                   h(
-                    "table",
-                    { className: "director-table" },
+                    "thead",
+                    null,
                     h(
-                      "thead",
+                      "tr",
                       null,
+                      h("th", null, "Personal / Usuario"),
+                      h("th", null, "Contacto y DNI"),
+                      h("th", null, "Área / Sector"),
+                      h("th", null, "Roles Asignados"),
+                      h("th", null, "Estado"),
+                      h("th", { style: { textAlign: "right" } }, "Acciones")
+                    )
+                  ),
+                  h(
+                    "tbody",
+                    null,
+                    personalFiltrado.map((p) =>
                       h(
                         "tr",
-                        null,
-                        h("th", null, "Personal / Usuario"),
-                        h("th", null, "Contacto y DNI"),
-                        h("th", null, "Área / Sector"),
-                        h("th", null, "Roles Asignados"),
-                        h("th", null, "Estado"),
-                        h("th", { style: { textAlign: "right" } }, "Acciones")
-                      )
-                    ),
-                    h(
-                      "tbody",
-                      null,
-                      personalFiltrado.map((p) =>
+                        { key: p.id, className: p.estado === "inactivo" ? "director-row--inactive" : "" },
+
+                        // Columna 1: Nombre y Avatar
                         h(
-                          "tr",
-                          { key: p.id, className: p.estado === "inactivo" ? "director-row--inactive" : "" },
-
-                          // Columna 1: Nombre y Avatar
+                          "td",
+                          null,
                           h(
-                            "td",
-                            null,
+                            "div",
+                            { className: "director-user-cell" },
                             h(
                               "div",
-                              { className: "director-user-cell" },
-                              h(
-                                "div",
-                                { className: "director-user-avatar" },
-                                p.nombreCompleto.charAt(0).toUpperCase()
-                              ),
-                              h(
-                                "div",
-                                null,
-                                h("strong", { className: "director-user-name" }, p.nombreCompleto),
-                                h("span", { className: "director-user-id" }, `ID: ${p.id}`)
-                              )
-                            )
-                          ),
-
-                          // Columna 2: Contacto
-                          h(
-                            "td",
-                            null,
-                            h("div", { className: "director-contact-email" }, p.email),
-                            h("span", { className: "director-contact-dni" }, `DNI: ${p.dni}`)
-                          ),
-
-                          // Columna 3: Área
-                          h(
-                            "td",
-                            null,
-                            h("span", { className: "director-area-badge" }, p.area)
-                          ),
-
-                          // Columna 4: Roles
-                          h(
-                            "td",
-                            null,
+                              { className: "director-user-avatar" },
+                              p.nombreCompleto.charAt(0).toUpperCase()
+                            ),
                             h(
                               "div",
-                              { className: "director-roles-badges-wrap" },
-                              p.roles.map((r) =>
-                                h(
-                                  "span",
-                                  {
-                                    key: r.id,
-                                    className: `director-role-pill director-role-pill--${r.id}`,
-                                    style: { borderLeftColor: r.color }
-                                  },
-                                  r.nombre
-                                )
+                              null,
+                              h("strong", { className: "director-user-name" }, p.nombreCompleto),
+                              h("span", { className: "director-user-id" }, `ID: ${p.id}`)
+                            )
+                          )
+                        ),
+
+                        // Columna 2: Contacto
+                        h(
+                          "td",
+                          null,
+                          h("div", { className: "director-contact-email" }, p.email),
+                          h("span", { className: "director-contact-dni" }, `DNI: ${p.dni}`)
+                        ),
+
+                        // Columna 3: Área
+                        h(
+                          "td",
+                          null,
+                          h("span", { className: "director-area-badge" }, p.area)
+                        ),
+
+                        // Columna 4: Roles
+                        h(
+                          "td",
+                          null,
+                          h(
+                            "div",
+                            { className: "director-roles-badges-wrap" },
+                            p.roles.map((r) =>
+                              h(
+                                "span",
+                                {
+                                  key: r.id,
+                                  className: `director-role-pill director-role-pill--${r.id}`,
+                                  style: { borderLeftColor: r.color }
+                                },
+                                r.nombre
                               )
                             )
-                          ),
+                          )
+                        ),
 
-                          // Columna 5: Estado
+                        // Columna 5: Estado
+                        h(
+                          "td",
+                          null,
                           h(
-                            "td",
-                            null,
+                            "span",
+                            {
+                              className: `director-status-tag ${p.estado === "activo" ? "director-status-tag--active" : "director-status-tag--inactive"}`
+                            },
+                            p.estado === "activo" ? "● Activo" : "○ Inactivo"
+                          )
+                        ),
+
+                        // Columna 6: Acciones
+                        h(
+                          "td",
+                          { style: { textAlign: "right" } },
+                          h(
+                            "div",
+                            { className: "director-actions-cell" },
                             h(
-                              "span",
+                              "button",
                               {
-                                className: `director-status-tag ${p.estado === "activo" ? "director-status-tag--active" : "director-status-tag--inactive"}`
+                                type: "button",
+                                className: "btn-director-action-edit-roles",
+                                onClick: () => setUsuarioEditandoRoles(p),
+                                title: "Modificar roles del usuario"
                               },
-                              p.estado === "activo" ? "● Activo" : "○ Inactivo"
-                            )
-                          ),
-
-                          // Columna 6: Acciones
-                          h(
-                            "td",
-                            { style: { textAlign: "right" } },
+                              h(IconSettings, { width: "13", height: "13" }),
+                              h("span", null, "Roles")
+                            ),
                             h(
-                              "div",
-                              { className: "director-actions-cell" },
-                              h(
-                                "button",
-                                {
-                                  type: "button",
-                                  className: "btn-director-action-edit-roles",
-                                  onClick: () => setUsuarioEditandoRoles(p),
-                                  title: "Modificar roles del usuario"
-                                },
-                                h(IconSettings, { width: "13", height: "13" }),
-                                h("span", null, "Roles")
-                              ),
-                              h(
-                                "button",
-                                {
-                                  type: "button",
-                                  className: `btn-director-action-toggle ${p.estado === "activo" ? "btn-director-action-toggle--deactivate" : "btn-director-action-toggle--activate"}`,
-                                  onClick: () => handleToggleEstado(p),
-                                  title: p.estado === "activo" ? "Desactivar cuenta" : "Reactivar cuenta"
-                                },
-                                p.estado === "activo" ? "Suspender" : "Activar"
-                              )
+                              "button",
+                              {
+                                type: "button",
+                                className: `btn-director-action-toggle ${p.estado === "activo" ? "btn-director-action-toggle--deactivate" : "btn-director-action-toggle--activate"}`,
+                                onClick: () => handleToggleEstado(p),
+                                title: p.estado === "activo" ? "Desactivar cuenta" : "Reactivar cuenta"
+                              },
+                              p.estado === "activo" ? "Suspender" : "Activar"
                             )
                           )
                         )
@@ -931,15 +1082,26 @@ export default function DirectorDashboardView() {
                     )
                   )
                 )
+              )
           )
         )
-      : null,
+        : null,
 
-    // =========================================================================
-    // PESTAÑA 3: SUPERVISIÓN DE ÁREAS
-    // =========================================================================
-    !cargando && pestanaActiva === "supervision"
-      ? h(
+      // =========================================================================
+      // PESTAÑA: ASIGNACIONES (Preceptores y Profesores a Cursos)
+      // =========================================================================
+      !cargando && pestanaActiva === "asignaciones"
+        ? h(AsignacionesSection, {
+          personal,
+          onMostrarToast: mostrarToast
+        })
+        : null,
+
+      // =========================================================================
+      // PESTAÑA 3: SUPERVISIÓN DE ÁREAS
+      // =========================================================================
+      !cargando && pestanaActiva === "supervision"
+        ? h(
           "div",
           { className: "director-section-content" },
 
@@ -1033,57 +1195,59 @@ export default function DirectorDashboardView() {
               )
             ),
 
-            // Bloque 3: Resumen de Server y Pañol
-            h(
-              DashboardCard,
-              {
-                title: "Supervisión de Server, Pañol e Infraestructura",
-                icon: "filter",
-                className: "dashboard-card--highlight",
-                collapsible: false
-              },
-              h(
-                "div",
-                { className: "director-supervision-block" },
+            // Bloque 3: Resumen de Server y Pañol (deshabilitado si !MOSTRAR_SERVER)
+            MOSTRAR_SERVER
+              ? h(
+                DashboardCard,
+                {
+                  title: "Supervisión de Server, Pañol e Infraestructura",
+                  icon: "filter",
+                  className: "dashboard-card--highlight",
+                  collapsible: false
+                },
                 h(
                   "div",
-                  { className: "director-metrics-mini-row" },
+                  { className: "director-supervision-block" },
                   h(
                     "div",
-                    { className: "director-metric-mini" },
-                    h("span", { className: "director-metric-mini__label" }, "Materiales Registrados"),
-                    h("strong", { className: "director-metric-mini__val" }, resumen?.serverPañol?.totalItems ?? 24)
+                    { className: "director-metrics-mini-row" },
+                    h(
+                      "div",
+                      { className: "director-metric-mini" },
+                      h("span", { className: "director-metric-mini__label" }, "Materiales Registrados"),
+                      h("strong", { className: "director-metric-mini__val" }, resumen?.serverPañol?.totalItems ?? 24)
+                    ),
+                    h(
+                      "div",
+                      { className: "director-metric-mini" },
+                      h("span", { className: "director-metric-mini__label" }, "Sin Stock"),
+                      h("strong", { className: "director-metric-mini__val text-rose-600" }, `${resumen?.serverPañol?.sinStock ?? 2} ítems`)
+                    ),
+                    h(
+                      "div",
+                      { className: "director-metric-mini" },
+                      h("span", { className: "director-metric-mini__label" }, "Solicitudes de Taller"),
+                      h("strong", { className: "director-metric-mini__val text-blue-600" }, `${resumen?.serverPañol?.solicitudesPendientes ?? 2} pendientes`)
+                    )
                   ),
                   h(
                     "div",
-                    { className: "director-metric-mini" },
-                    h("span", { className: "director-metric-mini__label" }, "Sin Stock"),
-                    h("strong", { className: "director-metric-mini__val text-rose-600" }, `${resumen?.serverPañol?.sinStock ?? 2} ítems`)
-                  ),
-                  h(
-                    "div",
-                    { className: "director-metric-mini" },
-                    h("span", { className: "director-metric-mini__label" }, "Solicitudes de Taller"),
-                    h("strong", { className: "director-metric-mini__val text-blue-600" }, `${resumen?.serverPañol?.solicitudesPendientes ?? 2} pendientes`)
+                    { className: "director-card-quick-links" },
+                    h("a", { href: "#/server", className: "director-link-btn" }, "Abrir Tablero de Server ➔"),
+                    h("a", { href: "#/inventario", className: "director-link-btn-outline" }, "Ver Inventario de Pañol")
                   )
-                ),
-                h(
-                  "div",
-                  { className: "director-card-quick-links" },
-                  h("a", { href: "#/server", className: "director-link-btn" }, "Abrir Tablero de Server ➔"),
-                  h("a", { href: "#/inventario", className: "director-link-btn-outline" }, "Ver Inventario de Pañol")
                 )
               )
-            )
+              : null
           )
         )
-      : null,
+        : null,
 
-    // =========================================================================
-    // PESTAÑA 4: ALERTAS INSTITUCIONALES CONSOLIDADAS
-    // =========================================================================
-    !cargando && pestanaActiva === "alertas"
-      ? h(
+      // =========================================================================
+      // PESTAÑA 4: ALERTAS INSTITUCIONALES CONSOLIDADAS
+      // =========================================================================
+      !cargando && pestanaActiva === "alertas"
+        ? h(
           "div",
           { className: "director-section-content" },
 
@@ -1145,13 +1309,13 @@ export default function DirectorDashboardView() {
             )
           )
         )
-      : null,
+        : null,
 
-    // =========================================================================
-    // PESTAÑA 5: HABILITACIÓN DE PEDIDOS (SERVER, SECRETARÍA, PRECEPTORÍA)
-    // =========================================================================
-    !cargando && pestanaActiva === "pedidos"
-      ? h(
+      // =========================================================================
+      // PESTAÑA 5: HABILITACIÓN DE PEDIDOS (deshabilitada según configuración)
+      // =========================================================================
+      !cargando && pestanaActiva === "pedidos" && MOSTRAR_HABILITAR_PEDIDOS
+        ? h(
           "div",
           { className: "director-section-content" },
           h(HabilitarPedidosSection, {
@@ -1161,22 +1325,23 @@ export default function DirectorDashboardView() {
             alCrearPrueba: handleCrearPedidoPrueba
           })
         )
-      : null,
+        : null,
 
-    // Modal para Crear Nuevo Perfil con Asignación de Roles
-    h(NuevoPerfilModal, {
-      abierto: modalNuevoAbierto,
-      alCerrar: () => setModalNuevoAbierto(false),
-      alPerfilCreado: handlePerfilCreado
-    }),
+      // Modal para Crear Nuevo Perfil con Asignación de Roles
+      h(NuevoPerfilModal, {
+        abierto: modalNuevoAbierto,
+        alCerrar: () => setModalNuevoAbierto(false),
+        alPerfilCreado: handlePerfilCreado
+      }),
 
-    // Modal para Editar Roles de un Usuario Existente
-    h(EditarRolesModal, {
-      usuario: usuarioEditandoRoles,
-      abierto: Boolean(usuarioEditandoRoles),
-      alCerrar: () => setUsuarioEditandoRoles(null),
-      alRolesActualizados: handleRolesActualizados
-    })
-  )
-);
+      // Modal para Editar Roles de un Usuario Existente
+      h(EditarRolesModal, {
+        usuario: usuarioEditandoRoles,
+        abierto: Boolean(usuarioEditandoRoles),
+        alCerrar: () => setUsuarioEditandoRoles(null),
+        alRolesActualizados: handleRolesActualizados
+      })
+    )
+  );
 }
+
