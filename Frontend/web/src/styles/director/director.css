@@ -937,18 +937,37 @@
 
 /* Eje X Superior con etiquetas de escala (0%, 50%, 100% o 0, 500, 840) */
 .director-hchart-axis-x {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 18px;
   margin-left: 56px;
-  /* Exactamente alineado con el track de las barras */
-  margin-right: 42px;
-  /* Exactamente alineado con el fin del track */
+  /* Exactamente alineado con el track de las barras (48px label + 8px gap) */
+  margin-right: 46px;
+  /* Exactamente alineado con el fin del track (38px val + 8px gap) */
   font-size: 10.5px;
   font-weight: 700;
   color: #94a3b8;
   padding-bottom: 3px;
   border-bottom: 1px solid #e2e8f0;
   user-select: none;
+}
+
+.director-hchart-axis-mark--start {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.director-hchart-axis-mark--mid {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  transition: left 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.director-hchart-axis-mark--end {
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
 .director-hchart-plot-area {
@@ -966,18 +985,30 @@
   top: 0;
   left: 56px;
   /* Alineado con el track */
-  right: 42px;
+  right: 46px;
   /* Alineado con el track */
   bottom: 0;
-  display: flex;
-  justify-content: space-between;
   pointer-events: none;
 }
 
 .director-hchart-grid-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
   width: 1px;
-  height: 100%;
   background: #f1f5f9;
+}
+
+.director-hchart-grid-line--start {
+  left: 0;
+}
+
+.director-hchart-grid-line--mid {
+  transition: left 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.director-hchart-grid-line--end {
+  right: 0;
 }
 
 /* Filas horizontales de turnos */
