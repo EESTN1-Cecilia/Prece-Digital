@@ -33,6 +33,9 @@ export const PERMISOS = {
   reservationsLeer: permiso("reservations", "read"),
   reservationsCrear: permiso("reservations", "write"),
   reservationsGestionar: permiso("reservations", "manage"),
+  planificacionesLeer: permiso("teaching-plans", "read"),
+  planificacionesEscribir: permiso("teaching-plans", "write"),
+  planificacionesGestionar: permiso("teaching-plans", "manage"),
   notificationsLeer: permiso("notifications", "read"),
   auditLeer: permiso("audit", "read")
 };

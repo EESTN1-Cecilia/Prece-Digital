@@ -45,6 +45,12 @@ import PerfilView from "../modules/identity/perfil-view.js";
 import InventarioListView from "../modules/server/inventario/inventario-list-view.js";
 import MaterialFormView from "../modules/server/inventario/material-form-view.js";
 import MaterialDetalleView from "../modules/server/inventario/material-detalle-view.js";
+import PlanificacionesListView from "../modules/planificaciones/planificaciones-list-view.js";
+import PlanificacionDetalleView from "../modules/planificaciones/planificacion-detalle-view.js";
+import PlanificacionFormView from "../modules/planificaciones/planificacion-form-view.js";
+import PlanificacionesDocenteView from "../modules/planificaciones/planificaciones-docente-view.js";
+import PlanificacionesMateriaView from "../modules/planificaciones/planificaciones-materia-view.js";
+import PlanificacionesCursoView from "../modules/planificaciones/planificaciones-curso-view.js";
 import { PERMISOS } from "../utils/permisos.js";
 import InicioView from "./inicio.js";
 
@@ -189,6 +195,87 @@ export const RUTAS = [
     padre: "#/server",
     permisos: [PERMISOS.inventoryLeer],
     enMenu: true
+  },
+  /* Planificaciones docentes: las rutas fijas (nueva, docentes, materias,
+     cursos) van antes que "#/planificaciones/:id". Escribir se habilita con
+     teaching-plans.write; el backend acota al docente a lo propio.
+     El listado va primero solo para que encabece la seccion del menu: tiene
+     un segmento y no compite con las demas. */
+  {
+    patron: "#/planificaciones",
+    titulo: "Planificaciones docentes",
+    vista: PlanificacionesListView,
+    seccion: "Planificaciones",
+    icono: "academic",
+    padre: "#/inicio",
+    permisos: [PERMISOS.planificacionesLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/planificaciones/nueva",
+    titulo: "Cargar planificación",
+    vista: PlanificacionFormView,
+    seccion: "Planificaciones",
+    icono: "clipboard",
+    padre: "#/planificaciones",
+    permisos: [PERMISOS.planificacionesEscribir],
+    enMenu: true
+  },
+  {
+    patron: "#/planificaciones/docentes/:docenteId",
+    titulo: "Planificaciones del docente",
+    vista: PlanificacionesDocenteView,
+    padre: "#/planificaciones/docentes",
+    permisos: [PERMISOS.planificacionesLeer]
+  },
+  {
+    patron: "#/planificaciones/docentes",
+    titulo: "Planificaciones por docente",
+    vista: PlanificacionesDocenteView,
+    padre: "#/planificaciones",
+    permisos: [PERMISOS.planificacionesLeer]
+  },
+  {
+    patron: "#/planificaciones/materias/:materiaId",
+    titulo: "Planificaciones de la materia",
+    vista: PlanificacionesMateriaView,
+    padre: "#/planificaciones/materias",
+    permisos: [PERMISOS.planificacionesLeer]
+  },
+  {
+    patron: "#/planificaciones/materias",
+    titulo: "Planificaciones por materia",
+    vista: PlanificacionesMateriaView,
+    padre: "#/planificaciones",
+    permisos: [PERMISOS.planificacionesLeer]
+  },
+  {
+    patron: "#/planificaciones/cursos/:cursoId",
+    titulo: "Planificaciones del curso",
+    vista: PlanificacionesCursoView,
+    padre: "#/planificaciones/cursos",
+    permisos: [PERMISOS.planificacionesLeer]
+  },
+  {
+    patron: "#/planificaciones/cursos",
+    titulo: "Planificaciones por curso",
+    vista: PlanificacionesCursoView,
+    padre: "#/planificaciones",
+    permisos: [PERMISOS.planificacionesLeer]
+  },
+  {
+    patron: "#/planificaciones/:id/editar",
+    titulo: "Modificar planificación",
+    vista: PlanificacionFormView,
+    padre: "#/planificaciones/:id",
+    permisos: [PERMISOS.planificacionesEscribir]
+  },
+  {
+    patron: "#/planificaciones/:id",
+    titulo: "Detalle de la planificación",
+    vista: PlanificacionDetalleView,
+    padre: "#/planificaciones",
+    permisos: [PERMISOS.planificacionesLeer]
   },
   {
     patron: "#/preceptoria/observaciones",

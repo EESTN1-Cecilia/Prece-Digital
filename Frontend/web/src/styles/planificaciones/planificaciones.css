@@ -1,0 +1,373 @@
+/* ---- Modulo Planificaciones docentes ----
+   Listado, consultas por docente/materia/curso, detalle y formulario.
+   Reutiliza data-panel (identidad.css) y los componentes ui-* (components.css);
+   aca solo va lo propio del modulo. */
+
+/* Navegacion entre el listado y las consultas */
+
+.planif-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+  border-bottom: 1px solid var(--ui-borde);
+}
+
+.planif-nav__enlace {
+  padding: 8px 14px;
+  border-bottom: 3px solid transparent;
+  color: var(--indigo-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.planif-nav__enlace:hover {
+  color: var(--navy);
+  border-bottom-color: var(--sky);
+}
+
+.planif-nav__enlace--activo {
+  color: var(--navy);
+  border-bottom-color: var(--indigo);
+}
+
+.planif-nav__enlace:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* Busqueda, filtros y chips */
+
+.planif-barra {
+  margin: 16px 0 0;
+}
+
+.planif-barra .ui-busqueda {
+  width: 100%;
+  max-width: 560px;
+}
+
+.planif-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px 14px;
+  margin: 12px 0 0;
+}
+
+.planif-filtros .ui-filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.planif-filtros .ui-filtro select {
+  width: 100%;
+  min-width: 0;
+}
+
+.planif-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.planif-chips__titulo {
+  color: #5b6170;
+  font-size: 13px;
+}
+
+.planif-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid var(--ui-borde);
+  border-radius: 999px;
+  background: var(--ui-info-suave);
+  color: var(--navy);
+  font-size: 13px;
+}
+
+.planif-chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planif-chip__quitar {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--navy);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.planif-chip__quitar:hover {
+  background: rgba(64, 77, 148, 0.15);
+}
+
+.planif-chip__quitar:focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 1px;
+}
+
+.planif-por-pagina {
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 0 0;
+  color: #5b6170;
+  font-size: 13px;
+}
+
+.planif-por-pagina select {
+  margin-left: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--ui-borde);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* Consultas por docente, materia y curso */
+
+.planif-consulta__selector {
+  max-width: 420px;
+  margin: 16px 0 0;
+}
+
+.planif-ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 18px;
+  margin: 16px 0 0;
+  padding: 16px 18px;
+  border: 1px solid var(--ui-borde);
+  border-radius: var(--ui-radio);
+  background: #f8f9fc;
+}
+
+.planif-ficha__titulo {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 20px;
+}
+
+.planif-ficha__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin: 8px 0 0;
+}
+
+.planif-ficha__etiqueta {
+  color: #5b6170;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.planif-ficha__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.planif-ficha__lista {
+  flex-basis: 100%;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+
+.planif-ficha__lista li + li {
+  margin-top: 4px;
+}
+
+.planif-resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.planif-resumen__total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--navy);
+}
+
+.planif-resumen__numero {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.planif-resumen__estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planif-resumen__estados li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.planif-resumen__fecha {
+  margin: 0;
+  color: #5b6170;
+  font-size: 13px;
+}
+
+/* Detalle */
+
+.planif-detalle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.planif-detalle__bloque {
+  margin: 20px 0 0;
+}
+
+.planif-detalle__bloque h2 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 18px;
+}
+
+.planif-detalle__enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 0 0;
+  font-size: 14px;
+}
+
+.planif-detalle__enlaces a {
+  color: var(--indigo-dark);
+  font-weight: 600;
+}
+
+.planif-seccion {
+  padding: 12px 0;
+  border-top: 1px solid var(--ui-borde);
+}
+
+.planif-seccion h3 {
+  margin: 0 0 6px;
+  color: var(--indigo-dark);
+  font-size: 15px;
+}
+
+.planif-seccion__texto {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.planif-historial {
+  margin: 0;
+  padding: 0 0 0 18px;
+  border-left: 2px solid var(--sky);
+  list-style: none;
+}
+
+.planif-historial__item {
+  position: relative;
+  padding: 0 0 14px 6px;
+}
+
+.planif-historial__item::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: -26px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: var(--indigo);
+}
+
+.planif-historial__estados {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.planif-historial__meta {
+  margin: 4px 0 0;
+  color: #5b6170;
+  font-size: 13px;
+}
+
+.planif-historial__motivo {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--ui-aviso-suave);
+  overflow-wrap: anywhere;
+}
+
+/* Formulario */
+
+.planif-form__bloque + .planif-form__bloque {
+  margin-top: 18px;
+}
+
+.planif-form__secciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0 20px;
+}
+
+/* Tablet y resoluciones intermedias */
+
+@media (max-width: 900px) {
+  .planif-ficha,
+  .planif-detalle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mobile: los selectores y las acciones ocupan el ancho; la tabla scrollea
+   dentro de su contenedor (ui-tabla__scroll). */
+
+@media (max-width: 640px) {
+  .planif .data-panel__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .planif-filtros {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planif-consulta__selector {
+    max-width: none;
+  }
+
+  .planif-form__secciones {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planif-nav__enlace {
+    padding: 8px 10px;
+  }
+}

@@ -56,6 +56,11 @@
 @import "./jefatura/jefatura.css";
 
 /* ==========================================================================
+   8.1 MÓDULO DE PLANIFICACIONES DOCENTES
+   ========================================================================== */
+@import "./planificaciones/planificaciones.css";
+
+/* ==========================================================================
    9. CENTRO DE NOTIFICACIONES & PÁGINAS ESPECIALES
    ========================================================================== */
 @import "./notificaciones/notificaciones.css";
