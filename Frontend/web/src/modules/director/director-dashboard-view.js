@@ -651,6 +651,10 @@ export default function DirectorDashboardView() {
                     }
                   ];
 
+                  const posicionMediaAlumnosPct = modoAlumnos === "porcentaje"
+                    ? 50
+                    : Math.min(100, Math.max(0, (500 / totalAlumnos) * 100));
+
                   const marcasEje = modoAlumnos === "porcentaje"
                     ? ["0%", "50%", "100%"]
                     : ["0", "500", String(totalAlumnos)];
@@ -662,9 +666,12 @@ export default function DirectorDashboardView() {
                     h(
                       "div",
                       { className: "director-hchart-axis-x" },
-                      h("span", null, marcasEje[0]),
-                      h("span", null, marcasEje[1]),
-                      h("span", null, marcasEje[2])
+                      h("span", { className: "director-hchart-axis-mark director-hchart-axis-mark--start" }, marcasEje[0]),
+                      h("span", {
+                        className: "director-hchart-axis-mark director-hchart-axis-mark--mid",
+                        style: { left: `${posicionMediaAlumnosPct}%` }
+                      }, marcasEje[1]),
+                      h("span", { className: "director-hchart-axis-mark director-hchart-axis-mark--end" }, marcasEje[2])
                     ),
                     // Área de trazado con líneas guía verticales detrás y barras
                     h(
@@ -673,9 +680,12 @@ export default function DirectorDashboardView() {
                       h(
                         "div",
                         { className: "director-hchart-grid-lines" },
-                        h("div", { className: "director-hchart-grid-line" }),
-                        h("div", { className: "director-hchart-grid-line" }),
-                        h("div", { className: "director-hchart-grid-line" })
+                        h("div", { className: "director-hchart-grid-line director-hchart-grid-line--start" }),
+                        h("div", {
+                          className: "director-hchart-grid-line director-hchart-grid-line--mid",
+                          style: { left: `${posicionMediaAlumnosPct}%` }
+                        }),
+                        h("div", { className: "director-hchart-grid-line director-hchart-grid-line--end" })
                       ),
                       datosTurnosAlumnos.map((item) =>
                         h(
@@ -788,23 +798,27 @@ export default function DirectorDashboardView() {
                       porcentaje: 94.2,
                       cantidad: 424,
                       color: "#10b981",
-                      anchoPct: modoAsistencia === "porcentaje" ? 94.2 : Math.min(100, (424 / totalAlumnos) * 100 * 1.6)
+                      anchoPct: modoAsistencia === "porcentaje" ? 94.2 : Math.min(100, (424 / totalAlumnos) * 100)
                     },
                     {
                       label: "Tarde",
                       porcentaje: 92.8,
                       cantidad: 362,
                       color: "#3b82f6",
-                      anchoPct: modoAsistencia === "porcentaje" ? 92.8 : Math.min(100, (362 / totalAlumnos) * 100 * 1.6)
+                      anchoPct: modoAsistencia === "porcentaje" ? 92.8 : Math.min(100, (362 / totalAlumnos) * 100)
                     },
                     {
                       label: "Taller",
                       porcentaje: 96.4,
                       cantidad: 505,
                       color: "#f59e0b",
-                      anchoPct: modoAsistencia === "porcentaje" ? 96.4 : Math.min(100, (505 / totalAlumnos) * 100 * 1.6)
+                      anchoPct: modoAsistencia === "porcentaje" ? 96.4 : Math.min(100, (505 / totalAlumnos) * 100)
                     }
                   ];
+
+                  const posicionMediaAsistenciaPct = modoAsistencia === "porcentaje"
+                    ? 50
+                    : Math.min(100, Math.max(0, (500 / totalAlumnos) * 100));
 
                   // Marcas del eje superior (0%, 50%, 100% o 0, 500, 840)
                   const marcasEje = modoAsistencia === "porcentaje"
@@ -818,9 +832,12 @@ export default function DirectorDashboardView() {
                     h(
                       "div",
                       { className: "director-hchart-axis-x" },
-                      h("span", null, marcasEje[0]),
-                      h("span", null, marcasEje[1]),
-                      h("span", null, marcasEje[2])
+                      h("span", { className: "director-hchart-axis-mark director-hchart-axis-mark--start" }, marcasEje[0]),
+                      h("span", {
+                        className: "director-hchart-axis-mark director-hchart-axis-mark--mid",
+                        style: { left: `${posicionMediaAsistenciaPct}%` }
+                      }, marcasEje[1]),
+                      h("span", { className: "director-hchart-axis-mark director-hchart-axis-mark--end" }, marcasEje[2])
                     ),
                     // 2. Área de trazado con líneas guía verticales detrás y barras
                     h(
@@ -830,9 +847,12 @@ export default function DirectorDashboardView() {
                       h(
                         "div",
                         { className: "director-hchart-grid-lines" },
-                        h("div", { className: "director-hchart-grid-line" }),
-                        h("div", { className: "director-hchart-grid-line" }),
-                        h("div", { className: "director-hchart-grid-line" })
+                        h("div", { className: "director-hchart-grid-line director-hchart-grid-line--start" }),
+                        h("div", {
+                          className: "director-hchart-grid-line director-hchart-grid-line--mid",
+                          style: { left: `${posicionMediaAsistenciaPct}%` }
+                        }),
+                        h("div", { className: "director-hchart-grid-line director-hchart-grid-line--end" })
                       ),
                       // Filas de barras horizontales
                       datosTurnos.map((item) =>
