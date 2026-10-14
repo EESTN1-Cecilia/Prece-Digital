@@ -1,35 +1,27 @@
 /* Bandeja de revision de Jefatura (#/planificaciones/revision).
 
-   Usa el listado existente y agrega los criterios propios de revision:
-   estados prioritarios, fechas de presentacion y fechas de revision. */
+   Mismo listado que #/planificaciones (useListadoPlanificaciones) con los
+   criterios propios de revision:
+   - Solo lo que ya se presento: sin un estado elegido, se piden los
+     `catalogos.estadosBandejaRevision` (todos menos borrador).
+   - Orden por defecto `revision` del backend: pendientes primero
+     (`catalogos.prioridadRevision`) en todas las paginas, no solo en la
+     visible. Ordenar por una columna lo reemplaza; la tercera vuelta vuelve
+     a la prioridad.
+   - Filtros por fecha de presentacion y de revision (el backend valida el
+     rango). */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
-import { Alerta, Boton, BotonEnlace, Busqueda, Campo, MensajeError, SinDatos, SinResultados } from "../../components/ui/index.js";
-import { PlanificacionesService } from "./planificaciones-service.js";
-import {
-  ESTADOS_REVISION_PRIORITARIOS,
-  FILTROS_VACIOS,
-  ORDEN_INICIAL,
-  aplicarFiltro,
-  consultaListado,
-  guardarCriterios,
-  hayCriterios,
-  leerCriterios,
-  nombreDeEstado,
-  opcionesDeCatalogo,
-  opcionesDeEstados,
-  opcionesDeFiltros,
-  priorizarRevision
-} from "./planificaciones-helpers.js";
-import { useCatalogosPlanificaciones, useConsulta } from "./use-planificaciones.js";
+import { Alerta, Boton, Busqueda, Campo, MensajeError, SinDatos, SinResultados } from "../../components/ui/index.js";
+import { ORDEN_REVISION, rangosInvalidos, sinRangosInvalidos } from "./planificaciones-helpers.js";
+import { useListadoPlanificaciones } from "./use-planificaciones.js";
 import { FiltrosActivos, FiltrosPlanificaciones } from "./components/filtros-planificaciones.js";
 import { NavegacionPlanificaciones } from "./components/navegacion-planificaciones.js";
 import { TablaPlanificaciones } from "./components/tabla-planificaciones.js";
+import { PorPagina } from "./components/por-pagina.js";
 
 const CLAVE_CRITERIOS = "prece.planificaciones.revision";
-const ESPERA_BUSQUEDA = 350;
-const TAMANOS_PAGINA = [10, 20, 50];
 const COLUMNAS_REVISION = [
   "id",
   "docente",
@@ -44,119 +36,61 @@ const COLUMNAS_REVISION = [
 ];
 const CAMPOS_FILTRO = ["anioLectivo", "docenteId", "materiaId", "anio", "turno", "cursoId", "divisionId", "periodo", "estado"];
 
+const FECHAS = [
+  { campo: "fechaPresentacionDesde", etiqueta: "Presentación desde" },
+  { campo: "fechaPresentacionHasta", etiqueta: "Presentación hasta" },
+  { campo: "fechaRevisionDesde", etiqueta: "Revisión desde" },
+  { campo: "fechaRevisionHasta", etiqueta: "Revisión hasta" }
+];
+
 function FiltrosFechas({ filtros, onCambiar }) {
   return h(
     "div",
     { className: "planif-fechas" },
-    h(Campo, {
-      id: "revision-fecha-presentacion-desde",
-      etiqueta: "Presentación desde",
-      tipo: "date",
-      valor: filtros.fechaPresentacionDesde ?? "",
-      onChange: (valor) => onCambiar("fechaPresentacionDesde", valor)
-    }),
-    h(Campo, {
-      id: "revision-fecha-presentacion-hasta",
-      etiqueta: "Presentación hasta",
-      tipo: "date",
-      valor: filtros.fechaPresentacionHasta ?? "",
-      onChange: (valor) => onCambiar("fechaPresentacionHasta", valor)
-    }),
-    h(Campo, {
-      id: "revision-fecha-revision-desde",
-      etiqueta: "Revisión desde",
-      tipo: "date",
-      valor: filtros.fechaRevisionDesde ?? "",
-      onChange: (valor) => onCambiar("fechaRevisionDesde", valor)
-    }),
-    h(Campo, {
-      id: "revision-fecha-revision-hasta",
-      etiqueta: "Revisión hasta",
-      tipo: "date",
-      valor: filtros.fechaRevisionHasta ?? "",
-      onChange: (valor) => onCambiar("fechaRevisionHasta", valor)
-    })
+    FECHAS.map(({ campo, etiqueta }) =>
+      h(Campo, {
+        key: campo,
+        id: `revision-${campo}`,
+        etiqueta,
+        tipo: "date",
+        valor: filtros[campo] ?? "",
+        onChange: (valor) => onCambiar(campo, valor)
+      })
+    )
   );
 }
 
+/* Sin estado elegido, la bandeja excluye borradores. Un rango de fechas
+   invertido no se envia (se avisa en pantalla). */
+function ajustarConsulta(consulta, catalogos) {
+  const limpia = sinRangosInvalidos(consulta);
+
+  if (limpia.estado || !catalogos?.estadosBandejaRevision?.length) {
+    return limpia;
+  }
+
+  return { ...limpia, estados: catalogos.estadosBandejaRevision.join(",") };
+}
+
 export default function PlanificacionesRevisionListView() {
-  const guardados = useMemo(() => leerCriterios(CLAVE_CRITERIOS) ?? {}, []);
-
-  const [texto, setTexto] = useState(guardados.busqueda ?? "");
-  const [busqueda, setBusqueda] = useState(guardados.busqueda ?? "");
-  const [filtros, setFiltros] = useState({ ...FILTROS_VACIOS, ...(guardados.filtros ?? {}) });
-  const [orden, setOrden] = useState(guardados.orden ?? ORDEN_INICIAL);
-  const [porPagina, setPorPagina] = useState(guardados.porPagina ?? 20);
-  const [pagina, setPagina] = useState(guardados.pagina ?? 1);
-
-  const { catalogos, combinaciones, error: errorCatalogos, recargar: recargarCatalogos } = useCatalogosPlanificaciones();
-
-  useEffect(() => {
-    const temporizador = setTimeout(() => setBusqueda(texto), ESPERA_BUSQUEDA);
-    return () => clearTimeout(temporizador);
-  }, [texto]);
-
-  const primerRender = useRef(true);
-
-  useEffect(() => {
-    if (primerRender.current) {
-      primerRender.current = false;
-      return;
-    }
-
-    setPagina(1);
-  }, [busqueda, filtros, orden, porPagina]);
-
-  useEffect(() => {
-    guardarCriterios(CLAVE_CRITERIOS, { busqueda, filtros, orden, porPagina, pagina });
-  }, [busqueda, filtros, orden, porPagina, pagina]);
-
-  const { datos: resultado, cargando, error, recargar } = useConsulta(
-    () => PlanificacionesService.listar(consultaListado({ busqueda, filtros, pagina, porPagina, orden })),
-    [busqueda, filtros, pagina, porPagina, orden]
-  );
-
-  useEffect(() => {
-    const totalPaginas = resultado?.paginacion?.totalPaginas ?? 0;
-
-    if (totalPaginas > 0 && pagina > totalPaginas) {
-      setPagina(totalPaginas);
-    }
-  }, [resultado, pagina]);
-
-  const opciones = useMemo(() => {
-    const deCombinaciones = opcionesDeFiltros(combinaciones, filtros);
-
-    return {
-      ...deCombinaciones,
-      anioLectivo: deCombinaciones.aniosLectivos,
-      docenteId: deCombinaciones.docentes,
-      materiaId: deCombinaciones.materias,
-      cursoId: deCombinaciones.cursos,
-      divisionId: deCombinaciones.divisiones,
-      anio: opcionesDeCatalogo(catalogos?.aniosCurso),
-      turno: opcionesDeCatalogo(catalogos?.turnos),
-      periodo: opcionesDeCatalogo(catalogos?.periodos),
-      estado: opcionesDeEstados(catalogos)
-    };
-  }, [combinaciones, catalogos, filtros]);
-
-  const cambiarFiltro = (campo, valor) => setFiltros((actuales) => aplicarFiltro(actuales, campo, valor, combinaciones));
-  const quitarFiltro = (campo) => cambiarFiltro(campo, "");
-
-  const limpiarBusqueda = () => {
-    setTexto("");
-    setBusqueda("");
-  };
-
-  const limpiarTodo = () => {
-    limpiarBusqueda();
-    setFiltros(FILTROS_VACIOS);
-  };
-
-  const filas = useMemo(() => priorizarRevision(resultado?.data ?? []), [resultado]);
-  const conCriterios = hayCriterios(busqueda, filtros);
+  const listado = useListadoPlanificaciones({
+    claveCriterios: CLAVE_CRITERIOS,
+    ordenInicial: ORDEN_REVISION,
+    ajustarConsulta,
+    /* Sin el catalogo no se sabe que estados excluir: se espera para no
+       mostrar por un instante los borradores. */
+    esperarCatalogos: true
+  });
+  const { resultado, catalogos } = listado;
   const paginacion = resultado?.paginacion;
+
+  /* El filtro de estado solo ofrece los estados revisables. */
+  const opciones = useMemo(() => {
+    const revisables = catalogos?.estadosBandejaRevision;
+    return revisables
+      ? { ...listado.opciones, estado: listado.opciones.estado.filter((opcion) => revisables.includes(opcion.id)) }
+      : listado.opciones;
+  }, [listado.opciones, catalogos]);
 
   return h(
     "section",
@@ -168,57 +102,59 @@ export default function PlanificacionesRevisionListView() {
         "h1",
         { id: "revision-planificaciones-titulo" },
         h(IconoFigma, { className: "people-icon", nombre: "clipboard" }),
-        "Revisión de contenidos"
-      ),
-      h(BotonEnlace, { variante: "contorno", href: "#/planificaciones" }, "Volver al listado")
+        "Revisión de planificaciones"
+      )
     ),
     h(NavegacionPlanificaciones, { activa: "revision" }),
-    h(
-      Alerta,
-      { tono: "info", titulo: "Bandeja de Jefatura" },
-      `Se priorizan ${ESTADOS_REVISION_PRIORITARIOS.map(nombreDeEstado).join(", ")}. La comparación con diseño curricular queda pendiente para una etapa posterior.`
-    ),
-    errorCatalogos ? h(MensajeError, { error: errorCatalogos, onReintentar: recargarCatalogos }) : null,
+    h("p", { className: "data-nota" }, "Primero se muestran las planificaciones pendientes de revisión: presentadas, corregidas, en revisión y observadas."),
+    listado.errorCatalogos ? h(MensajeError, { error: listado.errorCatalogos, onReintentar: listado.recargarCatalogos }) : null,
     h(
       "div",
       { className: "planif-barra", role: "search" },
       h(Busqueda, {
         id: "buscar-planificaciones-revision",
-        valor: texto,
-        onChange: setTexto,
-        onLimpiar: limpiarBusqueda,
+        valor: listado.texto,
+        onChange: listado.setTexto,
+        onLimpiar: listado.limpiarBusqueda,
         etiqueta: "Buscar por docente, materia, curso, división o ID",
         placeholder: "Buscar por docente, materia, curso, división o ID"
       })
     ),
-    h(FiltrosPlanificaciones, { campos: CAMPOS_FILTRO, filtros, opciones, onCambiar: cambiarFiltro, idPrefijo: "revision" }),
-    h(FiltrosFechas, { filtros, onCambiar: cambiarFiltro }),
+    h(FiltrosPlanificaciones, { campos: CAMPOS_FILTRO, filtros: listado.filtros, opciones, onCambiar: listado.cambiarFiltro, idPrefijo: "revision" }),
+    h(FiltrosFechas, { filtros: listado.filtros, onCambiar: listado.cambiarFiltro }),
+    rangosInvalidos(listado.filtros).map((rango) =>
+      h(
+        Alerta,
+        { key: rango.nombre, tono: "advertencia" },
+        `La fecha de ${rango.nombre} "hasta" es anterior a la fecha "desde": ese rango no se aplica.`
+      )
+    ),
     h(FiltrosActivos, {
-      filtros,
+      filtros: listado.filtros,
       opciones,
-      busqueda,
-      onQuitar: quitarFiltro,
-      onQuitarBusqueda: limpiarBusqueda,
-      onLimpiar: limpiarTodo
+      busqueda: listado.busqueda,
+      onQuitar: listado.quitarFiltro,
+      onQuitarBusqueda: listado.limpiarBusqueda,
+      onLimpiar: listado.limpiarTodo
     }),
     h(TablaPlanificaciones, {
       titulo: "Planificaciones para revisión",
       columnas: COLUMNAS_REVISION,
-      filas,
-      cargando,
-      error,
-      onReintentar: recargar,
-      orden,
-      onOrden: (proximo) => setOrden(proximo?.columna ? proximo : ORDEN_INICIAL),
-      vacio: conCriterios
+      filas: resultado?.data ?? [],
+      cargando: listado.cargando,
+      error: listado.error,
+      onReintentar: listado.recargar,
+      orden: listado.orden,
+      onOrden: listado.cambiarOrden,
+      vacio: listado.conCriterios
         ? h(SinResultados, {
             texto: "Ninguna planificación coincide con la búsqueda y los filtros aplicados.",
             descripcion: "Probá con otros criterios o limpiá los filtros.",
-            accion: h(Boton, { variante: "contorno", onClick: limpiarTodo }, "Limpiar filtros")
+            accion: h(Boton, { variante: "contorno", onClick: listado.limpiarTodo }, "Limpiar filtros")
           })
         : h(SinDatos, {
             titulo: "No hay planificaciones para revisar.",
-            descripcion: "Cuando los docentes presenten contenidos, van a aparecer en esta bandeja."
+            descripcion: "Cuando los docentes presenten sus planificaciones, van a aparecer en esta bandeja."
           }),
       paginacion: paginacion
         ? {
@@ -226,29 +162,12 @@ export default function PlanificacionesRevisionListView() {
             paginas: Math.max(1, paginacion.totalPaginas),
             total: paginacion.total,
             etiquetaTotal: paginacion.total === 1 ? "planificación" : "planificaciones",
-            onPagina: setPagina
+            onPagina: listado.setPagina
           }
         : undefined
     }),
     paginacion && paginacion.total > 0
-      ? h(
-          "div",
-          { className: "planif-por-pagina" },
-          h(
-            "label",
-            { htmlFor: "planif-revision-por-pagina" },
-            "Por página ",
-            h(
-              "select",
-              {
-                id: "planif-revision-por-pagina",
-                value: porPagina,
-                onChange: (evento) => setPorPagina(Number(evento.target.value))
-              },
-              TAMANOS_PAGINA.map((tamano) => h("option", { key: tamano, value: tamano }, String(tamano)))
-            )
-          )
-        )
+      ? h(PorPagina, { id: "planif-revision-por-pagina", valor: listado.porPagina, onCambiar: listado.setPorPagina })
       : null
   );
 }

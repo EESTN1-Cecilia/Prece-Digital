@@ -44,6 +44,11 @@ export const TRANSICIONES_REVISION = {
   en_revision: ["observada", "aprobada", "rechazada"]
 };
 
+/* Bandeja de revision de Jefatura: todo lo que ya se presento (un borrador
+   todavia no es revisable). Los pendientes van primero y en este orden. */
+export const ESTADOS_BANDEJA_REVISION = ESTADOS_VALIDOS.filter((estado) => estado !== "borrador");
+export const PRIORIDAD_REVISION = ["presentada", "corregida", "en_revision", "observada"];
+
 /* Estados que exigen un motivo al registrarse. */
 export const ESTADOS_CON_MOTIVO = ["observada", "rechazada"];
 
@@ -151,7 +156,10 @@ export const ORDENES = {
   creado: { campo: "creadoEn", sentido: 1 },
   creado_desc: { campo: "creadoEn", sentido: -1 },
   actualizado: { campo: "actualizadoEn", sentido: 1 },
-  actualizado_desc: { campo: "actualizadoEn", sentido: -1 }
+  actualizado_desc: { campo: "actualizadoEn", sentido: -1 },
+  /* Pendientes de revision primero (PRIORIDAD_REVISION) y, dentro de cada
+     grupo, lo mas reciente arriba. */
+  revision: { campo: "prioridadRevision", sentido: 1 }
 };
 
 export const ORDEN_POR_DEFECTO = "actualizado_desc";

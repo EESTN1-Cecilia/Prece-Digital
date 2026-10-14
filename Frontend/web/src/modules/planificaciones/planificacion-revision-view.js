@@ -22,34 +22,7 @@ import { PlanificacionesService } from "./planificaciones-service.js";
 import { etiquetaCurso, nombreDeEstado, opcionesDeEstados } from "./planificaciones-helpers.js";
 import { useCatalogosPlanificaciones, useConsulta } from "./use-planificaciones.js";
 import { EstadoPlanificacion } from "./components/estado-planificacion.js";
-
-function Historial({ entradas }) {
-  if (!entradas?.length) {
-    return h("p", { className: "data-nota" }, "Sin cambios de estado registrados.");
-  }
-
-  const ordenadas = [...entradas].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
-
-  return h(
-    "ol",
-    { className: "planif-historial" },
-    ordenadas.map((entrada, indice) =>
-      h(
-        "li",
-        { key: `${entrada.fecha}-${indice}`, className: "planif-historial__item" },
-        h(
-          "div",
-          { className: "planif-historial__estados" },
-          entrada.estadoAnterior ? h(EstadoPlanificacion, { estado: entrada.estadoAnterior }) : null,
-          entrada.estadoAnterior ? h("span", { "aria-hidden": "true" }, "→") : null,
-          h(EstadoPlanificacion, { estado: entrada.estadoNuevo })
-        ),
-        h("p", { className: "planif-historial__meta" }, `${fecha(entrada.fecha)} · ${entrada.usuario?.nombre ?? "Usuario no disponible"}`),
-        entrada.motivo ? h("p", { className: "planif-historial__motivo" }, entrada.motivo) : null
-      )
-    )
-  );
-}
+import { HistorialEstados } from "./components/historial-estados.js";
 
 function PanelRevision({ planificacion, catalogos, onActualizada }) {
   const transiciones = planificacion.transiciones ?? [];
@@ -246,7 +219,7 @@ export default function PlanificacionRevisionView({ id }) {
           "section",
           { className: "planif-detalle__bloque", "aria-labelledby": "revision-historial" },
           h("h2", { id: "revision-historial" }, "Historial de estados"),
-          h(Historial, { entradas: plan.historialEstados })
+          h(HistorialEstados, { entradas: plan.historialEstados })
         )
       ),
       h(PanelRevision, {

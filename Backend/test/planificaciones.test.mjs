@@ -143,6 +143,21 @@ test("filtra por fechas de presentacion y revision y expone cantidad de observac
   assert.equal(revisadas.cuerpo.data.find((plan) => plan.id === "pla-2").cantidadObservaciones, 1);
 });
 
+test("la bandeja de revision excluye borradores y prioriza los pendientes (orden=revision)", async () => {
+  const { cuerpo } = await pedir("GET", "/api/v1/planificaciones?estados=presentada,en_revision,observada,corregida,aprobada,rechazada&orden=revision&porPagina=3", "jefe");
+  assert.equal(cuerpo.paginacion.total, 5);
+  assert.deepEqual(cuerpo.data.map((plan) => plan.estado), ["presentada", "en_revision", "observada"]);
+
+  const invalido = await pedir("GET", "/api/v1/planificaciones?estados=presentada,otro", "jefe");
+  assert.equal(invalido.status, 422);
+});
+
+test("rechaza un rango de fechas invertido (422)", async () => {
+  const { status, cuerpo } = await pedir("GET", "/api/v1/planificaciones?fechaRevisionDesde=2026-03-12&fechaRevisionHasta=2026-03-01", "admin");
+  assert.equal(status, 422);
+  assert.equal(cuerpo.error.details[0].field, "fechaRevisionHasta");
+});
+
 test("busca por docente, materia, division e ID sin importar tildes", async () => {
   assert.deepEqual((await pedir("GET", "/api/v1/planificaciones?q=rios", "admin")).cuerpo.data.map((plan) => plan.id), ["pla-5"]);
   assert.equal((await pedir("GET", "/api/v1/planificaciones?q=matematica", "admin")).cuerpo.paginacion.total, 3);

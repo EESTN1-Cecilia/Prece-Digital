@@ -11,6 +11,7 @@ import {
   ANIOS_CURSO,
   ESTADO_INICIAL,
   ESTADOS,
+  ESTADOS_BANDEJA_REVISION,
   ESTADOS_CON_MOTIVO,
   ESTADOS_EDITABLES,
   ESTADOS_SIN_UNICIDAD,
@@ -20,6 +21,7 @@ import {
   ORDENES,
   PERIODOS,
   PRESENTACION,
+  PRIORIDAD_REVISION,
   SECCIONES,
   SECCIONES_VALIDAS,
   TRANSICIONES_REVISION,
@@ -308,9 +310,20 @@ const CLAVES_ORDEN = {
   actualizadoEn: (plan) => plan.actualizadoEn
 };
 
+function prioridadDeRevision(plan) {
+  const posicion = PRIORIDAD_REVISION.indexOf(plan.estado);
+  return posicion === -1 ? PRIORIDAD_REVISION.length : posicion;
+}
+
 function ordenar(lista, config) {
   if (!config) {
     return lista;
+  }
+
+  if (config.campo === "prioridadRevision") {
+    return [...lista].sort(
+      (a, b) => prioridadDeRevision(a) - prioridadDeRevision(b) || String(b.actualizadoEn).localeCompare(String(a.actualizadoEn))
+    );
   }
 
   const clave = CLAVES_ORDEN[config.campo];
@@ -584,6 +597,8 @@ const planificacionesService = {
           estados: ESTADOS,
           estadosEditables: ESTADOS_EDITABLES,
           estadosConMotivo: ESTADOS_CON_MOTIVO,
+          estadosBandejaRevision: ESTADOS_BANDEJA_REVISION,
+          prioridadRevision: PRIORIDAD_REVISION,
           presentacion: PRESENTACION,
           transicionesRevision: TRANSICIONES_REVISION,
           secciones: SECCIONES,
@@ -701,6 +716,22 @@ const planificacionesService = {
     const fechaRevisionDesde = validarFechaFiltro(query, "fechaRevisionDesde", errores);
     const fechaRevisionHasta = validarFechaFiltro(query, "fechaRevisionHasta", errores);
 
+    if (fechaPresentacionDesde && fechaPresentacionHasta && fechaPresentacionDesde > fechaPresentacionHasta) {
+      errores.push({ field: "fechaPresentacionHasta", message: "La fecha de presentacion hasta no puede ser anterior a la fecha desde." });
+    }
+
+    if (fechaRevisionDesde && fechaRevisionHasta && fechaRevisionDesde > fechaRevisionHasta) {
+      errores.push({ field: "fechaRevisionHasta", message: "La fecha de revision hasta no puede ser anterior a la fecha desde." });
+    }
+
+    /* `estados` acepta varios separados por coma (la bandeja de revision los usa
+       para excluir borradores); se combina con `estado`. */
+    const estados = typeof query.estados === "string" && query.estados.trim() ? query.estados.split(",").map((estado) => estado.trim()) : null;
+
+    if (estados && estados.some((estado) => !ESTADOS_VALIDOS.includes(estado))) {
+      errores.push({ field: "estados", message: `Los estados deben ser de: ${ESTADOS_VALIDOS.join(", ")}.` });
+    }
+
     const orden = query.orden || ORDEN_POR_DEFECTO;
 
     if (!ORDENES[orden]) {
@@ -728,6 +759,10 @@ const planificacionesService = {
 
     if (query.anio) {
       lista = lista.filter((plan) => plan.curso?.anio === Number(query.anio));
+    }
+
+    if (estados) {
+      lista = lista.filter((plan) => estados.includes(plan.estado));
     }
 
     if (fechaPresentacionDesde) {
@@ -776,6 +811,7 @@ const planificacionesService = {
         divisionId: query.divisionId || null,
         turno: query.turno || null,
         estado: query.estado || null,
+        estados: estados ? estados.join(",") : null,
         anioLectivo: query.anioLectivo || null,
         periodo: query.periodo || null,
         fechaPresentacionDesde: query.fechaPresentacionDesde || null,

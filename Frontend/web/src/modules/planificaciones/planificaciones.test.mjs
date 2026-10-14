@@ -16,7 +16,8 @@ import {
   opcionesDeFiltros,
   opcionesEnCascada,
   ordenParaApi,
-  priorizarRevision,
+  rangosInvalidos,
+  sinRangosInvalidos,
   separarErrores,
   tonoDeEstado,
   validarGenerales
@@ -149,15 +150,8 @@ test("la consulta del listado traduce el orden de la tabla a la API", () => {
   assert.deepEqual(consulta, { q: "rios", estado: "borrador", orden: "creado", pagina: 2, porPagina: 10 });
 });
 
-test("la revision prioriza estados pendientes sin ocultar los demas", () => {
-  const ordenadas = priorizarRevision([
-    { id: "a", estado: "aprobada", actualizadoEn: "2026-03-14T00:00:00.000Z" },
-    { id: "b", estado: "observada", actualizadoEn: "2026-03-11T00:00:00.000Z" },
-    { id: "c", estado: "presentada", actualizadoEn: "2026-03-10T00:00:00.000Z" },
-    { id: "d", estado: "en_revision", actualizadoEn: "2026-03-12T00:00:00.000Z" }
-  ]);
-
-  assert.deepEqual(ordenadas.map((plan) => plan.id), ["c", "d", "b", "a"]);
+test("la bandeja de revision pide al backend el orden por prioridad", () => {
+  assert.equal(ordenParaApi({ columna: "prioridad", direccion: "asc" }), "revision");
 });
 
 test("los filtros activos muestran el nombre legible de cada valor", () => {
@@ -188,4 +182,10 @@ test("el resumen lista solo los estados con planificaciones, en el orden del cat
     { estado: "borrador", cantidad: 1 },
     { estado: "aprobada", cantidad: 2 }
   ]);
+});
+
+test("detecta y descarta rangos de fechas invertidos", () => {
+  const filtros = { fechaRevisionDesde: "2026-03-12", fechaRevisionHasta: "2026-03-01", fechaPresentacionDesde: "2026-03-01" };
+  assert.deepEqual(rangosInvalidos(filtros).map((rango) => rango.nombre), ["revisión"]);
+  assert.deepEqual(sinRangosInvalidos(filtros), { fechaPresentacionDesde: "2026-03-01" });
 });

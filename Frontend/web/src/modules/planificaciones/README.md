@@ -9,9 +9,9 @@ para consultarlas por docente, materia y curso. API: `Backend/modules/planificac
 planificaciones-service.js         unico punto de llamadas HTTP del modulo (via services/http.js)
 planificaciones-helpers.js         logica pura: cascada, filtros, orden, formulario, criterios guardados
 planificaciones.test.mjs           pruebas de los helpers (npm test desde web/)
-use-planificaciones.js             hooks: catalogos + opciones, consulta generica con reintento
+use-planificaciones.js             hooks: catalogos + opciones, consulta generica y estado de listados paginados
 planificaciones-list-view.js       #/planificaciones
-planificaciones-revision-list-view.js #/planificaciones/revision, bandeja de Jefatura
+planificaciones-revision-list-view.js #/planificaciones/revision, bandeja de Jefatura (sin borradores, pendientes primero)
 planificacion-detalle-view.js      #/planificaciones/:id
 planificacion-revision-view.js     #/planificaciones/:id/revision, cambio de estado
 planificacion-form-view.js         #/planificaciones/nueva y #/planificaciones/:id/editar
@@ -20,7 +20,9 @@ planificaciones-materia-view.js    #/planificaciones/materias[/:materiaId]
 planificaciones-curso-view.js      #/planificaciones/cursos[/:cursoId]
 components/
   estado-planificacion.js          badge de estado (texto + tono, no depende del color)
-  navegacion-planificaciones.js    pestañas: todas / por docente / por materia / por curso
+  historial-estados.js             historial de cambios de estado (detalle y revision)
+  por-pagina.js                    selector de cantidad por pagina
+  navegacion-planificaciones.js    pestañas: todas / revision (solo con teaching-plans.manage) / por docente / por materia / por curso
   filtros-planificaciones.js       barra de filtros configurable + chips de filtros activos
   tabla-planificaciones.js         tabla con columnas elegibles y acciones segun la API
   presentar-planificacion.js       confirmacion + pedido de presentacion (anti doble envio)

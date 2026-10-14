@@ -27,6 +27,7 @@ import { etiquetaCurso, nombreDeEstado } from "./planificaciones-helpers.js";
 import { useCatalogosPlanificaciones, useConsulta } from "./use-planificaciones.js";
 import { EstadoPlanificacion } from "./components/estado-planificacion.js";
 import { PresentarPlanificacion } from "./components/presentar-planificacion.js";
+import { HistorialEstados } from "./components/historial-estados.js";
 
 function avisoInicial() {
   const query = (window.location.hash.split("?")[1] ?? "").split("&");
@@ -40,39 +41,6 @@ function avisoInicial() {
   }
 
   return null;
-}
-
-function Historial({ entradas }) {
-  if (!entradas?.length) {
-    return h("p", { className: "data-nota" }, "Sin cambios de estado registrados.");
-  }
-
-  /* Cronologico: del mas reciente al mas antiguo. */
-  const ordenadas = [...entradas].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
-
-  return h(
-    "ol",
-    { className: "planif-historial" },
-    ordenadas.map((entrada, indice) =>
-      h(
-        "li",
-        { key: `${entrada.fecha}-${indice}`, className: "planif-historial__item" },
-        h(
-          "div",
-          { className: "planif-historial__estados" },
-          entrada.estadoAnterior ? h(EstadoPlanificacion, { estado: entrada.estadoAnterior }) : null,
-          entrada.estadoAnterior ? h("span", { "aria-hidden": "true" }, "→") : null,
-          h(EstadoPlanificacion, { estado: entrada.estadoNuevo })
-        ),
-        h(
-          "p",
-          { className: "planif-historial__meta" },
-          `${fecha(entrada.fecha)} · ${entrada.usuario?.nombre ?? "Usuario no disponible"}`
-        ),
-        entrada.motivo ? h("p", { className: "planif-historial__motivo" }, entrada.motivo) : null
-      )
-    )
-  );
 }
 
 export default function PlanificacionDetalleView({ id }) {
@@ -122,6 +90,9 @@ export default function PlanificacionDetalleView({ id }) {
         h(BotonEnlace, { variante: "contorno", href: "#/planificaciones" }, "Volver al listado"),
         acciones.includes("editar")
           ? h(BotonEnlace, { variante: "contorno", href: `#/planificaciones/${encodeURIComponent(plan.id)}/editar` }, "Modificar")
+          : null,
+        acciones.includes("revisar")
+          ? h(BotonEnlace, { variante: "primario", href: `#/planificaciones/${encodeURIComponent(plan.id)}/revision` }, "Revisar")
           : null,
         acciones.includes("presentar")
           ? h(Boton, { variante: "primario", onClick: () => setPresentando(plan) }, plan.estado === "observada" ? "Presentar correcciones" : "Presentar")
@@ -198,7 +169,7 @@ export default function PlanificacionDetalleView({ id }) {
       "section",
       { className: "planif-detalle__bloque", "aria-labelledby": "planif-historial" },
       h("h2", { id: "planif-historial" }, "Historial de estados"),
-      h(Historial, { entradas: plan.historialEstados })
+      h(HistorialEstados, { entradas: plan.historialEstados })
     ),
     h(PresentarPlanificacion, {
       planificacion: presentando,

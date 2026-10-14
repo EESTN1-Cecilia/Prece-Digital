@@ -37,8 +37,6 @@ const NOMBRES_ESTADO = {
   rechazada: "Rechazada"
 };
 
-export const ESTADOS_REVISION_PRIORITARIOS = ["presentada", "corregida", "en_revision", "observada"];
-
 export function nombreDeEstado(estado) {
   if (!estado) {
     return "—";
@@ -343,28 +341,6 @@ export const FILTROS_VACIOS = {
   fechaRevisionHasta: ""
 };
 
-export const FILTROS_REVISION_VACIOS = {
-  ...FILTROS_VACIOS,
-  estado: ""
-};
-
-/* Los estados que requieren mirada de Jefatura quedan primero. Si hay estados
-   finales en el resultado, siguen visibles debajo para no esconder datos. */
-export function priorizarRevision(planificaciones = []) {
-  const prioridad = new Map(ESTADOS_REVISION_PRIORITARIOS.map((estado, indice) => [estado, indice]));
-
-  return [...planificaciones].sort((a, b) => {
-    const prioridadA = prioridad.has(a.estado) ? prioridad.get(a.estado) : ESTADOS_REVISION_PRIORITARIOS.length;
-    const prioridadB = prioridad.has(b.estado) ? prioridad.get(b.estado) : ESTADOS_REVISION_PRIORITARIOS.length;
-
-    if (prioridadA !== prioridadB) {
-      return prioridadA - prioridadB;
-    }
-
-    return String(b.actualizadoEn ?? "").localeCompare(String(a.actualizadoEn ?? ""));
-  });
-}
-
 /* Columna de la tabla -> valor de `orden` de la API. */
 const ORDEN_API = {
   id: "id",
@@ -374,10 +350,14 @@ const ORDEN_API = {
   estado: "estado",
   periodo: "periodo",
   creadoEn: "creado",
-  actualizadoEn: "actualizado"
+  actualizadoEn: "actualizado",
+  /* Sin columna en la tabla: orden por defecto de la bandeja de revision
+     (pendientes primero), resuelto por el backend. */
+  prioridad: "revision"
 };
 
 export const ORDEN_INICIAL = { columna: "actualizadoEn", direccion: "desc" };
+export const ORDEN_REVISION = { columna: "prioridad", direccion: "asc" };
 
 export function ordenParaApi(orden) {
   const base = ORDEN_API[orden?.columna];
@@ -467,4 +447,28 @@ export function estadosConCantidad(resumen, catalogos) {
   return claves
     .filter((estado) => (porEstado[estado] ?? 0) > 0)
     .map((estado) => ({ estado, cantidad: porEstado[estado] }));
+}
+
+/* ---------------- Rangos de fechas --------------------------------------- */
+
+const RANGOS_FECHA = [
+  { desde: "fechaPresentacionDesde", hasta: "fechaPresentacionHasta", nombre: "presentación" },
+  { desde: "fechaRevisionDesde", hasta: "fechaRevisionHasta", nombre: "revisión" }
+];
+
+/* Rangos con "hasta" anterior a "desde" (fechas AAAA-MM-DD, comparables como
+   texto). La pantalla avisa y no los envia: el backend los rechaza con 422. */
+export function rangosInvalidos(filtros = {}) {
+  return RANGOS_FECHA.filter(({ desde, hasta }) => filtros[desde] && filtros[hasta] && filtros[desde] > filtros[hasta]);
+}
+
+export function sinRangosInvalidos(consulta) {
+  const limpia = { ...consulta };
+
+  for (const { desde, hasta } of rangosInvalidos(consulta)) {
+    delete limpia[desde];
+    delete limpia[hasta];
+  }
+
+  return limpia;
 }

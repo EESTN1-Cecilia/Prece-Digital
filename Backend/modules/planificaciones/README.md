@@ -34,7 +34,7 @@ alta responde 403.
 
 ### Planificaciones
 
-- GET /api/v1/planificaciones — listar con búsqueda `q` (ID, docente, materia, curso, división), filtros (`docenteId`, `materiaId`, `anio`, `cursoId`, `divisionId`, `turno`, `estado`, `anioLectivo`, `periodo`, `fechaPresentacionDesde`, `fechaPresentacionHasta`, `fechaRevisionDesde`, `fechaRevisionHasta`), `orden` y paginación (`pagina`, `porPagina`). Cada fila incluye `cantidadObservaciones` calculada desde el historial de estados.
+- GET /api/v1/planificaciones — listar con búsqueda `q` (ID, docente, materia, curso, división), filtros (`docenteId`, `materiaId`, `anio`, `cursoId`, `divisionId`, `turno`, `estado`, `anioLectivo`, `periodo`, `fechaPresentacionDesde`, `fechaPresentacionHasta`, `fechaRevisionDesde`, `fechaRevisionHasta`, `estados` separados por coma), `orden` (incluye `revision`: pendientes primero) y paginación (`pagina`, `porPagina`). Cada fila incluye `cantidadObservaciones` calculada desde el historial de estados.
 - POST /api/v1/planificaciones — cargar (queda en `borrador`)
 - GET /api/v1/planificaciones/:planificacionId — detalle con contenido e historial
 - PATCH /api/v1/planificaciones/:planificacionId — modificar datos generales o secciones (solo en `borrador` u `observada`)

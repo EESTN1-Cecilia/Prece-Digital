@@ -9,138 +9,38 @@
    - Los criterios se guardan en sessionStorage para volver del detalle sin
      perderlos.
 
-   Las acciones de cada fila las define el backend (planificacion.acciones). */
+   El estado del listado vive en useListadoPlanificaciones (compartido con la
+   bandeja de revision). Las acciones de cada fila las define el backend. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
-import {
-  Acciones,
-  Alerta,
-  Boton,
-  BotonEnlace,
-  Busqueda,
-  MensajeError,
-  SinDatos,
-  SinResultados
-} from "../../components/ui/index.js";
+import { Acciones, Alerta, Boton, BotonEnlace, Busqueda, MensajeError, SinDatos, SinResultados } from "../../components/ui/index.js";
 import { usePermisos } from "../../estado/index.js";
 import { PERMISOS } from "../../utils/permisos.js";
-import { PlanificacionesService } from "./planificaciones-service.js";
-import {
-  FILTROS_VACIOS,
-  ORDEN_INICIAL,
-  aplicarFiltro,
-  consultaListado,
-  guardarCriterios,
-  hayCriterios,
-  leerCriterios,
-  opcionesDeCatalogo,
-  opcionesDeEstados,
-  opcionesDeFiltros
-} from "./planificaciones-helpers.js";
-import { useCatalogosPlanificaciones, useConsulta } from "./use-planificaciones.js";
+import { useListadoPlanificaciones } from "./use-planificaciones.js";
 import { NavegacionPlanificaciones } from "./components/navegacion-planificaciones.js";
 import { FiltrosActivos, FiltrosPlanificaciones } from "./components/filtros-planificaciones.js";
 import { TablaPlanificaciones } from "./components/tabla-planificaciones.js";
 import { PresentarPlanificacion } from "./components/presentar-planificacion.js";
+import { PorPagina } from "./components/por-pagina.js";
 
 const CLAVE_CRITERIOS = "prece.planificaciones.listado";
-const ESPERA_BUSQUEDA = 350;
-const TAMANOS_PAGINA = [10, 20, 50];
 
 export default function PlanificacionesListView() {
   const { puede } = usePermisos();
   const puedeCargar = puede(PERMISOS.planificacionesEscribir);
 
-  const guardados = useMemo(() => leerCriterios(CLAVE_CRITERIOS) ?? {}, []);
-
-  const [texto, setTexto] = useState(guardados.busqueda ?? "");
-  const [busqueda, setBusqueda] = useState(guardados.busqueda ?? "");
-  const [filtros, setFiltros] = useState({ ...FILTROS_VACIOS, ...(guardados.filtros ?? {}) });
-  const [orden, setOrden] = useState(guardados.orden ?? ORDEN_INICIAL);
-  const [porPagina, setPorPagina] = useState(guardados.porPagina ?? 20);
-  const [pagina, setPagina] = useState(guardados.pagina ?? 1);
+  const listado = useListadoPlanificaciones({ claveCriterios: CLAVE_CRITERIOS });
+  const { resultado } = listado;
+  const paginacion = resultado?.paginacion;
 
   const [aviso, setAviso] = useState(null);
   const [aPresentar, setAPresentar] = useState(null);
 
-  const { catalogos, combinaciones, error: errorCatalogos, recargar: recargarCatalogos } = useCatalogosPlanificaciones();
-
-  /* Debounce: la API se consulta cuando el tipeo se detiene. */
-  useEffect(() => {
-    const temporizador = setTimeout(() => setBusqueda(texto), ESPERA_BUSQUEDA);
-    return () => clearTimeout(temporizador);
-  }, [texto]);
-
-  /* Cambiar un criterio reinicia la paginacion. Se saltea el primer render
-     para respetar la pagina restaurada de sessionStorage. */
-  const primerRender = useRef(true);
-
-  useEffect(() => {
-    if (primerRender.current) {
-      primerRender.current = false;
-      return;
-    }
-
-    setPagina(1);
-  }, [busqueda, filtros, orden, porPagina]);
-
-  useEffect(() => {
-    guardarCriterios(CLAVE_CRITERIOS, { busqueda, filtros, orden, porPagina, pagina });
-  }, [busqueda, filtros, orden, porPagina, pagina]);
-
-  const { datos: resultado, cargando, error, recargar } = useConsulta(
-    () => PlanificacionesService.listar(consultaListado({ busqueda, filtros, pagina, porPagina, orden })),
-    [busqueda, filtros, pagina, porPagina, orden]
-  );
-
-  /* Si la pagina guardada ya no existe (se borraron resultados), volver a la ultima. */
-  useEffect(() => {
-    const totalPaginas = resultado?.paginacion?.totalPaginas ?? 0;
-
-    if (totalPaginas > 0 && pagina > totalPaginas) {
-      setPagina(totalPaginas);
-    }
-  }, [resultado, pagina]);
-
-  const opciones = useMemo(() => {
-    const deCombinaciones = opcionesDeFiltros(combinaciones, filtros);
-
-    return {
-      ...deCombinaciones,
-      anioLectivo: deCombinaciones.aniosLectivos,
-      docenteId: deCombinaciones.docentes,
-      materiaId: deCombinaciones.materias,
-      cursoId: deCombinaciones.cursos,
-      divisionId: deCombinaciones.divisiones,
-      anio: opcionesDeCatalogo(catalogos?.aniosCurso),
-      turno: opcionesDeCatalogo(catalogos?.turnos),
-      periodo: opcionesDeCatalogo(catalogos?.periodos),
-      estado: opcionesDeEstados(catalogos)
-    };
-  }, [combinaciones, catalogos, filtros]);
-
-  const cambiarFiltro = (campo, valor) => setFiltros((actuales) => aplicarFiltro(actuales, campo, valor, combinaciones));
-
-  const quitarFiltro = (campo) => cambiarFiltro(campo, "");
-
-  const limpiarBusqueda = () => {
-    setTexto("");
-    setBusqueda("");
-  };
-
-  const limpiarTodo = () => {
-    limpiarBusqueda();
-    setFiltros(FILTROS_VACIOS);
-  };
-
-  const conCriterios = hayCriterios(busqueda, filtros);
-  const paginacion = resultado?.paginacion;
-
   const presentada = (planificacion) => {
     setAPresentar(null);
-    setAviso({ tono: "exito", texto: `La planificación ${planificacion.id} quedó ${planificacion.estado === "corregida" ? "corregida" : "presentada"} para revisión.` });
-    recargar();
+    setAviso(`La planificación ${planificacion.id} quedó ${planificacion.estado === "corregida" ? "corregida" : "presentada"} para revisión.`);
+    listado.recargar();
   };
 
   return h(
@@ -162,42 +62,42 @@ export default function PlanificacionesListView() {
       )
     ),
     h(NavegacionPlanificaciones, { activa: "listado" }),
-    errorCatalogos ? h(MensajeError, { error: errorCatalogos, onReintentar: recargarCatalogos }) : null,
+    listado.errorCatalogos ? h(MensajeError, { error: listado.errorCatalogos, onReintentar: listado.recargarCatalogos }) : null,
     h(
       "div",
       { className: "planif-barra", role: "search" },
       h(Busqueda, {
         id: "buscar-planificaciones",
-        valor: texto,
-        onChange: setTexto,
-        onLimpiar: limpiarBusqueda,
+        valor: listado.texto,
+        onChange: listado.setTexto,
+        onLimpiar: listado.limpiarBusqueda,
         etiqueta: "Buscar por docente, materia, curso, división o ID",
         placeholder: "Buscar por docente, materia, curso, división o ID"
       })
     ),
-    h(FiltrosPlanificaciones, { filtros, opciones, onCambiar: cambiarFiltro, idPrefijo: "listado" }),
+    h(FiltrosPlanificaciones, { filtros: listado.filtros, opciones: listado.opciones, onCambiar: listado.cambiarFiltro, idPrefijo: "listado" }),
     h(FiltrosActivos, {
-      filtros,
-      opciones,
-      busqueda,
-      onQuitar: quitarFiltro,
-      onQuitarBusqueda: limpiarBusqueda,
-      onLimpiar: limpiarTodo
+      filtros: listado.filtros,
+      opciones: listado.opciones,
+      busqueda: listado.busqueda,
+      onQuitar: listado.quitarFiltro,
+      onQuitarBusqueda: listado.limpiarBusqueda,
+      onLimpiar: listado.limpiarTodo
     }),
-    aviso ? h(Alerta, { tono: aviso.tono, onCerrar: () => setAviso(null) }, aviso.texto) : null,
+    aviso ? h(Alerta, { tono: "exito", onCerrar: () => setAviso(null) }, aviso) : null,
     h(TablaPlanificaciones, {
       filas: resultado?.data ?? [],
-      cargando,
-      error,
-      onReintentar: recargar,
-      orden,
-      onOrden: (proximo) => setOrden(proximo?.columna ? proximo : ORDEN_INICIAL),
+      cargando: listado.cargando,
+      error: listado.error,
+      onReintentar: listado.recargar,
+      orden: listado.orden,
+      onOrden: listado.cambiarOrden,
       onPresentar: setAPresentar,
-      vacio: conCriterios
+      vacio: listado.conCriterios
         ? h(SinResultados, {
             texto: "Ninguna planificación coincide con la búsqueda y los filtros aplicados.",
             descripcion: "Probá con otros criterios o limpiá los filtros.",
-            accion: h(Boton, { variante: "contorno", onClick: limpiarTodo }, "Limpiar filtros")
+            accion: h(Boton, { variante: "contorno", onClick: listado.limpiarTodo }, "Limpiar filtros")
           })
         : h(SinDatos, {
             titulo: "Todavía no hay planificaciones registradas.",
@@ -212,29 +112,12 @@ export default function PlanificacionesListView() {
             paginas: Math.max(1, paginacion.totalPaginas),
             total: paginacion.total,
             etiquetaTotal: paginacion.total === 1 ? "planificación" : "planificaciones",
-            onPagina: setPagina
+            onPagina: listado.setPagina
           }
         : undefined
     }),
     paginacion && paginacion.total > 0
-      ? h(
-          "div",
-          { className: "planif-por-pagina" },
-          h(
-            "label",
-            { htmlFor: "planif-por-pagina" },
-            "Por página ",
-            h(
-              "select",
-              {
-                id: "planif-por-pagina",
-                value: porPagina,
-                onChange: (evento) => setPorPagina(Number(evento.target.value))
-              },
-              TAMANOS_PAGINA.map((tamano) => h("option", { key: tamano, value: tamano }, String(tamano)))
-            )
-          )
-        )
+      ? h(PorPagina, { id: "planif-por-pagina", valor: listado.porPagina, onCambiar: listado.setPorPagina })
       : null,
     h(PresentarPlanificacion, {
       planificacion: aPresentar,
