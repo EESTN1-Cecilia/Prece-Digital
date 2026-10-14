@@ -1,6 +1,7 @@
 import inventoryRepository from "../../modules/inventory/inventory.repository.mjs";
 import requestsRepository from "../../modules/requests/requests.repository.mjs";
 import reservationsRepository from "../../modules/reservations/reservations.repository.mjs";
+import { getStore } from "../../database/memory-store.mjs";
 
 export function seedInventory() {
   const schoolId = "esc-1";
@@ -524,8 +525,24 @@ export function seedInventory() {
     }
   ];
 
+  const store = getStore();
+  if (!store.inventoryMovements) store.inventoryMovements = new Map();
+
   for (const m of movements) {
-    inventoryRepository.createMovement(m);
+    store.inventoryMovements.set(m.id, {
+      id: m.id,
+      itemId: m.itemId,
+      type: m.type,
+      quantity: m.quantity,
+      previousStock: 0,
+      resultingStock: 0,
+      reason: m.notes ?? null,
+      observations: null,
+      referenceMovementId: null,
+      userId: m.createdBy,
+      schoolId: m.schoolId,
+      createdAt: m.createdAt
+    });
   }
 
   // 3. Solicitudes Pendientes y en Gestión

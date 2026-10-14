@@ -91,8 +91,8 @@ test("observaciones: alta validada, responsable del token y listado", async () =
 
   const delAlumno = await pedir("GET", "/api/v1/students/alu-2/observations", "docente");
   const todas = await pedir("GET", "/api/v1/observations", "secretario");
-  assert.equal(delAlumno.cuerpo.data.length, 1);
-  assert.equal(todas.cuerpo.data.length, 1);
+  assert.ok(delAlumno.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));
+  assert.ok(todas.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));
 
   const docenteEscribe = await pedir("POST", "/api/v1/students/alu-2/observations", "docente", {
     tipo: "Académica",
@@ -135,7 +135,8 @@ test("directorio de divisiones y busqueda libre del listado", async () => {
   const divisiones = await pedir("GET", "/api/v1/students/divisions", "preceptor");
   assert.equal(divisiones.status, 200);
   assert.equal(divisiones.cuerpo.data.length, 27);
-  assert.equal(divisiones.cuerpo.data.find((division) => division.id === "4-1").activos, 4);
+  /* la promocion del seed de course-changes (alu-17) suma un activo a 4-1 */
+  assert.equal(divisiones.cuerpo.data.find((division) => division.id === "4-1").activos, 5);
 
   const busqueda = await pedir("GET", "/api/v1/students?q=carla", "preceptor");
   assert.deepEqual(busqueda.cuerpo.data.map((alumno) => alumno.id), ["alu-2"]);

@@ -806,10 +806,11 @@
 }
 
 .director-kpi-asistencias-layout {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: center;
+  align-items: flex-start;
   height: 100%;
 }
 
@@ -823,15 +824,56 @@
 .director-kpi-asistencias-left {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  justify-content: center;
+  gap: 8px;
+  position: relative;
 }
 
-.director-asistencia-header-right {
+/* Encabezado izquierdo: solo la etiqueta ASISTENCIAS fija */
+.director-asistencia-header-left {
+  display: flex;
+  align-items: center;
+  height: 22px;
+}
+
+/* Badges y toggles flotantes independientes posicionados en la esquina superior */
+.director-asistencia-header-badge-float {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+}
+
+.director-asistencia-toggle-float {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  z-index: 3;
+}
+
+/* Layout para Card Personal cuando se ubica abajo en 2 columnas */
+.director-kpi-personal-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
+}
+
+.director-kpi-personal-left {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 5px;
+  gap: 8px;
+}
+
+@media (max-width: 680px) {
+  .director-kpi-personal-layout {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }
 
 .director-asistencia-toggle-group {
@@ -865,6 +907,12 @@
 .director-asistencia-toggle-btn--active {
   background: #ffffff;
   color: #059669;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.director-asistencia-toggle-btn--active-blue {
+  background: #ffffff;
+  color: #0284c7;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 

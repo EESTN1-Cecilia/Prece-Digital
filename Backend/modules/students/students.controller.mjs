@@ -52,7 +52,7 @@ export function desactivarAlumno({ params, user }) {
   return studentService.deactivate(params.studentId, user);
 }
 
-/* ---------------- Legajo: resumen, perfil, observaciones, pases, constancias ---------------- */
+/* ---------------- Legajo: resumen, perfil, pases, constancias ---------------- */
 
 export function obtenerResumen({ params }) {
   return legajoService.resumen(params.studentId);
@@ -60,18 +60,6 @@ export function obtenerResumen({ params }) {
 
 export function obtenerPerfil({ params, user }) {
   return legajoService.perfil(params.studentId, user);
-}
-
-export function listarObservacionesDeAlumno({ params }) {
-  return legajoService.listarObservaciones(params.studentId);
-}
-
-export function listarObservaciones({ url }) {
-  return legajoService.listarObservaciones(url.searchParams.get("alumnoId") || null);
-}
-
-export function crearObservacion({ params, body, user }) {
-  return legajoService.crearObservacion(params.studentId, body, user);
 }
 
 export function iniciarPase({ params, body, user }) {

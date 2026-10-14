@@ -1,0 +1,52 @@
+USE prece_digital;
+
+CREATE TABLE IF NOT EXISTS ausencia_eventos (
+  id                      VARCHAR(40)  NOT NULL PRIMARY KEY,
+  ausencia_id             VARCHAR(40)  NOT NULL,
+  escuela_id              INT UNSIGNED NOT NULL,
+  docente_id              VARCHAR(40)  NOT NULL,
+  schedule_assignment_id  VARCHAR(40)  NOT NULL,
+  schedule_id             VARCHAR(40)  NULL,
+  curso_id                VARCHAR(40)  NULL,
+  division_id             VARCHAR(40)  NULL,
+  materia_id              VARCHAR(40)  NULL,
+  espacio_id              VARCHAR(40)  NOT NULL,
+  dia_semana              VARCHAR(12)  NULL,
+  fecha                   DATE         NOT NULL,
+  hora_inicio             TIME         NOT NULL,
+  hora_fin                TIME         NOT NULL,
+  ausencia_tipo           VARCHAR(20)  NOT NULL,
+  ausencia_motivo         VARCHAR(255) NULL,
+  estado_clase            ENUM('sin_clase','con_clase') NOT NULL DEFAULT 'sin_clase',
+  espacio_disponible      TINYINT(1)   NOT NULL DEFAULT 1,
+  estado                  ENUM('activo','anulada') NOT NULL DEFAULT 'activo',
+  registrado_por          INT UNSIGNED NULL,
+  modificado_por          INT UNSIGNED NULL,
+  creado_en               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_aev_ausencia (ausencia_id),
+  KEY ix_aev_escuela (escuela_id),
+  KEY ix_aev_curso   (curso_id),
+  KEY ix_aev_fecha   (fecha),
+  KEY ix_aev_espacio (espacio_id),
+  KEY ix_aev_estado  (estado),
+  CONSTRAINT fk_aev_ausencia FOREIGN KEY (ausencia_id) REFERENCES ausencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_aev_escuela  FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_aev_creador  FOREIGN KEY (registrado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_aev_modifica FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ausencia_evento_notificaciones (
+  id                VARCHAR(40)  NOT NULL PRIMARY KEY,
+  evento_id         VARCHAR(40)  NOT NULL,
+  destinatario_id   INT UNSIGNED NOT NULL,
+  notificacion_id   VARCHAR(40)  NOT NULL,
+  rol_destinatario  VARCHAR(20)  NULL,
+  creado_en         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_aen_evento_destinatario (evento_id, destinatario_id),
+  KEY ix_aen_evento  (evento_id),
+  KEY ix_aen_dest    (destinatario_id),
+  KEY ix_aen_notif   (notificacion_id),
+  CONSTRAINT fk_aen_evento FOREIGN KEY (evento_id) REFERENCES ausencia_eventos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_aen_dest   FOREIGN KEY (destinatario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;

@@ -10,6 +10,8 @@ import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.
 import { AsignacionesSection } from "./components/asignaciones-section.js";
 import { fecha } from "../../utils/formato.js";
 
+
+
 // Íconos auxiliares con dimensiones explícitas (Sin emojis)
 function IconPlus({ className = "w-4 h-4", width = "16", height = "16" }) {
   return h(
@@ -139,6 +141,7 @@ export default function DirectorDashboardView() {
   const [cargando, setCargando] = useState(true);
   const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'supervision' | 'pedidos' | 'alertas'
   const [modoAsistencia, setModoAsistencia] = useState("porcentaje"); // 'porcentaje' | 'cantidad'
+  const [modoAlumnos, setModoAlumnos] = useState("cantidad"); // 'cantidad' | 'porcentaje'
 
   // Opciones de visualización (deshabilitar Server, Jefatura y Habilitar Pedidos sin borrar código)
   const MOSTRAR_SERVER = false;
@@ -539,45 +542,173 @@ export default function DirectorDashboardView() {
             "div",
             { className: "director-kpis-grid" },
 
-            // KPI 1: Alumnos
+            // KPI 1: Alumnos (Ocupa 2 columnas con gráfico horizontal de cada turno y selector num / %)
             h(
               "div",
-              { className: "director-kpi-card director-kpi-card--blue" },
+              { className: "director-kpi-card director-kpi-card--blue director-kpi-card--wide" },
               h(
                 "div",
-                { className: "director-kpi-card__header" },
-                h("span", { className: "director-kpi-label" }, "Alumnos"),
-                h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
-              ),
-              h("div", { className: "director-kpi-value" }, resumen?.alumnos?.totalActivos ?? 840),
-              h(
-                "div",
-                { className: "director-kpi-footer" },
-                h("span", null, `Mañana: ${resumen?.alumnos?.turnoManana ?? 450} alumnos`),
-                h("span", null, `·`),
-                h("span", null, `Tarde: ${resumen?.alumnos?.turnoTarde ?? 390} alumnos`)
+                { className: "director-kpi-asistencias-layout" },
+                // Lado izquierdo: Total alumnos, badge de cursos, toggle num/%, y footer
+                h(
+                  "div",
+                  { className: "director-kpi-asistencias-left" },
+                  h(
+                    "div",
+                    { className: "director-asistencia-header-left" },
+                    h("span", { className: "director-kpi-label" }, "Alumnos")
+                  ),
+                  // Elementos independientes posicionados a la derecha
+                  h(
+                    "div",
+                    { className: "director-asistencia-header-badge-float" },
+                    h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
+                  ),
+                  h(
+                    "div",
+                    { className: "director-asistencia-toggle-float" },
+                    h(
+                      "div",
+                      { className: "director-asistencia-toggle-group", role: "group", "aria-label": "Modo de visualización alumnos" },
+                      h(
+                        "button",
+                        {
+                          type: "button",
+                          className: `director-asistencia-toggle-btn ${modoAlumnos === "cantidad" ? "director-asistencia-toggle-btn--active-blue" : ""}`,
+                          onClick: () => setModoAlumnos("cantidad")
+                        },
+                        "num"
+                      ),
+                      h(
+                        "button",
+                        {
+                          type: "button",
+                          className: `director-asistencia-toggle-btn ${modoAlumnos === "porcentaje" ? "director-asistencia-toggle-btn--active-blue" : ""}`,
+                          onClick: () => setModoAlumnos("porcentaje")
+                        },
+                        "%"
+                      )
+                    )
+                  ),
+                  h(
+                    "div",
+                    { className: "director-kpi-value" },
+                    modoAlumnos === "porcentaje"
+                      ? "100%"
+                      : `${resumen?.alumnos?.totalActivos ?? 840}`
+                  ),
+                  h(
+                    "div",
+                    { className: "director-kpi-footer" },
+                    h(
+                      "span",
+                      null,
+                      modoAlumnos === "porcentaje"
+                        ? `${resumen?.alumnos?.totalActivos ?? 840} alumnos matriculados`
+                        : "32 divisiones activas"
+                    )
+                  )
+                ),
+
+                // Lado derecho: Gráfico Horizontal de cantidad/porcentaje por cada turno
+                (() => {
+                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 840;
+                  const turnoManana = resumen?.alumnos?.turnoManana ?? 450;
+                  const turnoTarde = resumen?.alumnos?.turnoTarde ?? 390;
+                  const turnoTaller = resumen?.alumnos?.turnoTaller ?? 525;
+
+                  const pctManana = Math.round(((turnoManana / totalAlumnos) * 100) * 10) / 10;
+                  const pctTarde = Math.round(((turnoTarde / totalAlumnos) * 100) * 10) / 10;
+                  const pctTaller = Math.round(((turnoTaller / totalAlumnos) * 100) * 10) / 10;
+
+                  const datosTurnosAlumnos = [
+                    {
+                      label: "Mañana",
+                      porcentaje: pctManana,
+                      cantidad: turnoManana,
+                      color: "#10b981",
+                      anchoPct: modoAlumnos === "porcentaje"
+                        ? pctManana
+                        : Math.min(100, (turnoManana / totalAlumnos) * 100)
+                    },
+                    {
+                      label: "Tarde",
+                      porcentaje: pctTarde,
+                      cantidad: turnoTarde,
+                      color: "#3b82f6",
+                      anchoPct: modoAlumnos === "porcentaje"
+                        ? pctTarde
+                        : Math.min(100, (turnoTarde / totalAlumnos) * 100)
+                    },
+                    {
+                      label: "Taller",
+                      porcentaje: pctTaller,
+                      cantidad: turnoTaller,
+                      color: "#f59e0b",
+                      anchoPct: modoAlumnos === "porcentaje"
+                        ? pctTaller
+                        : Math.min(100, (turnoTaller / totalAlumnos) * 100)
+                    }
+                  ];
+
+                  const marcasEje = modoAlumnos === "porcentaje"
+                    ? ["0%", "50%", "100%"]
+                    : ["0", "500", String(totalAlumnos)];
+
+                  return h(
+                    "div",
+                    { className: "director-hchart-container" },
+                    // Eje X superior con marcas de escala (0, 500, 840 o 0%, 50%, 100%)
+                    h(
+                      "div",
+                      { className: "director-hchart-axis-x" },
+                      h("span", null, marcasEje[0]),
+                      h("span", null, marcasEje[1]),
+                      h("span", null, marcasEje[2])
+                    ),
+                    // Área de trazado con líneas guía verticales detrás y barras
+                    h(
+                      "div",
+                      { className: "director-hchart-plot-area" },
+                      h(
+                        "div",
+                        { className: "director-hchart-grid-lines" },
+                        h("div", { className: "director-hchart-grid-line" }),
+                        h("div", { className: "director-hchart-grid-line" }),
+                        h("div", { className: "director-hchart-grid-line" })
+                      ),
+                      datosTurnosAlumnos.map((item) =>
+                        h(
+                          "div",
+                          { key: item.label, className: "director-hchart-row" },
+                          h("span", { className: "director-hchart-label" }, item.label),
+                          h(
+                            "div",
+                            { className: "director-hchart-track" },
+                            h("div", {
+                              className: "director-hchart-bar",
+                              style: {
+                                width: `${item.anchoPct}%`,
+                                backgroundColor: item.color
+                              }
+                            })
+                          ),
+                          h(
+                            "span",
+                            { className: "director-hchart-val" },
+                            modoAlumnos === "porcentaje"
+                              ? `${item.porcentaje}%`
+                              : `${item.cantidad}`
+                          )
+                        )
+                      )
+                    )
+                  );
+                })()
               )
             ),
 
-            // KPI 2: Personal
-            h(
-              "div",
-              { className: "director-kpi-card director-kpi-card--purple" },
-              h(
-                "div",
-                { className: "director-kpi-card__header" },
-                h("span", { className: "director-kpi-label" }, "Personal"),
-                h("span", { className: "director-kpi-badge director-kpi-badge--purple" }, "7 Roles")
-              ),
-              h("div", { className: "director-kpi-value" }, resumen?.personal?.totalUsuarios ?? personal.length),
-              h(
-                "div",
-                { className: "director-kpi-footer" },
-                h("span", null, `${resumen?.personal?.activos ?? personal.length} usuarios activos`)
-              )
-            ),
-
-            // KPI 3: Asistencias (Ocupa 2 columnas con gráfico horizontal y selector % / num)
+            // KPI 2: Asistencias (Ocupa 2 columnas con gráfico horizontal y selector % / num)
             h(
               "div",
               { className: "director-kpi-card director-kpi-card--emerald director-kpi-card--wide" },
@@ -590,33 +721,38 @@ export default function DirectorDashboardView() {
                   { className: "director-kpi-asistencias-left" },
                   h(
                     "div",
-                    { className: "director-kpi-card__header" },
-                    h("span", { className: "director-kpi-label" }, "Asistencias"),
+                    { className: "director-asistencia-header-left" },
+                    h("span", { className: "director-kpi-label" }, "Asistencias")
+                  ),
+                  // Elementos independientes posicionados a la derecha
+                  h(
+                    "div",
+                    { className: "director-asistencia-header-badge-float" },
+                    h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, "Promedio Hoy")
+                  ),
+                  h(
+                    "div",
+                    { className: "director-asistencia-toggle-float" },
                     h(
                       "div",
-                      { className: "director-asistencia-header-right" },
-                      h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, "Promedio Hoy"),
+                      { className: "director-asistencia-toggle-group", role: "group", "aria-label": "Modo de visualización" },
                       h(
-                        "div",
-                        { className: "director-asistencia-toggle-group", role: "group", "aria-label": "Modo de visualización" },
-                        h(
-                          "button",
-                          {
-                            type: "button",
-                            className: `director-asistencia-toggle-btn ${modoAsistencia === "cantidad" ? "director-asistencia-toggle-btn--active" : ""}`,
-                            onClick: () => setModoAsistencia("cantidad")
-                          },
-                          "num"
-                        ),
-                        h(
-                          "button",
-                          {
-                            type: "button",
-                            className: `director-asistencia-toggle-btn ${modoAsistencia === "porcentaje" ? "director-asistencia-toggle-btn--active" : ""}`,
-                            onClick: () => setModoAsistencia("porcentaje")
-                          },
-                          "%"
-                        )
+                        "button",
+                        {
+                          type: "button",
+                          className: `director-asistencia-toggle-btn ${modoAsistencia === "cantidad" ? "director-asistencia-toggle-btn--active" : ""}`,
+                          onClick: () => setModoAsistencia("cantidad")
+                        },
+                        "num"
+                      ),
+                      h(
+                        "button",
+                        {
+                          type: "button",
+                          className: `director-asistencia-toggle-btn ${modoAsistencia === "porcentaje" ? "director-asistencia-toggle-btn--active" : ""}`,
+                          onClick: () => setModoAsistencia("porcentaje")
+                        },
+                        "%"
                       )
                     )
                   ),
@@ -730,6 +866,24 @@ export default function DirectorDashboardView() {
               )
             ),
 
+            // KPI 3: Personal (Ubicado abajo, 1 cuadrado como antes)
+            h(
+              "div",
+              { className: "director-kpi-card director-kpi-card--purple" },
+              h(
+                "div",
+                { className: "director-kpi-card__header" },
+                h("span", { className: "director-kpi-label" }, "Personal"),
+                h("span", { className: "director-kpi-badge director-kpi-badge--purple" }, "7 Roles")
+              ),
+              h("div", { className: "director-kpi-value" }, `${resumen?.personal?.totalUsuarios ?? personal.length}`),
+              h(
+                "div",
+                { className: "director-kpi-footer" },
+                h("span", null, `${resumen?.personal?.activos ?? personal.length} usuarios activos`)
+              )
+            ),
+
             // KPI 4: Pañol (deshabilitado si !MOSTRAR_SERVER)
             MOSTRAR_SERVER
               ? h(
@@ -753,103 +907,57 @@ export default function DirectorDashboardView() {
               : null
           ),
 
-          // Accesos Rápidos de Supervisión Directiva (con íconos SVG)
-          h(
-            "div",
-            { className: "director-supervision-cards-grid" },
-
-            // Tarjeta Secretaría
-            h(
+          // Accesos Rápidos de Supervisión Directiva (si Server o Jefatura estuviesen activos)
+          (MOSTRAR_SERVER || MOSTRAR_JEFATURA)
+            ? h(
               "div",
-              { className: "director-access-box" },
-              h(
-                "div",
-                { className: "director-access-box__header" },
-                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--sec" }, h(IconClipboard, { width: "20", height: "20", className: "text-sky-600" })),
-                h("h3", { className: "director-access-title" }, "Secretaría Académica")
-              ),
-              h("p", { className: "director-access-desc" }, "Gestión de legajos de alumnos, certificados analíticos, libro matriz y constancias."),
-              h(
-                "div",
-                { className: "director-access-actions" },
-                h(
-                  "a",
-                  { href: "#/secretaria", className: "director-btn-navy" },
-                  "Ir a Secretaría"
-                )
-              )
-            ),
-
-            // Tarjeta Preceptoría
-            h(
-              "div",
-              { className: "director-access-box" },
-              h(
-                "div",
-                { className: "director-access-box__header" },
-                h("div", { className: "director-access-icon-wrap director-access-icon-wrap--prec" }, h(IconClock, { width: "20", height: "20", className: "text-purple-600" })),
-                h("h3", { className: "director-access-title" }, "Preceptoría y Asistencia")
-              ),
-              h("p", { className: "director-access-desc" }, "Supervisión de inasistencias diarias, libro de aula, alertas de ausencias y seguimiento."),
-              h(
-                "div",
-                { className: "director-access-actions" },
-                h(
-                  "a",
-                  { href: "#/preceptoria", className: "director-btn-navy" },
-                  "Ir a Preceptoría"
-                )
-              )
-            ),
-
-            // Tarjeta Server (deshabilitada si !MOSTRAR_SERVER)
-            MOSTRAR_SERVER
-              ? h(
-                "div",
-                { className: "director-access-box" },
-                h(
+              { className: "director-supervision-cards-grid" },
+              MOSTRAR_SERVER
+                ? h(
                   "div",
-                  { className: "director-access-box__header" },
-                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--srv" }, h(IconServer, { width: "20", height: "20", className: "text-emerald-600" })),
-                  h("h3", { className: "director-access-title" }, "Server")
-                ),
-                h("p", { className: "director-access-desc" }, "Control de stock de materiales, equipamiento técnico, reservas de laboratorios y solicitudes."),
-                h(
-                  "div",
-                  { className: "director-access-actions" },
+                  { className: "director-access-box" },
                   h(
-                    "a",
-                    { href: "#/server", className: "director-btn-navy" },
-                    "Ir a Server"
+                    "div",
+                    { className: "director-access-box__header" },
+                    h("div", { className: "director-access-icon-wrap director-access-icon-wrap--srv" }, h(IconServer, { width: "20", height: "20", className: "text-emerald-600" })),
+                    h("h3", { className: "director-access-title" }, "Server")
+                  ),
+                  h("p", { className: "director-access-desc" }, "Control de stock de materiales, equipamiento técnico, reservas de laboratorios y solicitudes."),
+                  h(
+                    "div",
+                    { className: "director-access-actions" },
+                    h(
+                      "a",
+                      { href: "#/server", className: "director-btn-navy" },
+                      "Ir a Server"
+                    )
                   )
                 )
-              )
-              : null,
-
-            // Tarjeta Jefatura de Área (deshabilitada si !MOSTRAR_JEFATURA)
-            MOSTRAR_JEFATURA
-              ? h(
-                "div",
-                { className: "director-access-box" },
-                h(
+                : null,
+              MOSTRAR_JEFATURA
+                ? h(
                   "div",
-                  { className: "director-access-box__header" },
-                  h("div", { className: "director-access-icon-wrap director-access-icon-wrap--jef" }, h(IconWrench, { width: "20", height: "20", className: "text-amber-600" })),
-                  h("h3", { className: "director-access-title" }, "Jefatura de Área y Talleres")
-                ),
-                h("p", { className: "director-access-desc" }, "Grilla horaria de talleres, distribución de espacios y seguimiento de materias técnicas."),
-                h(
-                  "div",
-                  { className: "director-access-actions" },
+                  { className: "director-access-box" },
                   h(
-                    "a",
-                    { href: "#/jefatura", className: "director-btn-navy" },
-                    "Ir a Jefatura"
+                    "div",
+                    { className: "director-access-box__header" },
+                    h("div", { className: "director-access-icon-wrap director-access-icon-wrap--jef" }, h(IconWrench, { width: "20", height: "20", className: "text-amber-600" })),
+                    h("h3", { className: "director-access-title" }, "Jefatura de Área y Talleres")
+                  ),
+                  h("p", { className: "director-access-desc" }, "Grilla horaria de talleres, distribución de espacios y seguimiento de materias técnicas."),
+                  h(
+                    "div",
+                    { className: "director-access-actions" },
+                    h(
+                      "a",
+                      { href: "#/jefatura", className: "director-btn-navy" },
+                      "Ir a Jefatura"
+                    )
                   )
                 )
-              )
-              : null
-          )
+                : null
+            )
+            : null
         )
         : null,
 

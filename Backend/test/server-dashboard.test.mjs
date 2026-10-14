@@ -110,19 +110,18 @@ test("Dashboard de Server - Integración con API", async (t) => {
     const createdItem = await createRes.json();
     const itemId = createdItem.data?.id || createdItem.id;
 
-    // Registrar egreso
-    const movRes = await fetch(`${baseUrl}/api/v1/inventory-movements`, {
+    // Registrar egreso (prestamo) por el endpoint de movimientos del material
+    const movRes = await fetch(`${baseUrl}/api/v1/inventory/${itemId}/movements`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
-        itemId,
-        type: "egreso",
+        type: "prestamo",
         quantity: 4,
-        toSpaceId: "Taller 2",
-        schoolId: "esc-1"
+        reason: "Prueba de egreso de stock",
+        toSpaceId: "Taller 2"
       })
     });
     assert.equal(movRes.status, 201, "Debe registrar el movimiento");

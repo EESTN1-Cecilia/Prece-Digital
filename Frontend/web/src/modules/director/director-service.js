@@ -40,6 +40,7 @@ export const DirectorService = {
         totalActivos: 840,
         turnoManana: 450,
         turnoTarde: 390,
+        turnoTaller: 525,
         divisiones: 32,
         promedioPorDivision: 26,
         alumnosEnRiesgo: 12
@@ -119,8 +120,10 @@ export const DirectorService = {
         if (Array.isArray(dashSec.porTurno)) {
           const tm = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("mañ"));
           const tt = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tard"));
+          const tall = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tall"));
           if (tm) resumen.alumnos.turnoManana = tm.cantidad;
           if (tt) resumen.alumnos.turnoTarde = tt.cantidad;
+          if (tall) resumen.alumnos.turnoTaller = tall.cantidad;
         }
         if (Array.isArray(dashSec.alertas)) {
           resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;

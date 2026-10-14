@@ -610,7 +610,7 @@ test("la notificacion llega a los preceptores de la escuela con referencia a la 
   const bandeja = await pedir("GET", "/api/v1/notifications", preceptor);
 
   assert.equal(bandeja.status, 200);
-  assert.ok(bandeja.cuerpo.data.some((item) => item.referenceId === alerta.id));
+  assert.ok(bandeja.cuerpo.data.notifications.some((item) => item.referenceId === alerta.id));
 });
 
 test("repetir la evaluacion no genera una segunda alerta para la misma situacion", async () => {
