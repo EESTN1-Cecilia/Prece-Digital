@@ -135,6 +135,49 @@ export default function BoletinesListView() {
     "section",
     { className: "welcome-panel boletines-panel" },
 
+    // Barra superior con botón volver atrás
+    h(
+      "div",
+      { className: "dashboard-top-bar alumnos-top-nav" },
+      h(
+        "button",
+        {
+          type: "button",
+          className: "btn-volver-atras",
+          onClick: () => {
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              window.location.hash = "#/inicio";
+            }
+          },
+          title: "Volver atrás",
+          "aria-label": "Volver atrás"
+        },
+        h(
+          "svg",
+          {
+            className: "btn-volver-atras__icon",
+            viewBox: "0 0 20 20",
+            fill: "currentColor",
+            "aria-hidden": "true"
+          },
+          h("path", {
+            fillRule: "evenodd",
+            d: "M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z",
+            clipRule: "evenodd"
+          })
+        ),
+        h("span", null, "Volver Atrás")
+      ),
+      h(
+        "div",
+        { className: "alumnos-top-badges" },
+        h("span", { className: "badge-institucion" }, user?.escuela || "E.E.S.T N°1 Monte Grande"),
+        h("span", { className: "badge-ciclo" }, `Ciclo Lectivo ${user?.cicloLectivo || 2026}`)
+      )
+    ),
+
     // Header Principal
     h(
       "div",

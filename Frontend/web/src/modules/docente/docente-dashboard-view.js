@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { StudentsService } from "../students/students-service.js";
-import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
 
 // Cursos asignados a la cuenta de prueba del docente (exactamente 3 cursos: dos turno mañana, uno turno tarde)
 const ASIGNACIONES_DOCENTE_DEFAULT = [
@@ -16,7 +15,6 @@ export default function DocenteDashboardView() {
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTurnoFilter, setSelectedTurnoFilter] = useState("todos");
   const [fechaHoy, setFechaHoy] = useState("");
 
   useEffect(() => {
@@ -93,13 +91,6 @@ export default function DocenteDashboardView() {
   useEffect(() => {
     fetchCursos();
   }, [fetchCursos]);
-
-  // Filtrado reactivo por turno
-  const cursosFiltrados = cursos.filter((c) => {
-    if (selectedTurnoFilter === "todos") return true;
-    const t = String(c.turnoAula || c.turno || "").toLowerCase();
-    return t.includes(selectedTurnoFilter);
-  });
 
   const totalEstudiantes = cursos.reduce((acc, c) => acc + (Number(c.activos ?? c.cantidad) || 0), 0);
   const cicloLectivo = user?.cicloLectivo || new Date().getFullYear();
@@ -207,7 +198,7 @@ export default function DocenteDashboardView() {
           h("span", { className: "docente-module-badge docente-module-badge--blue" }, "Módulo Habilitado"),
           h(
             "a",
-            { href: "#/asistencias", className: "docente-module-link-btn docente-module-link-btn--primary" },
+            { href: "#/docente/asistencias", className: "docente-module-link-btn docente-module-link-btn--primary" },
             "Abrir Planilla ➔"
           )
         )
@@ -297,136 +288,14 @@ export default function DocenteDashboardView() {
           ),
           h(
             "a",
-            { href: "#/boletines", className: "docente-module-link-btn docente-module-link-btn--secondary" },
-            "Ver Nóminas"
+            { href: "#/docente/cursos", className: "docente-module-link-btn docente-module-link-btn--primary" },
+            "Ver Cursos a Cargo ➔"
           )
         )
       )
     ),
 
-    // 3. Encabezado de Cursos Asignados con Filtros por Turno
-    h(
-      "div",
-      { className: "docente-section-header" },
-      h(
-        "div",
-        null,
-        h("h2", { className: "docente-section-title" }, "Mis Cursos y Materias Asignadas"),
-        h("p", { className: "docente-section-subtitle" }, "Selecciona un curso para tomar asistencia o acceder a la nómina de boletines.")
-      ),
-      h(
-        "div",
-        { className: "filters-toolbar" },
-        h(
-          "div",
-          { className: "filter-pills" },
-          [
-            { id: "todos", label: "Todos" },
-            { id: "mañana", label: "Mañana" },
-            { id: "tarde", label: "Tarde" }
-          ].map((pill) =>
-            h(
-              "button",
-              {
-                key: pill.id,
-                type: "button",
-                className: `filter-pill ${selectedTurnoFilter === pill.id ? "active filter-pill--active" : ""}`,
-                onClick: () => setSelectedTurnoFilter(pill.id)
-              },
-              pill.label
-            )
-          )
-        )
-      )
-    ),
-
-    // Estados de Carga / Error / Vacío / Grid
-    loading
-      ? h(LoadingState, { mensaje: "Cargando cursos y divisiones del docente..." })
-      : error
-      ? h(ErrorState, { mensaje: error, onRetry: fetchCursos })
-      : cursosFiltrados.length === 0
-      ? h(EmptyState, {
-          mensaje: "No se encontraron divisiones para el turno seleccionado.",
-          accion: h(
-            "button",
-            {
-              type: "button",
-              className: "docente-module-link-btn docente-module-link-btn--secondary",
-              onClick: () => setSelectedTurnoFilter("todos")
-            },
-            "Ver todos los turnos"
-          )
-        })
-      : h(
-          "div",
-          { className: "docente-cursos-grid" },
-          cursosFiltrados.map((c) => {
-            const displayCurso = c.curso || `${c.anio}°`;
-            const displayDivision = c.division ? `${c.division}°` : "";
-            const displayTurno = c.turnoAula || c.turno || "Mañana";
-            const displayOrientacion = c.orientacion || "Ciclo Básico";
-            const cantidadAlumnos = c.activos ?? c.cantidad ?? 0;
-
-            return h(
-              "div",
-              { key: c.id || c.clave || `${c.curso}-${c.division}`, className: "docente-curso-card" },
-              h(
-                "div",
-                { className: "docente-curso-card__header" },
-                h("span", { className: "docente-curso-badge" }, `${displayCurso} ${displayDivision}`),
-                h("span", { className: "docente-curso-turno" }, displayTurno)
-              ),
-              h(
-                "div",
-                { className: "docente-curso-card__body" },
-                h("span", { className: "docente-curso-materia" }, c.materia || displayOrientacion),
-                h(
-                  "div",
-                  { className: "docente-curso-info-row" },
-                  h("span", null, `Turno Taller: ${c.turnoTaller || (displayTurno === "Mañana" ? "Tarde" : "Mañana")}`),
-                  h("span", null, `• ${cantidadAlumnos} estudiantes`)
-                )
-              ),
-              h(
-                "div",
-                { className: "docente-curso-card__actions" },
-                h(
-                  "a",
-                  {
-                    href: `#/asistencias?curso=${encodeURIComponent(displayCurso)}&div=${encodeURIComponent(c.division)}`,
-                    className: "docente-curso-action-btn docente-curso-action-btn--asistencia",
-                    title: `Planilla de asistencia para ${displayCurso} ${displayDivision}`
-                  },
-                  h(
-                    "svg",
-                    { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                    h("path", { d: "M9 11l3 3L22 4" }),
-                    h("path", { d: "M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" })
-                  ),
-                  "Asistencia"
-                ),
-                h(
-                  "a",
-                  {
-                    href: `#/boletines?curso=${encodeURIComponent(displayCurso)}&div=${encodeURIComponent(c.division)}`,
-                    className: "docente-curso-action-btn docente-curso-action-btn--boletin",
-                    title: `Boletines de ${displayCurso} ${displayDivision}`
-                  },
-                  h(
-                    "svg",
-                    { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                    h("path", { d: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20" }),
-                    h("path", { d: "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" })
-                  ),
-                  "Boletines"
-                )
-              )
-            );
-          })
-        ),
-
-    // 4. Nota Informativa Oficial PBA
+    // 3. Nota Informativa Oficial PBA
     h(
       "div",
       { className: "docente-notice-box" },

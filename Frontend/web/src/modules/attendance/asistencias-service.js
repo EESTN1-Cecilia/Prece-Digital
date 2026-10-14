@@ -90,9 +90,11 @@ export const AsistenciasService = {
 
   /**
    * Obtiene la planilla de asistencias para el curso, mes y año cargando los alumnos reales del padrón.
+   * Si se especifica materia (rol docente), almacena y recupera el registro específico de dicha asignatura.
    */
-  async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear()) {
-    const key = `${STORAGE_KEY_PREFIX}${cursoId}_${anio}_${mes}`;
+  async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null) {
+    const materiaPrefix = materia ? `docente_${String(materia).trim().toLowerCase().replace(/\s+/g, "_")}_` : "";
+    const key = `${STORAGE_KEY_PREFIX}${materiaPrefix}${cursoId}_${anio}_${mes}`;
     const guardado = localStorage.getItem(key);
 
     const [cursoNumRaw, divNumRaw] = (cursoId || "1-1").split("-");
@@ -161,6 +163,7 @@ export const AsistenciasService = {
 
     const nuevaPlanilla = {
       cursoId,
+      materia: materia || null,
       mes,
       anio,
       diasHabiles: mesInfo.diasHabiles,
@@ -181,7 +184,8 @@ export const AsistenciasService = {
    * Guarda los cambios de la planilla en el almacenamiento institucional.
    */
   async guardarPlanilla(planilla) {
-    const key = `${STORAGE_KEY_PREFIX}${planilla.cursoId}_${planilla.anio}_${planilla.mes}`;
+    const materiaPrefix = planilla.materia ? `docente_${String(planilla.materia).trim().toLowerCase().replace(/\s+/g, "_")}_` : "";
+    const key = `${STORAGE_KEY_PREFIX}${materiaPrefix}${planilla.cursoId}_${planilla.anio}_${planilla.mes}`;
     const actualizado = {
       ...planilla,
       ultimaActualizacion: new Date().toISOString()

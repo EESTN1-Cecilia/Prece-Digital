@@ -28,6 +28,8 @@ import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
 import DocenteDashboardView from "../modules/docente/docente-dashboard-view.js";
+import DocenteAsistenciasView from "../modules/docente/docente-asistencias-view.js";
+import DocenteCursosView from "../modules/docente/docente-cursos-view.js";
 import BoletinesListView from "../modules/students/boletines-list-view.js";
 import CursosListView from "../modules/schools/cursos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
@@ -138,10 +140,38 @@ export const RUTAS = [
     roles: ["docente", "director", "admin"]
   },
   {
+    patron: "#/docente/cursos",
+    titulo: "Cursos a Cargo",
+    vista: DocenteCursosView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    roles: ["docente", "director", "admin"],
+    enMenu: true
+  },
+  {
+    patron: "#/cursos-a-cargo",
+    titulo: "Cursos a Cargo",
+    vista: DocenteCursosView,
+    padre: "#/inicio",
+    roles: ["docente", "director", "admin"]
+  },
+  {
+    patron: "#/docente/asistencias",
+    titulo: "Asistencia de Clase",
+    vista: DocenteAsistenciasView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio",
+    roles: ["docente", "director", "admin"],
+    enMenu: true
+  },
+  {
     patron: "#/asistencias/:cursoId",
     titulo: "Planilla de Asistencia",
     vista: AsistenciasView,
     padre: "#/asistencias",
+    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer]
   },
   {

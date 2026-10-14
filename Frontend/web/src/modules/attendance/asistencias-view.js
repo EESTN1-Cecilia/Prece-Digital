@@ -21,9 +21,24 @@ const ESTADOS_ASISTENCIA = {
 
 const LETRAS_DIAS = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
 
-export default function AsistenciasView() {
+const ASIGNACIONES_DOCENTE_DEFAULT = [
+  { id: "1-1", anio: 1, curso: "1°", division: "1", materia: "Matemática I", turno: "Mañana", orientacion: "Ciclo Básico" },
+  { id: "2-1", anio: 2, curso: "2°", division: "1", materia: "Matemática II", turno: "Mañana", orientacion: "Ciclo Básico" },
+  { id: "3-3", anio: 3, curso: "3°", division: "3", materia: "Matemática III", turno: "Tarde", orientacion: "Ciclo Básico" }
+];
+
+export default function AsistenciasView({ modoDocente = false }) {
   const user = useUsuarioActual();
   const tabsRef = useRef(null);
+
+  const esDocente =
+    modoDocente ||
+    user?.rol === "docente" ||
+    (Array.isArray(user?.roles) &&
+      user.roles.includes("docente") &&
+      !user.roles.includes("preceptor") &&
+      !user.roles.includes("admin") &&
+      !user.roles.includes("director"));
 
   // Desplazamiento horizontal suave con las flechas
   const handleScrollTabs = (delta) => {
@@ -33,19 +48,59 @@ export default function AsistenciasView() {
   };
 
   // Lista de cursos disponibles dinámicos
-  const [cursos, setCursos] = useState(CURSOS_DISPONIBLES);
+  const [cursos, setCursos] = useState(() => (esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : CURSOS_DISPONIBLES));
 
   // Estados de navegación y selección de curso/mes
-  const [selectedCursoId, setSelectedCursoId] = useState("1-1");
+  const [selectedCursoId, setSelectedCursoId] = useState(() => {
+    const hash = typeof window !== "undefined" ? window.location.hash || "" : "";
+    if (hash.includes("?")) {
+      const q = new URLSearchParams(hash.split("?")[1]);
+      const c = q.get("curso");
+      const d = q.get("div") || q.get("division");
+      if (c && d) {
+        return `${String(c).replace(/\D/g, "")}-${String(d).replace(/\D/g, "")}`;
+      }
+    }
+    return "1-1";
+  });
   const [selectedMes, setSelectedMes] = useState(new Date().getMonth() + 1); // Mes actual
   const [selectedAnio, setSelectedAnio] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Cargar lista dinámica de cursos desde el servicio/API
+  // Cargar lista dinámica de cursos según rol
   useEffect(() => {
     let montado = true;
+
+    if (esDocente) {
+      const asigs =
+        user?.assignments && user.assignments.length > 0
+          ? user.assignments.map((a) => {
+              const anioLimpio = String(a.anio || a.curso || "1").replace(/\D/g, "");
+              const divLimpia = String(a.division || "1").trim();
+              return {
+                id: `${anioLimpio}-${divLimpia}`,
+                curso: a.curso || `${anioLimpio}°`,
+                division: divLimpia,
+                turno: a.turno || (Number(anioLimpio) === 3 ? "Tarde" : "Mañana"),
+                materia: a.materia || "Matemática",
+                orientacion: "Ciclo Básico",
+                preceptor: `Docente: ${user?.nombre || "Docente"}`
+              };
+            })
+          : ASIGNACIONES_DOCENTE_DEFAULT;
+
+      if (montado) {
+        setCursos(asigs);
+        const hash = window.location.hash || "";
+        if (!hash.includes("?curso=") && asigs.length > 0) {
+          setSelectedCursoId(asigs[0].id);
+        }
+      }
+      return;
+    }
+
     AsistenciasService.getCursosDisponibles().then((lista) => {
       if (montado && lista && lista.length > 0) {
         setCursos(lista);
@@ -54,6 +109,23 @@ export default function AsistenciasView() {
     return () => {
       montado = false;
     };
+  }, [esDocente, user]);
+
+  // Leer parámetros de URL si cambian
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash || "";
+      if (hash.includes("?")) {
+        const q = new URLSearchParams(hash.split("?")[1]);
+        const c = q.get("curso");
+        const d = q.get("div") || q.get("division");
+        if (c && d) {
+          setSelectedCursoId(`${String(c).replace(/\D/g, "")}-${String(d).replace(/\D/g, "")}`);
+        }
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   // Datos de la planilla
@@ -69,21 +141,24 @@ export default function AsistenciasView() {
         curso: "1°",
         division: "1",
         turno: "Mañana",
+        materia: esDocente ? "Matemática" : undefined,
         orientacion: "Ciclo Básico",
-        preceptor: "Preceptoría"
+        preceptor: esDocente ? `Docente: ${user?.nombre || "Docente"}` : "Preceptoría"
       }
     );
-  }, [cursos, selectedCursoId]);
+  }, [cursos, selectedCursoId, esDocente, user]);
 
-  // Cargar planilla al cambiar de curso o mes
+  // Cargar planilla al cambiar de curso o mes (con materia si es docente)
   const cargarPlanilla = useCallback(async () => {
     setLoading(true);
     setSaveSuccess(false);
     try {
+      const materiaDocente = esDocente ? (cursoActual.materia || "Matemática") : null;
       const data = await AsistenciasService.getPlanilla(
         selectedCursoId,
         selectedMes,
-        selectedAnio
+        selectedAnio,
+        materiaDocente
       );
       setPlanilla(data);
       setPlanillaOriginal(JSON.parse(JSON.stringify(data)));
@@ -92,7 +167,7 @@ export default function AsistenciasView() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCursoId, selectedMes, selectedAnio]);
+  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia]);
 
   useEffect(() => {
     cargarPlanilla();
@@ -376,9 +451,13 @@ export default function AsistenciasView() {
           type: "button",
           className: "btn-volver-atras",
           onClick: () => {
-            window.location.hash = "#/cursos";
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              window.location.hash = esDocente ? "#/inicio" : "#/cursos";
+            }
           },
-          title: "Volver a Cursos"
+          title: esDocente ? "Volver atrás" : "Volver a Directorio de Cursos"
         },
         h(
           "svg",
@@ -393,12 +472,14 @@ export default function AsistenciasView() {
             clipRule: "evenodd"
           })
         ),
-        h("span", null, "Volver a Directorio de Cursos")
+        h("span", null, esDocente ? "Volver Atrás" : "Volver a Directorio de Cursos")
       ),
       h(
         "div",
         { className: "secretaria-eyebrow" },
-        `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · LIBRO DE ASISTENCIA DIARIA · CICLO 2026`
+        esDocente
+          ? `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · LIBRO DE ASISTENCIA POR MATERIA · CICLO 2026`
+          : `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · LIBRO DE ASISTENCIA DIARIA · CICLO 2026`
       )
     ),
 
@@ -412,11 +493,17 @@ export default function AsistenciasView() {
         "div",
         null,
         h("h1", { className: "secretaria-title" }, "Planilla de Registro de Asistencias"),
+        esDocente && cursoActual.materia
+          ? h("p", { style: { margin: "4px 0 0", color: "#64748b", fontSize: "14px", fontWeight: "600" } }, `Cátedra: ${cursoActual.materia}`)
+          : null
       ),
       h(
         "div",
         { className: "asistencia-badge-info" },
         h("span", { className: "badge-curso-activo" }, `${cursoActual.curso} ${cursoActual.division}°`),
+        esDocente && cursoActual.materia
+          ? h("span", { className: "badge-curso-activo", style: { background: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" } }, cursoActual.materia)
+          : null,
         h("span", { className: "badge-turno-activo" }, `Turno ${cursoActual.turno}`)
       )
     ),
@@ -558,7 +645,9 @@ export default function AsistenciasView() {
           h(
             "h2",
             { className: "registro-main-title" },
-            `REGISTRO DE ASISTENCIA: ${cursoActual.curso} ${cursoActual.division}° DIVISIÓN (${cursoActual.turno.toUpperCase()})`
+            esDocente && cursoActual.materia
+              ? `REGISTRO DE ASISTENCIA: ${cursoActual.curso} ${cursoActual.division}° DIVISIÓN - ${cursoActual.materia.toUpperCase()} (${cursoActual.turno.toUpperCase()})`
+              : `REGISTRO DE ASISTENCIA: ${cursoActual.curso} ${cursoActual.division}° DIVISIÓN (${cursoActual.turno.toUpperCase()})`
           )
         ),
         h(
@@ -937,8 +1026,8 @@ export default function AsistenciasView() {
           "div",
           { className: "firma-area" },
           h("div", { className: "firma-line" }),
-          h("span", { className: "firma-label" }, "FIRMA PRECEPTOR"),
-          h("span", { className: "firma-subtext" }, cursoActual.preceptor)
+          h("span", { className: "firma-label" }, esDocente ? "FIRMA DOCENTE" : "FIRMA PRECEPTOR"),
+          h("span", { className: "firma-subtext" }, esDocente ? `${user?.nombre || "Docente"} (${cursoActual.materia || "Materia"})` : cursoActual.preceptor)
         ),
         h(
           "div",
