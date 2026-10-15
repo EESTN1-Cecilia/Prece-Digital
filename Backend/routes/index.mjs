@@ -26,6 +26,14 @@ import * as schedulesController from "../modules/schedules/schedules.controller.
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as gradesController from "../modules/grades/grades.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
+import * as absenceEventsController from "../modules/absence-events/absence-events.controller.mjs";
+import * as groupsController from "../modules/groups/groups.controller.mjs";
+import * as reassignmentsController from "../modules/reassignments/reassignments.controller.mjs";
+import * as seguimientoController from "../modules/seguimiento/seguimiento.controller.mjs";
+import * as planificacionesController from "../modules/planificaciones/planificaciones.controller.mjs";
+import * as controlPlanificacionesController from "../modules/control-planificaciones/control-planificaciones.controller.mjs";
+import * as materialRequestsController from "../modules/material-requests/material-requests.controller.mjs";
+import * as materialReservationsController from "../modules/material-reservations/material-reservations.controller.mjs";
 import * as attendanceAlertsController from "../modules/attendance-alerts/attendance-alerts.controller.mjs";
 import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
 import * as inasistenciasController from "../modules/inasistencias/inasistencias.controller.mjs";
@@ -280,8 +288,6 @@ export const apiRoutes = [
   { method: "PATCH", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.updateTeacherCourse },
   { method: "DELETE", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeCourseFromTeacher },
 
-  { method: "POST", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createAbsence },
-
   /* Inasistencias de alumnos: rutas mas especificas primero por como matchea
      matchRoute (quien haga coincidir antes gana).
      Permisos: attendance.read para consultas y attendance.write para el resto. */
@@ -295,10 +301,33 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/inasistencias/:inasistenciaId/justify", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.justificarInasistencia },
   { method: "PATCH", path: "/api/v1/inasistencias/:inasistenciaId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: inasistenciasController.modificarInasistencia },
 
+  /* Inasistencias docentes (ausencias). Los literales van antes que :absenceId
+     porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/absences/available-spaces", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAvailableSpaces },
+  { method: "GET", path: "/api/v1/absences/affected-activities", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAffectedActivities },
+  { method: "GET", path: "/api/v1/absences/grid", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getGrid },
+  { method: "POST", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createAbsence },
   { method: "GET", path: "/api/v1/absences", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listAbsences },
+  { method: "GET", path: "/api/v1/absences/:absenceId/history", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsenceHistory },
+  { method: "GET", path: "/api/v1/absences/:absenceId/availability", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsenceAvailability },
+  { method: "POST", path: "/api/v1/absences/:absenceId/reactivate", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.reactivateAbsence },
   { method: "GET", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.getAbsence },
   { method: "PATCH", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateAbsence },
-  { method: "DELETE", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.deleteAbsence },
+  { method: "POST", path: "/api/v1/absences/:absenceId/annul", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.annulAbsence },
+  { method: "DELETE", path: "/api/v1/absences/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_MANAGE)], handler: absencesController.annulAbsence },
+
+  { method: "PATCH", path: "/api/v1/absence-liberations/:availabilityId", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.updateAvailabilityStatus },
+
+  /* Eventos de ausencia: bitacora y consultas derivadas. Los literales van antes
+     que los parametros porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/absence-events", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.listAbsenceEvents },
+  { method: "POST", path: "/api/v1/absence-events", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absenceEventsController.createAbsenceEvent },
+  { method: "GET", path: "/api/v1/absence-events/by-absence/:absenceId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getEventByAbsence },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/class-state", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getClassState },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/space-availability", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getSpaceAvailability },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/affected-classes", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getAffectedClasses },
+  { method: "GET", path: "/api/v1/absence-events/:eventId/notifications", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getEventNotifications },
+  { method: "GET", path: "/api/v1/absence-events/:eventId", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absenceEventsController.getAbsenceEvent },
 
   { method: "POST", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_WRITE)], handler: absencesController.createIncident },
   { method: "GET", path: "/api/v1/incidents", middlewares: [verifyToken, required(P.ABSENCES_READ)], handler: absencesController.listIncidents },
@@ -359,14 +388,24 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/workshop-sessions/:sessionId", middlewares: [verifyToken, required(P.WORKSHOPS_READ)], handler: workshopsController.getSession },
   { method: "PATCH", path: "/api/v1/workshop-sessions/:sessionId", middlewares: [verifyToken, required(P.WORKSHOPS_WRITE)], handler: workshopsController.updateSession },
 
-  { method: "POST", path: "/api/v1/inventory", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.createItem },
-  { method: "GET", path: "/api/v1/inventory", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.listItems },
-  { method: "GET", path: "/api/v1/inventory/:itemId", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.getItem },
-  { method: "PATCH", path: "/api/v1/inventory/:itemId", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.updateItem },
-  { method: "DELETE", path: "/api/v1/inventory/:itemId", middlewares: [verifyToken, required(P.INVENTORY_MANAGE)], handler: inventoryController.deleteItem },
+  /* Inventario: los literales (stock-low) y las subrutas van antes que
+     /inventory/:itemId porque el router gana con la primera coincidencia. */
+  { method: "POST", path: "/api/v1/inventory", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.createMaterial },
+  { method: "GET", path: "/api/v1/inventory", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.listMaterials },
+  { method: "GET", path: "/api/v1/inventory/stock-low", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.listLowStock },
+  { method: "GET", path: "/api/v1/inventory/:itemId/stock", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.getStock },
+  { method: "GET", path: "/api/v1/inventory/:itemId/stock/verify", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.verifyStock },
+  { method: "GET", path: "/api/v1/inventory/:itemId/movements", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.listItemMovements },
+  { method: "GET", path: "/api/v1/inventory/:itemId/history", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.getItemHistory },
+  { method: "POST", path: "/api/v1/inventory/:itemId/movements", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.registerMovement },
+  { method: "POST", path: "/api/v1/inventory/:itemId/movements/adjust", middlewares: [verifyToken, required(P.INVENTORY_MANAGE)], handler: inventoryController.registerAdjust },
+  { method: "GET", path: "/api/v1/inventory/:itemId", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.getMaterial },
+  { method: "PATCH", path: "/api/v1/inventory/:itemId", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.updateMaterial },
+  { method: "DELETE", path: "/api/v1/inventory/:itemId", middlewares: [verifyToken, required(P.INVENTORY_MANAGE)], handler: inventoryController.deactivateMaterial },
 
-  { method: "POST", path: "/api/v1/inventory-movements", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.createMovement },
+  { method: "POST", path: "/api/v1/inventory-movements", middlewares: [verifyToken, required(P.INVENTORY_WRITE)], handler: inventoryController.createMovementLegacy },
   { method: "GET", path: "/api/v1/inventory-movements", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.listMovements },
+  { method: "GET", path: "/api/v1/inventory-movements/:movementId", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.getMovement },
 
   { method: "POST", path: "/api/v1/requests", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: requestsController.createRequest },
   { method: "GET", path: "/api/v1/requests", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: requestsController.listRequests },
@@ -374,6 +413,31 @@ export const apiRoutes = [
   { method: "PATCH", path: "/api/v1/requests/:requestId", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: requestsController.updateRequest },
   { method: "POST", path: "/api/v1/requests/:requestId/comments", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: requestsController.addComment },
   { method: "GET", path: "/api/v1/requests/:requestId/comments", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: requestsController.listComments },
+
+  /* Pedidos de materiales: subrutas de accion antes que :requestId. */
+  { method: "POST", path: "/api/v1/material-requests", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: materialRequestsController.createRequest },
+  { method: "GET", path: "/api/v1/material-requests", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: materialRequestsController.listRequests },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/status", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.changeStatus },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/approve", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.approveRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/reject", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.rejectRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/cancel", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: materialRequestsController.cancelRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/deliver", middlewares: [verifyToken, required(P.REQUESTS_MANAGE), required(P.INVENTORY_WRITE)], handler: materialRequestsController.deliverRequest },
+  { method: "POST", path: "/api/v1/material-requests/:requestId/close", middlewares: [verifyToken, required(P.REQUESTS_MANAGE)], handler: materialRequestsController.closeRequest },
+  { method: "GET", path: "/api/v1/material-requests/:requestId/history", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: materialRequestsController.getRequestHistory },
+  { method: "GET", path: "/api/v1/material-requests/:requestId", middlewares: [verifyToken, required(P.REQUESTS_READ)], handler: materialRequestsController.getRequest },
+  { method: "PATCH", path: "/api/v1/material-requests/:requestId", middlewares: [verifyToken, required(P.REQUESTS_WRITE)], handler: materialRequestsController.updateRequest },
+
+  { method: "POST", path: "/api/v1/material-reservations", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: materialReservationsController.createReservation },
+  { method: "GET", path: "/api/v1/material-reservations", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.listReservations },
+  { method: "GET", path: "/api/v1/material-reservations/availability", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.getAvailability },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/approve", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE)], handler: materialReservationsController.approveReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/reject", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE)], handler: materialReservationsController.rejectReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/cancel", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: materialReservationsController.cancelReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/deliver", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE), required(P.INVENTORY_WRITE)], handler: materialReservationsController.deliverReservation },
+  { method: "POST", path: "/api/v1/material-reservations/:reservationId/finish", middlewares: [verifyToken, required(P.RESERVATIONS_MANAGE)], handler: materialReservationsController.finishReservation },
+  { method: "GET", path: "/api/v1/material-reservations/:reservationId/history", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.getReservationHistory },
+  { method: "GET", path: "/api/v1/material-reservations/:reservationId", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: materialReservationsController.getReservation },
+  { method: "PATCH", path: "/api/v1/material-reservations/:reservationId", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: materialReservationsController.updateReservation },
 
   { method: "POST", path: "/api/v1/reservations", middlewares: [verifyToken, required(P.RESERVATIONS_WRITE)], handler: reservationsController.createReservation },
   { method: "GET", path: "/api/v1/reservations", middlewares: [verifyToken, required(P.RESERVATIONS_READ)], handler: reservationsController.listReservations },
@@ -386,9 +450,11 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/notifications", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.createNotification },
   { method: "GET", path: "/api/v1/notifications", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.listNotifications },
   { method: "GET", path: "/api/v1/notifications/unread-count", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getUnreadCount },
+  { method: "POST", path: "/api/v1/notifications/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markManyRead },
+  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAllRead },
   { method: "GET", path: "/api/v1/notifications/:notificationId", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getNotification },
-  { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.markAsRead },
-  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.markAllRead },
+  { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAsRead },
+  { method: "POST", path: "/api/v1/notifications/:notificationId/archive", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.archiveNotification },
 
   { method: "POST", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.createArea },
   { method: "GET", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.listAreas },
@@ -404,6 +470,98 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/curriculum/activities", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.listActivities },
   { method: "GET", path: "/api/v1/curriculum/activities/:activityId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.getActivity },
   { method: "PATCH", path: "/api/v1/curriculum/activities/:activityId", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.updateActivity },
+
+  /* Seguimiento curricular: materias, disenos, contenidos, seguimientos y
+     avance. Los literales y subrutas van antes que los parametros. */
+  { method: "POST", path: "/api/v1/curriculum/materias", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: seguimientoController.createSubject },
+  { method: "GET", path: "/api/v1/curriculum/materias", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listSubjects },
+  { method: "GET", path: "/api/v1/curriculum/materias/:subjectId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getSubject },
+  { method: "PATCH", path: "/api/v1/curriculum/materias/:subjectId", middlewares: [verifyToken, required(P.ACADEMICS_WRITE)], handler: seguimientoController.updateSubject },
+
+  { method: "POST", path: "/api/v1/curriculum/disenos", middlewares: [verifyToken, required(P.CURRICULUM_MANAGE)], handler: seguimientoController.createDesign },
+  { method: "GET", path: "/api/v1/curriculum/disenos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listDesigns },
+  { method: "GET", path: "/api/v1/curriculum/disenos/:designId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getDesign },
+  { method: "PATCH", path: "/api/v1/curriculum/disenos/:designId", middlewares: [verifyToken, required(P.CURRICULUM_MANAGE)], handler: seguimientoController.updateDesign },
+
+  { method: "POST", path: "/api/v1/curriculum/contenidos", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: seguimientoController.createContent },
+  { method: "GET", path: "/api/v1/curriculum/contenidos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listContents },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/pendientes", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listPendingContents },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/:contentId/seguimientos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listContentTrackings },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/:contentId/historial", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getContentHistory },
+  { method: "GET", path: "/api/v1/curriculum/contenidos/:contentId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getContent },
+  { method: "PATCH", path: "/api/v1/curriculum/contenidos/:contentId", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: seguimientoController.updateContent },
+
+  { method: "POST", path: "/api/v1/curriculum/seguimientos", middlewares: [verifyToken, required(P.CURRICULUM_TRACK_WRITE)], handler: seguimientoController.createTracking },
+  { method: "GET", path: "/api/v1/curriculum/seguimientos", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.listTrackings },
+  { method: "GET", path: "/api/v1/curriculum/seguimientos/:trackingId", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.getTracking },
+  { method: "PATCH", path: "/api/v1/curriculum/seguimientos/:trackingId", middlewares: [verifyToken, required(P.CURRICULUM_TRACK_WRITE)], handler: seguimientoController.updateTracking },
+
+  { method: "GET", path: "/api/v1/curriculum/avance/materia", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avanceMateria },
+  { method: "GET", path: "/api/v1/curriculum/avance/curso", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avanceCurso },
+  { method: "GET", path: "/api/v1/curriculum/avance/docente", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avanceDocente },
+  { method: "GET", path: "/api/v1/curriculum/avance/periodo", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avancePeriodo },
+  { method: "GET", path: "/api/v1/curriculum/avance/pendientes", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: seguimientoController.avancePendientes },
+
+  /* Planificaciones docentes. Subrutas antes que :planId. */
+  { method: "POST", path: "/api/v1/teacher-plans", middlewares: [verifyToken, required(P.PLANNING_WRITE)], handler: planificacionesController.createPlanning },
+  { method: "GET", path: "/api/v1/teacher-plans", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlannings },
+  { method: "GET", path: "/api/v1/teacher-plans/by-teacher/:teacherId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsByTeacher },
+  { method: "GET", path: "/api/v1/teacher-plans/by-subject/:subjectId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsBySubject },
+  { method: "GET", path: "/api/v1/teacher-plans/by-course/:courseId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsByCourse },
+  { method: "GET", path: "/api/v1/teacher-plans/by-period/:year", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.listPlanningsByPeriod },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId/status", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanningStatus },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId/history", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanningHistory },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId/curriculum-comparison", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanningCurriculumComparison },
+  { method: "PATCH", path: "/api/v1/teacher-plans/:planId/status", middlewares: [verifyToken, required(P.PLANNING_WRITE)], handler: planificacionesController.changePlanningStatus },
+  { method: "GET", path: "/api/v1/teacher-plans/:planId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: planificacionesController.getPlanning },
+  { method: "PATCH", path: "/api/v1/teacher-plans/:planId", middlewares: [verifyToken, required(P.PLANNING_WRITE)], handler: planificacionesController.updatePlanning },
+  { method: "DELETE", path: "/api/v1/teacher-plans/:planId", middlewares: [verifyToken, required(P.PLANNING_MANAGE)], handler: planificacionesController.archivePlanning },
+
+  /* Control de planificaciones. Subrutas antes que :controlId. */
+  { method: "POST", path: "/api/v1/planning-controls", middlewares: [verifyToken, required(P.PLANNING_REVIEW)], handler: controlPlanificacionesController.createControl },
+  { method: "GET", path: "/api/v1/planning-controls", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControls },
+  { method: "GET", path: "/api/v1/planning-controls/pending", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listPendingControls },
+  { method: "GET", path: "/api/v1/planning-controls/by-teacher/:teacherId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByTeacher },
+  { method: "GET", path: "/api/v1/planning-controls/by-subject/:subjectId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsBySubject },
+  { method: "GET", path: "/api/v1/planning-controls/by-course/:courseId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByCourse },
+  { method: "GET", path: "/api/v1/planning-controls/by-period/:year", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByPeriod },
+  { method: "GET", path: "/api/v1/planning-controls/by-status/:status", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.listControlsByStatus },
+  { method: "GET", path: "/api/v1/planning-controls/planning/:planId/history", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getPlanningControlHistory },
+  { method: "GET", path: "/api/v1/planning-controls/planning/:planId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getControlByPlanning },
+  { method: "GET", path: "/api/v1/planning-controls/:controlId/history", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getControlAudit },
+  { method: "PATCH", path: "/api/v1/planning-controls/:controlId/status", middlewares: [verifyToken, required(P.PLANNING_REVIEW)], handler: controlPlanificacionesController.changeControlStatus },
+  { method: "GET", path: "/api/v1/planning-controls/:controlId", middlewares: [verifyToken, required(P.PLANNING_READ)], handler: controlPlanificacionesController.getControl },
+  { method: "PATCH", path: "/api/v1/planning-controls/:controlId", middlewares: [verifyToken, required(P.PLANNING_REVIEW)], handler: controlPlanificacionesController.updateControl },
+
+  /* Grupos: los literales (by-*) van antes que :groupId. */
+  { method: "POST", path: "/api/v1/groups", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.createGroup },
+  { method: "GET", path: "/api/v1/groups", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroups },
+  { method: "GET", path: "/api/v1/groups/by-student/:studentId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listStudentGroups },
+  { method: "GET", path: "/api/v1/groups/by-course/:courseId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroupsByCourse },
+  { method: "GET", path: "/api/v1/groups/by-division/:divisionId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroupsByDivision },
+  { method: "POST", path: "/api/v1/groups/:groupId/members", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.addMember },
+  { method: "GET", path: "/api/v1/groups/:groupId/members", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.listGroupMembers },
+  { method: "DELETE", path: "/api/v1/groups/:groupId/members/:studentId", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.removeMember },
+  { method: "GET", path: "/api/v1/groups/:groupId/planning", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.getGroupPlanning },
+  { method: "GET", path: "/api/v1/groups/:groupId/history", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.getGroupHistory },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/division", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/workshop", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/space", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId/schedule", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.assignToGroup },
+  { method: "POST", path: "/api/v1/groups/:groupId/activate", middlewares: [verifyToken, required(P.GROUPS_MANAGE)], handler: groupsController.activateGroup },
+  { method: "POST", path: "/api/v1/groups/:groupId/deactivate", middlewares: [verifyToken, required(P.GROUPS_MANAGE)], handler: groupsController.deactivateGroup },
+  { method: "POST", path: "/api/v1/groups/:groupId/finalize", middlewares: [verifyToken, required(P.GROUPS_MANAGE)], handler: groupsController.finalizeGroup },
+  { method: "GET", path: "/api/v1/groups/:groupId", middlewares: [verifyToken, required(P.GROUPS_READ)], handler: groupsController.getGroup },
+  { method: "PATCH", path: "/api/v1/groups/:groupId", middlewares: [verifyToken, required(P.GROUPS_WRITE)], handler: groupsController.updateGroup },
+
+  /* Reasignaciones. Subrutas antes que :reassignmentId. */
+  { method: "POST", path: "/api/v1/reassignments", middlewares: [verifyToken, required(P.REASSIGNMENTS_WRITE)], handler: reassignmentsController.createReassignment },
+  { method: "GET", path: "/api/v1/reassignments", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.listReassignments },
+  { method: "GET", path: "/api/v1/reassignments/current-space/:assignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.getCurrentSpace },
+  { method: "GET", path: "/api/v1/reassignments/by-activity/:assignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.listReassignmentsByActivity },
+  { method: "POST", path: "/api/v1/reassignments/:reassignmentId/revert", middlewares: [verifyToken, required(P.REASSIGNMENTS_WRITE)], handler: reassignmentsController.revertReassignment },
+  { method: "GET", path: "/api/v1/reassignments/:reassignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.getReassignment },
+  { method: "PATCH", path: "/api/v1/reassignments/:reassignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_WRITE)], handler: reassignmentsController.updateReassignment },
 
   { method: "GET", path: "/api/v1/audit/logs", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.listLogs },
   { method: "GET", path: "/api/v1/audit/logs/:logId", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.getLog },

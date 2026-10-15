@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -381,16 +381,6 @@ Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | PATCH | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
 | DELETE | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
 
-## absences
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| POST | `/api/v1/absences` | `absences.write` |
-| GET | `/api/v1/absences` | `absences.read` |
-| GET | `/api/v1/absences/:absenceId` | `absences.read` |
-| PATCH | `/api/v1/absences/:absenceId` | `absences.write` |
-| DELETE | `/api/v1/absences/:absenceId` | `absences.manage` |
-
 ## inasistencias
 
 | Metodo | Ruta | Permiso |
@@ -404,6 +394,42 @@ Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/inasistencias/:inasistenciaId` | `attendance.read` |
 | POST | `/api/v1/inasistencias/:inasistenciaId/justify` | `attendance.write` |
 | PATCH | `/api/v1/inasistencias/:inasistenciaId` | `attendance.write` |
+
+## absences
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/absences/available-spaces` | `absences.read` |
+| GET | `/api/v1/absences/affected-activities` | `absences.read` |
+| GET | `/api/v1/absences/grid` | `absences.read` |
+| POST | `/api/v1/absences` | `absences.write` |
+| GET | `/api/v1/absences` | `absences.read` |
+| GET | `/api/v1/absences/:absenceId/history` | `absences.read` |
+| GET | `/api/v1/absences/:absenceId/availability` | `absences.read` |
+| POST | `/api/v1/absences/:absenceId/reactivate` | `absences.manage` |
+| GET | `/api/v1/absences/:absenceId` | `absences.read` |
+| PATCH | `/api/v1/absences/:absenceId` | `absences.write` |
+| POST | `/api/v1/absences/:absenceId/annul` | `absences.manage` |
+| DELETE | `/api/v1/absences/:absenceId` | `absences.manage` |
+
+## absence-liberations
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| PATCH | `/api/v1/absence-liberations/:availabilityId` | `absences.write` |
+
+## absence-events
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/absence-events` | `absences.read` |
+| POST | `/api/v1/absence-events` | `absences.write` |
+| GET | `/api/v1/absence-events/by-absence/:absenceId` | `absences.read` |
+| GET | `/api/v1/absence-events/:eventId/class-state` | `absences.read` |
+| GET | `/api/v1/absence-events/:eventId/space-availability` | `absences.read` |
+| GET | `/api/v1/absence-events/:eventId/affected-classes` | `absences.read` |
+| GET | `/api/v1/absence-events/:eventId/notifications` | `absences.read` |
+| GET | `/api/v1/absence-events/:eventId` | `absences.read` |
 
 ## incidents
 
@@ -474,6 +500,13 @@ Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | POST | `/api/v1/inventory` | `inventory.write` |
 | GET | `/api/v1/inventory` | `inventory.read` |
+| GET | `/api/v1/inventory/stock-low` | `inventory.read` |
+| GET | `/api/v1/inventory/:itemId/stock` | `inventory.read` |
+| GET | `/api/v1/inventory/:itemId/stock/verify` | `inventory.read` |
+| GET | `/api/v1/inventory/:itemId/movements` | `inventory.read` |
+| GET | `/api/v1/inventory/:itemId/history` | `inventory.read` |
+| POST | `/api/v1/inventory/:itemId/movements` | `inventory.write` |
+| POST | `/api/v1/inventory/:itemId/movements/adjust` | `inventory.manage` |
 | GET | `/api/v1/inventory/:itemId` | `inventory.read` |
 | PATCH | `/api/v1/inventory/:itemId` | `inventory.write` |
 | DELETE | `/api/v1/inventory/:itemId` | `inventory.manage` |
@@ -484,6 +517,7 @@ Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | POST | `/api/v1/inventory-movements` | `inventory.write` |
 | GET | `/api/v1/inventory-movements` | `inventory.read` |
+| GET | `/api/v1/inventory-movements/:movementId` | `inventory.read` |
 
 ## requests
 
@@ -495,6 +529,38 @@ Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | PATCH | `/api/v1/requests/:requestId` | `requests.write` |
 | POST | `/api/v1/requests/:requestId/comments` | `requests.write` |
 | GET | `/api/v1/requests/:requestId/comments` | `requests.read` |
+
+## material-requests
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/material-requests` | `requests.write` |
+| GET | `/api/v1/material-requests` | `requests.read` |
+| POST | `/api/v1/material-requests/:requestId/status` | `requests.manage` |
+| POST | `/api/v1/material-requests/:requestId/approve` | `requests.manage` |
+| POST | `/api/v1/material-requests/:requestId/reject` | `requests.manage` |
+| POST | `/api/v1/material-requests/:requestId/cancel` | `requests.write` |
+| POST | `/api/v1/material-requests/:requestId/deliver` | `requests.manage`, `inventory.write` |
+| POST | `/api/v1/material-requests/:requestId/close` | `requests.manage` |
+| GET | `/api/v1/material-requests/:requestId/history` | `requests.read` |
+| GET | `/api/v1/material-requests/:requestId` | `requests.read` |
+| PATCH | `/api/v1/material-requests/:requestId` | `requests.write` |
+
+## material-reservations
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/material-reservations` | `reservations.write` |
+| GET | `/api/v1/material-reservations` | `reservations.read` |
+| GET | `/api/v1/material-reservations/availability` | `reservations.read` |
+| POST | `/api/v1/material-reservations/:reservationId/approve` | `reservations.manage` |
+| POST | `/api/v1/material-reservations/:reservationId/reject` | `reservations.manage` |
+| POST | `/api/v1/material-reservations/:reservationId/cancel` | `reservations.write` |
+| POST | `/api/v1/material-reservations/:reservationId/deliver` | `reservations.manage`, `inventory.write` |
+| POST | `/api/v1/material-reservations/:reservationId/finish` | `reservations.manage` |
+| GET | `/api/v1/material-reservations/:reservationId/history` | `reservations.read` |
+| GET | `/api/v1/material-reservations/:reservationId` | `reservations.read` |
+| PATCH | `/api/v1/material-reservations/:reservationId` | `reservations.write` |
 
 ## reservations
 
@@ -515,9 +581,11 @@ Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/notifications` | `notifications.write` |
 | GET | `/api/v1/notifications` | `notifications.read` |
 | GET | `/api/v1/notifications/unread-count` | `notifications.read` |
+| POST | `/api/v1/notifications/read` | `notifications.write` |
+| POST | `/api/v1/notifications/read-all` | `notifications.write` |
 | GET | `/api/v1/notifications/:notificationId` | `notifications.read` |
-| POST | `/api/v1/notifications/:notificationId/read` | `notifications.read` |
-| POST | `/api/v1/notifications/read-all` | `notifications.read` |
+| POST | `/api/v1/notifications/:notificationId/read` | `notifications.write` |
+| POST | `/api/v1/notifications/:notificationId/archive` | `notifications.write` |
 
 ## curriculum
 
@@ -535,6 +603,103 @@ Total: 288 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/curriculum/activities` | `curriculum.read` |
 | GET | `/api/v1/curriculum/activities/:activityId` | `curriculum.read` |
 | PATCH | `/api/v1/curriculum/activities/:activityId` | `curriculum.write` |
+| POST | `/api/v1/curriculum/materias` | `academics.write` |
+| GET | `/api/v1/curriculum/materias` | `curriculum.read` |
+| GET | `/api/v1/curriculum/materias/:subjectId` | `curriculum.read` |
+| PATCH | `/api/v1/curriculum/materias/:subjectId` | `academics.write` |
+| POST | `/api/v1/curriculum/disenos` | `curriculum.manage` |
+| GET | `/api/v1/curriculum/disenos` | `curriculum.read` |
+| GET | `/api/v1/curriculum/disenos/:designId` | `curriculum.read` |
+| PATCH | `/api/v1/curriculum/disenos/:designId` | `curriculum.manage` |
+| POST | `/api/v1/curriculum/contenidos` | `curriculum.write` |
+| GET | `/api/v1/curriculum/contenidos` | `curriculum.read` |
+| GET | `/api/v1/curriculum/contenidos/pendientes` | `curriculum.read` |
+| GET | `/api/v1/curriculum/contenidos/:contentId/seguimientos` | `curriculum.read` |
+| GET | `/api/v1/curriculum/contenidos/:contentId/historial` | `curriculum.read` |
+| GET | `/api/v1/curriculum/contenidos/:contentId` | `curriculum.read` |
+| PATCH | `/api/v1/curriculum/contenidos/:contentId` | `curriculum.write` |
+| POST | `/api/v1/curriculum/seguimientos` | `curriculum.track` |
+| GET | `/api/v1/curriculum/seguimientos` | `curriculum.read` |
+| GET | `/api/v1/curriculum/seguimientos/:trackingId` | `curriculum.read` |
+| PATCH | `/api/v1/curriculum/seguimientos/:trackingId` | `curriculum.track` |
+| GET | `/api/v1/curriculum/avance/materia` | `curriculum.read` |
+| GET | `/api/v1/curriculum/avance/curso` | `curriculum.read` |
+| GET | `/api/v1/curriculum/avance/docente` | `curriculum.read` |
+| GET | `/api/v1/curriculum/avance/periodo` | `curriculum.read` |
+| GET | `/api/v1/curriculum/avance/pendientes` | `curriculum.read` |
+
+## teacher-plans
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/teacher-plans` | `planning.write` |
+| GET | `/api/v1/teacher-plans` | `planning.read` |
+| GET | `/api/v1/teacher-plans/by-teacher/:teacherId` | `planning.read` |
+| GET | `/api/v1/teacher-plans/by-subject/:subjectId` | `planning.read` |
+| GET | `/api/v1/teacher-plans/by-course/:courseId` | `planning.read` |
+| GET | `/api/v1/teacher-plans/by-period/:year` | `planning.read` |
+| GET | `/api/v1/teacher-plans/:planId/status` | `planning.read` |
+| GET | `/api/v1/teacher-plans/:planId/history` | `planning.read` |
+| GET | `/api/v1/teacher-plans/:planId/curriculum-comparison` | `planning.read` |
+| PATCH | `/api/v1/teacher-plans/:planId/status` | `planning.write` |
+| GET | `/api/v1/teacher-plans/:planId` | `planning.read` |
+| PATCH | `/api/v1/teacher-plans/:planId` | `planning.write` |
+| DELETE | `/api/v1/teacher-plans/:planId` | `planning.manage` |
+
+## planning-controls
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/planning-controls` | `planning.review` |
+| GET | `/api/v1/planning-controls` | `planning.read` |
+| GET | `/api/v1/planning-controls/pending` | `planning.read` |
+| GET | `/api/v1/planning-controls/by-teacher/:teacherId` | `planning.read` |
+| GET | `/api/v1/planning-controls/by-subject/:subjectId` | `planning.read` |
+| GET | `/api/v1/planning-controls/by-course/:courseId` | `planning.read` |
+| GET | `/api/v1/planning-controls/by-period/:year` | `planning.read` |
+| GET | `/api/v1/planning-controls/by-status/:status` | `planning.read` |
+| GET | `/api/v1/planning-controls/planning/:planId/history` | `planning.read` |
+| GET | `/api/v1/planning-controls/planning/:planId` | `planning.read` |
+| GET | `/api/v1/planning-controls/:controlId/history` | `planning.read` |
+| PATCH | `/api/v1/planning-controls/:controlId/status` | `planning.review` |
+| GET | `/api/v1/planning-controls/:controlId` | `planning.read` |
+| PATCH | `/api/v1/planning-controls/:controlId` | `planning.review` |
+
+## groups
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/groups` | `groups.write` |
+| GET | `/api/v1/groups` | `groups.read` |
+| GET | `/api/v1/groups/by-student/:studentId` | `groups.read` |
+| GET | `/api/v1/groups/by-course/:courseId` | `groups.read` |
+| GET | `/api/v1/groups/by-division/:divisionId` | `groups.read` |
+| POST | `/api/v1/groups/:groupId/members` | `groups.write` |
+| GET | `/api/v1/groups/:groupId/members` | `groups.read` |
+| DELETE | `/api/v1/groups/:groupId/members/:studentId` | `groups.write` |
+| GET | `/api/v1/groups/:groupId/planning` | `groups.read` |
+| GET | `/api/v1/groups/:groupId/history` | `groups.read` |
+| PATCH | `/api/v1/groups/:groupId/division` | `groups.write` |
+| PATCH | `/api/v1/groups/:groupId/workshop` | `groups.write` |
+| PATCH | `/api/v1/groups/:groupId/space` | `groups.write` |
+| PATCH | `/api/v1/groups/:groupId/schedule` | `groups.write` |
+| POST | `/api/v1/groups/:groupId/activate` | `groups.manage` |
+| POST | `/api/v1/groups/:groupId/deactivate` | `groups.manage` |
+| POST | `/api/v1/groups/:groupId/finalize` | `groups.manage` |
+| GET | `/api/v1/groups/:groupId` | `groups.read` |
+| PATCH | `/api/v1/groups/:groupId` | `groups.write` |
+
+## reassignments
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/reassignments` | `reassignments.write` |
+| GET | `/api/v1/reassignments` | `reassignments.read` |
+| GET | `/api/v1/reassignments/current-space/:assignmentId` | `reassignments.read` |
+| GET | `/api/v1/reassignments/by-activity/:assignmentId` | `reassignments.read` |
+| POST | `/api/v1/reassignments/:reassignmentId/revert` | `reassignments.write` |
+| GET | `/api/v1/reassignments/:reassignmentId` | `reassignments.read` |
+| PATCH | `/api/v1/reassignments/:reassignmentId` | `reassignments.write` |
 
 ## audit
 

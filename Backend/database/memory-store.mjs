@@ -14,34 +14,12 @@ export function getStore() {
 }
 
 export function resetStore() {
-  store.users.clear();
-  store.refreshTokens.clear();
-  store.students.clear();
-  store.studentsAudit.length = 0;
-  store.loginAttempts.clear();
-  store.auditLogs.clear();
-  store.errorLogs.clear();
-  store.rolePermissions.clear();
-  if (store.teachers) store.teachers.clear();
-  if (store.teacherSubjects) store.teacherSubjects.clear();
-  if (store.teacherCourses) store.teacherCourses.clear();
-  if (store.teachersAudit) store.teachersAudit.length = 0;
-  if (store.inventoryItems) store.inventoryItems.clear();
-  if (store.inventoryMovements) store.inventoryMovements.clear();
-  if (store.requests) store.requests.clear();
-  if (store.requestComments) store.requestComments.clear();
-  if (store.reservations) store.reservations.clear();
-  if (store.courseChangesMovimientos) store.courseChangesMovimientos.clear();
-  if (store.courseChangesOperaciones) store.courseChangesOperaciones.clear();
-  if (store.courseChangesAudit) store.courseChangesAudit.length = 0;
-  if (store.gradesCalificaciones) store.gradesCalificaciones.clear();
-  if (store.gradesAudit) store.gradesAudit.length = 0;
-  if (store.bookRegistries) store.bookRegistries.clear();
-  if (store.bookRegistriesAudit) store.bookRegistriesAudit.length = 0;
-  if (store.particularConditions) store.particularConditions.clear();
-  if (store.particularConditionsAudit) store.particularConditionsAudit.length = 0;
-  if (store.observations) store.observations.clear();
-  if (store.observationFollowups) store.observationFollowups.clear();
-  if (store.observationsAudit) store.observationsAudit.length = 0;
+  for (const value of Object.values(store)) {
+    if (value instanceof Map || value instanceof Set) {
+      value.clear();
+    } else if (Array.isArray(value)) {
+      value.length = 0;
+    }
+  }
 }
 
