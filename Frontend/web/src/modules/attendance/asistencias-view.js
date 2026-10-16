@@ -327,13 +327,27 @@ export default function AsistenciasView({ modoDocente = false }) {
     });
 
     const totalInasistencias = ausentesInjust + ausentesJust;
+    const baseEvaluada = presentes + totalInasistencias;
+    const porcentajeCalculado = baseEvaluada > 0 ? (presentes / baseEvaluada) * 100 : 100;
+    const porcentajeNumero = Number(porcentajeCalculado.toFixed(1));
+
+    let porcentajeClass = "pct-good";
+    if (porcentajeNumero < 75) {
+      porcentajeClass = "pct-danger";
+    } else if (porcentajeNumero < 85) {
+      porcentajeClass = "pct-warning";
+    }
 
     return {
       presentes,
       ausentesJust,
       ausentesInjust,
       ef: 0,
-      totalInasistencias
+      totalInasistencias,
+      baseEvaluada,
+      porcentajeNumero,
+      porcentajeAsistencia: `${porcentajeNumero}%`,
+      porcentajeClass
     };
   };
 
@@ -695,6 +709,15 @@ export default function AsistenciasView({ modoDocente = false }) {
                   h("th", { className: "th-col-asistencia", rowSpan: 2 }, "ASISTENCIA"),
                   h("th", { className: "th-col-inasistencia-group", colSpan: 3 }, "INASISTENCIA"),
                   h("th", { className: "th-col-total-inasist", rowSpan: 2 }, "TOTAL"),
+                  h(
+                    "th",
+                    {
+                      className: "th-col-porcentaje-asist",
+                      rowSpan: 2,
+                      title: "Porcentaje total de asistencia del alumno en el mes"
+                    },
+                    "% ASISTENCIA"
+                  ),
                   h("th", { className: "th-col-observaciones", rowSpan: 2 }, "OBSERVACIONES")
                 ),
                 h(
@@ -730,7 +753,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   { className: "tr-section-divider" },
                   h(
                     "td",
-                    { colSpan: diasMes.length + 7, className: "td-section-banner" },
+                    { colSpan: diasMes.length + 9, className: "td-section-banner" },
                     h("span", { className: "sticky-section-title" }, "VARONES")
                   )
                 ),
@@ -767,6 +790,14 @@ export default function AsistenciasView({ modoDocente = false }) {
                     h("td", { className: "td-total td-injust" }, totales.ausentesInjust || "—"),
                     h("td", { className: "td-total td-ef" }, totales.ef || "—"),
                     h("td", { className: "td-total td-inasist-total" }, totales.totalInasistencias || "0"),
+                    h(
+                      "td",
+                      {
+                        className: `td-total td-porcentaje ${totales.porcentajeClass}`,
+                        title: `${totales.porcentajeAsistencia} de asistencia (${totales.presentes} presentes de ${totales.baseEvaluada} días computados)`
+                      },
+                      totales.porcentajeAsistencia
+                    ),
                     h("td", { className: "td-observaciones-input" },
                       h("input", {
                         type: "text",
@@ -797,7 +828,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `vp-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.varonesPresentes[d.numero])
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
                 h(
                   "tr",
@@ -807,7 +838,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `va-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.varonesAusentes[d.numero])
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
                 h(
                   "tr",
@@ -817,7 +848,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `vi-${d.numero}`, className: "td-tot-col" }, varones.length)
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
 
                 // -------------------------------------------------------------
@@ -828,7 +859,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   { className: "tr-section-divider" },
                   h(
                     "td",
-                    { colSpan: diasMes.length + 7, className: "td-section-banner" },
+                    { colSpan: diasMes.length + 9, className: "td-section-banner" },
                     h("span", { className: "sticky-section-title" }, "MUJERES")
                   )
                 ),
@@ -865,6 +896,14 @@ export default function AsistenciasView({ modoDocente = false }) {
                     h("td", { className: "td-total td-injust" }, totales.ausentesInjust || "—"),
                     h("td", { className: "td-total td-ef" }, totales.ef || "—"),
                     h("td", { className: "td-total td-inasist-total" }, totales.totalInasistencias || "0"),
+                    h(
+                      "td",
+                      {
+                        className: `td-total td-porcentaje ${totales.porcentajeClass}`,
+                        title: `${totales.porcentajeAsistencia} de asistencia (${totales.presentes} presentes de ${totales.baseEvaluada} días computados)`
+                      },
+                      totales.porcentajeAsistencia
+                    ),
                     h("td", { className: "td-observaciones-input" },
                       h("input", {
                         type: "text",
@@ -895,7 +934,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `mp-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.mujeresPresentes[d.numero])
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
                 h(
                   "tr",
@@ -905,7 +944,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `ma-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.mujeresAusentes[d.numero])
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
                 h(
                   "tr",
@@ -915,7 +954,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `mi-${d.numero}`, className: "td-tot-col" }, mujeres.length)
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
 
                 // -------------------------------------------------------------
@@ -929,7 +968,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `tp-${d.numero}`, className: "td-tot-col td-tot-highlight" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.totalPresentes[d.numero])
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
                 h(
                   "tr",
@@ -939,7 +978,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `ta-${d.numero}`, className: "td-tot-col td-tot-highlight" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.totalAusentes[d.numero])
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
                 h(
                   "tr",
@@ -949,7 +988,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   diasMes.map((d) =>
                     h("td", { key: `ti-${d.numero}`, className: "td-tot-col td-tot-highlight" }, (planilla?.alumnos || []).length)
                   ),
-                  h("td", { colSpan: 5, className: "td-empty-spacer" }, "")
+                  h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 )
               )
             )

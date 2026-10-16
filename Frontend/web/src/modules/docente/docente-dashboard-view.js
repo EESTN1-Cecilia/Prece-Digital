@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { StudentsService } from "../students/students-service.js";
+import { AsistenciasService, calcularMetricasPlanilla } from "../attendance/asistencias-service.js";
+import { DocenteCursosGrafico } from "./docente-cursos-grafico.js";
 
 // Cursos asignados a la cuenta de prueba del docente (exactamente 3 cursos: dos turno mañana, uno turno tarde)
 const ASIGNACIONES_DOCENTE_DEFAULT = [
@@ -28,14 +30,16 @@ export default function DocenteDashboardView() {
     try {
       setLoading(true);
       setError(null);
+
+      // 1. Consultamos divisiones de la institución (con matrícula real de la base de datos)
       const divisiones = await StudentsService.getDivisiones();
 
-      // Cursos asignados a la cuenta del docente (desde su perfil de sesión o las 3 asignaciones de prueba)
+      // Cursos asignados a la cuenta del docente (desde su perfil de sesión o asignaciones registradas)
       const asignaciones = (user?.assignments && user.assignments.length > 0)
         ? user.assignments
         : ASIGNACIONES_DOCENTE_DEFAULT;
 
-      // Filtramos las divisiones de la institución para conservar ÚNICAMENTE las 3 asignadas a este docente
+      // Filtramos las divisiones de la institución para conservar las asignadas a este docente
       const cursosAsignados = (divisiones || []).filter((div) => {
         return asignaciones.some((asig) => {
           const anioAsig = String(asig.anio || asig.curso || "").replace(/\D/g, "");
@@ -46,37 +50,125 @@ export default function DocenteDashboardView() {
         });
       });
 
-      // Mapeamos los cursos con su materia correspondiente y datos reales de matrícula
-      const cursosListos = cursosAsignados.map((c) => {
-        const asig = asignaciones.find((a) => {
-          const anioAsig = String(a.anio || a.curso || "").replace(/\D/g, "");
-          const anioDiv = String(c.anio || c.curso || "").replace(/\D/g, "");
-          const divAsig = String(a.division || "").trim();
-          const divDiv = String(c.division || "").trim();
-          return anioAsig === anioDiv && divAsig === divDiv;
-        });
-        return {
-          ...c,
-          materia: asig?.materia || "Matemática"
-        };
-      });
+      const now = new Date();
+      const mesActual = now.getMonth() + 1;
+      const anioActual = now.getFullYear();
 
-      // Si el catálogo de la institución no matcheó por IDs, usamos las 3 asignaciones con datos normalizados
+      // Mapeamos los cursos con su materia correspondiente, matrícula real y planilla oficial de asistencias
+      const cursosListos = await Promise.all(
+        cursosAsignados.map(async (c) => {
+          const asig = asignaciones.find((a) => {
+            const anioAsig = String(a.anio || a.curso || "").replace(/\D/g, "");
+            const anioDiv = String(c.anio || c.curso || "").replace(/\D/g, "");
+            const divAsig = String(a.division || "").trim();
+            const divDiv = String(c.division || "").trim();
+            return anioAsig === anioDiv && divAsig === divDiv;
+          });
+
+          const anioNum = String(c.anio || c.curso || "1").replace(/\D/g, "");
+          const divNum = String(c.division || "1").replace(/\D/g, "");
+          const cursoId = `${anioNum}-${divNum}`;
+          const materiaNombre = asig?.materia || c.materia || "";
+
+          // Consultamos la planilla oficial de asistencias (idéntica a la pantalla del libro de asistencias)
+          let metricas = null;
+          let planilla = null;
+          try {
+            planilla = await AsistenciasService.getPlanilla(
+              cursoId,
+              mesActual,
+              anioActual,
+              materiaNombre
+            );
+            if (planilla) {
+              metricas = calcularMetricasPlanilla(planilla);
+            }
+          } catch (err) {
+            console.warn(`No se pudo obtener planilla para el curso ${cursoId}:`, err);
+          }
+
+          // Matrícula real: si la planilla obtuvo los alumnos reales de la base de datos, usamos su longitud
+          const cantAlumnos = (planilla?.alumnos && planilla.alumnos.length > 0)
+            ? planilla.alumnos.length
+            : (Number(c.activos ?? c.cantidad) || 0);
+
+          if (!metricas) {
+            metricas = {
+              porcentaje: 0,
+              label: "0%",
+              sinAlumnos: cantAlumnos === 0,
+              sinRegistros: true,
+              subtexto: cantAlumnos === 0 ? "Sin matrícula asignada" : "Sin asistencias registradas"
+            };
+          }
+
+          return {
+            ...c,
+            cantidad: cantAlumnos,
+            activos: cantAlumnos,
+            materia: materiaNombre,
+            asistencia: metricas
+          };
+        })
+      );
+
+      // Si el catálogo de la institución no matcheó por IDs, usamos asignaciones con cantidades reales de división
       if (cursosListos.length === 0) {
-        setCursos(
-          ASIGNACIONES_DOCENTE_DEFAULT.map((asig) => ({
-            id: `${asig.anio}-${asig.division}`,
-            curso: asig.curso,
-            division: asig.division,
-            anio: asig.anio,
-            turnoAula: asig.anio === 3 ? "Tarde" : "Mañana",
-            turnoTaller: asig.anio === 3 ? "Mañana" : "Tarde",
-            orientacion: "Ciclo Básico",
-            cantidad: 28,
-            activos: 28,
-            materia: asig.materia
-          }))
+        const fallbackListos = await Promise.all(
+          asignaciones.map(async (asig) => {
+            const anioNum = String(asig.anio || asig.curso || "1").replace(/\D/g, "");
+            const divNum = String(asig.division || "1").replace(/\D/g, "");
+            const cursoId = `${anioNum}-${divNum}`;
+            const divMatch = (divisiones || []).find((div) => {
+              const anioDiv = String(div.anio || div.curso || "").replace(/\D/g, "");
+              const divDiv = String(div.division || "").trim();
+              return anioNum === anioDiv && divNum === divDiv;
+            });
+
+            let metricas = null;
+            let planilla = null;
+            try {
+              planilla = await AsistenciasService.getPlanilla(
+                cursoId,
+                mesActual,
+                anioActual,
+                asig.materia
+              );
+              if (planilla) {
+                metricas = calcularMetricasPlanilla(planilla);
+              }
+            } catch (err) {}
+
+            const cantReal = (planilla?.alumnos && planilla.alumnos.length > 0)
+              ? planilla.alumnos.length
+              : (divMatch ? Number(divMatch.activos ?? divMatch.cantidad) || 0 : 0);
+
+            if (!metricas) {
+              metricas = {
+                porcentaje: 0,
+                label: "0%",
+                sinAlumnos: cantReal === 0,
+                sinRegistros: true,
+                subtexto: cantReal === 0 ? "Sin matrícula asignada" : "Sin asistencias registradas"
+              };
+            }
+
+            return {
+              id: `${anioNum}-${divNum}`,
+              curso: asig.curso || `${anioNum}°`,
+              division: divNum,
+              anio: Number(anioNum),
+              turnoAula: asig.shiftId === "tarde" || asig.anio === 3 ? "Tarde" : "Mañana",
+              turnoTaller: asig.shiftId === "tarde" || asig.anio === 3 ? "Mañana" : "Tarde",
+              orientacion: divMatch?.orientacion || "Ciclo Básico",
+              cantidad: cantReal,
+              activos: cantReal,
+              materia: asig.materia || "",
+              asistencia: metricas
+            };
+          })
         );
+        setCursos(fallbackListos);
       } else {
         setCursos(cursosListos);
       }
@@ -159,7 +251,10 @@ export default function DocenteDashboardView() {
       )
     ),
 
-    // 2. Módulos Autorizados del Docente (KPI Cards)
+    // 2. Gráficos interactivos del Docente (Contenedores compactos: Matrícula y Asistencia por curso)
+    h(DocenteCursosGrafico, { cursos, loading }),
+
+    // 3. Módulos Autorizados del Docente (KPI Cards)
     h(
       "div",
       { className: "docente-modules-grid" },
@@ -295,7 +390,7 @@ export default function DocenteDashboardView() {
       )
     ),
 
-    // 3. Nota Informativa Oficial PBA
+    // 4. Nota Informativa Oficial PBA
     h(
       "div",
       { className: "docente-notice-box" },

@@ -93,9 +93,27 @@ export const AsistenciasService = {
    * Si se especifica materia (rol docente), almacena y recupera el registro específico de dicha asignatura.
    */
   async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null) {
-    const materiaPrefix = materia ? `docente_${String(materia).trim().toLowerCase().replace(/\s+/g, "_")}_` : "";
-    const key = `${STORAGE_KEY_PREFIX}${materiaPrefix}${cursoId}_${anio}_${mes}`;
-    const guardado = localStorage.getItem(key);
+    const rawMateria = materia ? String(materia).trim().toLowerCase().replace(/\s+/g, "_") : "";
+    const normMateria = materia
+      ? String(materia).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, "_")
+      : "";
+
+    let guardado = null;
+    if (typeof localStorage !== "undefined") {
+      const keys = [
+        rawMateria ? `${STORAGE_KEY_PREFIX}docente_${rawMateria}_${cursoId}_${anio}_${mes}` : null,
+        normMateria && normMateria !== rawMateria ? `${STORAGE_KEY_PREFIX}docente_${normMateria}_${cursoId}_${anio}_${mes}` : null,
+        `${STORAGE_KEY_PREFIX}${cursoId}_${anio}_${mes}`
+      ].filter(Boolean);
+
+      for (const k of keys) {
+        const item = localStorage.getItem(k);
+        if (item) {
+          guardado = item;
+          break;
+        }
+      }
+    }
 
     const [cursoNumRaw, divNumRaw] = (cursoId || "1-1").split("-");
     const cursoNum = String(cursoNumRaw || "1").replace(/°/g, "").trim();
@@ -190,7 +208,92 @@ export const AsistenciasService = {
       ...planilla,
       ultimaActualizacion: new Date().toISOString()
     };
-    localStorage.setItem(key, JSON.stringify(actualizado));
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(key, JSON.stringify(actualizado));
+    }
     return actualizado;
   }
 };
+
+/**
+ * Calcula las métricas oficiales de asistencia de una planilla
+ * Idéntico al Libro Oficial de Asistencias (asistencias-view.js)
+ */
+export function calcularMetricasPlanilla(planilla) {
+  if (!planilla || !Array.isArray(planilla.alumnos) || planilla.alumnos.length === 0) {
+    return {
+      matricula: 0,
+      totalAsistencias: 0,
+      totalInasistencias: 0,
+      porcentaje: 0,
+      label: "0%",
+      sinAlumnos: true,
+      sinRegistros: true,
+      subtexto: "Sin matrícula asignada"
+    };
+  }
+
+  const anio = Number(planilla.anio) || new Date().getFullYear();
+  const mes = Number(planilla.mes) || new Date().getMonth() + 1;
+  const totalDias = new Date(anio, mes, 0).getDate();
+  const efemerides = Array.isArray(planilla.observacionesMes) ? planilla.observacionesMes : [];
+
+  let totalPresentes = 0;
+  let totalAusentes = 0;
+  let diasHabilesEfectivos = 0;
+
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const fecha = new Date(anio, mes - 1, dia);
+    const diaSemanaIndex = fecha.getDay(); // 0 = Domingo, 6 = Sábado
+    const esFinDeSemana = diaSemanaIndex === 0 || diaSemanaIndex === 6;
+    const esEfemeride = efemerides.some((e) => e.dia === dia);
+
+    if (!esFinDeSemana && !esEfemeride) {
+      diasHabilesEfectivos++;
+      planilla.alumnos.forEach((al) => {
+        const val = planilla.registros?.[al.orden]?.[dia];
+        if (val === "P") {
+          totalPresentes += 1;
+        } else if (val === "A" || val === "J") {
+          totalAusentes += 1;
+        } else if (val === "T") {
+          totalPresentes += 0.5;
+          totalAusentes += 0.5;
+        } else if (val !== "—") {
+          // Por defecto presente en día lectivo
+          totalPresentes += 1;
+        }
+      });
+    }
+  }
+
+  const basePosible = totalPresentes + totalAusentes;
+  if (basePosible === 0) {
+    return {
+      matricula: planilla.alumnos.length,
+      totalAsistencias: 0,
+      totalInasistencias: 0,
+      porcentaje: 0,
+      label: "0%",
+      sinAlumnos: false,
+      sinRegistros: true,
+      subtexto: "Sin asistencias registradas"
+    };
+  }
+
+  const pctExacto = (totalPresentes / basePosible) * 100;
+  const pctRedondeado = Math.round(pctExacto);
+
+  return {
+    matricula: planilla.alumnos.length,
+    totalAsistencias: Math.round(totalPresentes),
+    totalInasistencias: Math.round(totalAusentes),
+    porcentaje: pctRedondeado,
+    label: `${pctRedondeado}%`,
+    sinAlumnos: false,
+    sinRegistros: false,
+    subtexto: totalAusentes === 0
+      ? `${Math.round(totalPresentes)} presentes de ${Math.round(basePosible)} computados`
+      : `${Math.round(totalAusentes)} inasistencia(s) computada(s)`
+  };
+}

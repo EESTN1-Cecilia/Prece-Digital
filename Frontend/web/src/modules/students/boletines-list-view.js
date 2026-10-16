@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
@@ -7,8 +7,40 @@ import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
 import { BoletinDigitalModal } from "./components/boletin-digital-modal.js";
 
+// Cursos de referencia para la cuenta docente institucional
+const ASIGNACIONES_DOCENTE_DEFAULT = [
+  { anio: 1, curso: "1°", division: "1", materia: "Matemática I" },
+  { anio: 2, curso: "2°", division: "1", materia: "Matemática II" },
+  { anio: 3, curso: "3°", division: "3", materia: "Matemática III" }
+];
+
+function normalizarAsignacion(asig) {
+  const anio = Number(String(asig.anio || asig.curso || "").replace(/\D/g, "")) || 1;
+  const division = String(asig.division || "").trim();
+  const cursoStr = `${anio}°`;
+  return { anio, curso: cursoStr, division, materia: asig.materia || "Matemática" };
+}
+
 export default function BoletinesListView() {
   const user = useUsuarioActual();
+
+  const esDocente =
+    user?.rol === "docente" ||
+    (Array.isArray(user?.roles) &&
+      user.roles.includes("docente") &&
+      !user.roles.includes("admin") &&
+      !user.roles.includes("director") &&
+      !user.roles.includes("secretario") &&
+      !user.roles.includes("secretaria"));
+
+  const asignacionesDocente = useMemo(() => {
+    if (!esDocente) return null;
+    const raw =
+      user?.assignments && user.assignments.length > 0
+        ? user.assignments
+        : ASIGNACIONES_DOCENTE_DEFAULT;
+    return raw.map(normalizarAsignacion);
+  }, [user, esDocente]);
 
   // Filtros
   const [studentSearch, setStudentSearch] = useState("");
@@ -69,40 +101,170 @@ export default function BoletinesListView() {
     return () => clearTimeout(timer);
   }, [studentSearch]);
 
+  // Opciones dinámicas para selector de Curso/Año
+  const aniosDisponibles = useMemo(() => {
+    if (!asignacionesDocente) return [1, 2, 3, 4, 5, 6, 7];
+    const setAnios = new Set(asignacionesDocente.map((a) => a.anio).filter(Boolean));
+    return Array.from(setAnios).sort((a, b) => a - b);
+  }, [asignacionesDocente]);
+
+  const opcionesCurso = useMemo(() => {
+    if (!esDocente) {
+      return [
+        { value: "todos", label: "Todos los Años" },
+        { value: "1°", label: "1° Año" },
+        { value: "2°", label: "2° Año" },
+        { value: "3°", label: "3° Año" },
+        { value: "4°", label: "4° Año" },
+        { value: "5°", label: "5° Año" },
+        { value: "6°", label: "6° Año" },
+        { value: "7°", label: "7° Año" }
+      ];
+    }
+    return [
+      { value: "todos", label: "Mis cursos asignados" },
+      ...aniosDisponibles.map((anio) => ({ value: `${anio}°`, label: `${anio}° Año` }))
+    ];
+  }, [esDocente, aniosDisponibles]);
+
+  // Opciones dinámicas para selector de División
+  const divisionesDisponibles = useMemo(() => {
+    if (!esDocente) {
+      return [
+        { value: "todas", label: "Todas las Div." },
+        { value: "1", label: "División 1" },
+        { value: "2", label: "División 2" },
+        { value: "3", label: "División 3" },
+        { value: "4", label: "División 4" },
+        { value: "5", label: "División 5" },
+        { value: "6", label: "División 6" }
+      ];
+    }
+
+    let filteredAsigs = asignacionesDocente;
+    if (selectedCurso !== "todos") {
+      const selAnioNum = Number(String(selectedCurso).replace(/\D/g, ""));
+      filteredAsigs = asignacionesDocente.filter((a) => a.anio === selAnioNum);
+    }
+    const setDivs = new Set(filteredAsigs.map((a) => a.division).filter(Boolean));
+    const divsSorted = Array.from(setDivs).sort((a, b) => Number(a) - Number(b));
+    return [
+      { value: "todas", label: "Todas las Div." },
+      ...divsSorted.map((d) => ({ value: d, label: `División ${d}` }))
+    ];
+  }, [esDocente, asignacionesDocente, selectedCurso]);
+
   // Cargar nómina de alumnos
   const fetchStudents = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await StudentsService.getAlumnos({
-        q: debouncedStudentSearch,
-        curso: selectedCurso,
-        division: selectedDivision,
-        turno: selectedTurno,
-        estado: "activo",
-        sortBy: "apellido",
-        sortOrder: "asc",
-        page: currentPage,
-        limit: pageSize
-      });
+      if (esDocente && asignacionesDocente && asignacionesDocente.length > 0) {
+        // Enfoque Docente: acotado estrictamente a los cursos y divisiones asignados al docente
+        let cursosAConsultar = [];
 
-      setStudents(res.data || []);
-      setPagination(
-        res.pagination || {
-          total: res.data?.length || 0,
-          page: currentPage,
-          limit: pageSize,
-          totalPages: 1,
-          hasNextPage: false,
-          hasPrevPage: false
+        if (selectedCurso !== "todos" && selectedDivision !== "todas") {
+          cursosAConsultar = [{ curso: selectedCurso, division: selectedDivision }];
+        } else if (selectedCurso !== "todos" && selectedDivision === "todas") {
+          const selAnioNum = Number(String(selectedCurso).replace(/\D/g, ""));
+          cursosAConsultar = asignacionesDocente
+            .filter((a) => a.anio === selAnioNum)
+            .map((a) => ({ curso: `${a.anio}°`, division: a.division }));
+        } else if (selectedCurso === "todos" && selectedDivision !== "todas") {
+          cursosAConsultar = asignacionesDocente
+            .filter((a) => a.division === String(selectedDivision).trim())
+            .map((a) => ({ curso: `${a.anio}°`, division: a.division }));
+        } else {
+          // Todos los cursos asignados al docente
+          cursosAConsultar = asignacionesDocente.map((a) => ({
+            curso: `${a.anio}°`,
+            division: a.division
+          }));
         }
-      );
+
+        // Consultamos en paralelo las nóminas de cada una de sus divisiones
+        const respuestas = await Promise.all(
+          cursosAConsultar.map((c) =>
+            StudentsService.getAlumnos({
+              curso: c.curso,
+              division: c.division,
+              q: debouncedStudentSearch,
+              turno: selectedTurno,
+              estado: "activo",
+              sortBy: "apellido",
+              sortOrder: "asc",
+              limit: 100
+            })
+          )
+        );
+
+        // Agrupar y asegurar unicidad
+        const mapaAlumnos = new Map();
+        for (const res of respuestas) {
+          for (const alu of res?.data || []) {
+            mapaAlumnos.set(alu.id, alu);
+          }
+        }
+
+        let listaAlumnos = Array.from(mapaAlumnos.values());
+
+        // Ordenar alfabéticamente por apellido y nombre
+        listaAlumnos.sort((a, b) => {
+          const comp = (a.apellido || "").localeCompare(b.apellido || "");
+          if (comp !== 0) return comp;
+          return (a.nombre || "").localeCompare(b.nombre || "");
+        });
+
+        // Paginación client-side de las divisiones del docente
+        const total = listaAlumnos.length;
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        const paginaValida = Math.min(currentPage, totalPages);
+        const offset = (paginaValida - 1) * pageSize;
+        const dataPaginada = listaAlumnos.slice(offset, offset + pageSize);
+
+        setStudents(dataPaginada);
+        setPagination({
+          total,
+          page: paginaValida,
+          limit: pageSize,
+          totalPages,
+          hasNextPage: offset + pageSize < total,
+          hasPrevPage: paginaValida > 1
+        });
+      } else {
+        // Enfoque general (Administrador, Director, Preceptor, Secretaría)
+        const res = await StudentsService.getAlumnos({
+          q: debouncedStudentSearch,
+          curso: selectedCurso,
+          division: selectedDivision,
+          turno: selectedTurno,
+          estado: "activo",
+          sortBy: "apellido",
+          sortOrder: "asc",
+          page: currentPage,
+          limit: pageSize
+        });
+
+        setStudents(res.data || []);
+        setPagination(
+          res.pagination || {
+            total: res.data?.length || 0,
+            page: currentPage,
+            limit: pageSize,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        );
+      }
     } catch (err) {
       setError(err.message || "Error al cargar la nómina de alumnos.");
     } finally {
       setLoading(false);
     }
   }, [
+    esDocente,
+    asignacionesDocente,
     debouncedStudentSearch,
     selectedCurso,
     selectedDivision,
@@ -174,7 +336,17 @@ export default function BoletinesListView() {
         "div",
         { className: "alumnos-top-badges" },
         h("span", { className: "badge-institucion" }, user?.escuela || "E.E.S.T N°1 Monte Grande"),
-        h("span", { className: "badge-ciclo" }, `Ciclo Lectivo ${user?.cicloLectivo || 2026}`)
+        h("span", { className: "badge-ciclo" }, `Ciclo Lectivo ${user?.cicloLectivo || 2026}`),
+        esDocente
+          ? h(
+              "span",
+              {
+                className: "badge-ciclo",
+                style: { background: "#eff6ff", color: "#1d4ed8", borderColor: "#bfdbfe" }
+              },
+              "Vista Docente · Cursos a Cargo"
+            )
+          : null
       )
     ),
 
@@ -201,36 +373,6 @@ export default function BoletinesListView() {
           "p",
           { className: "boletines-subtitle" },
           "Consulta, carga de notas por informes valorativos y emisión oficial de boletines de alumnos."
-        )
-      ),
-      h(
-        "div",
-        { className: "boletines-header-actions" },
-        h(
-          "button",
-          {
-            type: "button",
-            className: "action-button action-button--primary",
-            style: { background: "var(--navy, #222a4c)", borderColor: "var(--navy, #222a4c)" },
-            onClick: () => {
-              if (students.length > 0) {
-                setAlumnoSeleccionado(students[0]);
-              }
-            },
-            title: "Abrir visor de boletín digital con búsqueda directa por DNI"
-          },
-          h(IconoFigma, { className: "action-button__icon", nombre: "search" }),
-          h("span", null, "Ver Boletín por DNI")
-        ),
-        h(
-          "a",
-          {
-            href: "#/asistencias",
-            className: "action-button action-button--secondary",
-            title: "Ir al registro de asistencias"
-          },
-          h(IconoFigma, { className: "action-button__icon", nombre: "clipboard" }),
-          h("span", null, "Planilla de Asistencia")
         )
       )
     ),
@@ -277,36 +419,22 @@ export default function BoletinesListView() {
           label: "Año/Curso",
           value: selectedCurso,
           onChange: (val) => {
-            setSelectedCurso(typeof val === "string" ? val : val?.target?.value);
+            const nextVal = typeof val === "string" ? val : val?.target?.value;
+            setSelectedCurso(nextVal);
+            setSelectedDivision("todas");
             setCurrentPage(1);
           },
-          options: [
-            { value: "todos", label: "Todos los Años" },
-            { value: "1°", label: "1° Año" },
-            { value: "2°", label: "2° Año" },
-            { value: "3°", label: "3° Año" },
-            { value: "4°", label: "4° Año" },
-            { value: "5°", label: "5° Año" },
-            { value: "6°", label: "6° Año" },
-            { value: "7°", label: "7° Año" }
-          ]
+          options: opcionesCurso
         }),
         h(CustomSelect, {
           label: "División",
           value: selectedDivision,
           onChange: (val) => {
-            setSelectedDivision(typeof val === "string" ? val : val?.target?.value);
+            const nextVal = typeof val === "string" ? val : val?.target?.value;
+            setSelectedDivision(nextVal);
             setCurrentPage(1);
           },
-          options: [
-            { value: "todas", label: "Todas las Div." },
-            { value: "1", label: "División 1" },
-            { value: "2", label: "División 2" },
-            { value: "3", label: "División 3" },
-            { value: "4", label: "División 4" },
-            { value: "5", label: "División 5" },
-            { value: "6", label: "División 6" }
-          ]
+          options: divisionesDisponibles
         }),
         h(CustomSelect, {
           label: "Turno",
@@ -323,6 +451,31 @@ export default function BoletinesListView() {
         })
       )
     ),
+
+    // Banner informativo para el docente con sus cursos a cargo
+    esDocente && asignacionesDocente
+      ? h(
+          "div",
+          {
+            className: "alumnos-filter-status-bar",
+            style: {
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              color: "#1e40af",
+              margin: "0 0 16px 0"
+            }
+          },
+          h(
+            "span",
+            { className: "filter-status-text" },
+            `Cursos Asignados: ${asignacionesDocente
+              .map((a) => `${a.curso} ${a.division}°`)
+              .join(" • ")} · Total matrícula asignada: ${pagination.total} estudiante${
+              pagination.total === 1 ? "" : "s"
+            }`
+          )
+        )
+      : null,
 
     // Estado de filtros activos
     isFiltered

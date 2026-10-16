@@ -4,14 +4,15 @@
    ========================================================================== */
 
 .docente-dashboard-wrapper,
-.docente-panel {
+.docente-panel,
+.docente-cursos-container {
   width: min(1320px, calc(100% - 48px));
   max-width: 1320px;
-  margin: 16px auto 40px;
+  margin: 32px auto 48px;
   background: #ffffff;
   border: 1px solid rgba(203, 213, 225, 0.7);
   border-radius: 28px;
-  padding: 24px 32px 36px;
+  padding: 28px 32px 36px;
   box-shadow: 0 10px 36px -8px rgba(15, 23, 42, 0.06);
   display: flex;
   flex-direction: column;
@@ -20,6 +21,12 @@
   contain: layout style;
   animation: viewEnter 180ms cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
+}
+
+.docente-cursos-container .alumnos-main-card {
+  margin-top: 0;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
 /* 0. Barra superior institucional */
@@ -1177,3 +1184,371 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   GRÁFICOS DUALES COMPACTOS: MATRÍCULA Y ASISTENCIA (DASHBOARD DOCENTE)
+   ========================================================================== */
+
+.docente-charts-dual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .docente-charts-dual-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.docente-chart-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color 150ms ease;
+  overflow: visible;
+}
+
+.docente-chart-card:hover {
+  border-color: #cbd5e1;
+}
+
+/* Encabezado compacto */
+.docente-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.docente-chart-header__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.docente-chart-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.docente-chart-tag--blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.docente-chart-tag--emerald {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.docente-chart-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.docente-chart-header__right {
+  display: flex;
+  align-items: center;
+}
+
+.docente-chart-stat-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.docente-chart-stat-badge--blue strong {
+  color: #2563eb;
+  font-weight: 800;
+}
+
+.docente-chart-stat-badge--emerald strong {
+  color: #059669;
+  font-weight: 800;
+}
+
+/* Área de trazado del gráfico */
+.docente-chart-plot {
+  position: relative;
+  height: 155px;
+  padding-left: 36px;
+  padding-bottom: 46px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.docente-chart-y-axis {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.docente-chart-y-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 0;
+}
+
+.docente-chart-y-lbl {
+  width: 28px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: right;
+  padding-right: 8px;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.docente-chart-y-line {
+  flex: 1;
+  height: 1px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.docente-chart-y-row:last-child .docente-chart-y-line {
+  border-bottom: 1.5px solid #cbd5e1;
+}
+
+/* Pista y columnas de barras */
+.docente-chart-cols-container {
+  position: absolute;
+  top: 0;
+  left: 36px;
+  right: 8px;
+  bottom: 0;
+  display: grid;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.docente-chart-col-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-decoration: none;
+  position: relative;
+  cursor: pointer;
+  height: 100%;
+}
+
+/* Valor numérico o porcentual superior en flujo normal */
+.docente-chart-col-val {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  line-height: 1;
+  transition: transform 120ms ease;
+  user-select: none;
+}
+
+.docente-chart-col-item:hover .docente-chart-col-val {
+  transform: translateY(-2px);
+}
+
+.docente-chart-col-val--blue {
+  color: #1d4ed8;
+}
+
+.docente-chart-col-val--emerald {
+  color: #047857;
+}
+
+.docente-chart-col-val--zero {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* Pista y relleno de barra (sin brillo, plano y limpio) */
+.docente-chart-col-track {
+  width: 100%;
+  max-width: 44px;
+  height: 64px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  transition: background-color 140ms ease;
+}
+
+.docente-chart-col-item:hover .docente-chart-col-track {
+  background: #e2e8f0;
+}
+
+.docente-chart-col-fill {
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
+  transition: height 240ms cubic-bezier(0.2, 0.8, 0.4, 1);
+}
+
+.docente-chart-col-fill--blue {
+  background: #2563eb;
+}
+
+.docente-chart-col-fill--emerald {
+  background: #059669;
+}
+
+/* Etiquetas del pie de columna */
+.docente-chart-col-labels {
+  height: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 5px;
+  text-align: center;
+  max-width: 100%;
+}
+
+.docente-chart-col-main {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1e293b;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.docente-chart-col-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95px;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.docente-chart-col-shift {
+  font-size: 9.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+/* Tooltip limpio, plano y sin brillo */
+.docente-chart-tooltip {
+  position: absolute;
+  bottom: calc(100% - 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  z-index: 30;
+  pointer-events: none;
+  min-width: 140px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.docente-chart-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+}
+
+.docente-chart-tooltip__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.docente-chart-tooltip__sub {
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.docente-chart-tooltip__val {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-top: 2px;
+}
+
+.docente-chart-tooltip__meta {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.docente-chart-tooltip__hint {
+  font-size: 9.5px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Skeletons y Estado Vacío */
+.docente-chart-card--skeleton {
+  min-height: 200px;
+  justify-content: center;
+}
+
+.docente-chart-skeleton-title {
+  width: 45%;
+  height: 16px;
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.docente-chart-skeleton-body {
+  width: 100%;
+  height: 120px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.docente-chart-card--empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 140px;
+  padding: 24px 20px;
+}
+
+

@@ -316,7 +316,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "people",
     padre: "#/inicio",
-    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
+    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },

@@ -95,7 +95,7 @@ export default function DocenteCursosView() {
 
   return h(
     "section",
-    { className: "alumnos-panel docente-cursos-module" },
+    { className: "docente-cursos-container docente-panel" },
 
     // 1. Barra de navegación superior (con botón de regreso)
     h(
@@ -107,7 +107,11 @@ export default function DocenteCursosView() {
           type: "button",
           className: "btn-volver-atras",
           onClick: () => {
-            window.location.hash = "#/inicio";
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              window.location.hash = "#/docente";
+            }
           },
           title: "Volver al Tablero Docente"
         },

@@ -1150,6 +1150,14 @@
     background: transparent !important;
   }
 
+  .boletin-grade-input::placeholder,
+  .boletin-input-table-pending::placeholder,
+  .boletin-inasistencias-input::placeholder,
+  .boletin-data-value input::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+  }
+
   @page {
     size: A4 portrait;
     margin: 6mm;

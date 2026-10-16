@@ -6,11 +6,16 @@
 .boletines-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 6px 0 30px;
+  gap: 20px;
+  width: min(1320px, calc(100% - 48px));
+  max-width: 1320px;
+  margin: 32px auto 48px;
+  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  border-radius: 28px;
+  padding: 28px 32px 36px;
+  box-shadow: 0 10px 36px -8px rgba(15, 23, 42, 0.06);
+  box-sizing: border-box;
 }
 
 /* Header del listado de boletines */

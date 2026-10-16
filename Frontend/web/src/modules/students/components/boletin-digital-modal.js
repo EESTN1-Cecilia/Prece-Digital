@@ -487,7 +487,7 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
         count++;
       }
     });
-    return count > 0 ? (sum / count).toFixed(2) : "—";
+    return count > 0 ? (sum / count).toFixed(2) : "";
   }, [todasLasMaterias, calificaciones]);
 
   // Exportar a Excel exactamente con la plantilla oficial
@@ -1094,7 +1094,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.informe1) >= 7 ? "grade--approved" : mData.informe1 ? "grade--disapproved" : ""}`,
                         value: mData.informe1 || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "informe1", e.target.value)
                       })
@@ -1106,7 +1105,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.informe2) >= 7 ? "grade--approved" : mData.informe2 ? "grade--disapproved" : ""}`,
                         value: mData.informe2 || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "informe2", e.target.value)
                       })
@@ -1118,7 +1116,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.promedioAnual) >= 7 ? "grade--approved" : mData.promedioAnual ? "grade--disapproved" : ""}`,
                         value: mData.promedioAnual || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "promedioAnual", e.target.value)
                       })
@@ -1130,7 +1127,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: "boletin-grade-input",
                         value: mData.diciembre || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "diciembre", e.target.value)
                       })
@@ -1142,7 +1138,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: "boletin-grade-input",
                         value: mData.febrero || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "febrero", e.target.value)
                       })
@@ -1155,7 +1150,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         className: `boletin-grade-input ${parseFloat(mData.definitiva) >= 7 ? "grade--approved" : mData.definitiva ? "grade--disapproved" : ""}`,
                         style: { fontWeight: 900 },
                         value: mData.definitiva || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "definitiva", e.target.value)
                       })
@@ -1187,7 +1181,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.informe1) >= 7 ? "grade--approved" : mData.informe1 ? "grade--disapproved" : ""}`,
                         value: mData.informe1 || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "informe1", e.target.value)
                       })
@@ -1199,7 +1192,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.informe2) >= 7 ? "grade--approved" : mData.informe2 ? "grade--disapproved" : ""}`,
                         value: mData.informe2 || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "informe2", e.target.value)
                       })
@@ -1211,7 +1203,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: `boletin-grade-input ${parseFloat(mData.promedioAnual) >= 7 ? "grade--approved" : mData.promedioAnual ? "grade--disapproved" : ""}`,
                         value: mData.promedioAnual || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "promedioAnual", e.target.value)
                       })
@@ -1223,7 +1214,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: "boletin-grade-input",
                         value: mData.diciembre || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "diciembre", e.target.value)
                       })
@@ -1235,7 +1225,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         type: "text",
                         className: "boletin-grade-input",
                         value: mData.febrero || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "febrero", e.target.value)
                       })
@@ -1248,7 +1237,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         className: `boletin-grade-input ${parseFloat(mData.definitiva) >= 7 ? "grade--approved" : mData.definitiva ? "grade--disapproved" : ""}`,
                         style: { fontWeight: 900 },
                         value: mData.definitiva || "",
-                        placeholder: "—",
                         maxLength: 5,
                         onChange: (e) => handleGradeChange(materia, "definitiva", e.target.value)
                       })
@@ -1386,7 +1374,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.anio || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1404,7 +1391,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.abrilCalif || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1422,7 +1408,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.abrilLF || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1440,7 +1425,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.mayoCalif || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1458,7 +1442,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.mayoLF || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1476,7 +1459,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.agostoCalif || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1494,7 +1476,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.agostoLF || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1512,7 +1493,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.octubreCalif || "",
                           onChange: (e) => {
                             const val = e.target.value;
@@ -1530,7 +1510,6 @@ E.E.S.T. N° 1 "Cecilia Berdichevski"`
                         h("input", {
                           type: "text",
                           className: "boletin-input-table-pending",
-                          placeholder: "—",
                           value: p.octubreLF || "",
                           onChange: (e) => {
                             const val = e.target.value;
