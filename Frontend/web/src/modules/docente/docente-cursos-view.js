@@ -363,15 +363,15 @@ export default function DocenteCursosView() {
                     {
                       href: `#/boletines?curso=${encodeURIComponent(displayCurso)}&div=${encodeURIComponent(c.division)}`,
                       className: "docente-curso-action-btn docente-curso-action-btn--boletin",
-                      title: `Boletines de ${displayCurso} ${displayDivision}`
+                      title: `Planilla de calificaciones de ${displayCurso} ${displayDivision}`
                     },
                     h(
                       "svg",
                       { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                      h("path", { d: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20" }),
-                      h("path", { d: "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" })
+                      h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
+                      h("path", { d: "M3 9h18M9 21V9" })
                     ),
-                    "Boletines"
+                    "Calificaciones"
                   )
                 )
               );
@@ -446,9 +446,9 @@ export default function DocenteCursosView() {
                             href: `#/boletines?curso=${encodeURIComponent(displayCurso)}&div=${encodeURIComponent(c.division)}`,
                             className: "btn-ver-ficha-inline",
                             style: { background: "#f0fdf4", color: "#166534", borderColor: "#bbf7d0" },
-                            title: "Ver boletines"
+                            title: "Ver planilla de calificaciones"
                           },
-                          "Boletines"
+                          "Calificaciones"
                         )
                       )
                     )

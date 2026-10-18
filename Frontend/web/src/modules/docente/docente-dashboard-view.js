@@ -321,11 +321,11 @@ export default function DocenteDashboardView() {
           h(
             "div",
             { className: "docente-module-title-wrap" },
-            h("h2", { className: "docente-module-name" }, "Boletines Digitales"),
+            h("h2", { className: "docente-module-name" }, "Planilla de Calificaciones"),
             h(
               "p",
               { className: "docente-module-desc" },
-              "Visualización y carga oficial de informes valorativos (1° y 2° informe), promedios y definitivas."
+              "Planilla oficial de calificaciones por materia, informes valorativos e intensificación para tus cursos a cargo."
             )
           )
         ),
@@ -336,7 +336,7 @@ export default function DocenteDashboardView() {
           h(
             "a",
             { href: "#/boletines", className: "docente-module-link-btn docente-module-link-btn--primary" },
-            "Ver Boletines ➔"
+            "Cargar Calificaciones ➔"
           )
         )
       ),

@@ -11,7 +11,6 @@ import {
 
 /**
  * SolicitudPaseModal: Digitalización oficial del formulario "SOLICITUD DE PASES"
- * (Gráfica Escolar 3345-2217)
  */
 export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) {
   const {
@@ -123,7 +122,7 @@ export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) 
                 style: { width: "56px", height: "56px", objectFit: "contain", flexShrink: 0 },
                 onError: (e) => { e.currentTarget.src = "/assets/Logo Tec.png"; }
               }),
-              h("div", { style: { whiteSpace: "pre-line", fontWeight: "700" } }, "Gráfica Escolar\n3345-2217")
+              h("div", { style: { whiteSpace: "pre-line", fontWeight: "700" } }, "E.E.S.T. Nº 1\nEsteban Echeverría")
             ),
             h("div", { className: "doc-pase-blue-banner", style: { whiteSpace: "nowrap" } }, "SOLICITUD DE PASES")
           ),
@@ -139,7 +138,7 @@ export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) 
               h(
                 "span",
                 { className: "doc-pase-dotted-field doc-pase-dotted-field--grow" },
-                "E.E.S.T N° 1 - Gral. Manuel Belgrano"
+                "E.E.S.T. Nº 1 \"Cecilia Berdichevski\""
               )
             ),
             h(

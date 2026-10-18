@@ -6,6 +6,7 @@ import { CustomSelect } from "../../components/common/custom-select.js";
 import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
 import { BoletinDigitalModal } from "./components/boletin-digital-modal.js";
+import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
 
 // Cursos de referencia para la cuenta docente institucional
 const ASIGNACIONES_DOCENTE_DEFAULT = [
@@ -64,8 +65,19 @@ export default function BoletinesListView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Modal de boletín activo
+  // Modal de boletín / planilla activo
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
+  const [planillaModalOpen, setPlanillaModalOpen] = useState(false);
+  const [califRefreshTick, setCalifRefreshTick] = useState(0);
+
+  // Escuchar actualizaciones de calificaciones para refrescar estados de la tabla
+  useEffect(() => {
+    const onCalifsActualizadas = () => {
+      setCalifRefreshTick((t) => t + 1);
+    };
+    window.addEventListener("prece:calificaciones-updated", onCalifsActualizadas);
+    return () => window.removeEventListener("prece:calificaciones-updated", onCalifsActualizadas);
+  }, []);
 
   // Parsear hash params (ej: #/boletines?curso=7°&div=3)
   useEffect(() => {
@@ -366,13 +378,19 @@ export default function BoletinesListView() {
             h("path", { d: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20" }),
             h("path", { d: "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" })
           ),
-          "CALIFICACIONES OFICIALES · PBA"
+          esDocente ? "CALIFICACIONES OFICIALES · PLANILLA DOCENTE PBA" : "CALIFICACIONES OFICIALES · PBA"
         ),
-        h("h1", { className: "boletines-main-title" }, "Boletines Digitales de Calificaciones"),
+        h(
+          "h1",
+          { className: "boletines-main-title" },
+          esDocente ? "Planilla de Calificaciones" : "Boletines Digitales de Calificaciones"
+        ),
         h(
           "p",
           { className: "boletines-subtitle" },
-          "Consulta, carga de notas por informes valorativos y emisión oficial de boletines de alumnos."
+          esDocente
+            ? "Consulta y carga oficial de notas por informes valorativos e intensificación para tus cursos a cargo. Las calificaciones se autocompletan directamente en el Boletín Digital de cada estudiante."
+            : "Consulta, carga de notas por informes valorativos y emisión oficial de boletines de alumnos."
         )
       )
     ),
@@ -452,7 +470,7 @@ export default function BoletinesListView() {
       )
     ),
 
-    // Banner informativo para el docente con sus cursos a cargo
+    // Banner informativo para el docente con sus cursos a cargo y acceso a la planilla completa
     esDocente && asignacionesDocente
       ? h(
           "div",
@@ -462,17 +480,42 @@ export default function BoletinesListView() {
               background: "#eff6ff",
               border: "1px solid #bfdbfe",
               color: "#1e40af",
-              margin: "0 0 16px 0"
+              margin: "0 0 16px 0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "10px"
             }
           },
           h(
             "span",
             { className: "filter-status-text" },
             `Cursos Asignados: ${asignacionesDocente
-              .map((a) => `${a.curso} ${a.division}°`)
+              .map((a) => `${a.curso} ${a.division}° (${a.materia || "Materia"})`)
               .join(" • ")} · Total matrícula asignada: ${pagination.total} estudiante${
               pagination.total === 1 ? "" : "s"
             }`
+          ),
+          h(
+            "button",
+            {
+              type: "button",
+              className: "boletin-btn-open",
+              style: { padding: "6px 14px", fontSize: "12.5px" },
+              onClick: () => {
+                setAlumnoSeleccionado(null);
+                setPlanillaModalOpen(true);
+              },
+              title: "Abrir planilla de calificaciones completa del curso"
+            },
+            h(
+              "svg",
+              { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+              h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
+              h("path", { d: "M3 9h18M9 21V9" })
+            ),
+            "Abrir Planilla del Curso"
           )
         )
       : null,
@@ -595,22 +638,42 @@ export default function BoletinesListView() {
                   h(
                     "td",
                     { style: { textAlign: "center" } },
-                    h(
-                      "button",
-                      {
-                        type: "button",
-                        className: "boletin-btn-open",
-                        onClick: () => setAlumnoSeleccionado(alumno),
-                        title: `Abrir Boletín Digital de ${alumno.nombre} ${alumno.apellido}`
-                      },
-                      h(
-                        "svg",
-                        { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                        h("path", { d: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" }),
-                        h("path", { d: "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" })
-                      ),
-                      "Abrir Boletín"
-                    )
+                    esDocente
+                      ? h(
+                          "button",
+                          {
+                            type: "button",
+                            className: "boletin-btn-open",
+                            onClick: () => {
+                              setAlumnoSeleccionado(alumno);
+                              setPlanillaModalOpen(true);
+                            },
+                            title: `Cargar / Ver Planilla de Calificaciones de ${alumno.nombre} ${alumno.apellido}`
+                          },
+                          h(
+                            "svg",
+                            { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                            h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
+                            h("path", { d: "M3 9h18M9 21V9" })
+                          ),
+                          "Planilla de Calificaciones"
+                        )
+                      : h(
+                          "button",
+                          {
+                            type: "button",
+                            className: "boletin-btn-open",
+                            onClick: () => setAlumnoSeleccionado(alumno),
+                            title: `Abrir Boletín Digital de ${alumno.nombre} ${alumno.apellido}`
+                          },
+                          h(
+                            "svg",
+                            { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                            h("path", { d: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" }),
+                            h("path", { d: "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" })
+                          ),
+                          "Abrir Boletín"
+                        )
                   )
                 );
               })
@@ -741,8 +804,31 @@ export default function BoletinesListView() {
         )
       : null,
 
-    // Modal de Boletín Digital Oficial
-    alumnoSeleccionado
+    // Modal de Planilla de Calificaciones Oficial PBA (para Docentes)
+    esDocente && planillaModalOpen
+      ? h(PlanillaCalificacionesModal, {
+          abierto: planillaModalOpen,
+          onCerrar: () => {
+            setPlanillaModalOpen(false);
+            setAlumnoSeleccionado(null);
+          },
+          alumnoInicial: alumnoSeleccionado,
+          cursoInicial: selectedCurso !== "todos" ? selectedCurso : (alumnoSeleccionado?.curso || asignacionesDocente?.[0]?.curso || "1°"),
+          divisionInicial: selectedDivision !== "todas" ? selectedDivision : (alumnoSeleccionado?.division || asignacionesDocente?.[0]?.division || "1"),
+          materiaInicial: asignacionesDocente?.find((a) => {
+            const c = selectedCurso !== "todos" ? selectedCurso : alumnoSeleccionado?.curso;
+            const d = selectedDivision !== "todas" ? selectedDivision : alumnoSeleccionado?.division;
+            return a.curso === c && String(a.division) === String(d);
+          })?.materia || asignacionesDocente?.[0]?.materia || "Matemática",
+          estudiantesIniciales: students,
+          asignacionesDocente: asignacionesDocente,
+          esDocente: true,
+          profesorNombre: user?.nombreCompleto || (user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : "Docente Asignado")
+        })
+      : null,
+
+    // Modal de Boletín Digital Oficial (para Directores, Preceptores, Secretaría)
+    !esDocente && alumnoSeleccionado
       ? h(BoletinDigitalModal, {
           abierto: Boolean(alumnoSeleccionado),
           onCerrar: () => setAlumnoSeleccionado(null),

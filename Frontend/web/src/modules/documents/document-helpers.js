@@ -1,17 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { h } from "../../layouts/site-layout.js";
 
-// Datos de Alumnos institucionales de muestra
-export const ALUMNOS_DEMO = [
-  { id: 1, apellido: "González", nombre: "Lucas Agustín", dni: "46.123.456", curso: "7°", division: "2", turno: "Tarde", orientacion: "Técnico en Programación", legajo: "LEG-2026-081" },
-  { id: 19, apellido: "Medina", nombre: "Lautaro Nahuel", dni: "43.111.222", curso: "7°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", legajo: "LEG-2026-019" },
-  { id: 24, apellido: "Molina", nombre: "Kiara Denise", dni: "42.666.777", curso: "5°", division: "2", turno: "Tarde", orientacion: "Técnico en Informática", legajo: "LEG-2026-024" },
-  { id: 21, apellido: "Aguirre", nombre: "Thiago Valentín", dni: "43.333.444", curso: "4°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", legajo: "LEG-2026-021" },
-  { id: 23, apellido: "Gutiérrez", nombre: "Matías Alejandro", dni: "42.555.666", curso: "5°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática", legajo: "LEG-2026-023" },
-  { id: 28, apellido: "Ortiz", nombre: "Constanza Guadalupe", dni: "41.234.567", curso: "6°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación", legajo: "LEG-2026-028" },
-  { id: 29, apellido: "Vargas", nombre: "Maximiliano Gastón", dni: "40.345.678", curso: "3°", division: "3", turno: "Mañana", orientacion: "Ciclo Básico", legajo: "LEG-2026-029" },
-  { id: 30, apellido: "Cabrera", nombre: "Antonella Solange", dni: "40.456.789", curso: "3°", division: "1", turno: "Tarde", orientacion: "Ciclo Básico", legajo: "LEG-2026-030" }
-];
+import { StudentsService } from "../students/students-service.js";
+
+// Lista de alumnos vacía por defecto (sin datos mock ni hardcodeados)
+export const ALUMNOS_DEMO = [];
 
 export const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
@@ -26,16 +19,51 @@ export function getFechaActual() {
 }
 
 // Hook compartido para resolver el alumno activo y opciones de búsqueda en todos los modales de documentos
-export function useDocumentStudent(alumnoInicial, defaultFallbackId = 1) {
+export function useDocumentStudent(alumnoInicial) {
   const getEffectiveId = (al) => {
-    if (!al) return defaultFallbackId;
+    if (!al) return null;
     if (al.id !== undefined && al.id !== null) return al.id;
     if (al.dni) return al.dni;
-    return "current_student";
+    return null;
   };
 
   const [alumnoId, setAlumnoId] = useState(() => getEffectiveId(alumnoInicial));
+  const [alumnosBD, setAlumnosBD] = useState(() => (alumnoInicial ? [alumnoInicial] : []));
   const [busqueda, setBusqueda] = useState("");
+
+  // Cargar nómina real de alumnos de la base de datos
+  useEffect(() => {
+    let cancel = false;
+    async function fetchAlumnos() {
+      try {
+        const res = await StudentsService.getAlumnos({
+          estado: "activo",
+          limit: 100,
+          sortBy: "apellido",
+          sortOrder: "asc"
+        });
+        if (!cancel && res?.data && res.data.length > 0) {
+          setAlumnosBD((prev) => {
+            const map = new Map();
+            if (alumnoInicial) {
+              const initId = getEffectiveId(alumnoInicial);
+              if (initId) map.set(String(initId), alumnoInicial);
+            }
+            res.data.forEach((a) => {
+              const id = getEffectiveId(a);
+              if (id) map.set(String(id), a);
+            });
+            return Array.from(map.values());
+          });
+        }
+      } catch (e) {
+        console.warn("No se pudo cargar la nómina de alumnos desde la BD:", e);
+      }
+    }
+
+    fetchAlumnos();
+    return () => { cancel = true; };
+  }, [alumnoInicial]);
 
   useEffect(() => {
     if (alumnoInicial) {
@@ -43,24 +71,10 @@ export function useDocumentStudent(alumnoInicial, defaultFallbackId = 1) {
     }
   }, [alumnoInicial]);
 
-  // Lista combinada de opciones con el alumno actual garantizado al inicio
+  // Lista combinada de opciones con los alumnos reales de la base de datos
   const opcionesAlumnos = useMemo(() => {
-    let list = [...ALUMNOS_DEMO];
-    if (alumnoInicial) {
-      const currentObj = {
-        ...alumnoInicial,
-        id: getEffectiveId(alumnoInicial)
-      };
-      const idx = list.findIndex((a) => String(a.id) === String(currentObj.id));
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...currentObj };
-      } else {
-        list = [currentObj, ...list];
-      }
-    }
-
     const q = busqueda.toLowerCase().trim();
-    return list
+    return alumnosBD
       .filter((a) => {
         if (!q) return true;
         const nom = `${a.apellido || ""} ${a.nombre || ""}`.toLowerCase();
@@ -68,35 +82,59 @@ export function useDocumentStudent(alumnoInicial, defaultFallbackId = 1) {
         return nom.includes(q) || dni.includes(q);
       })
       .map((a) => ({
-        value: a.id,
+        value: getEffectiveId(a),
         label: `${a.apellido || ""}, ${a.nombre || ""} (${a.curso || "1°"} ${a.division || "1"} - DNI: ${a.dni || "S/D"})`
       }));
-  }, [busqueda, alumnoInicial]);
+  }, [alumnosBD, busqueda]);
 
-  // Alumno resuelto: si coincide con alumnoInicial, devolver alumnoInicial con datos normalizados
+  // Alumno resuelto estrictamente desde la base de datos o alumnoInicial
   const alumno = useMemo(() => {
     const curEffId = getEffectiveId(alumnoInicial);
-    if (alumnoInicial && (String(curEffId) === String(alumnoId) || !alumnoId)) {
+    if (alumnoInicial && (!alumnoId || String(curEffId) === String(alumnoId))) {
       return {
-        ...ALUMNOS_DEMO[0],
-        ...alumnoInicial,
         id: curEffId,
-        apellido: alumnoInicial.apellido || alumnoInicial.nombreCompleto?.split(",")[0]?.trim() || "ALUMNO",
-        nombre: alumnoInicial.nombre || alumnoInicial.nombreCompleto?.split(",")[1]?.trim() || "ESTUDIANTE",
+        apellido: alumnoInicial.apellido || alumnoInicial.nombreCompleto?.split(",")[0]?.trim() || "",
+        nombre: alumnoInicial.nombre || alumnoInicial.nombreCompleto?.split(",")[1]?.trim() || "",
         dni: alumnoInicial.dni || "S/D",
         curso: alumnoInicial.curso || alumnoInicial.anio || "1°",
         division: String(alumnoInicial.division || "1"),
         turno: alumnoInicial.turno || "Mañana",
         orientacion:
           alumnoInicial.orientacion ||
-          (parseInt(String(alumnoInicial.curso || "1"), 10) <= 3 ? "Ciclo Básico" : "Técnico en Informática")
+          (parseInt(String(alumnoInicial.curso || "1"), 10) <= 3 ? "Ciclo Básico" : "Técnico en Informática"),
+        ...alumnoInicial
       };
     }
-    const found = ALUMNOS_DEMO.find((a) => String(a.id) === String(alumnoId));
-    if (found) return found;
+
+    const found = alumnosBD.find((a) => String(getEffectiveId(a)) === String(alumnoId));
+    if (found) {
+      return {
+        id: getEffectiveId(found),
+        apellido: found.apellido || "",
+        nombre: found.nombre || "",
+        dni: found.dni || "S/D",
+        curso: found.curso || "1°",
+        division: String(found.division || "1"),
+        turno: found.turno || "Mañana",
+        orientacion: found.orientacion || "Ciclo Básico",
+        ...found
+      };
+    }
+
     if (alumnoInicial) return alumnoInicial;
-    return ALUMNOS_DEMO[0];
-  }, [alumnoId, alumnoInicial]);
+    if (alumnosBD.length > 0) return alumnosBD[0];
+
+    return {
+      id: "",
+      apellido: "",
+      nombre: "",
+      dni: "",
+      curso: "1°",
+      division: "1",
+      turno: "Mañana",
+      orientacion: "Ciclo Básico"
+    };
+  }, [alumnoId, alumnoInicial, alumnosBD]);
 
   return {
     alumnoId,
