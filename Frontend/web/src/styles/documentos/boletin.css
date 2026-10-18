@@ -50,28 +50,39 @@
   }
 }
 
-/* 3. Header del Modal (Colores institucionales planos y sólidos, sin gradientes ni brillos) */
+/* 3. Header del Modal (Diseño ordenado, jerárquico y profesional) */
 .boletin-modal-header {
   background: var(--navy, #222a4c);
   color: #ffffff;
-  padding: 14px 20px;
+  padding: 12px 20px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
   box-sizing: border-box;
+}
+
+/* Fila 1: Título y Datos del Alumno + Botón Cerrar */
+.boletin-header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
 }
 
 .boletin-header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  flex: 1;
 }
 
 .boletin-header-icon-box {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -83,98 +94,55 @@
 }
 
 .boletin-header-icon-box svg {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
+}
+
+.boletin-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .boletin-header-title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
   margin: 0;
   color: #ffffff;
   letter-spacing: -0.2px;
+  white-space: nowrap;
 }
 
 .boletin-header-subtitle {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
-  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
-.boletin-header-subtitle .pill-student-dni {
-  background: rgba(255, 255, 255, 0.15);
-  padding: 1.5px 6.5px;
+.boletin-header-subtitle .pill-student-name {
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 12.5px;
+}
+
+.boletin-header-subtitle .pill-student-badge {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 1.5px 7px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
-}
-
-.boletin-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Botones del Header (Sin gradientes, sin brillo, colores estándar de la aplicación) */
-.btn-boletin-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 7px 13px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.14s ease, border-color 0.14s ease;
-  white-space: nowrap;
-  box-shadow: none;
-}
-
-.btn-boletin-action svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.btn-boletin-action--print {
-  background: #ffffff;
-  color: var(--navy, #222a4c);
-  border: 1px solid #cbd5e1;
-}
-
-.btn-boletin-action--print:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-}
-
-.btn-boletin-action--excel {
-  background: #166534;
-  color: #ffffff;
-  border: 1px solid #15803d;
-}
-
-.btn-boletin-action--excel:hover {
-  background: #14532d;
-  border-color: #166534;
-}
-
-.btn-boletin-action--save {
-  background: #15803d;
-  color: #ffffff;
-  border: 1px solid #16a34a;
-}
-
-.btn-boletin-action--save:hover {
-  background: #166534;
-  border-color: #15803d;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .boletin-modal-close-btn {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -183,14 +151,211 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.14s ease;
-  margin-left: 2px;
+  transition: all 0.14s ease;
+  flex-shrink: 0;
 }
 
 .boletin-modal-close-btn:hover {
   background: #dc2626;
   border-color: #dc2626;
   color: #ffffff;
+}
+
+/* Fila 2: Barra de herramientas (Buscador por DNI y Botones de Acción) */
+.boletin-header-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.boletin-toolbar-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.boletin-dni-search-form {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.15s ease;
+  height: 32px;
+}
+
+.boletin-dni-search-form:focus-within {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+}
+
+.boletin-dni-search-icon {
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.boletin-dni-input {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px 4px 8px;
+  width: 160px;
+  outline: none;
+}
+
+.boletin-dni-input::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.btn-boletin-dni-search {
+  background: rgba(255, 255, 255, 0.14);
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  padding: 0 13px;
+  height: 100%;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.14s ease;
+  white-space: nowrap;
+}
+
+.btn-boletin-dni-search:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.btn-boletin-dni-search:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boletin-dni-error-bubble {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  background: #dc2626;
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  animation: fadeInDown 0.18s ease;
+  white-space: nowrap;
+}
+
+.boletin-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Botones de acción con jerarquía y estilo limpio */
+.btn-boletin-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.btn-boletin-action svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Acciones secundarias en botones traslúcidos ordenados */
+.btn-boletin-action--secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.btn-boletin-action--secondary:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Tinte distintivo y armónico: Enviar Correo */
+.btn-boletin-action--email {
+  background: rgba(2, 132, 199, 0.18);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #e0f2fe;
+}
+
+.btn-boletin-action--email:hover {
+  background: rgba(2, 132, 199, 0.35);
+  border-color: rgba(56, 189, 248, 0.7);
+  color: #ffffff;
+}
+
+/* Tinte distintivo y armónico: Imprimir / PDF */
+.btn-boletin-action--print {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+.btn-boletin-action--print:hover {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #ffffff;
+}
+
+/* Tinte distintivo y armónico: Excel (.xlsx) */
+.btn-boletin-action--excel {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #d1fae5;
+}
+
+.btn-boletin-action--excel:hover {
+  background: rgba(16, 185, 129, 0.32);
+  border-color: rgba(52, 211, 153, 0.7);
+  color: #ffffff;
+}
+
+/* Acción principal destacada: Guardar Notas */
+.btn-boletin-action--save {
+  background: #15803d;
+  color: #ffffff;
+  border: 1px solid #16a34a;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.btn-boletin-action--save:hover {
+  background: #166534;
+  border-color: #22c55e;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
 }
 
 /* 4. Barra de Navegación de Años (1° a 7° Año) */
@@ -301,65 +466,98 @@
   overscroll-behavior: contain;
 }
 
-/* 6. Tarjeta Física del Boletín (Diseño Oficial de la Escuela según Matriz.xlsx) */
+/* 6. Tarjeta Física del Boletín (Diseño Oficial de la Escuela con tipografía institucional 'Plus Jakarta Sans') */
 .boletin-paper-card {
   background: #ffffff;
   width: 100%;
   max-width: 960px;
-  border: 2px solid #000000;
-  padding: 20px;
+  border: 2px solid #700d18;
+  padding: 18px 20px;
   box-sizing: border-box;
-  color: #000000;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0f172a;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   position: relative;
   margin: 0 auto;
   overflow-x: hidden;
+  box-shadow: 0 4px 15px rgba(112, 13, 24, 0.08);
 }
 
-/* Encabezado Institucional del Boletín */
+/* Encabezado Institucional del Boletín con Escudo */
 .boletin-school-header {
-  text-align: center;
-  border-bottom: 2px solid #000000;
-  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border-bottom: 2px solid #700d18;
+  padding-bottom: 12px;
   margin-bottom: 12px;
   width: 100%;
   box-sizing: border-box;
 }
 
+.boletin-school-logo-wrap {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.boletin-school-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+}
+
+.boletin-school-text-wrap {
+  text-align: center;
+  flex: 1;
+}
+
 .boletin-school-ministry {
+  font-family: inherit;
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #111111;
-  margin: 0 0 2px 0;
+  color: #475569;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
 }
 
 .boletin-school-name {
-  font-size: 15px;
-  font-weight: 900;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  color: #000000;
-  margin: 0 0 2px 0;
+  color: #700d18;
+  margin: 0 0 4px 0;
+  line-height: 1.25;
 }
 
 .boletin-school-doc-title {
+  font-family: inherit;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  color: var(--navy, #222a4c);
-  letter-spacing: 0.6px;
+  color: #700d18;
+  letter-spacing: 0.5px;
   margin: 4px 0 0 0;
+  line-height: 1.25;
 }
 
-/* Grilla de Datos del Alumno - Ancho 100% y alineación exacta */
+/* Grilla de Datos del Alumno - Tipografía limpia y alineada */
 .boletin-student-data-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px 12px;
-  border: 1.5px solid #000000;
-  padding: 8px 12px;
+  gap: 8px 14px;
+  border: 1.5px solid #700d18;
+  padding: 8px 14px;
   margin: 0 0 12px 0;
   width: 100%;
   box-sizing: border-box;
@@ -372,19 +570,23 @@
   gap: 6px;
   font-size: 11.5px;
   min-width: 0;
+  font-family: inherit;
 }
 
 .boletin-data-label {
-  font-weight: 800;
+  font-family: inherit;
+  font-weight: 700;
   text-transform: uppercase;
-  color: #000000;
+  color: #1e293b;
   white-space: nowrap;
+  letter-spacing: 0.25px;
 }
 
 .boletin-data-value {
-  font-weight: 700;
-  color: #000000;
-  border-bottom: 1px dotted #555;
+  font-family: inherit;
+  font-weight: 600;
+  color: #0f172a;
+  border-bottom: 1px dotted #700d18;
   flex: 1;
   min-width: 0;
   padding-bottom: 1px;
@@ -398,63 +600,73 @@
   border: none;
   background: transparent;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
+  font-family: inherit;
   outline: none;
   padding: 0;
-  color: #000000;
+  color: #0f172a;
 }
 
-/* Tabla Principal de Calificaciones - table-layout fixed y ancho 100% estricto sin sobresalir */
+/* Tabla Principal de Calificaciones */
 .boletin-grades-table {
   width: 100% !important;
   max-width: 100% !important;
   table-layout: fixed !important;
   border-collapse: collapse !important;
-  border: 2px solid #000000;
+  border: 2px solid #700d18;
   margin: 0 0 12px 0;
   font-size: 11px;
   background: #ffffff;
   box-sizing: border-box !important;
+  font-family: inherit;
 }
 
 .boletin-grades-table th,
 .boletin-grades-table td {
-  border: 1px solid #000000;
+  border: 1px solid #700d18;
   padding: 3px 4px;
   box-sizing: border-box !important;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
+  font-family: inherit;
 }
 
 .boletin-grades-table thead th {
-  background: #f1f5f9;
-  color: #000000;
-  font-weight: 800;
+  background: #700d18;
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: 700;
   text-align: center;
-  font-size: 10px;
+  font-size: 10.5px;
   text-transform: uppercase;
-  line-height: 1.2;
-  padding: 5px 3px !important;
+  line-height: 1.25;
+  letter-spacing: 0.35px;
+  padding: 6px 3px !important;
   white-space: normal;
   word-break: break-word;
+  border: 1px solid #55070f;
 }
 
 .boletin-category-row {
-  background: #e2e8f0;
-  font-weight: 900;
+  background: #700d18;
+  font-family: inherit;
+  font-weight: 700;
   text-transform: uppercase;
   font-size: 11px;
-  color: #000000;
-  letter-spacing: 0.3px;
+  color: #ffffff;
+  letter-spacing: 0.5px;
   padding: 5px 8px !important;
+  border: 1px solid #55070f;
 }
 
 .boletin-subject-name {
-  font-weight: 700;
+  font-family: inherit;
+  font-weight: 600;
   text-transform: uppercase;
-  color: #000000;
+  color: #0f172a;
   font-size: 11px;
+  letter-spacing: 0.15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -462,9 +674,21 @@
 
 .boletin-grade-cell {
   text-align: center;
-  font-weight: 800;
+  font-family: inherit;
+  font-weight: 700;
   font-size: 12px;
   padding: 1px !important;
+}
+
+/* Columnas Clave Resaltadas en Tono Rosa Suave Institucional */
+.boletin-grade-cell--highlight {
+  background: #fae8ea !important;
+}
+
+.boletin-grade-cell--highlight-def {
+  background: #f7dcdF !important;
+  font-weight: 800;
+  font-family: inherit;
 }
 
 .boletin-grade-input {
@@ -476,8 +700,9 @@
   border: 1px solid transparent;
   background: transparent;
   font-size: 11.5px;
-  font-weight: 800;
-  color: #000000;
+  font-weight: 700;
+  font-family: inherit;
+  color: #0f172a;
   outline: none;
   border-radius: 3px;
   padding: 0 2px;
@@ -485,14 +710,14 @@
 }
 
 .boletin-grade-input:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: #fdf2f3;
+  border-color: #fca5a5;
 }
 
 .boletin-grade-input:focus {
-  background: #eff6ff;
-  border-color: var(--navy, #222a4c);
-  color: var(--navy, #222a4c);
+  background: #ffffff;
+  border-color: #700d18;
+  color: #700d18;
 }
 
 .boletin-grade-input.grade--approved {
@@ -505,10 +730,12 @@
 
 /* Fila de Inasistencias y Promedio General */
 .boletin-summary-row td {
-  background: #f8fafc;
-  font-weight: 800;
+  background: #fdf5f6;
+  font-family: inherit;
+  font-weight: 700;
   padding: 5px 6px;
   box-sizing: border-box !important;
+  border: 1px solid #700d18;
 }
 
 .boletin-summary-inasistencias {
@@ -518,27 +745,46 @@
   white-space: nowrap;
 }
 
+.boletin-inasistencias-label {
+  font-family: inherit;
+  font-weight: 700;
+  color: #700d18;
+}
+
 .boletin-inasistencias-input {
   width: 44px !important;
   min-width: 0 !important;
   height: 22px;
   text-align: center;
-  font-weight: 800;
-  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  font-weight: 700;
+  border: 1.5px solid #700d18;
   border-radius: 4px;
   background: #ffffff;
   outline: none;
   box-sizing: border-box !important;
+  color: #700d18;
+}
+
+.boletin-inasistencias-badge {
+  font-family: inherit;
+  font-size: 10px;
+  color: #700d18;
+  font-weight: 600;
+  background: rgba(112, 13, 24, 0.08);
+  padding: 1.5px 5px;
+  border-radius: 4px;
 }
 
 .boletin-promedio-general-val {
+  font-family: inherit;
   font-size: 13.5px;
-  font-weight: 900;
-  color: var(--navy, #222a4c);
+  font-weight: 800;
+  color: #700d18;
   text-align: center;
 }
 
-/* Tabla de Materias Pendientes - Exactamente contenida sin sobresalir */
+/* Tabla de Materias Pendientes */
 .boletin-pendientes-section {
   margin: 12px 0 0 0;
   width: 100%;
@@ -546,12 +792,13 @@
 }
 
 .boletin-pendientes-title {
+  font-family: inherit;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 800;
   text-transform: uppercase;
-  color: #000000;
+  color: #700d18;
   margin: 0 0 6px 0;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
 }
 
 .boletin-pendientes-table {
@@ -559,27 +806,39 @@
   max-width: 100% !important;
   table-layout: fixed !important;
   border-collapse: collapse !important;
-  border: 2px solid #000000;
+  border: 2px solid #700d18;
   font-size: 11px;
+  font-family: inherit;
   box-sizing: border-box !important;
 }
 
 .boletin-pendientes-table th,
 .boletin-pendientes-table td {
-  border: 1px solid #000000;
+  border: 1px solid #700d18;
   padding: 3px 4px;
   box-sizing: border-box !important;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
+  font-family: inherit;
 }
 
 .boletin-pendientes-table thead th {
-  background: #f1f5f9;
-  font-weight: 800;
+  background: #700d18;
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: 700;
   text-align: center;
   font-size: 10px;
-  line-height: 1.2;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+  border: 1px solid #55070f;
+}
+
+.boletin-pendientes-table thead tr:last-child th {
+  background: #84101e;
+  color: #ffffff;
+  font-family: inherit;
 }
 
 .boletin-input-table-pending {
@@ -587,6 +846,7 @@
   max-width: 100% !important;
   min-width: 0 !important;
   border: none;
+  font-family: inherit;
   background: transparent;
   font-size: 11px;
   font-weight: 700;
@@ -597,7 +857,7 @@
 }
 
 .boletin-input-table-pending:focus {
-  background: #eff6ff;
+  background: #fdf2f3;
 }
 
 /* Área de Firmas */
@@ -605,7 +865,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin: 55px 0 12px 0;
+  margin: 50px 0 12px 0;
   width: 100%;
   box-sizing: border-box;
   text-align: center;
@@ -619,7 +879,7 @@
 
 .boletin-signature-line {
   width: 82%;
-  border-top: 1.5px solid #000000;
+  border-top: 1.5px solid #700d18;
   margin-bottom: 6px;
 }
 
@@ -627,30 +887,142 @@
   font-size: 10.5px;
   font-weight: 800;
   text-transform: uppercase;
-  color: #000000;
+  color: #111827;
 }
 
 .boletin-signature-sub {
   font-size: 9px;
-  color: #555555;
+  color: #4b5563;
 }
 
-/* Cartel de guardado */
+/* Modal Emergente para Enviar Boletín por Correo */
+.boletin-email-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.boletin-email-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  border: 1.5px solid #cbd5e1;
+  width: 100%;
+  max-width: 520px;
+  padding: 22px;
+  box-sizing: border-box;
+  animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.boletin-email-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+}
+
+.boletin-email-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(112, 13, 24, 0.1);
+  color: #700d18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.boletin-email-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.boletin-email-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.boletin-email-field {
+  margin-bottom: 12px;
+}
+
+.boletin-email-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.boletin-email-input,
+.boletin-email-textarea {
+  width: 100%;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  box-sizing: border-box;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.boletin-email-input:focus,
+.boletin-email-textarea:focus {
+  border-color: #700d18;
+  box-shadow: 0 0 0 3px rgba(112, 13, 24, 0.12);
+}
+
+.boletin-email-info-box {
+  background: #fdf2f3;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  font-size: 11.5px;
+  color: #881337;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.boletin-email-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* Cartel de guardado y notificaciones */
 .boletin-toast-save {
   position: absolute;
   top: 14px;
   right: 20px;
   background: #15803d;
   color: #ffffff;
-  padding: 7px 13px;
+  padding: 8px 14px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
-  gap: 6px;
-  z-index: 10;
+  gap: 8px;
+  z-index: 100;
   animation: fadeInDown 0.18s ease;
 }
 
@@ -776,6 +1148,14 @@
   .boletin-data-value input {
     border: none !important;
     background: transparent !important;
+  }
+
+  .boletin-grade-input::placeholder,
+  .boletin-input-table-pending::placeholder,
+  .boletin-inasistencias-input::placeholder,
+  .boletin-data-value input::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
   }
 
   @page {

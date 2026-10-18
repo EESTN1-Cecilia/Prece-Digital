@@ -83,10 +83,14 @@ test("catalogo: curso con division valida tiene turno y orientacion; invalida no
   const informatica = buscarDivision(4, "1");
   const programacion = buscarDivision(7, "2");
   const basico = buscarDivision(1, "6");
+  const sextoDos = buscarDivision(6, "2");
+  const septimoTres = buscarDivision(7, "3");
 
   assert.deepEqual(informatica, { turno: "mañana", orientacion: "Técnico en Informática" });
   assert.deepEqual(programacion, { turno: "tarde", orientacion: "Técnico en Programación" });
   assert.deepEqual(basico, { turno: "mañana", orientacion: null });
+  assert.deepEqual(sextoDos, { turno: "tarde", orientacion: "Técnico en Informática" });
+  assert.deepEqual(septimoTres, { turno: "mañana", orientacion: "Técnico en Programación" });
   assert.equal(buscarDivision(4, "9"), null);
   assert.equal(buscarDivision(8, "1"), null);
 });
@@ -412,4 +416,41 @@ test("busqueda por edad calculada desde la fecha de nacimiento", async () => {
   assert.equal(cuerpo.paginacion.total, 1);
   assert.equal(cuerpo.data[0].nombre, "Iara");
   assert.equal(getStore().students.get(idDe("40987765")).edad, undefined);
+});
+
+test("carga masiva de alumnos registra estudiantes y los refleja en cursos y divisiones", async () => {
+  const payload = [
+    {
+      nombre: "BONELLI FRANCISCO DANTE",
+      curso: "7° 3°",
+      genero: "Masculino"
+    },
+    {
+      nombre: "FERNANDEZ, BENJAMIN",
+      curso: "6° 2°",
+      genero: "Masculino"
+    }
+  ];
+
+  const respuesta = await pedir("POST", "/api/v1/students/bulk", {
+    token: director.accessToken,
+    body: { alumnos: payload }
+  });
+
+  assert.equal(respuesta.status, 200);
+  assert.equal(respuesta.cuerpo.data.importados, 2);
+
+  // Verificar que aparecen al consultar por curso y division
+  const resSieteTres = await pedir("GET", "/api/v1/students?curso=7&division=3", { token: director.accessToken });
+  assert.equal(resSieteTres.status, 200);
+  assert.ok(resSieteTres.cuerpo.data.some((a) => a.nombre.includes("FRANCISCO") || a.apellido.includes("BONELLI")));
+
+  const resSeisDos = await pedir("GET", "/api/v1/students?curso=6&division=2", { token: director.accessToken });
+  assert.equal(resSeisDos.status, 200);
+  assert.ok(resSeisDos.cuerpo.data.some((a) => a.apellido.includes("FERNANDEZ")));
+
+  // Verificar que el resumen de divisiones refleja los alumnos importados
+  const resDivisiones = await pedir("GET", "/api/v1/students/divisions", { token: director.accessToken });
+  const div73 = resDivisiones.cuerpo.data.find((d) => d.id === "7-3");
+  assert.ok(div73 && div73.cantidad >= 1);
 });

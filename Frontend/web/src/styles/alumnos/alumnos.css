@@ -699,65 +699,298 @@
   padding: 2px 4px;
 }
 
+/* ================================================================
+   PAGINACIÓN MODERNA Y ELEGANTE DEL LISTADO DE ALUMNOS
+   ================================================================ */
 .alumnos-pagination-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 6px 4px;
-  border-top: 1px solid #f1f5f9;
+  padding: 16px 8px 6px;
+  border-top: 1px solid #e2e8f0;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
+}
+
+/* 1. Indicador / Resumen a la izquierda */
+.pagination-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.pagination-info-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--navy, #222a4c);
+  box-shadow: 0 0 0 2px rgba(34, 42, 76, 0.15);
+  flex-shrink: 0;
 }
 
 .pagination-counter-text {
   font-size: 13px;
+  line-height: 1.4;
   color: #64748b;
   font-weight: 500;
-}
-
-.pagination-controls {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
-.pagination-btn {
-  padding: 6px 12px;
-  border-radius: 6px;
-  background: #ffffff;
+.pagination-text-muted {
+  color: #64748b;
+}
+
+.pagination-text-bold {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.pagination-divider {
+  margin: 0 4px;
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+/* 2. Contenedor central de botones de paginación */
+.pagination-controls-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f8fafc;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Botones Anterior y Siguiente */
+.pagination-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 7px;
   border: 1px solid #cbd5e1;
+  background: #ffffff;
   color: #334155;
   font-size: 12.5px;
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  transition: all 140ms ease;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.pagination-btn:hover:not(:disabled) {
+.pagination-nav-btn:hover:not(:disabled) {
+  background: #ffffff;
+  border-color: var(--navy, #222a4c);
+  color: var(--navy, #222a4c);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(34, 42, 76, 0.12);
+}
+
+.pagination-nav-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.pagination-nav-btn:disabled {
   background: #f1f5f9;
-  border-color: #94a3b8;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  opacity: 0.65;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.pagination-page-indicator {
-  font-size: 12.5px;
+.pagination-nav-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  transition: transform 140ms ease;
+}
+
+.pagination-nav-btn--prev:hover:not(:disabled) .pagination-nav-icon {
+  transform: translateX(-2px);
+}
+
+.pagination-nav-btn--next:hover:not(:disabled) .pagination-nav-icon {
+  transform: translateX(2px);
+}
+
+.pagination-nav-label {
+  line-height: 1;
+}
+
+/* Lista de botones con números de página */
+.pagination-pages-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 2px;
+}
+
+.pagination-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pagination-page-btn:hover:not(.pagination-page-btn--active) {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-page-btn:active:not(.pagination-page-btn--active) {
+  transform: translateY(0);
+}
+
+.pagination-page-btn--active {
+  background: var(--navy, #222a4c);
+  border-color: var(--navy, #222a4c);
+  color: #ffffff;
   font-weight: 700;
-  color: #1e293b;
-  padding: 0 4px;
+  box-shadow: 0 2px 5px rgba(34, 42, 76, 0.28);
+  cursor: default;
 }
 
+.pagination-page-btn--active:hover {
+  background: #171d36;
+  border-color: #171d36;
+  color: #ffffff;
+}
+
+.pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 34px;
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 13px;
+  user-select: none;
+}
+
+/* 3. Acciones a la derecha (Exportar Nómina) */
 .alumnos-bottom-actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 14px;
-  border-top: 1px solid #f1f5f9;
-  flex-wrap: wrap;
+}
+
+.alumnos-bottom-actions .action-button {
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 150ms ease;
+}
+
+.alumnos-bottom-actions .action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.pagination-page-size-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 2px 3px 2px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.pagination-size-label {
+  user-select: none;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.pagination-custom-select {
+  width: auto;
+  min-width: 128px;
+  position: relative;
+}
+
+.pagination-custom-select .custom-select__trigger {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.pagination-custom-select .custom-select__trigger:hover {
+  border-color: var(--navy, #222a4c);
+  background: #ffffff;
+}
+
+.pagination-custom-select .custom-select__trigger--open {
+  border-color: var(--navy, #222a4c) !important;
+  box-shadow: 0 0 0 2px rgba(34, 42, 76, 0.15) !important;
+}
+
+.pagination-custom-select .custom-select__arrow {
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+}
+
+.pagination-custom-select .custom-select__dropdown {
+  min-width: 135px;
+  width: 135px;
+  right: 0;
+  left: auto;
+  padding: 4px;
+  z-index: 1300;
+}
+
+.pagination-custom-select .custom-select__option {
+  padding: 6px 10px;
+  font-size: 12.5px;
+  border-radius: 6px;
 }
 
 /* Tarjetas de Alumnos Grid */
@@ -1478,7 +1711,11 @@ input.form-control:focus,
   margin: 6px 0;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
+  max-height: none;
+  width: 100%;
+  background: #ffffff;
 }
 
 .alumnos-table {
@@ -1711,89 +1948,6 @@ input.form-control:focus,
   padding: 0 10px;
   border-radius: 7px;
   text-decoration: none;
-  font-weight: 700;
-}
-
-/* Paginación */
-.alumnos-pagination-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 4px 6px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.pagination-counter-text {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 600;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 14px;
-  height: 34px;
-  border-radius: 6px;
-  background: #ffffff;
-  border: 1.5px solid #cbd5e1;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #334155;
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: all 140ms ease;
-  user-select: none;
-  font-family: inherit;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #2b72ba;
-  color: #1a4a7e;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(43, 114, 186, 0.12);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.pagination-page-indicator {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #64748b;
-  padding: 0 6px;
-}
-
-/* Botones Inferiores del Mockup */
-.alumnos-bottom-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  flex-wrap: wrap;
-}
-
-.alumnos-bottom-actions .action-button,
-.alumnos-bottom-actions .btn-volver-atras {
-  min-width: 140px;
-  height: 38px;
-  font-size: 13.5px;
   font-weight: 700;
 }
 

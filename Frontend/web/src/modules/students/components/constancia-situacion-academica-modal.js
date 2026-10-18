@@ -21,13 +21,21 @@ export function SituacionAcademicaModal({ abierto, onCerrar, alumnoInicial = nul
     opcionesAlumnos,
     alumno
   } = useDocumentStudent(alumnoInicial);
-  const [materiasAdeudadas, setMateriasAdeudadas] = useState([
-    "MATEMÁTICA",
-    "FÍSICO QUÍMICA",
-    "LABORATORIO DE PROGRAMACIÓN"
-  ]);
+  const [materiasAdeudadas, setMateriasAdeudadas] = useState([]);
   const [nuevaMateria, setNuevaMateria] = useState("");
   const fecha = useMemo(() => getFechaActual(), []);
+
+  // Cargar materias adeudadas reales del estudiante si las tiene
+  useEffect(() => {
+    if (alumno?.materiasAdeudadas && Array.isArray(alumno.materiasAdeudadas)) {
+      setMateriasAdeudadas(alumno.materiasAdeudadas);
+    } else if (alumno?.materiasPendientes && Array.isArray(alumno.materiasPendientes)) {
+      const list = alumno.materiasPendientes.map((m) => typeof m === "string" ? m : m.materia).filter(Boolean);
+      setMateriasAdeudadas(list);
+    } else {
+      setMateriasAdeudadas([]);
+    }
+  }, [alumno]);
 
   const handleAgregarMateria = (e) => {
     e.preventDefault();

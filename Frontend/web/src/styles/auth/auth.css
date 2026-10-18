@@ -195,7 +195,7 @@
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 120px);
-  padding: 40px 20px 48px;
+  padding: 24px 20px 24px;
   box-sizing: border-box;
 }
 
@@ -211,12 +211,12 @@
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 24px;
-  padding: 32px 36px 26px;
+  padding: 30px 36px 18px;
   box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.08),
               0 2px 6px rgba(15, 23, 42, 0.02);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
@@ -581,13 +581,58 @@
   }
 }
 
+/* Accesos rápidos de rol / demostración */
+.login-quick-roles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0 4px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.login-quick-roles-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.login-quick-roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.login-quick-role-chip {
+  padding: 4px 10px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 140ms ease;
+  font-family: inherit;
+}
+
+.login-quick-role-chip:hover {
+  background: var(--navy, #222a4c);
+  border-color: var(--navy, #222a4c);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 /* Pie de la tarjeta: Badge de seguridad */
 .login-card__footer {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 4px;
-  margin-top: 0;
+  padding-top: 0;
+  margin-top: -2px;
 }
 
 .login-footer-badge {

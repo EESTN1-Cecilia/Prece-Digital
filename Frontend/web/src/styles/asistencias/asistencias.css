@@ -408,6 +408,15 @@
   font-size: 10.5px;
 }
 
+.th-col-porcentaje-asist {
+  min-width: 68px;
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
 .th-col-inasistencia-group {
   background: #fef2f2 !important;
   color: #991b1b;
@@ -546,6 +555,29 @@
 .td-inasist-total {
   background: #fef2f2;
   color: #991b1b;
+}
+
+.td-porcentaje {
+  font-weight: 800;
+  font-size: 11.5px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.td-porcentaje.pct-good {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+}
+
+.td-porcentaje.pct-warning {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+}
+
+.td-porcentaje.pct-danger {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  font-weight: 900;
 }
 
 .td-observaciones-input {

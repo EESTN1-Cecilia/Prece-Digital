@@ -319,6 +319,15 @@ export const StudentsService = {
     };
   },
 
+  /* Importación masiva de alumnos desde planilla Excel. */
+  async importarAlumnos(alumnos) {
+    const res = await pedir("/api/v1/students/bulk", {
+      method: "POST",
+      body: JSON.stringify({ alumnos })
+    });
+    return res;
+  },
+
   async getAlumnoSummary(studentId) {
     const data = await pedir(`/api/v1/students/${encodeURIComponent(studentId)}/summary`, { recurso: "el alumno solicitado" });
     return { success: true, data };

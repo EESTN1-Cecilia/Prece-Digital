@@ -12,7 +12,7 @@
    se devuelven en cero con `disponible: false`, sin inventar datos. */
 
 import studentRepository from "./students.repository.mjs";
-import { buscarDivision, CURSOS_VALIDOS } from "./catalogo.mjs";
+import { buscarDivision, CURSOS_VALIDOS, DIVISIONES_CATALOGO } from "./catalogo.mjs";
 import { vistaAlumno } from "./students.service.mjs";
 import tutorsRepository from "../tutors/tutors.repository.mjs";
 import academicRecordsRepository from "../academic-records/academic-records.repository.mjs";
@@ -452,30 +452,24 @@ const legajoService = {
       };
     });
 
-    const divisiones = new Map();
-    for (const alumno of activos) {
-      if (!alumno.curso || !CURSOS_VALIDOS.includes(alumno.curso)) continue;
-      const clave = `${alumno.curso}-${alumno.division}`;
-      divisiones.set(clave, (divisiones.get(clave) ?? 0) + 1);
-    }
+    const alumnosPorCurso = DIVISIONES_CATALOGO.map(({ anio, division, turno, orientacion }) => {
+      const cantidad = activos.filter(
+        (alumno) => alumno.curso === anio && String(alumno.division).trim() === division
+      ).length;
 
-    const alumnosPorCurso = [...divisiones.entries()]
-      .map(([clave, cantidad]) => {
-        const [curso, division] = clave.split("-");
-        const informacion = buscarDivision(Number(curso), division) ?? {};
-        return {
-          id: clave,
-          curso: `${curso}°`,
-          division,
-          turnoAula: capitalizar(informacion.turno) ?? null,
-          turnoTaller: turnoTaller(informacion.turno),
-          orientacion: informacion.orientacion ?? "Ciclo Básico",
-          cantidad,
-          estado: "Normal",
-          porcentaje: Math.round((cantidad / activos.length) * 1000) / 10
-        };
-      })
-      .sort((a, b) => a.id.localeCompare(b.id, "es", { numeric: true }));
+      return {
+        id: `${anio}-${division}`,
+        anio,
+        curso: `${anio}°`,
+        division,
+        turnoAula: capitalizar(turno) ?? null,
+        turnoTaller: turnoTaller(turno),
+        orientacion: orientacion ?? "Ciclo Básico",
+        cantidad,
+        estado: "Normal",
+        porcentaje: activos.length ? Math.round((cantidad / activos.length) * 1000) / 10 : 0
+      };
+    }).sort((a, b) => a.id.localeCompare(b.id, "es", { numeric: true }));
 
     const alertas = [];
     let totalPendientes = 0;

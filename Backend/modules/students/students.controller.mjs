@@ -35,6 +35,10 @@ export function crearAlumno({ body, user }) {
   return studentService.create(body, user);
 }
 
+export function importarAlumnos({ body, user }) {
+  return studentService.createBulk(body?.alumnos || body?.estudiantes || body, user);
+}
+
 export function obtenerAlumno({ params }) {
   return studentService.getById(params.studentId);
 }

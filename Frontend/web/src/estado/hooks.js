@@ -119,7 +119,7 @@ export function useUsuarioActual() {
 
   return useMemo(() => {
     const codigos = roles.map((rol) => rol?.id ?? rol);
-    const nombre = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(" ") || usuario?.email || null;
+    const nombre = [usuario?.nombre, usuario?.apellido].filter(Boolean).join(" ") || usuario?.displayName || usuario?.email || null;
 
     return {
       id: usuario?.id ?? null,
@@ -127,11 +127,12 @@ export function useUsuarioActual() {
       email: usuario?.email ?? null,
       roles: codigos,
       /* Rol que decide el tablero de inicio. */
-      rol: codigos.includes("director") ? "director" : codigos.includes("admin") ? "director" : codigos.includes("server") ? "server" : codigos.includes("secretario") ? "secretaria" : codigos.includes("preceptor") ? "preceptor" : codigos[0] ?? null,
+      rol: codigos.includes("director") ? "director" : codigos.includes("admin") ? "director" : codigos.includes("server") ? "server" : codigos.includes("secretario") ? "secretaria" : codigos.includes("jefe_area") ? "jefe_area" : codigos.includes("docente") ? "docente" : codigos.includes("preceptor") ? "preceptor" : codigos[0] ?? null,
       rolNombre: roles[0]?.nombre ?? null,
       escuela: ESCUELA,
       cicloLectivo: new Date().getFullYear(),
-      permisos
+      permisos,
+      assignments: usuario?.assignments || []
     };
   }, [usuario, roles, permisos]);
 }

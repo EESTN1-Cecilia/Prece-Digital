@@ -25,6 +25,18 @@ export function TramitePaseModal({ abierto, onCerrar, alumnoInicial = null }) {
   const [destino, setDestino] = useState("las autoridades que lo requieran (Pase de Institución)");
   const fecha = useMemo(() => getFechaActual(), []);
 
+  // Sincronizar materias adeudadas reales del alumno
+  useEffect(() => {
+    if (alumno?.materiasAdeudadas && Array.isArray(alumno.materiasAdeudadas) && alumno.materiasAdeudadas.length > 0) {
+      setMateriasAdeudadas(alumno.materiasAdeudadas.join(", "));
+    } else if (alumno?.materiasPendientes && Array.isArray(alumno.materiasPendientes) && alumno.materiasPendientes.length > 0) {
+      const list = alumno.materiasPendientes.map((m) => typeof m === "string" ? m : m.materia).filter(Boolean);
+      setMateriasAdeudadas(list.length > 0 ? list.join(", ") : "NINGUNA");
+    } else {
+      setMateriasAdeudadas("NINGUNA");
+    }
+  }, [alumno]);
+
   if (!abierto) return null;
 
   const modalContent = h(
@@ -106,7 +118,7 @@ export function TramitePaseModal({ abierto, onCerrar, alumnoInicial = null }) {
             h(
               "p",
               null,
-              "La Dirección de la ESCUELA DE EDUCACIÓN SECUNDARIA TÉCNICA Nº 1 de Esteban Echeverría, hace constar por la presente que el alumno/a ",
+              "La Dirección de la ESCUELA DE EDUCACIÓN SECUNDARIA TÉCNICA Nº 1 \"CECILIA BERDICHEVSKI\" de Esteban Echeverría, hace constar por la presente que el alumno/a ",
               h("span", { className: "doc-field-underlined doc-field--bold" }, `${alumno.apellido}, ${alumno.nombre}`),
               " D.N.I. Nº ",
               h("span", { className: "doc-field-underlined doc-field--bold" }, alumno.dni),
@@ -119,7 +131,7 @@ export function TramitePaseModal({ abierto, onCerrar, alumnoInicial = null }) {
               ", Especialidad ",
               h("span", { className: "doc-field-underlined" }, alumno.orientacion),
               ", R.M. Nº ",
-              h("span", { className: "doc-field-underlined" }, "302/12"),
+              h("span", { className: "doc-field-underlined" }, alumno?.resolucionMinisterial || "_______________"),
               ", adeudando las siguientes asignaturas: ",
               h("span", { className: "doc-field-underlined doc-field--bold" }, materiasAdeudadas),
               ", siendo el/los idiomas extranjeros cursados ",
