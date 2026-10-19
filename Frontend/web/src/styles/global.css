@@ -43,6 +43,8 @@
 @import "./documentos/matriz.css";
 @import "./documentos/legajo.css";
 @import "./documentos/boletin.css";
+@import "./documentos/boletines-list.css";
+@import "./docente/docente.css";
 
 /* ==========================================================================
    7. MÓDULO DE SERVER, PAÑOL & INVENTARIO

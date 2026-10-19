@@ -89,6 +89,7 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/students/listas/grupo", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarGrupo },
   { method: "GET", path: "/api/v1/students/listas/taller", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarTaller },
   { method: "POST", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.crearAlumno },
+  { method: "POST", path: "/api/v1/students/bulk", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.importarAlumnos },
   { method: "GET", path: "/api/v1/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarAlumnos },
   { method: "GET", path: "/api/v1/students/divisions", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarDivisiones },
   { method: "GET", path: "/api/v1/students/:studentId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.obtenerAlumno },

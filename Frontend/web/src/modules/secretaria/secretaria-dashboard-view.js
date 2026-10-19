@@ -443,7 +443,7 @@ export default function SecretariaDashboardView() {
                   : h(CursoDistribucionGrafico, {
                       cursos: cursosFiltrados,
                       turnoFiltro: selectedTurnoFilter,
-                      totalDivisiones: data?.alumnosPorCurso?.length || 19
+                      totalDivisiones: cursosFiltrados.length
                     })
               ),
 

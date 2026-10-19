@@ -120,7 +120,9 @@ test("tablero de secretaria con datos reales y alertas descartables", async () =
   assert.equal(status, 200);
   assert.equal(cuerpo.data.resumenAlumnos.total, 32);
   assert.equal(cuerpo.data.resumenAlumnos.inactivos, 1);
-  assert.ok(cuerpo.data.alumnosPorCurso.length > 0);
+  assert.equal(cuerpo.data.alumnosPorCurso.length, 31);
+  const totalAlumnosEnCursos = cuerpo.data.alumnosPorCurso.reduce((sum, c) => sum + c.cantidad, 0);
+  assert.equal(totalAlumnosEnCursos, 31);
   assert.ok(cuerpo.data.alertas.length > 0);
 
   const alerta = cuerpo.data.alertas[0];
@@ -134,9 +136,11 @@ test("tablero de secretaria con datos reales y alertas descartables", async () =
 test("directorio de divisiones y busqueda libre del listado", async () => {
   const divisiones = await pedir("GET", "/api/v1/students/divisions", "preceptor");
   assert.equal(divisiones.status, 200);
-  assert.equal(divisiones.cuerpo.data.length, 27);
+  assert.equal(divisiones.cuerpo.data.length, 31);
   /* la promocion del seed de course-changes (alu-17) suma un activo a 4-1 */
   assert.equal(divisiones.cuerpo.data.find((division) => division.id === "4-1").activos, 5);
+  assert.ok(divisiones.cuerpo.data.some((division) => division.id === "6-2"));
+  assert.ok(divisiones.cuerpo.data.some((division) => division.id === "7-3"));
 
   const busqueda = await pedir("GET", "/api/v1/students?q=carla", "preceptor");
   assert.deepEqual(busqueda.cuerpo.data.map((alumno) => alumno.id), ["alu-2"]);

@@ -47,15 +47,44 @@ export async function seedAuthData() {
   userRepository.create({
     email: "docente@prece.local",
     passwordHash: docenteHash,
-    displayName: "Docente Matemática",
+    displayName: "Prof. María Villatoro",
+    nombre: "María",
+    apellido: "Villatoro",
     assignments: [
       {
         role: ROLES.DOCENTE,
         schoolId: "esc-1",
         courseId: "cur-1",
-        divisionId: "div-a",
-        subjectId: "mat",
+        divisionId: "div-1",
+        anio: 1,
+        curso: "1°",
+        division: "1",
+        materia: "Matemática I",
         shiftId: "manana",
+        periodId: "2026"
+      },
+      {
+        role: ROLES.DOCENTE,
+        schoolId: "esc-1",
+        courseId: "cur-3",
+        divisionId: "div-6",
+        anio: 2,
+        curso: "2°",
+        division: "1",
+        materia: "Matemática II",
+        shiftId: "manana",
+        periodId: "2026"
+      },
+      {
+        role: ROLES.DOCENTE,
+        schoolId: "esc-1",
+        courseId: "3-3",
+        divisionId: "div-7",
+        anio: 3,
+        curso: "3°",
+        division: "3",
+        materia: "Matemática III",
+        shiftId: "tarde",
         periodId: "2026"
       }
     ]

@@ -8,6 +8,8 @@ import {
   BotonCerrarBarra
 } from "./document-helpers.js";
 
+import { PLANES_BOLETIN } from "../students/components/boletin-digital-modal.js";
+
 // ============================================================================
 // 2. MODAL: RITE - REGISTRO INSTITUCIONAL DE TRAYECTORIAS EDUCATIVAS
 // ============================================================================
@@ -22,21 +24,63 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
   } = useDocumentStudent(alumnoInicial);
   const fecha = useMemo(() => getFechaActual(), []);
 
-  const materiasRite = useMemo(() => [
-    { nombre: "BIOLOGÍA", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "8 (OCHO)" },
-    { nombre: "CONSTRUCCIÓN DE CIUDADANÍA", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "9 (NUEVE)" },
-    { nombre: "EDUCACIÓN ARTÍSTICA", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "8 (OCHO)" },
-    { nombre: "EDUCACIÓN FÍSICA", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "10 (DIEZ)" },
-    { nombre: "FÍSICO QUÍMICA", tipo: "C", nota1C: "TEP", nota2C: "TEA", dic: "7", feb: "-", final: "7 (SIETE)" },
-    { nombre: "GEOGRAFÍA", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "8 (OCHO)" },
-    { nombre: "HISTORIA", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "8 (OCHO)" },
-    { nombre: "INGLÉS", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "9 (NUEVE)" },
-    { nombre: "MATEMÁTICA", tipo: "C", nota1C: "TEP", nota2C: "TEA", dic: "8", feb: "-", final: "8 (OCHO)" },
-    { nombre: "PRÁCTICAS DEL LENGUAJE", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "8 (OCHO)" },
-    { nombre: "PROCEDIMIENTOS TÉCNICOS", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "9 (NUEVE)" },
-    { nombre: "LENGUAJES TECNOLÓGICOS", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "10 (DIEZ)" },
-    { nombre: "SISTEMAS TECNOLÓGICOS", tipo: "C", nota1C: "TEA", nota2C: "TEA", dic: "-", feb: "-", final: "9 (NUEVE)" }
-  ], []);
+  const anioNum = useMemo(() => {
+    return Number(String(alumno?.curso || "1").replace(/\D/g, "")) || 1;
+  }, [alumno?.curso]);
+
+  // Cargar materias y calificaciones reales del alumno desde el boletín oficial
+  const materiasRite = useMemo(() => {
+    const plan = PLANES_BOLETIN[anioNum] || PLANES_BOLETIN[1] || {};
+    const ori = String(alumno?.orientacion || "").toLowerCase().includes("info") ? "informatica" : "programacion";
+    const listaMaterias = [
+      ...(plan.formacionGeneral || []),
+      ...(plan.tcoEspecifica || []),
+      ...(plan.orientaciones?.[ori] || [])
+    ];
+
+    let califs = {};
+    try {
+      const raw = localStorage.getItem(`prece_boletin_${alumno?.id}_anio_${anioNum}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.calificaciones) califs = parsed.calificaciones;
+      }
+    } catch {}
+
+    const NUM_A_PALABRA = {
+      1: "UNO", 2: "DOS", 3: "TRES", 4: "CUATRO", 5: "CINCO",
+      6: "SEIS", 7: "SIETE", 8: "OCHO", 9: "NUEVE", 10: "DIEZ"
+    };
+
+    return listaMaterias.map((nombreMat) => {
+      const entry = califs[nombreMat] || califs[nombreMat.toUpperCase()] || {};
+      const n1 = entry.informe1 || "-";
+      const n2 = entry.informe2 || "-";
+      const dic = entry.diciembre || "-";
+      const feb = entry.febrero || "-";
+      const finalVal = entry.definitiva || entry.promedioAnual || "";
+
+      let finalTexto = "-";
+      if (finalVal) {
+        const numF = Math.round(parseFloat(finalVal));
+        if (NUM_A_PALABRA[numF]) {
+          finalTexto = `${numF} (${NUM_A_PALABRA[numF]})`;
+        } else {
+          finalTexto = finalVal;
+        }
+      }
+
+      return {
+        nombre: nombreMat,
+        tipo: "C",
+        nota1C: n1,
+        nota2C: n2,
+        dic,
+        feb,
+        final: finalTexto
+      };
+    });
+  }, [anioNum, alumno]);
 
   if (!abierto) return null;
 
@@ -191,15 +235,15 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
               h("h3", { className: "doc-rite-box-title" }, "INASISTENCIAS"),
               h("div", { className: "doc-rite-asist-row" },
                 h("span", null, "1º Cuatrimestre:"),
-                h("strong", null, "2")
+                h("strong", null, alumno?.inasistencias1C ?? "-")
               ),
               h("div", { className: "doc-rite-asist-row" },
                 h("span", null, "2º Cuatrimestre:"),
-                h("strong", null, "1")
+                h("strong", null, alumno?.inasistencias2C ?? "-")
               ),
               h("div", { className: "doc-rite-asist-row doc-rite-asist-row--total" },
                 h("span", null, "TOTAL ANUAL:"),
-                h("strong", null, "3")
+                h("strong", null, String(alumno?.inasistencias?.total ?? alumno?.inasistencias ?? "0"))
               )
             ),
             h(

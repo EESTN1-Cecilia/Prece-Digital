@@ -27,6 +27,10 @@ import DirectorDashboardView from "../modules/director/director-dashboard-view.j
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
+import DocenteDashboardView from "../modules/docente/docente-dashboard-view.js";
+import DocenteAsistenciasView from "../modules/docente/docente-asistencias-view.js";
+import DocenteCursosView from "../modules/docente/docente-cursos-view.js";
+import BoletinesListView from "../modules/students/boletines-list-view.js";
 import CursosListView from "../modules/schools/cursos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
 import AlumnosListView from "../modules/students/alumnos-list-view.js";
@@ -94,6 +98,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "attendance",
     padre: "#/inicio",
+    roles: ["preceptor", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
@@ -104,6 +109,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "students",
     padre: "#/inicio",
+    roles: ["secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosEditar],
     enMenu: true
   },
@@ -114,6 +120,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "academic",
     padre: "#/inicio",
+    roles: ["jefe_area", "admin"],
     permisos: [PERMISOS.academicosLeer, PERMISOS.horariosLeer],
     todosLosPermisos: true,
     enMenu: true
@@ -126,10 +133,45 @@ export const RUTAS = [
     permisos: [PERMISOS.alumnosEditar]
   },
   {
+    patron: "#/docente",
+    titulo: "Tablero Docente",
+    vista: DocenteDashboardView,
+    padre: "#/inicio",
+    roles: ["docente", "director", "admin"]
+  },
+  {
+    patron: "#/docente/cursos",
+    titulo: "Cursos a Cargo",
+    vista: DocenteCursosView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    roles: ["docente", "director", "admin"],
+    enMenu: true
+  },
+  {
+    patron: "#/cursos-a-cargo",
+    titulo: "Cursos a Cargo",
+    vista: DocenteCursosView,
+    padre: "#/inicio",
+    roles: ["docente", "director", "admin"]
+  },
+  {
+    patron: "#/docente/asistencias",
+    titulo: "Asistencia de Clase",
+    vista: DocenteAsistenciasView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio",
+    roles: ["docente", "director", "admin"],
+    enMenu: true
+  },
+  {
     patron: "#/asistencias/:cursoId",
     titulo: "Planilla de Asistencia",
     vista: AsistenciasView,
     padre: "#/asistencias",
+    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer]
   },
   {
@@ -140,6 +182,18 @@ export const RUTAS = [
     icono: "clipboard",
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosLeer],
+    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
+    enMenu: true
+  },
+  {
+    patron: "#/boletines",
+    titulo: "Boletines",
+    vista: BoletinesListView,
+    seccion: "General",
+    icono: "academic",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alumnosLeer],
+    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
     enMenu: true
   },
   {
@@ -197,6 +251,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "activity",
     padre: "#/inicio",
+    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.observacionesLeer],
     enMenu: true
   },
@@ -222,6 +277,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "clipboard",
     padre: "#/alumnos",
+    roles: ["secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosCrear],
     enMenu: true
   },
@@ -260,6 +316,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "people",
     padre: "#/inicio",
+    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
@@ -270,6 +327,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "academic",
     padre: "#/inicio",
+    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },

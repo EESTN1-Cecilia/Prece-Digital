@@ -83,7 +83,7 @@ export function StudentCertificateModal({
             "div",
             { className: "cert-header" },
             h("div", { className: "cert-institution" }, "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN"),
-            h("div", { className: "cert-school" }, "E.E.S.T N° 1 MONTE GRANDE"),
+            h("div", { className: "cert-school" }, "E.E.S.T. Nº 1 \"CECILIA BERDICHEVSKI\""),
             h("div", { className: "cert-district" }, "Distrito Esteban Echeverría • Pcia. de Buenos Aires")
           ),
           h("h3", { className: "cert-main-title" }, "CONSTANCIA DE ALUMNO REGULAR"),

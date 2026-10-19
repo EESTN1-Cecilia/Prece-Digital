@@ -61,15 +61,19 @@ function IconBook({ className }) {
 export function CursoDistribucionGrafico({
   cursos = [],
   turnoFiltro = "todos",
-  totalDivisiones = 19
+  totalDivisiones = null
 }) {
   const [hoveredAnio, setHoveredAnio] = useState(null);
+
+  // Cantidad de divisiones activas en la vista actual
+  const totalDivs = totalDivisiones ?? cursos.length;
 
   // Agrupación de alumnos y divisiones por cada año académico (1° a 7°)
   const aniosData = CONFIG_ANIOS.map((cfg) => {
     const divisionesAnio = (cursos || []).filter((c) => {
       const cursoStr = String(c.curso || "");
-      return cursoStr.startsWith(String(cfg.anio)) || cursoStr === `${cfg.anio}°`;
+      const anioNum = Number(c.anio || parseInt(cursoStr, 10));
+      return anioNum === cfg.anio || cursoStr.startsWith(String(cfg.anio)) || cursoStr === `${cfg.anio}°`;
     });
 
     const totalAlumnos = divisionesAnio.reduce((acc, c) => acc + (Number(c.cantidad) || 0), 0);
@@ -84,7 +88,7 @@ export function CursoDistribucionGrafico({
   });
 
   const maxStudentCount = Math.max(...aniosData.map((d) => d.totalAlumnos), 0);
-  const maxScale = Math.max(30, Math.ceil((maxStudentCount * 1.2) / 5) * 5);
+  const maxScale = Math.max(10, Math.ceil((maxStudentCount * 1.25) / 5) * 5);
 
   const yTicks = [
     maxScale,
@@ -110,7 +114,7 @@ export function CursoDistribucionGrafico({
         { className: "curso-distribucion-meta" },
         h("span", { className: "meta-item" }, `Total: ${totalAlumnosFiltrados} alumnos`),
         turnoFiltro !== "todos"
-          ? h("span", { className: "meta-badge" }, `Turno ${turnoFiltro}`)
+          ? h("span", { className: "meta-badge" }, `Turno ${turnoFiltro.charAt(0).toUpperCase() + turnoFiltro.slice(1)}`)
           : null
       )
     ),
@@ -140,6 +144,7 @@ export function CursoDistribucionGrafico({
         { className: "chart-bars-container" },
         aniosData.map((item) => {
           const heightPercent = maxScale > 0 ? (item.totalAlumnos / maxScale) * 100 : 0;
+          const barVisualPercent = item.totalAlumnos > 0 ? Math.max(heightPercent, 14) : 0;
           const isHovered = hoveredAnio === item.anio;
 
           return h(
@@ -157,19 +162,24 @@ export function CursoDistribucionGrafico({
                   "div",
                   { className: "chart-bar-tooltip" },
                   h("strong", null, `${item.label} Año`),
-                  h("span", null, `${item.totalAlumnos} alumnos · ${item.cantDivisiones} divisiones`),
+                  h(
+                    "span",
+                    null,
+                    `${item.cantDivisiones} ${item.cantDivisiones === 1 ? "división" : "divisiones"} · ${item.totalAlumnos} ${item.totalAlumnos === 1 ? "alumno" : "alumnos"}`
+                  ),
                   h("small", null, "Click para ver cursos")
                 )
               : null,
 
-            // Valor numérico superior sobre la barra
+            // Valor numérico superior sobre la barra: totalidad de cursos/divisiones (ej: 5 primeros)
             h(
               "div",
               {
                 className: "chart-bar-value",
-                style: { bottom: `calc(${heightPercent}% + 6px)` }
+                style: { bottom: `calc(${barVisualPercent}% + 6px)` },
+                title: `${item.cantDivisiones} ${item.cantDivisiones === 1 ? "curso" : "cursos"} en ${item.label} Año`
               },
-              item.totalAlumnos
+              item.cantDivisiones
             ),
 
             // Contenedor del riel y la barra
@@ -180,13 +190,20 @@ export function CursoDistribucionGrafico({
                 className: "chart-bar-track",
                 title: `${item.label} Año: ${item.totalAlumnos} alumnos en ${item.cantDivisiones} divisiones. Click para ver.`
               },
-              h("div", {
-                className: "chart-bar-fill",
-                style: {
-                  height: `${Math.max(heightPercent, 2)}%`,
-                  backgroundColor: item.color
-                }
-              })
+              h(
+                "div",
+                {
+                  className: "chart-bar-fill",
+                  style: {
+                    height: `${barVisualPercent}%`,
+                    backgroundColor: item.color
+                  }
+                },
+                // Sumatoria de alumnos dentro del código de barra
+                item.totalAlumnos > 0
+                  ? h("span", { className: "chart-bar-inner-value" }, item.totalAlumnos)
+                  : null
+              )
             ),
 
             // Etiqueta del Eje X (1°, 2°, 3°...) debajo de la barra
@@ -219,7 +236,7 @@ export function CursoDistribucionGrafico({
           "span",
           null,
           `Directorio de `,
-          h("strong", null, `${totalDivisiones} divisiones`),
+          h("strong", null, `${totalDivs} divisiones`),
           ` habilitadas`
         )
       ),

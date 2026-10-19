@@ -155,7 +155,7 @@ export function StudentDocumentationTab({
             h(
               "span",
               { className: "doc-card-tag doc-card-tag--oficial" },
-              "Gráfica Escolar"
+              "Formulario Oficial"
             )
           ),
           h(

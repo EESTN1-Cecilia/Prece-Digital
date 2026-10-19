@@ -1,0 +1,1554 @@
+/* ==========================================================================
+   MÓDULO DE DOCENTE - PANEL ACADÉMICO INSTITUCIONAL
+   E.E.S.T. Nº 1 "Cecilia Berdichevski"
+   ========================================================================== */
+
+.docente-dashboard-wrapper,
+.docente-panel,
+.docente-cursos-container {
+  width: min(1320px, calc(100% - 48px));
+  max-width: 1320px;
+  margin: 32px auto 48px;
+  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  border-radius: 28px;
+  padding: 28px 32px 36px;
+  box-shadow: 0 10px 36px -8px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  contain: layout style;
+  animation: viewEnter 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.docente-cursos-container .alumnos-main-card {
+  margin-top: 0;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+/* 0. Barra superior institucional */
+.docente-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: -4px;
+}
+
+.docente-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.docente-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.docente-ciclo-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1e293b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.docente-top-bar .btn-actualizar-datos {
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.16);
+  transition: all 180ms ease;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.docente-top-bar .btn-actualizar-datos:hover:not(:disabled) {
+  background: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.22);
+}
+
+.docente-top-bar .btn-actualizar-datos:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.docente-top-bar .btn-actualizar-icon {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(1);
+  flex-shrink: 0;
+}
+
+/* 1. Hero Banner Docente */
+.docente-hero-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 16px;
+  padding: 28px 32px;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.docente-hero-banner::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.docente-hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1;
+}
+
+.docente-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #93c5fd;
+}
+
+.docente-hero-dot {
+  width: 7px;
+  height: 7px;
+  background: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.docente-hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.docente-hero-subtitle {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin: 0;
+  max-width: 620px;
+  line-height: 1.5;
+}
+
+.docente-hero-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.docente-role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #bfdbfe;
+}
+
+.docente-school-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.docente-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1;
+}
+
+/* 2. Módulos Principales (KPI Cards) */
+.docente-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.docente-module-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.docente-module-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08);
+}
+
+.docente-module-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.docente-module-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.docente-module-icon-wrap--asistencias {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.docente-module-icon-wrap--boletines {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.docente-module-icon-wrap--cursos {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+.docente-module-icon-wrap svg {
+  width: 24px;
+  height: 24px;
+}
+
+.docente-module-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docente-module-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.docente-module-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.docente-module-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  gap: 12px;
+}
+
+.docente-module-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.docente-module-badge--blue {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.docente-module-badge--green {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.docente-module-badge--purple {
+  background: #faf5ff;
+  color: #6b21a8;
+}
+
+.docente-module-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 140ms ease;
+  cursor: pointer;
+}
+
+.docente-module-link-btn--primary {
+  background: var(--navy, #222a4c);
+  color: #ffffff;
+}
+
+.docente-module-link-btn--primary:hover {
+  background: #171d36;
+  transform: translateY(-1px);
+}
+
+.docente-module-link-btn--secondary {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.docente-module-link-btn--secondary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* 3. Sección Cursos Asignados */
+.docente-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+
+.docente-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.docente-section-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.docente-section-header .filters-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.docente-section-header .filter-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.docente-section-header .filter-pill {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 160ms ease;
+}
+
+.docente-section-header .filter-pill:hover {
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.docente-section-header .filter-pill.active,
+.docente-section-header .filter-pill--active {
+  background: var(--navy, #222a4c);
+  color: #ffffff;
+  border-color: var(--navy, #222a4c);
+  box-shadow: 0 2px 6px rgba(34, 42, 76, 0.22);
+}
+
+.docente-cursos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.docente-curso-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 160ms ease;
+}
+
+.docente-curso-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 14px -3px rgba(37, 99, 235, 0.08);
+}
+
+.docente-curso-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.docente-curso-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 3px 10px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+}
+
+.docente-curso-turno {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  background: #f8fafc;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.docente-curso-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docente-curso-materia {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.docente-curso-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.docente-curso-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.docente-curso-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 33px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 140ms ease;
+  user-select: none;
+}
+
+.docente-curso-action-btn--asistencia {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.docente-curso-action-btn--asistencia:hover {
+  background: #dbeafe;
+  color: #1e3a8a;
+  transform: translateY(-1px);
+}
+
+.docente-curso-action-btn--boletin {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.docente-curso-action-btn--boletin:hover {
+  background: #dcfce7;
+  color: #14532d;
+  transform: translateY(-1px);
+}
+
+/* 4. Banner informativo inferior */
+.docente-notice-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.docente-notice-icon {
+  width: 20px;
+  height: 20px;
+  color: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.docente-notice-title {
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+/* ==========================================================================
+   VISTA DE ASISTENCIA POR MATERIA (DOCENTE ÁULICA)
+   ========================================================================== */
+
+.docente-asistencias-page {
+  gap: 22px;
+}
+
+.docente-breadcrumb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.docente-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.docente-back-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.docente-crumb-divider {
+  color: #94a3b8;
+}
+
+.docente-crumb-current {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Encabezado de la Clase */
+.docente-asistencias-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 18px;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2);
+}
+
+.docente-asistencias-header__left {
+  max-width: 650px;
+}
+
+.docente-asistencias-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 6px 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.docente-asistencias-subtitle {
+  font-size: 13.5px;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.docente-asistencias-header__stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.docente-stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  min-width: 80px;
+  backdrop-filter: blur(8px);
+}
+
+.docente-stat-chip__num {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.docente-stat-chip__lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.docente-stat-chip--primary .docente-stat-chip__num {
+  color: #38bdf8;
+}
+
+.docente-stat-chip--green .docente-stat-chip__num {
+  color: #4ade80;
+}
+
+.docente-stat-chip--red .docente-stat-chip__num {
+  color: #f87171;
+}
+
+.docente-stat-chip--yellow .docente-stat-chip__num {
+  color: #facc15;
+}
+
+/* Panel de Control y Selección de Clase */
+.docente-control-panel {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.docente-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 170px;
+}
+
+.docente-control-group--actions {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 8px;
+  flex: initial;
+}
+
+.docente-control-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.docente-control-select,
+.docente-control-input {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: all 140ms ease;
+  outline: none;
+}
+
+.docente-control-select:focus,
+.docente-control-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.btn-docente-action {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 140ms ease;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.btn-docente-action--all-present {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.btn-docente-action--all-present:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.btn-docente-action--clear {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.btn-docente-action--clear:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* Toast de éxito */
+.docente-success-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  animation: slideInDown 180ms ease;
+}
+
+/* Barra de Búsqueda y Filtros */
+.docente-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.docente-search-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.docente-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.docente-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 34px 0 38px;
+  border-radius: 9999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.docente-search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.docente-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px;
+}
+
+.docente-list-count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* Tabla de Asistencia Áulica */
+.docente-table-container {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  background: #ffffff;
+}
+
+.docente-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.docente-table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.docente-table th {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-align: left;
+  letter-spacing: 0.4px;
+}
+
+.docente-table-row {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 120ms ease;
+}
+
+.docente-table-row:hover {
+  background-color: #f8fafc;
+}
+
+.docente-table-row--a {
+  background-color: rgba(254, 242, 242, 0.6);
+}
+
+.docente-table-row--t {
+  background-color: rgba(254, 252, 232, 0.6);
+}
+
+.docente-table td {
+  padding: 11px 16px;
+  vertical-align: middle;
+}
+
+.docente-col-num {
+  font-weight: 700;
+  color: #64748b;
+}
+
+.docente-student-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.docente-student-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.docente-student-avatar--m {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.docente-student-avatar--f {
+  background: #fdf2f8;
+  color: #be185d;
+  border: 1px solid #fbcfe8;
+}
+
+.docente-student-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.docente-student-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.docente-student-sub {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.docente-col-dni {
+  font-weight: 600;
+  color: #475569;
+  font-family: monospace;
+}
+
+/* Indicador de Preceptoría */
+.docente-prece-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.docente-prece-tag--presente {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.docente-prece-tag--ausente {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.docente-prece-tag--tarde {
+  background: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
+.docente-prece-tag--neutral {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+}
+
+.dot-indicator--green { background: #22c55e; }
+.dot-indicator--red { background: #ef4444; }
+.dot-indicator--yellow { background: #eab308; }
+.dot-indicator--gray { background: #94a3b8; }
+
+/* Grupo de Botones de Estado */
+.docente-state-btn-group {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+  gap: 3px;
+}
+
+.docente-state-btn {
+  width: 32px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: pointer;
+  background: transparent;
+  color: #64748b;
+  transition: all 120ms ease;
+}
+
+.docente-state-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.docente-state-btn--p.active {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+}
+
+.docente-state-btn--a.active {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+}
+
+.docente-state-btn--t.active {
+  background: #d97706;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.35);
+}
+
+.docente-state-btn--j.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.docente-inline-note-input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  color: #334155;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.docente-inline-note-input:focus {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+/* Pie de la Clase / Guardado */
+.docente-class-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 22px 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+
+.docente-class-footer__left {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.docente-footer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.docente-footer-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.docente-footer-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.docente-footer-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.docente-class-footer__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.docente-save-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.docente-save-summary strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.btn-docente-save-all {
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 26px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2);
+  transition: all 160ms ease;
+  font-family: inherit;
+}
+
+.btn-docente-save-all:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.28);
+}
+
+.btn-docente-save-all:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   GRÁFICOS DUALES COMPACTOS: MATRÍCULA Y ASISTENCIA (DASHBOARD DOCENTE)
+   ========================================================================== */
+
+.docente-charts-dual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .docente-charts-dual-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.docente-chart-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color 150ms ease;
+  overflow: visible;
+}
+
+.docente-chart-card:hover {
+  border-color: #cbd5e1;
+}
+
+/* Encabezado compacto */
+.docente-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.docente-chart-header__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.docente-chart-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.docente-chart-tag--blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.docente-chart-tag--emerald {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.docente-chart-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.docente-chart-header__right {
+  display: flex;
+  align-items: center;
+}
+
+.docente-chart-stat-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.docente-chart-stat-badge--blue strong {
+  color: #2563eb;
+  font-weight: 800;
+}
+
+.docente-chart-stat-badge--emerald strong {
+  color: #059669;
+  font-weight: 800;
+}
+
+/* Área de trazado del gráfico */
+.docente-chart-plot {
+  position: relative;
+  height: 155px;
+  padding-left: 36px;
+  padding-bottom: 46px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.docente-chart-y-axis {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.docente-chart-y-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 0;
+}
+
+.docente-chart-y-lbl {
+  width: 28px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: right;
+  padding-right: 8px;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.docente-chart-y-line {
+  flex: 1;
+  height: 1px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.docente-chart-y-row:last-child .docente-chart-y-line {
+  border-bottom: 1.5px solid #cbd5e1;
+}
+
+/* Pista y columnas de barras */
+.docente-chart-cols-container {
+  position: absolute;
+  top: 0;
+  left: 36px;
+  right: 8px;
+  bottom: 0;
+  display: grid;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.docente-chart-col-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-decoration: none;
+  position: relative;
+  cursor: pointer;
+  height: 100%;
+}
+
+/* Valor numérico o porcentual superior en flujo normal */
+.docente-chart-col-val {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  line-height: 1;
+  transition: transform 120ms ease;
+  user-select: none;
+}
+
+.docente-chart-col-item:hover .docente-chart-col-val {
+  transform: translateY(-2px);
+}
+
+.docente-chart-col-val--blue {
+  color: #1d4ed8;
+}
+
+.docente-chart-col-val--emerald {
+  color: #047857;
+}
+
+.docente-chart-col-val--zero {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* Pista y relleno de barra (sin brillo, plano y limpio) */
+.docente-chart-col-track {
+  width: 100%;
+  max-width: 44px;
+  height: 64px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  transition: background-color 140ms ease;
+}
+
+.docente-chart-col-item:hover .docente-chart-col-track {
+  background: #e2e8f0;
+}
+
+.docente-chart-col-fill {
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
+  transition: height 240ms cubic-bezier(0.2, 0.8, 0.4, 1);
+}
+
+.docente-chart-col-fill--blue {
+  background: #2563eb;
+}
+
+.docente-chart-col-fill--emerald {
+  background: #059669;
+}
+
+/* Etiquetas del pie de columna */
+.docente-chart-col-labels {
+  height: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 5px;
+  text-align: center;
+  max-width: 100%;
+}
+
+.docente-chart-col-main {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1e293b;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.docente-chart-col-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95px;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.docente-chart-col-shift {
+  font-size: 9.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+/* Tooltip limpio, plano y sin brillo */
+.docente-chart-tooltip {
+  position: absolute;
+  bottom: calc(100% - 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  z-index: 30;
+  pointer-events: none;
+  min-width: 140px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.docente-chart-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+}
+
+.docente-chart-tooltip__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.docente-chart-tooltip__sub {
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.docente-chart-tooltip__val {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-top: 2px;
+}
+
+.docente-chart-tooltip__meta {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.docente-chart-tooltip__hint {
+  font-size: 9.5px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Skeletons y Estado Vacío */
+.docente-chart-card--skeleton {
+  min-height: 200px;
+  justify-content: center;
+}
+
+.docente-chart-skeleton-title {
+  width: 45%;
+  height: 16px;
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.docente-chart-skeleton-body {
+  width: 100%;
+  height: 120px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.docente-chart-card--empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 140px;
+  padding: 24px 20px;
+}
+
+

@@ -5,6 +5,7 @@ import { PERMISOS, puede } from "../../utils/permisos.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../components/common/state-handlers.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
+import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
 
 export default function AlumnosListView() {
@@ -26,13 +27,13 @@ export default function AlumnosListView() {
   const [sortBy, setSortBy] = useState("apellido");
   const [sortOrder, setSortOrder] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 25;
+  const [pageSize, setPageSize] = useState(10);
 
   const [students, setStudents] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    limit: 25,
+    limit: 10,
     totalPages: 1,
     hasNextPage: false,
     hasPrevPage: false
@@ -490,7 +491,7 @@ export default function AlumnosListView() {
           ? // 1. Tabla de Alumnos
             h(
               "div",
-              { className: "table-responsive alumnos-table-wrap" },
+              { className: "alumnos-table-wrap" },
               h(
                 "table",
                 { className: "custom-table alumnos-table" },
@@ -697,49 +698,117 @@ export default function AlumnosListView() {
         ? h(
             "div",
             { className: "alumnos-pagination-row" },
+            // Indicador / Resumen a la izquierda
             h(
               "div",
               { className: "pagination-info" },
+              h("span", { className: "pagination-info-dot" }),
               h(
                 "span",
                 { className: "pagination-counter-text" },
-                `Página ${pagination.page} de ${pagination.totalPages} • Total: ${pagination.total} alumnos`
+                h("span", { className: "pagination-text-muted" }, "Página "),
+                h("strong", { className: "pagination-text-bold" }, String(pagination.page)),
+                h("span", { className: "pagination-text-muted" }, ` de ${pagination.totalPages}`),
+                h("span", { className: "pagination-divider" }, "•"),
+                h("strong", { className: "pagination-text-bold" }, String(pagination.total)),
+                h("span", { className: "pagination-text-muted" }, " alumnos")
               )
             ),
+            // Controles de navegación y números de página al centro
             h(
-              "div",
-              { className: "pagination-controls-buttons" },
+              "nav",
+              { className: "pagination-controls-buttons", "aria-label": "Navegación de páginas" },
               h(
                 "button",
                 {
                   type: "button",
-                  className: "pagination-btn",
+                  className: "pagination-nav-btn pagination-nav-btn--prev",
                   disabled: !pagination.hasPrevPage || currentPage <= 1,
                   onClick: () => setCurrentPage((prev) => Math.max(1, prev - 1)),
-                  title: "Página anterior"
+                  title: "Ir a la página anterior",
+                  "aria-label": "Página anterior"
                 },
-                "← Anterior"
+                h(
+                  "svg",
+                  { className: "pagination-nav-icon", viewBox: "0 0 20 20", fill: "currentColor" },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z",
+                    clipRule: "evenodd"
+                  })
+                ),
+                h("span", { className: "pagination-nav-label" }, "Anterior")
               ),
               h(
-                "span",
-                { className: "pagination-current-badge" },
-                `Pág. ${currentPage}`
+                "div",
+                { className: "pagination-pages-list" },
+                paginasVisibles(currentPage, pagination.totalPages, 5).map((num, idx) => {
+                  if (num === "…") {
+                    return h("span", { key: `ellipsis-${idx}`, className: "pagination-ellipsis" }, "…");
+                  }
+                  const isActive = num === currentPage;
+                  return h(
+                    "button",
+                    {
+                      key: `page-${num}`,
+                      type: "button",
+                      className: `pagination-page-btn ${isActive ? "pagination-page-btn--active" : ""}`,
+                      onClick: () => setCurrentPage(num),
+                      title: `Ir a la página ${num}`,
+                      "aria-current": isActive ? "page" : undefined
+                    },
+                    String(num)
+                  );
+                })
               ),
               h(
                 "button",
                 {
                   type: "button",
-                  className: "pagination-btn",
+                  className: "pagination-nav-btn pagination-nav-btn--next",
                   disabled: !pagination.hasNextPage || currentPage >= pagination.totalPages,
                   onClick: () => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1)),
-                  title: "Página siguiente"
+                  title: "Ir a la página siguiente",
+                  "aria-label": "Página siguiente"
                 },
-                "Siguiente →"
+                h("span", { className: "pagination-nav-label" }, "Siguiente"),
+                h(
+                  "svg",
+                  { className: "pagination-nav-icon", viewBox: "0 0 20 20", fill: "currentColor" },
+                  h("path", {
+                    fillRule: "evenodd",
+                    d: "M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z",
+                    clipRule: "evenodd"
+                  })
+                )
               )
             ),
+            // Selector de cantidad y acciones a la derecha
             h(
               "div",
               { className: "alumnos-bottom-actions" },
+              h(
+                "div",
+                { className: "pagination-page-size-selector" },
+                h("span", { className: "pagination-size-label" }, "Mostrar:"),
+                h(CustomSelect, {
+                  className: "pagination-custom-select",
+                  value: String(pageSize),
+                  dropUp: true,
+                  onChange: (val) => {
+                    setPageSize(Number(val) || 10);
+                    setCurrentPage(1);
+                  },
+                  options: [
+                    { value: "10", label: "10 por pág." },
+                    { value: "15", label: "15 por pág." },
+                    { value: "20", label: "20 por pág." },
+                    { value: "25", label: "25 por pág." },
+                    { value: "50", label: "50 por pág." }
+                  ],
+                  ariaLabel: "Cantidad de alumnos por página"
+                })
+              ),
               h(
                 ActionButton,
                 {
