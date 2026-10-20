@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import { DirectorService } from "../director-service.js";
+import { CustomSelect } from "../../../components/common/custom-select.js";
 
 // Íconos auxiliares SVG
 function IconCheckShield({ className = "w-5 h-5", width = "20", height = "20" }) {
@@ -236,6 +237,18 @@ function ModalAsignarPreceptor({ abierto, division, personal, alCerrar, alGuarda
     }
   }, [division, preceptoresDisponibles]);
 
+  const opcionesPreceptores = useMemo(() => {
+    const list = preceptoresDisponibles.map((p) => ({
+      value: p.id,
+      label: `${p.nombreCompleto} (${p.email})`
+    }));
+    list.push({
+      value: "otro",
+      label: "➕ Asignar otro preceptor / nuevo nombre..."
+    });
+    return list;
+  }, [preceptoresDisponibles]);
+
   if (!abierto || !division) return null;
 
   const handleSubmit = async (e) => {
@@ -317,18 +330,14 @@ function ModalAsignarPreceptor({ abierto, division, personal, alCerrar, alGuarda
           "div",
           { className: "form-group" },
           h("label", { className: "form-label" }, "Seleccionar Preceptor del Personal:"),
-          h(
-            "select",
-            {
-              className: "director-filter-select w-full",
-              value: preceptorSeleccionado,
-              onChange: (e) => setPreceptorSeleccionado(e.target.value)
-            },
-            preceptoresDisponibles.map((p) =>
-              h("option", { key: p.id, value: p.id }, `${p.nombreCompleto} (${p.email})`)
-            ),
-            h("option", { value: "otro" }, "➕ Asignar otro preceptor / nuevo nombre...")
-          )
+          h(CustomSelect, {
+            id: "select-preceptor-modal",
+            value: preceptorSeleccionado,
+            options: opcionesPreceptores,
+            onChange: (val) => setPreceptorSeleccionado(val),
+            placeholder: "Seleccione un preceptor...",
+            className: "w-full"
+          })
         ),
 
         // Campos manuales si seleccionó "otro"
@@ -387,13 +396,16 @@ function ModalAsignarPreceptor({ abierto, division, personal, alCerrar, alGuarda
 }
 
 /**
- * Modal para asignar o reasignar un Profesor a una Cátedra/Materia
+ * Modal para asignar o reasignar un Profesor a una o varias Cátedras/Cursos
  */
-function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar }) {
+function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar, todasLasCatedras = [] }) {
   const [profesorSeleccionado, setProfesorSeleccionado] = useState("");
   const [nombrePersonalizado, setNombrePersonalizado] = useState("");
   const [emailPersonalizado, setEmailPersonalizado] = useState("");
-  const [cargaHoraria, setCargaHoraria] = useState("4 hs semanales");
+  const [horas, setHoras] = useState(4);
+  const [situacion, setSituacion] = useState("titular"); // 'titular' | 'provisorio' | 'suplente'
+  const [cursosSeleccionados, setCursosSeleccionados] = useState([]);
+  const [mostrarTodasLasMaterias, setMostrarTodasLasMaterias] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
   const profesoresDisponibles = useMemo(() => {
@@ -420,25 +432,114 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar 
   }, [personal]);
 
   useEffect(() => {
-    if (catedra?.profesor) {
-      setProfesorSeleccionado(catedra.profesor.id || "");
-      setNombrePersonalizado(catedra.profesor.nombre || "");
-      setEmailPersonalizado(catedra.profesor.email || "");
-      setCargaHoraria(catedra.cargaHoraria || "4 hs semanales");
-    } else {
-      setProfesorSeleccionado(profesoresDisponibles[0]?.id || "usr-doc-1");
-      setNombrePersonalizado("");
-      setEmailPersonalizado("");
-      setCargaHoraria("4 hs semanales");
+    if (catedra) {
+      if (catedra.profesor) {
+        setProfesorSeleccionado(catedra.profesor.id || "");
+        setNombrePersonalizado(catedra.profesor.nombre || "");
+        setEmailPersonalizado(catedra.profesor.email || "");
+      } else {
+        setProfesorSeleccionado(profesoresDisponibles[0]?.id || "usr-doc-1");
+        setNombrePersonalizado("");
+        setEmailPersonalizado("");
+      }
+
+      // Horas semanales (parsear si viene ej "4 hs semanales" o "4.5")
+      let hVal = 4;
+      if (catedra.horasSemanales !== undefined && catedra.horasSemanales !== null) {
+        hVal = parseFloat(catedra.horasSemanales) || 4;
+      } else if (catedra.cargaHoraria) {
+        const parsed = parseFloat(String(catedra.cargaHoraria).replace(/[^\d.]/g, ""));
+        if (!isNaN(parsed) && parsed > 0) hVal = parsed;
+      }
+      setHoras(hVal > 0 ? Math.max(0.5, Math.round(hVal * 2) / 2) : 4);
+
+      // Situación de revista (titular, provisorio, suplente)
+      setSituacion(catedra.situacion || "titular");
+
+      // Cursos seleccionados: por defecto la cátedra actual
+      setCursosSeleccionados([catedra.id]);
+      setMostrarTodasLasMaterias(false);
     }
   }, [catedra, profesoresDisponibles]);
 
+  // Opciones para el CustomSelect de profesores
+  const opcionesProfesores = useMemo(() => {
+    const list = profesoresDisponibles.map((p) => ({
+      value: p.id,
+      label: `${p.nombreCompleto} (${p.email})`
+    }));
+    list.push({
+      value: "otro",
+      label: "➕ Asignar otro profesor / nuevo docente..."
+    });
+    return list;
+  }, [profesoresDisponibles]);
+
+  // Lista de cursos disponibles para asignación múltiple
+  const cursosDisponibles = useMemo(() => {
+    if (!todasLasCatedras || todasLasCatedras.length === 0) {
+      return catedra ? [catedra] : [];
+    }
+    if (mostrarTodasLasMaterias) {
+      return todasLasCatedras;
+    }
+    // Filtrar por la misma materia que la cátedra actual
+    const matActual = String(catedra?.materia || "").toLowerCase().trim();
+    return todasLasCatedras.filter(
+      (c) => String(c.materia || "").toLowerCase().trim() === matActual
+    );
+  }, [todasLasCatedras, catedra, mostrarTodasLasMaterias]);
+
   if (!abierto || !catedra) return null;
+
+  const toggleCurso = (id) => {
+    setCursosSeleccionados((prev) => {
+      if (prev.includes(id)) {
+        if (prev.length <= 1) return prev;
+        return prev.filter((cId) => cId !== id);
+      }
+      return [...prev, id];
+    });
+  };
+
+  const seleccionarTodosCursos = () => {
+    const todosIds = cursosDisponibles.map((c) => c.id);
+    setCursosSeleccionados(todosIds);
+  };
+
+  const seleccionarSoloEsteCurso = () => {
+    setCursosSeleccionados([catedra.id]);
+  };
+
+  const modificarHoras = (delta) => {
+    setHoras((prev) => {
+      const num = parseFloat(prev) || 0;
+      const next = Math.round((num + delta) * 10) / 10;
+      return Math.max(0.5, next);
+    });
+  };
+
+  const formatoDetalleHoras = (val) => {
+    if (val === "" || val === null || val === undefined) return "Escriba las horas...";
+    const num = Number(val);
+    if (isNaN(num) || num <= 0) return "0 hs semanales";
+    const ent = Math.floor(num);
+    const min = Math.round((num - ent) * 60);
+    if (ent === 0) return "30 min semanales";
+    if (min === 0) return `${ent} hs semanales`;
+    return `${ent} hs ${min} min semanales`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setGuardando(true);
     try {
+      const numHoras = parseFloat(horas) || 4;
+      const horasFinal = Math.max(0.5, Math.round(numHoras * 2) / 2);
+      const ent = Math.floor(horasFinal);
+      const min = Math.round((horasFinal - ent) * 60);
+      const textoHoras = min === 0 ? `${ent} hs semanales` : `${horasFinal} hs semanales`;
+
       let datosProfesor = null;
       if (profesorSeleccionado === "otro") {
         if (!nombrePersonalizado.trim()) return;
@@ -446,16 +547,33 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar 
           id: `doc-${Date.now()}`,
           nombreCompleto: nombrePersonalizado.trim(),
           email: emailPersonalizado.trim() || "docente@prece.local",
-          cargaHoraria
+          cargaHoraria: textoHoras,
+          horasSemanales: horasFinal,
+          situacion
         };
       } else {
         const encontrado = profesoresDisponibles.find((p) => p.id === profesorSeleccionado);
         datosProfesor = encontrado
-          ? { id: encontrado.id, nombreCompleto: encontrado.nombreCompleto, email: encontrado.email, cargaHoraria }
-          : { id: "usr-doc-1", nombreCompleto: "Docente Asignado", email: "docente@prece.local", cargaHoraria };
+          ? {
+              id: encontrado.id,
+              nombreCompleto: encontrado.nombreCompleto,
+              email: encontrado.email,
+              cargaHoraria: textoHoras,
+              horasSemanales: horasFinal,
+              situacion
+            }
+          : {
+              id: "usr-doc-1",
+              nombreCompleto: "Docente Asignado",
+              email: "docente@prece.local",
+              cargaHoraria: textoHoras,
+              horasSemanales: horasFinal,
+              situacion
+            };
       }
 
-      await alGuardar(catedra.id, datosProfesor);
+      const ids = cursosSeleccionados.length > 0 ? cursosSeleccionados : [catedra.id];
+      await alGuardar(ids, datosProfesor);
       alCerrar();
     } finally {
       setGuardando(false);
@@ -466,143 +584,330 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar 
     h(
       "div",
       { className: "director-modal-backdrop", onClick: (e) => e.target === e.currentTarget && alCerrar() },
-    h(
-      "div",
-      { className: "director-modal-container", role: "dialog", "aria-modal": "true" },
-      // Header
       h(
         "div",
-        { className: "director-modal-header" },
+        { className: "director-modal-container", role: "dialog", "aria-modal": "true", style: { maxWidth: "560px" } },
+        // Header
         h(
           "div",
-          null,
-          h("h2", { className: "director-modal-title" }, catedra.profesor ? "Reasignar Profesor a Cátedra" : "Asignar Profesor a Cátedra"),
+          { className: "director-modal-header" },
           h(
-            "p",
-            { className: "director-modal-subtitle" },
-            `${catedra.materia} · ${catedra.curso} ${catedra.division} (${catedra.turno})`
-          )
-        ),
-        h(
-          "button",
-          { type: "button", className: "director-modal-close-btn", onClick: alCerrar, "aria-label": "Cerrar" },
-          h(IconClose, null)
-        )
-      ),
-
-      // Formulario
-      h(
-        "form",
-        { className: "director-modal-form", onSubmit: handleSubmit },
-
-        // Profesor actual
-        catedra.profesor
-          ? h(
-              "div",
-              { className: "asignaciones-current-info" },
-              h("span", { className: "asignaciones-current-label" }, "Profesor asignado actualmente:"),
-              h(
-                "div",
-                { className: "asignaciones-current-val" },
-                h("strong", null, catedra.profesor.nombre),
-                h("span", null, ` (${catedra.profesor.email})`)
-              )
-            )
-          : null,
-
-        // Selector de profesor
-        h(
-          "div",
-          { className: "form-group" },
-          h("label", { className: "form-label" }, "Profesor / Docente:"),
-          h(
-            "select",
-            {
-              className: "director-filter-select w-full",
-              value: profesorSeleccionado,
-              onChange: (e) => setProfesorSeleccionado(e.target.value)
-            },
-            profesoresDisponibles.map((p) =>
-              h("option", { key: p.id, value: p.id }, `${p.nombreCompleto} (${p.email})`)
+            "div",
+            null,
+            h(
+              "h2",
+              { className: "director-modal-title" },
+              catedra.profesor ? "Reasignar Profesor a Curso(s)" : "Asignar Profesor a Curso(s)"
             ),
-            h("option", { value: "otro" }, "➕ Asignar otro profesor / nuevo docente...")
-          )
-        ),
-
-        // Carga horaria
-        h(
-          "div",
-          { className: "form-group" },
-          h("label", { className: "form-label" }, "Carga Horaria / Régimen:"),
-          h(
-            "select",
-            {
-              className: "director-filter-select w-full",
-              value: cargaHoraria,
-              onChange: (e) => setCargaHoraria(e.target.value)
-            },
-            h("option", { value: "2 hs semanales" }, "2 hs semanales (Módulo simple)"),
-            h("option", { value: "3 hs semanales" }, "3 hs semanales"),
-            h("option", { value: "4 hs semanales" }, "4 hs semanales (Módulo doble estándar)"),
-            h("option", { value: "6 hs semanales" }, "6 hs semanales (Taller / Laboratorio)"),
-            h("option", { value: "8 hs semanales" }, "8 hs semanales (Práctica profesionalizante)"),
-            h("option", { value: "10 hs semanales" }, "10 hs semanales (Especialidad técnica)")
-          )
-        ),
-
-        // Campos personalizados si eligió "otro"
-        profesorSeleccionado === "otro"
-          ? h(
-              "div",
-              { className: "asignaciones-custom-fields" },
-              h(
-                "div",
-                { className: "form-group" },
-                h("label", { className: "form-label" }, "Nombre y Apellido del Profesor:"),
-                h("input", {
-                  type: "text",
-                  className: "search-input",
-                  placeholder: "Ej. Prof. Javier Zanetti",
-                  value: nombrePersonalizado,
-                  onChange: (e) => setNombrePersonalizado(e.target.value),
-                  required: true
-                })
-              ),
-              h(
-                "div",
-                { className: "form-group" },
-                h("label", { className: "form-label" }, "Correo Institucional:"),
-                h("input", {
-                  type: "email",
-                  className: "search-input",
-                  placeholder: "jzanetti@prece.local",
-                  value: emailPersonalizado,
-                  onChange: (e) => setEmailPersonalizado(e.target.value)
-                })
-              )
+            h(
+              "p",
+              { className: "director-modal-subtitle" },
+              `${catedra.materia} · ${catedra.curso} ${catedra.division} (${catedra.turno})`
             )
-          : null,
-
-        // Botones de acción
-        h(
-          "div",
-          { className: "director-modal-actions" },
-          h(
-            "button",
-            { type: "button", className: "btn-director-secondary", onClick: alCerrar, disabled: guardando },
-            "Cancelar"
           ),
           h(
             "button",
-            { type: "submit", className: "btn-director-primary", disabled: guardando },
-            guardando ? "Guardando..." : "Confirmar Asignación"
+            { type: "button", className: "director-modal-close-btn", onClick: alCerrar, "aria-label": "Cerrar" },
+            h(IconClose, null)
+          )
+        ),
+
+        // Formulario
+        h(
+          "form",
+          { className: "director-modal-form", onSubmit: handleSubmit },
+
+          // Profesor actual
+          catedra.profesor
+            ? h(
+                "div",
+                { className: "asignaciones-current-info" },
+                h("span", { className: "asignaciones-current-label" }, "Profesor asignado actualmente:"),
+                h(
+                  "div",
+                  { className: "asignaciones-current-val" },
+                  h("strong", null, catedra.profesor.nombre),
+                  h("span", null, ` (${catedra.profesor.email})`)
+                )
+              )
+            : null,
+
+          // Selector de profesor
+          h(
+            "div",
+            { className: "form-group" },
+            h("label", { className: "form-label" }, "Profesor / Docente:"),
+            h(CustomSelect, {
+              id: "select-profesor-modal",
+              value: profesorSeleccionado,
+              options: opcionesProfesores,
+              onChange: (val) => setProfesorSeleccionado(val),
+              placeholder: "Seleccione un profesor o docente...",
+              className: "w-full"
+            })
+          ),
+
+          // Campos personalizados si eligió "otro"
+          profesorSeleccionado === "otro"
+            ? h(
+                "div",
+                { className: "asignaciones-custom-fields" },
+                h(
+                  "div",
+                  { className: "form-group" },
+                  h("label", { className: "form-label" }, "Nombre y Apellido del Profesor:"),
+                  h("input", {
+                    type: "text",
+                    className: "search-input",
+                    placeholder: "Ej. Prof. Javier Zanetti",
+                    value: nombrePersonalizado,
+                    onChange: (e) => setNombrePersonalizado(e.target.value),
+                    required: true
+                  })
+                ),
+                h(
+                  "div",
+                  { className: "form-group" },
+                  h("label", { className: "form-label" }, "Correo Institucional:"),
+                  h("input", {
+                    type: "email",
+                    className: "search-input",
+                    placeholder: "jzanetti@prece.local",
+                    value: emailPersonalizado,
+                    onChange: (e) => setEmailPersonalizado(e.target.value)
+                  })
+                )
+              )
+            : null,
+
+          // Situación de Revista (Titular, Provisorio, Suplente)
+          h(
+            "div",
+            { className: "form-group" },
+            h("label", { className: "form-label" }, "Situación de Revista:"),
+            h(
+              "div",
+              { className: "asignaciones-situacion-grid" },
+              [
+                { id: "titular", label: "Titular", desc: "Cargo efectivo" },
+                { id: "provisorio", label: "Provisorio", desc: "Vacante transitoria" },
+                { id: "suplente", label: "Suplente", desc: "Reemplazo de titular" }
+              ].map((sit) =>
+                h(
+                  "div",
+                  {
+                    key: sit.id,
+                    className: `asignaciones-situacion-card ${situacion === sit.id ? `asignaciones-situacion-card--active-${sit.id}` : ""}`,
+                    onClick: () => setSituacion(sit.id)
+                  },
+                  h("span", { className: "asignaciones-situacion-title" }, sit.label),
+                  h("span", { className: "asignaciones-situacion-desc" }, sit.desc)
+                )
+              )
+            )
+          ),
+
+          // Carga Horaria
+          h(
+            "div",
+            { className: "form-group" },
+            h("label", { className: "form-label" }, "Carga Horaria Semanal:"),
+            h(
+              "div",
+              { className: "asignaciones-stepper-wrap" },
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "asignaciones-stepper-btn",
+                  onClick: () => modificarHoras(-0.5),
+                  disabled: (parseFloat(horas) || 0) <= 0.5,
+                  title: "Restar 30 minutos"
+                },
+                "−"
+              ),
+              h("input", {
+                type: "number",
+                min: "0.5",
+                step: "0.5",
+                className: "asignaciones-stepper-input",
+                value: horas,
+                placeholder: "0",
+                onChange: (e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    setHoras("");
+                    return;
+                  }
+                  const num = parseFloat(val);
+                  if (!isNaN(num)) {
+                    setHoras(val);
+                  }
+                },
+                onBlur: () => {
+                  if (horas === "") {
+                    setHoras(4);
+                  } else {
+                    const num = parseFloat(horas);
+                    if (isNaN(num) || num <= 0) {
+                      setHoras(0.5);
+                    } else {
+                      const ajustado = Math.max(0.5, Math.round(num * 2) / 2);
+                      setHoras(ajustado);
+                    }
+                  }
+                }
+              }),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "asignaciones-stepper-btn",
+                  onClick: () => modificarHoras(0.5),
+                  title: "Sumar 30 minutos"
+                },
+                "+"
+              ),
+              h("span", { className: "asignaciones-stepper-detail" }, formatoDetalleHoras(horas))
+            ),
+            // Chips rápidos
+            h(
+              "div",
+              { className: "asignaciones-stepper-chips" },
+              [2, 3, 4, 4.5, 6, 8, 12, 16, 20].map((num) =>
+                h(
+                  "button",
+                  {
+                    key: num,
+                    type: "button",
+                    className: `asignaciones-chip-btn ${parseFloat(horas) === num ? "asignaciones-chip-btn--active" : ""}`,
+                    onClick: () => setHoras(num)
+                  },
+                  `${num} hs`
+                )
+              )
+            )
+          ),
+
+          // Cursos / Cátedras a asignar (Asignación múltiple)
+          h(
+            "div",
+            { className: "form-group" },
+            h(
+              "div",
+              { className: "asignaciones-multicursos-header" },
+              h("span", null, `Cursos a asignar (${cursosSeleccionados.length} seleccionado${cursosSeleccionados.length > 1 ? "s" : ""}):`),
+              h(
+                "div",
+                { style: { display: "flex", alignItems: "center", gap: "6px" } },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "asignaciones-footer-tool-btn",
+                    onClick: seleccionarTodosCursos,
+                    title: "Marcar todas las divisiones disponibles"
+                  },
+                  "Marcar todas"
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "asignaciones-footer-tool-btn",
+                    onClick: seleccionarSoloEsteCurso,
+                    title: "Seleccionar solo la división actual"
+                  },
+                  "Solo este curso"
+                )
+              )
+            ),
+            h(
+              "div",
+              { className: "asignaciones-multicursos-box" },
+              h(
+                "div",
+                { className: "asignaciones-multicursos-list" },
+                cursosDisponibles.map((c) => {
+                  const estaSeleccionado = cursosSeleccionados.includes(c.id);
+                  return h(
+                    "label",
+                    {
+                      key: c.id,
+                      className: `asignaciones-multicursos-item ${estaSeleccionado ? "asignaciones-multicursos-item--selected" : ""}`
+                    },
+                    h("input", {
+                      type: "checkbox",
+                      className: "asignaciones-multicursos-checkbox",
+                      checked: estaSeleccionado,
+                      onChange: () => toggleCurso(c.id)
+                    }),
+                    h(
+                      "div",
+                      { className: "asignaciones-multicursos-info" },
+                      h("span", { className: "asignaciones-multicursos-curso" }, `${c.curso} ${c.division}`),
+                      h("span", { className: "asignaciones-multicursos-turno" }, c.turno),
+                      mostrarTodasLasMaterias
+                        ? h("span", { style: { fontSize: "11px", color: "#64748b" } }, `(${c.materia})`)
+                        : null,
+                      h(
+                        "span",
+                        {
+                          className: `asignaciones-multicursos-estado ${c.profesor ? "asignaciones-multicursos-estado--assigned" : "asignaciones-multicursos-estado--unassigned"}`
+                        },
+                        c.profesor ? `● ${c.profesor.nombre}` : "○ Sin asignar"
+                      )
+                    )
+                  );
+                })
+              )
+            )
+          ),
+
+          // Footer: Cancelar y Confirmar a la izquierda, Ver otras materias a la derecha en la misma línea
+          h(
+            "div",
+            { className: "asignaciones-modal-footer" },
+            // Botones Cancelar y Confirmar del lado izquierdo
+            h(
+              "div",
+              { style: { display: "flex", alignItems: "center", gap: "10px" } },
+              h(
+                "button",
+                { type: "button", className: "btn-director-secondary", onClick: alCerrar, disabled: guardando },
+                "Cancelar"
+              ),
+              h(
+                "button",
+                { type: "submit", className: "btn-director-primary", disabled: guardando },
+                guardando ? "Guardando..." : "Confirmar"
+              )
+            ),
+            // Ver otras materias del lado derecho en la misma línea
+            todasLasCatedras.length > cursosDisponibles.length || mostrarTodasLasMaterias
+              ? h(
+                  "div",
+                  { style: { marginLeft: "auto" } },
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      className: `asignaciones-footer-tool-btn ${mostrarTodasLasMaterias ? "asignaciones-footer-tool-btn--accent" : ""}`,
+                      onClick: () => setMostrarTodasLasMaterias(!mostrarTodasLasMaterias),
+                      title: mostrarTodasLasMaterias ? "Ver solo la materia actual" : "Ver cursos de otras materias"
+                    },
+                    mostrarTodasLasMaterias
+                      ? `Solo ${catedra.materia}`
+                      : "Ver otras materias..."
+                  )
+                )
+              : null
           )
         )
       )
-    )
-  ),
-  document.body
-);
+    ),
+    document.body
+  );
 }
 
 /**
@@ -682,7 +987,12 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
       const actualizada = await DirectorService.guardarAsignacionProfesor(catedraId, profesorData);
       setCatedrasProfesores(actualizada);
       if (onMostrarToast) {
-        onMostrarToast(`Profesor asignado exitosamente a la cátedra.`);
+        const cant = Array.isArray(catedraId) ? catedraId.length : 1;
+        onMostrarToast(
+          cant > 1
+            ? `Profesor asignado exitosamente a ${cant} cursos/divisiones.`
+            : `Profesor asignado exitosamente a la cátedra.`
+        );
       }
     } catch {
       if (onMostrarToast) onMostrarToast("Error al asignar profesor.");
@@ -757,47 +1067,39 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
     return Array.from(set).sort();
   }, [catedrasProfesores]);
 
+  const renderSubtabs = () =>
+    h(
+      "div",
+      { className: "asignaciones-subtabs-nav" },
+      [
+        { id: "preceptores", label: "Preceptores", icon: IconUsers, count: preceptoresAsignadosCount },
+        { id: "profesores", label: "Profesores", icon: IconGraduationCap, count: profesoresAsignadosCount }
+      ].map((tab) =>
+        h(
+          "button",
+          {
+            key: tab.id,
+            type: "button",
+            className: `director-tab-btn ${subPestana === tab.id ? "director-tab-btn--active" : ""}`,
+            onClick: () => setSubPestana(tab.id)
+          },
+          h(tab.icon, { width: "15", height: "15" }),
+          h("span", null, tab.label),
+          h(
+            "span",
+            { className: subPestana === tab.id ? "asignaciones-pill-active" : "asignaciones-pill-inactive" },
+            tab.count
+          )
+        )
+      )
+    );
+
   return h(
     "div",
     { className: "director-section-content" },
 
     // =========================================================================
-    // BARRA DE SUB-PESTAÑAS (PROFESORES Y PRECEPTORES)
-    // Idéntico diseño a la segunda imagen de pestañas directivas
-    // =========================================================================
-    h(
-      "div",
-      { className: "asignaciones-subtabs-wrapper" },
-      h(
-        "div",
-        { className: "asignaciones-subtabs-nav" },
-        [
-          { id: "preceptores", label: "Preceptores", icon: IconUsers, count: preceptoresAsignadosCount },
-          { id: "profesores", label: "Profesores", icon: IconGraduationCap, count: profesoresAsignadosCount }
-        ].map((tab) =>
-          h(
-            "button",
-            {
-              key: tab.id,
-              type: "button",
-              className: `director-tab-btn ${subPestana === tab.id ? "director-tab-btn--active" : ""}`,
-              onClick: () => setSubPestana(tab.id)
-            },
-            h(tab.icon, { width: "15", height: "15" }),
-            h("span", null, tab.label),
-            h(
-              "span",
-              { className: subPestana === tab.id ? "asignaciones-pill-active" : "asignaciones-pill-inactive" },
-              tab.count
-            )
-          )
-        )
-      )
-    ),
-
-    // =========================================================================
     // VISTA 1: ASIGNACIÓN DE CURSOS Y PRECEPTORES
-    // Idéntico diseño a la primera imagen compartida
     // =========================================================================
     subPestana === "preceptores"
       ? h(
@@ -822,7 +1124,8 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
                 { className: "asignaciones-counter-badge" },
                 `${preceptoresAsignadosCount} de ${divisionesPreceptores.length} divisiones con preceptor`
               )
-            )
+            ),
+            renderSubtabs()
           ),
 
           // Toolbar de Filtros (Buscador, Años, Turnos, Estados)
@@ -1089,7 +1392,8 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
                 { className: "asignaciones-counter-badge asignaciones-counter-badge--green" },
                 `${profesoresAsignadosCount} de ${catedrasProfesores.length} cátedras con profesor`
               )
-            )
+            ),
+            renderSubtabs()
           ),
 
           // Toolbar de Filtros (Buscador, Años, Turnos, Materias, Estados)
@@ -1276,8 +1580,36 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
                                 h(
                                   "div",
                                   { className: "asignaciones-user-info" },
-                                  h("strong", { className: "asignaciones-user-name" }, item.profesor.nombre),
-                                  h("span", { className: "asignaciones-user-email" }, item.profesor.email)
+                                  h(
+                                    "div",
+                                    { style: { display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" } },
+                                    h("strong", { className: "asignaciones-user-name" }, item.profesor.nombre),
+                                    item.situacion
+                                      ? h(
+                                          "span",
+                                          {
+                                            className: `asignaciones-badge-situacion asignaciones-badge-situacion--${item.situacion}`
+                                          },
+                                          item.situacion === "provisorio"
+                                            ? "Provisorio"
+                                            : item.situacion === "suplente"
+                                            ? "Suplente"
+                                            : "Titular"
+                                        )
+                                      : null
+                                  ),
+                                  h(
+                                    "div",
+                                    { style: { display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "2px" } },
+                                    h("span", { className: "asignaciones-user-email" }, item.profesor.email),
+                                    item.horasSemanales || item.cargaHoraria
+                                      ? h(
+                                          "span",
+                                          { className: "asignaciones-tag-horas" },
+                                          item.horasSemanales ? `${item.horasSemanales} hs/sem` : item.cargaHoraria
+                                        )
+                                      : null
+                                  )
                                 )
                               )
                             : h(
@@ -1371,6 +1703,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
           abierto: Boolean(catedraParaAsignar),
           catedra: catedraParaAsignar,
           personal,
+          todasLasCatedras: catedrasProfesores,
           alCerrar: () => setCatedraParaAsignar(null),
           alGuardar: handleGuardarProfesor
         })

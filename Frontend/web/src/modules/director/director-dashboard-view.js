@@ -357,6 +357,33 @@ export default function DirectorDashboardView() {
             h("span", null, "Asistencias")
           ),
 
+          // --- Docentes ---
+          h("div", { key: "side-div-doc", className: "director-sidebar-divider-label" }, "Docentes"),
+          h(
+            "a",
+            { key: "side-link-doc", href: "#/docente", className: "director-sidebar-item director-sidebar-item--doc" },
+            h("div", { className: "director-sidebar-icon director-sidebar-icon--doc" }, h(IconSchool, { width: "16", height: "16" })),
+            h(
+              "div",
+              { className: "director-sidebar-item-text" },
+              h("strong", null, "Docentes"),
+              h("span", null, "Clases y Calificaciones")
+            ),
+            h("span", { className: "director-sidebar-item-arrow" }, "➔")
+          ),
+          h(
+            "a",
+            { key: "side-link-doc-asist", href: "#/docente/asistencias", className: "director-sidebar-sub-btn" },
+            h(IconClipboard, { width: "15", height: "15" }),
+            h("span", null, "Planilla de Asistencia")
+          ),
+          h(
+            "a",
+            { key: "side-link-doc-calif", href: "#/boletines", className: "director-sidebar-sub-btn" },
+            h(IconAward, { width: "15", height: "15" }),
+            h("span", null, "Planilla de Calificaciones")
+          ),
+
           // --- Server (deshabilitado según configuración) ---
           ...(MOSTRAR_SERVER
             ? [
@@ -1172,7 +1199,8 @@ export default function DirectorDashboardView() {
                             {
                               className: `director-status-tag ${p.estado === "activo" ? "director-status-tag--active" : "director-status-tag--inactive"}`
                             },
-                            p.estado === "activo" ? "● Activo" : "○ Inactivo"
+                            h("span", { className: "director-status-dot", "aria-hidden": "true" }, p.estado === "activo" ? "●" : "○"),
+                            h("span", null, p.estado === "activo" ? "Activo" : "Inactivo")
                           )
                         ),
 

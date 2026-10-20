@@ -1063,8 +1063,9 @@ export const DirectorService = {
   async guardarAsignacionProfesor(catedraId, profesorData) {
     const STORAGE_KEY = "prece_asignaciones_profesores";
     const lista = await this.listarAsignacionesProfesores();
+    const ids = Array.isArray(catedraId) ? catedraId : [catedraId];
     const actualizada = lista.map((item) => {
-      if (item.id === catedraId) {
+      if (ids.includes(item.id)) {
         return {
           ...item,
           profesor: {
@@ -1074,6 +1075,8 @@ export const DirectorService = {
             avatar: (profesorData.nombreCompleto || profesorData.nombre || "D").charAt(0).toUpperCase()
           },
           estado: "asignado",
+          situacion: profesorData.situacion || item.situacion || "titular",
+          horasSemanales: profesorData.horasSemanales !== undefined ? profesorData.horasSemanales : (item.horasSemanales || 4),
           cargaHoraria: profesorData.cargaHoraria || item.cargaHoraria || "4 hs semanales"
         };
       }
