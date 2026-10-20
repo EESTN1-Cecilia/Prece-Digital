@@ -6,6 +6,7 @@
 import { endpoint } from "../config/env.js";
 import {
   hayRefreshToken,
+  haySesionGuardada,
   leerAccessToken,
   limpiarTokens
 } from "./session-tokens.js";
@@ -36,15 +37,94 @@ const MENSAJES = {
   [CODIGOS.TIEMPO_AGOTADO]: "La solicitud tardó demasiado. Intentá nuevamente."
 };
 
+/* Mensajes curados para 401: el Backend usa el mismo estado HTTP para casos
+   distintos y cada uno merece su propia instruccion. INVALID_CREDENTIALS no
+   entra aca: el mensaje del Backend ya explica el caso y no debe traducirse
+   al perder el matiz de que no se revela si el email existe. */
+const MENSAJES_401 = {
+  MISSING_TOKEN: "Necesitás iniciar sesión para realizar esta acción.",
+  INVALID_TOKEN: MENSAJES[CODIGOS.SIN_AUTENTICAR],
+  ACCOUNT_INACTIVE: "Tu cuenta está desactivada. Contactá a la administración."
+};
+
+/* Mensaje para errores HTTP sin codigo conocido del Backend: se indica el estado
+   real sin inventar categorias nuevas. */
+function mensajePorEstado(estado) {
+  if (estado && estado >= 500) {
+    return MENSAJES[CODIGOS.ERROR_INTERNO];
+  }
+
+  if (estado) {
+    return `No se pudo completar la operación (${estado}).`;
+  }
+
+  return "Ocurrió un error inesperado.";
+}
+
+/* Un mensaje del backend solo se muestra tal cual si esta escrito para una
+   persona: se descartan stack traces, SQL, rutas internas y excepciones. */
+export function esMensajeApto(texto) {
+  if (typeof texto !== "string") {
+    return false;
+  }
+
+  const limpio = texto.trim();
+
+  if (limpio.length === 0 || limpio.length > 200 || limpio.includes("\n")) {
+    return false;
+  }
+
+  return !/(sql|sqlite|constraint|exception|traceback|stack|errno|\bat\s+\w+\s*\(|node_modules|[a-z]:\\|\/(usr|var|home|src)\/|select\s+.+\s+from\s)/i.test(
+    limpio
+  );
+}
+
+/* Errores por campo para formularios, desde el formato real del Backend
+   { error: { details: [{ field, message }] } }. Se aceptan ademas las formas
+   sueltas ({ errores: { campo: mensaje } }) por si algun endpoint no migro. */
+const CLAVES_DE_CONTROL = new Set(["permission", "permiso", "roles", "context", "alcance"]);
+
+export function camposDeError(cuerpo) {
+  const crudo = Array.isArray(cuerpo)
+    ? cuerpo
+    : (cuerpo?.error?.details ?? cuerpo?.campos ?? cuerpo?.errores ?? cuerpo?.errors ?? cuerpo?.fields);
+
+  if (!crudo) {
+    return null;
+  }
+
+  const entradas = Array.isArray(crudo)
+    ? crudo.map((item) => [item?.campo ?? item?.field, item?.mensaje ?? item?.message])
+    : Object.entries(crudo).map(([campo, valor]) => [
+      campo,
+      typeof valor === "string" ? valor : (valor?.mensaje ?? valor?.message)
+    ]);
+
+  const campos = Object.fromEntries(
+    entradas.filter(([campo, mensaje]) => campo && esMensajeApto(mensaje) && !CLAVES_DE_CONTROL.has(campo))
+  );
+
+  return Object.keys(campos).length ? campos : null;
+}
+
 export class ErrorDeApi extends Error {
   constructor({ codigo, mensaje, estado, detalles }) {
-    super(mensaje || MENSAJES[codigo] || "Ocurrió un error inesperado.");
+    super(mensaje || MENSAJES[codigo] || mensajePorEstado(estado));
 
     this.name = "ErrorDeApi";
-    this.codigo = codigo || CODIGOS.ERROR_INTERNO;
-    this.estado = estado || 0;
-    this.detalles = detalles || null;
     this.mensaje = this.message;
+    /* Codigo estable del Backend (VALIDATION_ERROR, FORBIDDEN, INVALID_TOKEN, ...).
+       Los errores de transporte sin respuesta HTTP usan NETWORK_ERROR o TIMEOUT.
+       Un error HTTP sin codigo conocido queda en null: el estado viaja aparte y
+       no se fuerza a ERROR_INTERNO a errores de otro tipo. */
+    this.codigo = codigo || null;
+    this.estado = estado || 0;
+    /* `detalles` conserva el valor crudo de error.details. `campos` es la version
+       lista para formularios ({ campo: mensaje }); `permiso` se completa solo si
+       el Backend reporto el nombre del permiso rechazado en details.permission. */
+    this.detalles = detalles || null;
+    this.campos = camposDeError(detalles);
+    this.permiso = typeof detalles?.permission === "string" ? detalles.permission : null;
   }
 }
 
@@ -88,9 +168,25 @@ function avisarSesionInvalida() {
   }
 }
 
+/* Invalida la sesion una sola vez por vencimiento: si los tokens ya estan
+   limpios (otro pedido concurrente ya hizo la limpieza) no se vuelve a avisar,
+   ni siquiera si la limpieza anterior sigue en curso (se comparte la promesa). */
+let invalidacionEnCurso = null;
+
 async function invalidarSesion() {
-  await limpiarTokens();
-  avisarSesionInvalida();
+  if (!haySesionGuardada() && !invalidacionEnCurso) {
+    return;
+  }
+
+  if (!invalidacionEnCurso) {
+    invalidacionEnCurso = limpiarTokens()
+      .then(avisarSesionInvalida)
+      .finally(() => {
+        invalidacionEnCurso = null;
+      });
+  }
+
+  return invalidacionEnCurso;
 }
 
 function renovarSesionEnCurso() {
@@ -123,7 +219,7 @@ async function ejecutar(url, opciones, metodo) {
   try {
     return await implementar(url, { ...opciones, signal: controlador.signal });
   } catch (fallo) {
-    if (fallo && fallo.name === "AbortError") {
+    if (fallo && (fallo.name === "AbortError" || fallo.name === "TimeoutError")) {
       throw new ErrorDeApi({
         codigo: CODIGOS.TIEMPO_AGOTADO,
         estado: 0
@@ -205,15 +301,22 @@ export async function pedir(ruta, opciones = {}) {
     return desenvolver(body);
   }
 
+  /* Solo se usa el mensaje del backend si esta escrito para una persona: el
+     usuario nunca ve stack traces, SQL ni excepciones internas. En los 401
+     gana el mensaje curado del codigo de autenticacion. */
+  const delBackend = body?.error?.message;
+
   const fallo = new ErrorDeApi({
     codigo: body?.error?.code,
     estado: respuesta.status,
-    mensaje: body?.error?.message || MENSAJES[body?.error?.code],
+    mensaje:
+      (respuesta.status === 401 && MENSAJES_401[body?.error?.code]) ||
+      (esMensajeApto(delBackend) ? delBackend : undefined),
     detalles: body?.error?.details
   });
 
   /* Token invalido, vencido o revocado: se intenta renovar una sola vez con el
-     refresh token. Si tampoco alcanza, se limpia la sesion local. */
+      refresh token. Si tampoco alcanza, se limpia la sesion local. */
   if (fallo.estado === 401 && autenticado && permitirRenovacion && renovador && hayRefreshToken()) {
     let renovado = false;
 
@@ -228,6 +331,12 @@ export async function pedir(ruta, opciones = {}) {
       return pedir(ruta, { ...opciones, permitirRenovacion: false });
     }
 
+    await invalidarSesion();
+  } else if (fallo.estado === 401 && autenticado && haySesionGuardada()) {
+    /* 401 de sesion sin refresh disponible (sin refresh token o antes de
+       configurar el renovador): el token dejo de servir, se limpia la sesion
+       local para volver al login. En requests sin autenticacion (login, logout)
+       nunca se llega aca: no hay sesion que invalidar. */
     await invalidarSesion();
   }
 
