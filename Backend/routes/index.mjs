@@ -42,6 +42,7 @@ import * as inventoryController from "../modules/inventory/inventory.controller.
 import * as requestsController from "../modules/requests/requests.controller.mjs";
 import * as reservationsController from "../modules/reservations/reservations.controller.mjs";
 import * as notificationsController from "../modules/notifications/notifications.controller.mjs";
+import * as devicesController from "../modules/devices/devices.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
 import * as academicController from "../modules/academic/academic.controller.mjs";
 import * as academicRecordsController from "../modules/academic-records/academic-records.controller.mjs";
@@ -455,6 +456,13 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/notifications/:notificationId", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getNotification },
   { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAsRead },
   { method: "POST", path: "/api/v1/notifications/:notificationId/archive", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.archiveNotification },
+
+  /* Dispositivos del usuario autenticado (preparacion para notificaciones push).
+     La propiedad la fija el token: recurso estrictamente personal, sin permiso
+     de modulo (igual que /api/v1/auth/me). Ver modules/devices/README.md. */
+  { method: "POST", path: "/api/v1/devices", middlewares: [verifyToken], handler: devicesController.registrarDispositivo },
+  { method: "GET", path: "/api/v1/devices", middlewares: [verifyToken], handler: devicesController.listarDispositivos },
+  { method: "DELETE", path: "/api/v1/devices/:deviceId", middlewares: [verifyToken], handler: devicesController.desasociarDispositivo },
 
   { method: "POST", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_WRITE)], handler: curriculumController.createArea },
   { method: "GET", path: "/api/v1/curriculum/areas", middlewares: [verifyToken, required(P.CURRICULUM_READ)], handler: curriculumController.listAreas },

@@ -1010,6 +1010,20 @@ CREATE TABLE tickets_soporte (
   CONSTRAINT fk_ts_asignado FOREIGN KEY (asignado_a) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE dispositivos (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id            INT UNSIGNED NOT NULL COMMENT 'Cuenta a la que pertenece la instalacion',
+  id_instalacion        VARCHAR(128) NOT NULL COMMENT 'Identificador estable de la instalacion (Expo/OS)',
+  plataforma            ENUM('android','ios') NOT NULL,
+  token_push            VARCHAR(4096) NULL COMMENT 'Token del proveedor de push. SENSIBLE: no exponer',
+  activo                TINYINT(1)   NOT NULL DEFAULT 1 COMMENT 'Baja logica de la desasociacion',
+  fecha_registro        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_dispositivo_instalacion (id_instalacion),
+  KEY ix_dispositivos_usuario (usuario_id),
+  CONSTRAINT fk_dispositivo_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
 INSERT INTO tipos_accion_seguimiento (codigo, descripcion) VALUES
   ('llamado_familia',        'Llamado telefonico a la familia del alumno'),
   ('comunicacion_familia',   'Comunicacion con padre, madre o tutor'),

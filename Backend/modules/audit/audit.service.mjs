@@ -22,7 +22,9 @@ const CAMPOS_SENSIBLES = [
   "refreshToken",
   "token",
   "secret",
-  "refreshTokenId"
+  "refreshTokenId",
+  "pushToken",
+  "tokenPush"
 ];
 
 const ACCIONES_VALIDAS = ["create", "read", "update", "delete", "export", "login", "logout", "access", "aprobacion"];

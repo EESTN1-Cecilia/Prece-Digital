@@ -6,7 +6,8 @@ const store = {
   loginAttempts: new Map(),
   auditLogs: new Map(),
   errorLogs: new Map(),
-  rolePermissions: new Map()
+  rolePermissions: new Map(),
+  devices: new Map()
 };
 
 export function getStore() {
