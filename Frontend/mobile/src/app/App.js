@@ -4,6 +4,7 @@ import { modules } from "../../../../Shared/src/domain.mjs";
 
 import LoginScreen from "../modules/auth/LoginScreen.js";
 import { ESTADO_ANONIMO, ESTADO_AUTENTICADO, ProveedorDeSesion, useSesion } from "../modules/auth/SesionContext.js";
+import PantallaNotificaciones from "../modules/notifications/PantallaNotificaciones.js";
 import { instalarAlmacenamientoSeguro } from "../services/adaptador-secure-store.js";
 import { ALTO_BOTON, COLORES, ESPACIOS, RADIOS, TIPOGRAFIA } from "../theme/tokens.js";
 
@@ -21,8 +22,29 @@ function PantallaDeEspera() {
   );
 }
 
-function SesionActual({ sesion, cerrarSesion, cerrando }) {
+function SesionActual({ sesion, cerrarSesion, cerrando, vista, cambiarVista }) {
   const nombre = sesion.usuario?.displayName || sesion.usuario?.email || "";
+
+  if (vista === "notificaciones") {
+    return h(
+      View,
+      { style: styles.contenedorVista },
+      h(
+        View,
+        { style: styles.encabezadoSecundario },
+        h(
+          Pressable,
+          {
+            onPress: () => cambiarVista("home"),
+            accessibilityRole: "button",
+            style: ({ pressed }) => [styles.botonVolver, pressed && styles.botonVolverPresionado]
+          },
+          h(Text, { style: styles.botonVolverTexto }, "← Volver")
+        )
+      ),
+      h(PantallaNotificaciones, null)
+    );
+  }
 
   return h(
     ScrollView,
@@ -42,19 +64,32 @@ function SesionActual({ sesion, cerrarSesion, cerrando }) {
         sesion.roles.length ? `Roles: ${sesion.roles.join(", ")}` : "Roles: sin identificar"
       ),
       h(
-        Pressable,
-        {
-          onPress: cerrarSesion,
-          disabled: cerrando,
-          accessibilityRole: "button",
-          accessibilityState: { disabled: cerrando, busy: cerrando },
-          style: ({ pressed }) => [styles.botonCerrar, pressed && styles.botonCerrarPresionado]
-        },
+        View,
+        { style: styles.botonera },
         h(
-          View,
-          { style: styles.botonCerrarContenido },
-          cerrando ? h(ActivityIndicator, { color: COLORES.blanco, size: "small" }) : null,
-          h(Text, { style: styles.botonCerrarTexto }, cerrando ? "Cerrando sesion..." : "Cerrar sesion")
+          Pressable,
+          {
+            onPress: () => cambiarVista("notificaciones"),
+            accessibilityRole: "button",
+            style: ({ pressed }) => [styles.botonPrincipal, pressed && styles.botonPrincipalPresionado]
+          },
+          h(Text, { style: styles.botonPrincipalTexto }, "Notificaciones")
+        ),
+        h(
+          Pressable,
+          {
+            onPress: cerrarSesion,
+            disabled: cerrando,
+            accessibilityRole: "button",
+            accessibilityState: { disabled: cerrando, busy: cerrando },
+            style: ({ pressed }) => [styles.botonCerrar, pressed && styles.botonCerrarPresionado]
+          },
+          h(
+            View,
+            { style: styles.botonCerrarContenido },
+            cerrando ? h(ActivityIndicator, { color: COLORES.blanco, size: "small" }) : null,
+            h(Text, { style: styles.botonCerrarTexto }, cerrando ? "Cerrando sesion..." : "Cerrar sesion")
+          )
         )
       )
     ),
@@ -72,6 +107,7 @@ function SesionActual({ sesion, cerrarSesion, cerrando }) {
 
 function Contenido() {
   const { estado, sesion, cerrarSesion } = useSesion();
+  const [vista, cambiarVista] = React.useState("home");
 
   if (estado === ESTADO_ANONIMO) {
     return h(LoginScreen, null);
@@ -81,7 +117,7 @@ function Contenido() {
     return h(PantallaDeEspera, null);
   }
 
-  return h(SesionActual, { sesion, cerrarSesion, cerrando: false });
+  return h(SesionActual, { sesion, cerrarSesion, cerrando: false, vista, cambiarVista });
 }
 
 export default function App() {
@@ -153,8 +189,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: COLORES.boton,
-    borderRadius: RADIOS.boton,
-    marginTop: ESPACIOS.md
+    borderRadius: RADIOS.boton
   },
   botonCerrarPresionado: {
     backgroundColor: COLORES.botonPresionado
@@ -186,5 +221,47 @@ const styles = StyleSheet.create({
     color: COLORES.textoSuave,
     fontSize: 14,
     lineHeight: 20
+  },
+  contenedorVista: {
+    flex: 1
+  },
+  encabezadoSecundario: {
+    paddingHorizontal: ESPACIOS.xl,
+    paddingTop: ESPACIOS.md,
+    paddingBottom: ESPACIOS.sm,
+    backgroundColor: COLORES.fondoApp
+  },
+  botonVolver: {
+    alignSelf: "flex-start",
+    paddingVertical: ESPACIOS.sm,
+    paddingHorizontal: ESPACIOS.lg,
+    borderRadius: RADIOS.boton,
+    borderWidth: 1,
+    borderColor: COLORES.linea,
+    backgroundColor: COLORES.papel
+  },
+  botonVolverPresionado: {
+    opacity: 0.85
+  },
+  botonVolverTexto: {
+    ...TIPOGRAFIA.enlace,
+    color: COLORES.indigo
+  },
+  botonera: {
+    gap: ESPACIOS.sm
+  },
+  botonPrincipal: {
+    height: ALTO_BOTON,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORES.indigo,
+    borderRadius: RADIOS.boton
+  },
+  botonPrincipalPresionado: {
+    backgroundColor: COLORES.indigoOscuro
+  },
+  botonPrincipalTexto: {
+    ...TIPOGRAFIA.boton,
+    color: COLORES.blanco
   }
 });
