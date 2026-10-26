@@ -73,6 +73,52 @@ test("el alta valida campos, roles y correo duplicado", async () => {
   assert.equal(duplicado.status, 409);
 });
 
+const DOCENTE = {
+  nombre: "Carlos",
+  apellido: "Fernandez",
+  email: "cfernandez@prece.local",
+  dni: "32456789",
+  roles: ["docente"],
+  cargoDocente: {
+    materia: "Matematica",
+    situacionRevista: "suplente",
+    docenteSuplido: "Rios, Lucia",
+    modulos: 4,
+    horaDesde: "07:30",
+    horaHasta: "10:10"
+  }
+};
+
+test("el alta de un docente guarda los datos del cargo", async () => {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/users", "director", DOCENTE);
+
+  assert.equal(status, 201);
+  assert.deepEqual(cuerpo.data.cargoDocente, DOCENTE.cargoDocente);
+
+  const detalle = await pedir("GET", `/api/v1/users/${cuerpo.data.id}`, "director");
+  assert.equal(detalle.cuerpo.data.cargoDocente.materia, "Matematica");
+});
+
+test("el alta valida el cargo docente", async () => {
+  const sinSuplido = await pedir("POST", "/api/v1/users", "director", {
+    ...DOCENTE,
+    cargoDocente: { ...DOCENTE.cargoDocente, docenteSuplido: "", modulos: 5, horaHasta: "07:00" }
+  });
+  const campos = sinSuplido.cuerpo.error.details.map((detalle) => detalle.field);
+
+  assert.equal(sinSuplido.status, 422);
+  assert.ok(campos.includes("cargoDocente.docenteSuplido"));
+  assert.ok(campos.includes("cargoDocente.modulos"));
+  assert.ok(campos.includes("cargoDocente.horario"));
+
+  const titular = await pedir("POST", "/api/v1/users", "director", {
+    ...DOCENTE,
+    cargoDocente: { ...DOCENTE.cargoDocente, situacionRevista: "titular" }
+  });
+  assert.equal(titular.status, 201);
+  assert.equal(titular.cuerpo.data.cargoDocente.docenteSuplido, null);
+});
+
 test("secretaria puede consultar pero no crear usuarios", async () => {
   const lista = await pedir("GET", "/api/v1/users?rol=docente", "secretario");
   const alta = await pedir("POST", "/api/v1/users", "secretario", NUEVO);
