@@ -238,12 +238,12 @@
 
 /* Sello institucional circular */
 .doc-sello-circular {
+  display: none !important;
   width: 130px;
   height: 130px;
   border: 3px double #222a4c;
   border-radius: 50%;
   padding: 6px;
-  display: flex;
   align-items: center;
   justify-content: center;
   transform: rotate(-4deg);

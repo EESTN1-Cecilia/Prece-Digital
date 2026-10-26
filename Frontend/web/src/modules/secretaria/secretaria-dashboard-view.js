@@ -609,7 +609,8 @@ export default function SecretariaDashboardView() {
       : null,
     h(AlumnoMatrizModal, {
       abierto: matrizModalAbierto,
-      onCerrar: () => setMatrizModalAbierto(false)
+      onCerrar: () => setMatrizModalAbierto(false),
+      permitirSeleccionarAlumno: true
     })
   );
 }

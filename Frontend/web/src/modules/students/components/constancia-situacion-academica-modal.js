@@ -208,7 +208,12 @@ export function SituacionAcademicaModal({ abierto, onCerrar, alumnoInicial = nul
           h(
             "div",
             { className: "doc-paper-signatures-row" },
-            h(SelloInstitucionalCircular),
+            h(
+              "div",
+              { className: "doc-paper-signature-box" },
+              h("div", { className: "doc-paper-signature-line" }),
+              h("span", { className: "doc-paper-signature-label" }, "Sello de la Institución")
+            ),
             h(
               "div",
               { className: "doc-paper-signature-box" },

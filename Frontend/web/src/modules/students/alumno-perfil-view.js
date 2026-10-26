@@ -567,7 +567,8 @@ export default function AlumnoPerfilView({ id, ruta }) {
     h(AlumnoMatrizModal, {
       abierto: matrizModalOpen,
       onCerrar: () => setMatrizModalOpen(false),
-      alumnoInicial: alumnoCompleto
+      alumnoInicial: alumnoCompleto,
+      permitirSeleccionarAlumno: false
     }),
 
     boletinOpen

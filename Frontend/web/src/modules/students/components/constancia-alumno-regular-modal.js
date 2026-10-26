@@ -151,14 +151,15 @@ export function AlumnoRegularModal({ abierto, onCerrar, alumnoInicial = null }) 
             )
           ),
 
-          // Pie de Sello y Firma
+          // Pie con espacio oficial para Sello y Firma
           h(
             "div",
             { className: "doc-regular-footer" },
             h(
               "div",
-              { className: "doc-regular-sello-wrap" },
-              h(SelloInstitucionalCircular)
+              { className: "doc-regular-firma-wrap" },
+              h("div", { className: "doc-regular-firma-line" }),
+              h("span", null, "SELLO DE LA INSTITUCIÓN")
             ),
             h(
               "div",

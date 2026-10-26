@@ -260,18 +260,9 @@ export function DarkCustomDropdown({
   );
 }
 
-// Sello Institucional Circular
+// Sello Institucional Circular (desactivado a solicitud oficial)
 export function SelloInstitucionalCircular() {
-  return h(
-    "div",
-    { className: "doc-sello-circular" },
-    h("div", { className: "doc-sello-inner" },
-      h("span", { className: "doc-sello-top" }, "DIR. GRAL. DE CULTURA Y EDUCACIÓN"),
-      h("span", { className: "doc-sello-center" }, "E.E.S.T. Nº 1"),
-      h("span", { className: "doc-sello-sub" }, "SECRETARÍA"),
-      h("span", { className: "doc-sello-bottom" }, "PROV. DE BUENOS AIRES")
-    )
-  );
+  return null;
 }
 
 // Botón de Cierre en la barra superior que permanece fijo al scrollear

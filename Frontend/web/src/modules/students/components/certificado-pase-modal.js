@@ -170,7 +170,8 @@ export function TramitePaseModal({ abierto, onCerrar, alumnoInicial = null }) {
             h(
               "div",
               { className: "doc-tramite-box" },
-              h(SelloInstitucionalCircular)
+              h("div", { className: "doc-tramite-line" }),
+              h("span", null, "Sello del Establecimiento")
             ),
             h(
               "div",
