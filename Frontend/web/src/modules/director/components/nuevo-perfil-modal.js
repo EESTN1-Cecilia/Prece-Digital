@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import { ROLES_DISPONIBLES, DirectorService } from "../director-service.js";
 
@@ -79,6 +80,35 @@ function IconPlus({ className = "w-4 h-4", width = "16", height = "16" }) {
   );
 }
 
+function IconBook({ className = "w-4 h-4", width = "18", height = "18" }) {
+  return h(
+    "svg",
+    {
+      className,
+      width,
+      height,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      "aria-hidden": "true",
+      style: { flexShrink: 0 }
+    },
+    h("path", { d: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20" }),
+    h("path", { d: "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" })
+  );
+}
+
+const SITUACIONES_REVISTA = [
+  { id: "titular", nombre: "Titular" },
+  { id: "provisional", nombre: "Provisional" },
+  { id: "suplente", nombre: "Suplente" }
+];
+
+const MODULOS_DISPONIBLES = [2, 3, 4, 6];
+
 const FORMULARIO_INICIAL = {
   nombre: "",
   apellido: "",
@@ -86,8 +116,40 @@ const FORMULARIO_INICIAL = {
   dni: "",
   telefono: "",
   area: "Docencia",
-  roles: ["docente"]
+  roles: [],
+  materia: "",
+  situacionRevista: "",
+  docenteSuplido: "",
+  modulos: null,
+  horaDesde: "",
+  horaHasta: ""
 };
+
+/* Botonera de opcion unica (situacion de revista, cantidad de modulos). */
+function SelectorSegmentado({ opciones, valor, alCambiar, conError, etiqueta }) {
+  return h(
+    "div",
+    {
+      className: `director-segmented ${conError ? "director-segmented--error" : ""}`,
+      role: "radiogroup",
+      "aria-label": etiqueta
+    },
+    opciones.map((opcion) =>
+      h(
+        "button",
+        {
+          key: opcion.id,
+          type: "button",
+          role: "radio",
+          "aria-checked": valor === opcion.id,
+          className: `director-segmented__btn ${valor === opcion.id ? "director-segmented__btn--active" : ""}`,
+          onClick: () => alCambiar(opcion.id)
+        },
+        opcion.nombre
+      )
+    )
+  );
+}
 
 export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   const [form, setForm] = useState(FORMULARIO_INICIAL);
@@ -97,12 +159,25 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   const [creadoExitoso, setCreadoExitoso] = useState(null);
   const [copiado, setCopiado] = useState(false);
 
+  // Bloquea el scroll de la pagina mientras el modal esta abierto
+  useEffect(() => {
+    if (!abierto) return undefined;
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = overflowPrevio;
+    };
+  }, [abierto]);
+
   if (!abierto) return null;
+
+  const esDocente = form.roles.includes("docente");
 
   const handleChange = (campo, valor) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
-    if (errores[campo]) {
-      setErrores((prev) => ({ ...prev, [campo]: null }));
+    const claveError = campo === "horaDesde" || campo === "horaHasta" ? "horario" : campo;
+    if (errores[claveError]) {
+      setErrores((prev) => ({ ...prev, [claveError]: null }));
     }
   };
 
@@ -138,6 +213,19 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
     }
     if (!form.roles || form.roles.length === 0) {
       errs.roles = "Selecciona al menos un rol para el perfil.";
+    }
+    if (esDocente) {
+      if (!form.materia.trim()) errs.materia = "Indica la materia que dicta.";
+      if (!form.situacionRevista) errs.situacionRevista = "Selecciona la situación de revista.";
+      if (form.situacionRevista === "suplente" && !form.docenteSuplido.trim()) {
+        errs.docenteSuplido = "Ingresa el apellido y nombre del docente al que suple.";
+      }
+      if (!form.modulos) errs.modulos = "Selecciona la cantidad de módulos.";
+      if (!form.horaDesde || !form.horaHasta) {
+        errs.horario = "Completa el horario desde y hasta.";
+      } else if (form.horaHasta <= form.horaDesde) {
+        errs.horario = "La hora de fin debe ser posterior a la de inicio.";
+      }
     }
     setErrores(errs);
     return Object.keys(errs).length === 0;
@@ -184,12 +272,17 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
     alCerrar();
   };
 
-  return h(
+  const contenido = h(
     "div",
     { className: "director-modal-backdrop", onClick: (e) => e.target === e.currentTarget && handleCerrarModal() },
     h(
       "div",
-      { className: "director-modal-container", role: "dialog", "aria-modal": "true", "aria-labelledby": "modal-director-titulo" },
+      {
+        className: "director-modal-container director-modal-container--perfil",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-labelledby": "modal-director-titulo"
+      },
 
       // Header del Modal
       h(
@@ -421,9 +514,11 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
                   const seleccionado = form.roles.includes(rol.id);
 
                   return h(
-                    "div",
+                    "button",
                     {
                       key: rol.id,
+                      type: "button",
+                      "aria-pressed": seleccionado,
                       className: `director-role-card ${seleccionado ? "director-role-card--active" : ""}`,
                       onClick: () => toggleRol(rol.id)
                     },
@@ -448,6 +543,127 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
                 })
               )
             ),
+
+            // Sección: Datos del cargo docente (solo con el rol Docente)
+            esDocente
+              ? h(
+                  "div",
+                  { className: "director-docente-section" },
+                  h(
+                    "div",
+                    { className: "director-docente-section__header" },
+                    h("span", { className: "director-docente-section__icon" }, h(IconBook, null)),
+                    h(
+                      "div",
+                      null,
+                      h("strong", { className: "director-docente-section__title" }, "Datos del Cargo Docente"),
+                      h("span", { className: "director-roles-sublabel" }, "Materia, situación de revista y carga horaria.")
+                    )
+                  ),
+
+                  // Materia
+                  h(
+                    "div",
+                    { className: "director-form-group" },
+                    h("label", { className: "director-form-label", htmlFor: "perfil-materia" }, "Materia *"),
+                    h("input", {
+                      id: "perfil-materia",
+                      type: "text",
+                      className: `director-form-input ${errores.materia ? "director-form-input--error" : ""}`,
+                      placeholder: "Ej: Matemática",
+                      value: form.materia,
+                      onChange: (e) => handleChange("materia", e.target.value)
+                    }),
+                    errores.materia ? h("span", { className: "director-form-error" }, errores.materia) : null
+                  ),
+
+                  // Situación de revista
+                  h(
+                    "div",
+                    { className: "director-form-group" },
+                    h("span", { className: "director-form-label" }, "Situación de Revista *"),
+                    h(SelectorSegmentado, {
+                      etiqueta: "Situación de revista",
+                      opciones: SITUACIONES_REVISTA,
+                      valor: form.situacionRevista,
+                      conError: Boolean(errores.situacionRevista),
+                      alCambiar: (valor) => handleChange("situacionRevista", valor)
+                    }),
+                    errores.situacionRevista
+                      ? h("span", { className: "director-form-error" }, errores.situacionRevista)
+                      : null
+                  ),
+
+                  // Docente al que suple (solo suplentes)
+                  form.situacionRevista === "suplente"
+                    ? h(
+                        "div",
+                        { className: "director-form-group" },
+                        h(
+                          "label",
+                          { className: "director-form-label", htmlFor: "perfil-docente-suplido" },
+                          "Apellido y Nombre del Docente al que suple *"
+                        ),
+                        h("input", {
+                          id: "perfil-docente-suplido",
+                          type: "text",
+                          className: `director-form-input ${errores.docenteSuplido ? "director-form-input--error" : ""}`,
+                          placeholder: "Ej: Fernández, Carlos",
+                          value: form.docenteSuplido,
+                          onChange: (e) => handleChange("docenteSuplido", e.target.value)
+                        }),
+                        errores.docenteSuplido
+                          ? h("span", { className: "director-form-error" }, errores.docenteSuplido)
+                          : null
+                      )
+                    : null,
+
+                  // Módulos y horario
+                  h(
+                    "div",
+                    { className: "director-form-row" },
+                    h(
+                      "div",
+                      { className: "director-form-group" },
+                      h("span", { className: "director-form-label" }, "Cantidad de Módulos *"),
+                      h(SelectorSegmentado, {
+                        etiqueta: "Cantidad de módulos",
+                        opciones: MODULOS_DISPONIBLES.map((m) => ({ id: m, nombre: String(m) })),
+                        valor: form.modulos,
+                        conError: Boolean(errores.modulos),
+                        alCambiar: (valor) => handleChange("modulos", valor)
+                      }),
+                      errores.modulos ? h("span", { className: "director-form-error" }, errores.modulos) : null
+                    ),
+                    h(
+                      "div",
+                      { className: "director-form-group" },
+                      h("span", { className: "director-form-label" }, "Horario *"),
+                      h(
+                        "div",
+                        { className: "director-horario-row" },
+                        h("label", { className: "director-horario-label", htmlFor: "perfil-hora-desde" }, "Desde"),
+                        h("input", {
+                          id: "perfil-hora-desde",
+                          type: "time",
+                          className: `director-form-input ${errores.horario ? "director-form-input--error" : ""}`,
+                          value: form.horaDesde,
+                          onChange: (e) => handleChange("horaDesde", e.target.value)
+                        }),
+                        h("label", { className: "director-horario-label", htmlFor: "perfil-hora-hasta" }, "Hasta"),
+                        h("input", {
+                          id: "perfil-hora-hasta",
+                          type: "time",
+                          className: `director-form-input ${errores.horario ? "director-form-input--error" : ""}`,
+                          value: form.horaHasta,
+                          onChange: (e) => handleChange("horaHasta", e.target.value)
+                        })
+                      ),
+                      errores.horario ? h("span", { className: "director-form-error" }, errores.horario) : null
+                    )
+                  )
+                )
+              : null,
 
             // Footer del Modal
             h(
@@ -476,4 +692,7 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
           )
     )
   );
+
+  // Se dibuja sobre <body> para que el difuminado cubra toda la pantalla
+  return createPortal(contenido, document.body);
 }

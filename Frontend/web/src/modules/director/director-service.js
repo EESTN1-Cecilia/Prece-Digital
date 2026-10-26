@@ -220,6 +220,19 @@ export const DirectorService = {
    * Devuelve la información del usuario creado incluyendo la contraseña temporal.
    */
   async crearPerfil(datos) {
+    const roles = Array.isArray(datos.roles) ? datos.roles : [datos.roles].filter(Boolean);
+    const cargoDocente = roles.includes("docente")
+      ? {
+          materia: String(datos.materia || "").trim(),
+          situacionRevista: datos.situacionRevista,
+          docenteSuplido:
+            datos.situacionRevista === "suplente" ? String(datos.docenteSuplido || "").trim() : undefined,
+          modulos: Number(datos.modulos),
+          horaDesde: datos.horaDesde,
+          horaHasta: datos.horaHasta
+        }
+      : undefined;
+
     const payload = {
       nombre: String(datos.nombre || "").trim(),
       apellido: String(datos.apellido || "").trim(),
@@ -227,7 +240,8 @@ export const DirectorService = {
       dni: String(datos.dni || "").trim().replace(/\D/g, ""),
       telefono: datos.telefono ? String(datos.telefono).trim() : undefined,
       area: datos.area || "E.E.S.T N°1",
-      roles: Array.isArray(datos.roles) ? datos.roles : [datos.roles].filter(Boolean),
+      roles,
+      cargoDocente,
       schoolId: datos.schoolId || "esc-1"
     };
 
