@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 416 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -586,6 +586,14 @@ Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/notifications/:notificationId` | `notifications.read` |
 | POST | `/api/v1/notifications/:notificationId/read` | `notifications.write` |
 | POST | `/api/v1/notifications/:notificationId/archive` | `notifications.write` |
+
+## devices
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/devices` | sesion valida |
+| GET | `/api/v1/devices` | sesion valida |
+| DELETE | `/api/v1/devices/:deviceId` | sesion valida |
 
 ## curriculum
 
