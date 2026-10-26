@@ -6,8 +6,8 @@ function query(url) {
 
 /* ---------------- Docentes ------------------------------------------------- */
 
-export function getCatalogos() {
-  return teachersService.getCatalogos();
+export function getCatalogos({ user } = {}) {
+  return teachersService.getCatalogos(user);
 }
 
 export function createTeacher({ body, user }) {

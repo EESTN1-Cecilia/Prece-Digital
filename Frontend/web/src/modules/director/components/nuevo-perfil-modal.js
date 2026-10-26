@@ -1,479 +1,435 @@
-import React, { useState } from "react";
+/* Modal de alta de perfiles de personal.
+
+   Usa el modal compartido (portal, trampa de foco, Escape y devolucion del
+   foco) y el catalogo real de areas que publica el backend: no se escriben los
+   sectores a mano.
+
+   El formulario no pide contrasena: el backend usa el DNI (sin puntos) como
+   clave provisoria, guarda solo su hash y obliga a cambiarla en el primer
+   ingreso. La clave no viaja en la respuesta ni se muestra aca. */
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { h } from "../../../layouts/site-layout.js";
+import { Modal, Confirmacion, Campo, Select, Acciones, Boton, MensajeError } from "../../../components/ui/index.js";
 import { ROLES_DISPONIBLES, DirectorService } from "../director-service.js";
+import { RoleGrid } from "./role-card.js";
+import {
+  AREA_DOCENCIA,
+  AREA_POR_DEFECTO,
+  DIAS_CURSADA,
+  MODULOS_DOCENTES,
+  SITUACIONES_REVISTA,
+  formularioSucio,
+  formularioVacio,
+  validarPerfil
+} from "../perfil-validacion.js";
 
-function IconCheck({ className = "w-4 h-4", width = "16", height = "16" }) {
-  return h(
-    "svg",
-    {
-      className,
-      width,
-      height,
-      viewBox: "0 0 20 20",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      style: { flexShrink: 0 }
-    },
-    h("path", {
-      fillRule: "evenodd",
-      d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z",
-      clipRule: "evenodd"
-    })
-  );
-}
-
-function IconCopy({ className = "w-4 h-4", width = "16", height = "16" }) {
-  return h(
-    "svg",
-    {
-      className,
-      width,
-      height,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      strokeWidth: "2",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      "aria-hidden": "true",
-      style: { flexShrink: 0 }
-    },
-    h("rect", { x: "9", y: "9", width: "13", height: "13", rx: "2", ry: "2" }),
-    h("path", { d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" })
-  );
-}
-
-function IconClose({ className = "w-5 h-5", width = "20", height = "20" }) {
-  return h(
-    "svg",
-    {
-      className,
-      width,
-      height,
-      viewBox: "0 0 20 20",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      style: { flexShrink: 0 }
-    },
-    h("path", {
-      fillRule: "evenodd",
-      d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
-      clipRule: "evenodd"
-    })
-  );
-}
-
-function IconPlus({ className = "w-4 h-4", width = "16", height = "16" }) {
-  return h(
-    "svg",
-    {
-      className,
-      width,
-      height,
-      viewBox: "0 0 20 20",
-      fill: "currentColor",
-      "aria-hidden": "true",
-      style: { flexShrink: 0 }
-    },
-    h("path", { d: "M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" })
-  );
-}
-
-const FORMULARIO_INICIAL = {
-  nombre: "",
-  apellido: "",
-  email: "",
-  dni: "",
-  telefono: "",
-  area: "Docencia",
-  roles: ["docente"]
-};
-
-export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
-  const [form, setForm] = useState(FORMULARIO_INICIAL);
+/* `rolesIniciales`: roles ya marcados al abrir (por ejemplo, Docente cuando el
+   alta se inicia desde el sector Docentes). */
+export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado, rolesIniciales = [] }) {
+  const [form, setForm] = useState(formularioVacio);
   const [errores, setErrores] = useState({});
-  const [guardando, setGuardando] = useState(false);
   const [errorGlobal, setErrorGlobal] = useState(null);
-  const [creadoExitoso, setCreadoExitoso] = useState(null);
-  const [copiado, setCopiado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [creado, setCreado] = useState(null);
+  const [areas, setAreas] = useState([]);
+  const [cargandoAreas, setCargandoAreas] = useState(false);
+  const [avisarDescarte, setAvisarDescarte] = useState(false);
+  /* Candado sincronico contra el doble envio: el estado `guardando` recien se
+     ve en el proximo render, un doble clic rapido llegaria antes. */
+  const enviando = useRef(false);
 
-  if (!abierto) return null;
-
-  const handleChange = (campo, valor) => {
-    setForm((prev) => ({ ...prev, [campo]: valor }));
-    if (errores[campo]) {
-      setErrores((prev) => ({ ...prev, [campo]: null }));
+  /* Cada vez que se abre el modal arranca en blanco: el formulario anterior
+     no puede quedar pegado. */
+  useEffect(() => {
+    if (!abierto) {
+      return;
     }
+
+    setForm({ ...formularioVacio(), roles: [...rolesIniciales] });
+    setErrores({});
+    setErrorGlobal(null);
+    setCreado(null);
+    setAvisarDescarte(false);
+
+    let vigente = true;
+
+    setCargandoAreas(true);
+    DirectorService.listarAreas()
+      .then((catalogo) => {
+        if (vigente && Array.isArray(catalogo) && catalogo.length) {
+          setAreas(catalogo);
+        }
+      })
+      .catch(() => {
+        /* Sin catalogo no se puede elegir area: el error se ve al enviar. */
+      })
+      .finally(() => {
+        if (vigente) {
+          setCargandoAreas(false);
+        }
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [abierto]);
+
+  const idsAreas = useMemo(() => areas.map((area) => area.id), [areas]);
+  const esDocencia = (form.area || AREA_POR_DEFECTO) === AREA_DOCENCIA;
+
+  const cambiar = (campo) => (valor) => {
+    setForm((previo) => ({ ...previo, [campo]: valor }));
+    setErrores((previos) => (previos[campo] ? { ...previos, [campo]: null } : previos));
   };
 
-  const toggleRol = (rolId) => {
-    setForm((prev) => {
-      const yaExiste = prev.roles.includes(rolId);
-      let nuevosRoles;
-      if (yaExiste) {
-        nuevosRoles = prev.roles.filter((r) => r !== rolId);
-      } else {
-        nuevosRoles = [...prev.roles, rolId];
-      }
-      return { ...prev, roles: nuevosRoles };
-    });
-    if (errores.roles) {
-      setErrores((prev) => ({ ...prev, roles: null }));
-    }
+  const alternarRol = (marcado, rolId) => {
+    setForm((previo) => ({
+      ...previo,
+      roles: marcado
+        ? [...previo.roles, rolId]
+        : previo.roles.filter((rol) => rol !== rolId)
+    }));
+    setErrores((previos) => (previos.roles ? { ...previos, roles: null } : previos));
   };
 
-  const validar = () => {
-    const errs = {};
-    if (!form.nombre.trim()) errs.nombre = "El nombre es obligatorio.";
-    if (!form.apellido.trim()) errs.apellido = "El apellido es obligatorio.";
-    if (!form.email.trim()) {
-      errs.email = "El correo es obligatorio.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      errs.email = "Ingresa un correo con formato válido.";
-    }
-    if (!form.dni.trim()) {
-      errs.dni = "El DNI es obligatorio.";
-    } else if (!/^\d{7,9}$/.test(form.dni.trim().replace(/\D/g, ""))) {
-      errs.dni = "El DNI debe contener entre 7 y 9 dígitos numéricos.";
-    }
-    if (!form.roles || form.roles.length === 0) {
-      errs.roles = "Selecciona al menos un rol para el perfil.";
-    }
-    setErrores(errs);
-    return Object.keys(errs).length === 0;
+  const cerrar = () => {
+    setForm(formularioVacio());
+    setErrores({});
+    setCreado(null);
+    setErrorGlobal(null);
+    alCerrar();
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validar() || guardando) return;
+  /* Si el usuario escribio algo, cerrar sin guardar pide confirmacion. */
+  const pedirCierre = () => {
+    if (guardando) {
+      return;
+    }
 
-    setGuardando(true);
+    if (!creado && formularioSucio(form)) {
+      setAvisarDescarte(true);
+      return;
+    }
+
+    cerrar();
+  };
+
+  const enviar = async (evento) => {
+    evento.preventDefault();
+
+    if (enviando.current) {
+      return;
+    }
+
+    const { errores: foundos, datos } = validarPerfil(form, idsAreas);
+    setErrores(foundos);
     setErrorGlobal(null);
 
+    if (Object.keys(foundos).length) {
+      return;
+    }
+
+    enviando.current = true;
+    setGuardando(true);
+
     try {
-      const respuesta = await DirectorService.crearPerfil(form);
-      setCreadoExitoso(respuesta);
-      if (alPerfilCreado) {
-        alPerfilCreado(respuesta);
+      const respuesta = await DirectorService.crearPerfil(datos);
+      setCreado(respuesta);
+      alPerfilCreado?.(respuesta);
+    } catch (error) {
+      /* El backend manda los errores por campo: se pintan debajo del input
+         que corresponde y el resto va al aviso general. */
+      if (error?.campos) {
+        setErrores((previos) => ({ ...previos, ...error.campos }));
       }
-    } catch (err) {
-      setErrorGlobal(err.message || "Error al crear el perfil de usuario.");
+      setErrorGlobal(error);
     } finally {
+      enviando.current = false;
       setGuardando(false);
     }
   };
 
-  const copiarPassword = () => {
-    if (creadoExitoso?.passwordTemporal) {
-      navigator.clipboard.writeText(creadoExitoso.passwordTemporal);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2500);
-    }
-  };
-
-  const reiniciarFormulario = () => {
-    setForm(FORMULARIO_INICIAL);
-    setCreadoExitoso(null);
-    setErrores({});
-    setErrorGlobal(null);
-    setCopiado(false);
-  };
-
-  const handleCerrarModal = () => {
-    reiniciarFormulario();
-    alCerrar();
-  };
-
-  return h(
-    "div",
-    { className: "director-modal-backdrop", onClick: (e) => e.target === e.currentTarget && handleCerrarModal() },
-    h(
-      "div",
-      { className: "director-modal-container", role: "dialog", "aria-modal": "true", "aria-labelledby": "modal-director-titulo" },
-
-      // Header del Modal
-      h(
+  const cuerpo = creado
+    ? h(
         "div",
-        { className: "director-modal-header" },
+        { className: "director-modal-success-pane" },
+        h("h3", { className: "director-success-title" }, "Perfil creado exitosamente"),
         h(
-          "div",
-          null,
-          h("h2", { id: "modal-director-titulo", className: "director-modal-title" }, "Crear Nuevo Perfil / Usuario"),
-          h("p", { className: "director-modal-subtitle" }, "Registra personal institucional y define sus permisos de acceso.")
+          "p",
+          { className: "director-success-desc" },
+          "Se generó el acceso institucional para ",
+          h("strong", null, creado.displayName || `${creado.nombre} ${creado.apellido}`),
+          ` (${creado.email}).`
         ),
-        h(
-          "button",
-          {
-            type: "button",
-            className: "director-modal-close-btn",
-            onClick: handleCerrarModal,
-            "aria-label": "Cerrar modal"
-          },
-          h(IconClose, null)
-        )
-      ),
-
-      // Cuerpo del Modal: Formulario o Pantalla de Éxito
-      creadoExitoso
-        ? // Vista de Éxito con Contraseña Temporal
-          h(
-            "div",
-            { className: "director-modal-success-pane" },
-            h(
-              "div",
-              { className: "director-success-badge-icon" },
-              h(IconCheck, { className: "w-8 h-8" })
-            ),
-            h("h3", { className: "director-success-title" }, "¡Perfil creado exitosamente!"),
-            h(
+        creado.docenteId
+          ? h(
               "p",
               { className: "director-success-desc" },
-              `Se ha generado el acceso institucional para `,
-              h("strong", null, creadoExitoso.displayName || `${creadoExitoso.nombre} ${creadoExitoso.apellido}`),
-              ` (${creadoExitoso.email}).`
-            ),
-
-            // Tarjeta de Contraseña Temporal
-            h(
-              "div",
-              { className: "director-temp-password-card" },
-              h("span", { className: "director-temp-password-label" }, "Contraseña Temporal de Acceso"),
-              h(
-                "div",
-                { className: "director-temp-password-row" },
-                h("code", { className: "director-temp-password-code" }, creadoExitoso.passwordTemporal || "Temporal123!"),
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    className: `director-copy-btn ${copiado ? "director-copy-btn--copied" : ""}`,
-                    onClick: copiarPassword
-                  },
-                  copiado ? h(IconCheck, null) : h(IconCopy, null),
-                  h("span", null, copiado ? "¡Copiada!" : "Copiar")
-                )
-              ),
-              h(
-                "p",
-                { className: "director-temp-password-hint" },
-                "Entrega esta contraseña al usuario. El sistema le solicitará cambiarla en su primer inicio de sesión."
-              )
-            ),
-
-            // Botones de Acción de Éxito
-            h(
-              "div",
-              { className: "director-modal-success-actions" },
-              h(
-                "button",
-                {
-                  type: "button",
-                  className: "btn-director-secondary",
-                  onClick: reiniciarFormulario
-                },
-                h(IconPlus, { width: "15", height: "15" }),
-                h("span", null, "Crear otro perfil")
-              ),
-              h(
-                "button",
-                {
-                  type: "button",
-                  className: "btn-director-primary",
-                  onClick: handleCerrarModal
-                },
-                "Finalizar y Ver Personal"
-              )
+              "Ya figura en el sector Docentes y puede ingresar al ",
+              h("a", { href: "#/portal-docente" }, "Portal Docente"),
+              "."
             )
-          )
-        : // Formulario de Registro
+          : null,
+        h(
+          "div",
+          { className: "director-temp-password-card" },
+          h("span", { className: "director-temp-password-label" }, "Clave de acceso provisoria"),
           h(
-            "form",
-            { className: "director-modal-form", onSubmit: handleSubmit },
+            "p",
+            { className: "director-temp-password-hint" },
+            "Ingresa con su correo institucional y, como clave, su ",
+            h("strong", null, "DNI sin puntos"),
+            ". En el primer inicio de sesión el sistema le pide elegir una clave nueva antes de continuar."
+          )
+        )
+      )
+    : h(
+        "form",
+        { className: "director-modal-form", id: "formulario-nuevo-perfil", onSubmit: enviar, noValidate: true },
 
-            errorGlobal
-              ? h(
-                  "div",
-                  { className: "director-form-alert director-form-alert--error" },
-                  errorGlobal
-                )
-              : null,
+        errorGlobal
+          ? h(MensajeError, { error: errorGlobal })
+          : null,
 
-            // Fila 1: Nombre y Apellido
-            h(
-              "div",
-              { className: "director-form-row" },
-              h(
-                "div",
-                { className: "director-form-group" },
-                h("label", { className: "director-form-label" }, "Nombre *"),
-                h("input", {
-                  type: "text",
-                  className: `director-form-input ${errores.nombre ? "director-form-input--error" : ""}`,
-                  placeholder: "Ej: Carlos",
-                  value: form.nombre,
-                  onChange: (e) => handleChange("nombre", e.target.value)
-                }),
-                errores.nombre ? h("span", { className: "director-form-error" }, errores.nombre) : null
-              ),
-              h(
-                "div",
-                { className: "director-form-group" },
-                h("label", { className: "director-form-label" }, "Apellido *"),
-                h("input", {
-                  type: "text",
-                  className: `director-form-input ${errores.apellido ? "director-form-input--error" : ""}`,
-                  placeholder: "Ej: Fernández",
-                  value: form.apellido,
-                  onChange: (e) => handleChange("apellido", e.target.value)
-                }),
-                errores.apellido ? h("span", { className: "director-form-error" }, errores.apellido) : null
-              )
-            ),
+        h(
+          "div",
+          { className: "director-form-grid" },
+          h(Campo, {
+            id: "perfil-nombre",
+            etiqueta: "Nombre",
+            valor: form.nombre,
+            onChange: cambiar("nombre"),
+            error: errores.nombre,
+            requerido: true,
+            autoComplete: "given-name"
+          }),
+          h(Campo, {
+            id: "perfil-apellido",
+            etiqueta: "Apellido",
+            valor: form.apellido,
+            onChange: cambiar("apellido"),
+            error: errores.apellido,
+            requerido: true,
+            autoComplete: "family-name"
+          }),
+          h(Campo, {
+            id: "perfil-email",
+            etiqueta: "Correo institucional",
+            tipo: "email",
+            valor: form.email,
+            onChange: cambiar("email"),
+            error: errores.email,
+            requerido: true,
+            autoComplete: "email"
+          }),
+          h(Campo, {
+            id: "perfil-dni",
+            etiqueta: "DNI (sin puntos)",
+            valor: form.dni,
+            onChange: cambiar("dni"),
+            error: errores.dni,
+            requerido: true,
+            ayuda: "Entre 7 y 9 dígitos."
+          }),
+          h(Campo, {
+            id: "perfil-telefono",
+            etiqueta: "Teléfono de contacto",
+            tipo: "tel",
+            valor: form.telefono,
+            onChange: cambiar("telefono"),
+            error: errores.telefono,
+            ayuda: "Opcional."
+          }),
+          h(Select, {
+            id: "perfil-area",
+            etiqueta: "Área institucional",
+            valor: form.area || AREA_POR_DEFECTO,
+            onChange: cambiar("area"),
+            error: errores.area,
+            requerido: true,
+            deshabilitado: cargandoAreas,
+            ayuda: cargandoAreas ? "Cargando el catálogo de áreas..." : "Sector donde se asigna la persona.",
+            opciones: areas.map((area) => ({ id: area.id, nombre: area.nombre }))
+          })
+        ),
 
-            // Fila 2: Correo institucional y DNI
-            h(
-              "div",
-              { className: "director-form-row" },
+        esDocencia
+          ? h(
+              "section",
+              { className: "director-academic-section" },
               h(
                 "div",
-                { className: "director-form-group" },
-                h("label", { className: "director-form-label" }, "Correo Electrónico Institucional *"),
-                h("input", {
-                  type: "email",
-                  className: `director-form-input ${errores.email ? "director-form-input--error" : ""}`,
-                  placeholder: "cfernandez@escuela.edu.ar",
-                  value: form.email,
-                  onChange: (e) => handleChange("email", e.target.value)
-                }),
-                errores.email ? h("span", { className: "director-form-error" }, errores.email) : null
-              ),
-              h(
-                "div",
-                { className: "director-form-group" },
-                h("label", { className: "director-form-label" }, "DNI (sin puntos) *"),
-                h("input", {
-                  type: "text",
-                  className: `director-form-input ${errores.dni ? "director-form-input--error" : ""}`,
-                  placeholder: "Ej: 32456789",
-                  value: form.dni,
-                  onChange: (e) => handleChange("dni", e.target.value)
-                }),
-                errores.dni ? h("span", { className: "director-form-error" }, errores.dni) : null
-              )
-            ),
-
-            // Fila 3: Teléfono y Área
-            h(
-              "div",
-              { className: "director-form-row" },
-              h(
-                "div",
-                { className: "director-form-group" },
-                h("label", { className: "director-form-label" }, "Teléfono de Contacto (opcional)"),
-                h("input", {
-                  type: "tel",
-                  className: "director-form-input",
-                  placeholder: "+54 11 4567-8900",
-                  value: form.telefono,
-                  onChange: (e) => handleChange("telefono", e.target.value)
-                })
-              ),
-              h(
-                "div",
-                { className: "director-form-group" },
-                h("label", { className: "director-form-label" }, "Área / Departamento Escolar"),
+                { className: "director-academic-header" },
+                h("span", { className: "director-form-label" }, "Datos Académicos y Carga Horaria"),
                 h(
-                  "select",
-                  {
-                    className: "director-form-select",
-                    value: form.area,
-                    onChange: (e) => handleChange("area", e.target.value)
-                  },
-                  h("option", { value: "Dirección" }, "Equipo Directivo"),
-                  h("option", { value: "Secretaría" }, "Secretaría y Administración"),
-                  h("option", { value: "Preceptoría" }, "Cuerpo de Preceptoría"),
-                  h("option", { value: "Informática" }, "Dpto. Informática y Programación"),
-                  h("option", { value: "Electromecánica" }, "Dpto. Electromecánica"),
-                  h("option", { value: "Taller" }, "Área de Talleres Técnicos"),
-                  h("option", { value: "Exactas" }, "Ciencias Exactas y Naturales"),
-                  h("option", { value: "Docencia" }, "Cuerpo Docente General"),
-                  h("option", { value: "Server y Pañol" }, "Pañol, Server y Soporte Técnico")
+                  "span",
+                  { className: "director-roles-sublabel" },
+                  "Información específica del área de Docencia."
                 )
-              )
-            ),
-
-            // Sección: Asignación de Roles Visual
-            h(
-              "div",
-              { className: "director-roles-section" },
-              h(
-                "div",
-                { className: "director-roles-header" },
-                h("label", { className: "director-form-label" }, "Asignación de Roles y Permisos *"),
-                h("span", { className: "director-roles-sublabel" }, "Puedes seleccionar uno o varios roles para el usuario.")
               ),
-              errores.roles ? h("span", { className: "director-form-error" }, errores.roles) : null,
-
               h(
                 "div",
-                { className: "director-roles-grid" },
-                ROLES_DISPONIBLES.map((rol) => {
-                  const seleccionado = form.roles.includes(rol.id);
-
-                  return h(
-                    "div",
-                    {
-                      key: rol.id,
-                      className: `director-role-card ${seleccionado ? "director-role-card--active" : ""}`,
-                      onClick: () => toggleRol(rol.id)
-                    },
-                    h(
+                { className: "director-form-grid" },
+                h(Campo, {
+                  id: "perfil-materia",
+                  etiqueta: "Materia",
+                  valor: form.materia,
+                  onChange: cambiar("materia"),
+                  error: errores.materia,
+                  requerido: true
+                }),
+                h(Select, {
+                  id: "perfil-situacion-revista",
+                  etiqueta: "Situación de revista",
+                  valor: form.situacion_revista,
+                  onChange: cambiar("situacion_revista"),
+                  error: errores.situacion_revista,
+                  requerido: true,
+                  placeholder: "Seleccioná una situación",
+                  opciones: SITUACIONES_REVISTA
+                }),
+                /* Ocupa la fila completa para que los pares de abajo
+                   (Módulos/Día y Hora de inicio/fin) sigan alineados. */
+                form.situacion_revista === "Suplente"
+                  ? h(
                       "div",
-                      { className: "director-role-card__header" },
-                      h(
-                        "div",
-                        {
-                          className: "director-role-card__checkbox",
-                          style: {
-                            borderColor: seleccionado ? rol.color : "#cbd5e1",
-                            background: seleccionado ? rol.color : "transparent"
-                          }
-                        },
-                        seleccionado ? h(IconCheck, { className: "w-3 h-3 text-white" }) : null
-                      ),
-                      h("strong", { className: "director-role-card__title" }, rol.nombre)
-                    ),
-                    h("p", { className: "director-role-card__desc" }, rol.descripcion)
-                  );
+                      { className: "director-form-grid__completo" },
+                      h(Campo, {
+                        id: "perfil-suplente-de",
+                        etiqueta: "Reemplaza a",
+                        valor: form.suplente_de,
+                        onChange: cambiar("suplente_de"),
+                        error: errores.suplente_de,
+                        requerido: true,
+                        ayuda: "Nombre del docente titular al que reemplaza."
+                      })
+                    )
+                  : null,
+                h(Select, {
+                  id: "perfil-modulos",
+                  etiqueta: "Módulos",
+                  valor: form.modulos,
+                  onChange: cambiar("modulos"),
+                  error: errores.modulos,
+                  requerido: true,
+                  placeholder: "Seleccioná los módulos",
+                  opciones: MODULOS_DOCENTES.map((modulo) => ({ id: String(modulo), nombre: String(modulo) }))
+                }),
+                h(Select, {
+                  id: "perfil-dia",
+                  etiqueta: "Día",
+                  valor: form.dia,
+                  onChange: cambiar("dia"),
+                  error: errores.dia,
+                  requerido: true,
+                  placeholder: "Seleccioná el día",
+                  opciones: DIAS_CURSADA
+                }),
+                h(Campo, {
+                  id: "perfil-hora-desde",
+                  etiqueta: "Hora de inicio",
+                  tipo: "time",
+                  valor: form.hora_desde,
+                  onChange: cambiar("hora_desde"),
+                  error: errores.hora_desde,
+                  requerido: true
+                }),
+                h(Campo, {
+                  id: "perfil-hora-hasta",
+                  etiqueta: "Hora de fin",
+                  tipo: "time",
+                  valor: form.hora_hasta,
+                  onChange: cambiar("hora_hasta"),
+                  error: errores.hora_hasta,
+                  requerido: true
                 })
-              )
-            ),
-
-            // Footer del Modal
-            h(
-              "div",
-              { className: "director-modal-footer" },
-              h(
-                "button",
-                {
-                  type: "button",
-                  className: "btn-director-secondary",
-                  onClick: handleCerrarModal,
-                  disabled: guardando
-                },
-                "Cancelar"
-              ),
-              h(
-                "button",
-                {
-                  type: "submit",
-                  className: "btn-director-primary",
-                  disabled: guardando
-                },
-                guardando ? "Creando perfil..." : "Crear Perfil y Asignar Roles"
               )
             )
-          )
-    )
+          : null,
+
+        h(
+          "div",
+          { className: "director-roles-section" },
+          h(
+            "div",
+            { className: "director-roles-header" },
+            h("span", { className: "director-form-label" }, "Asignación de roles y permisos"),
+            h("span", { className: "director-roles-sublabel" }, "Se puede seleccionar más de un rol.")
+          ),
+          errores.roles ? h("p", { className: "director-form-error", role: "alert" }, errores.roles) : null,
+          h(RoleGrid, {
+            roles: ROLES_DISPONIBLES,
+            seleccionados: form.roles,
+            onChange: alternarRol
+          })
+        )
+      );
+
+  const acciones = creado
+    ? h(
+        Acciones,
+        null,
+        h(
+          Boton,
+          {
+            variante: "secundario",
+            onClick: () => {
+              setCreado(null);
+              setForm(formularioVacio());
+              setErrores({});
+            }
+          },
+          "Crear otro perfil"
+        ),
+        h(Boton, { variante: "primario", onClick: cerrar }, "Finalizar")
+      )
+    : h(
+        Acciones,
+        null,
+        h(Boton, { variante: "secundario", onClick: pedirCierre, deshabilitado: guardando }, "Cancelar"),
+        h(
+          Boton,
+          {
+            variante: "primario",
+            tipo: "submit",
+            form: "formulario-nuevo-perfil",
+            cargando: guardando
+          },
+          "Crear Perfil y Asignar Roles"
+        )
+      );
+
+  return h(
+    React.Fragment,
+    null,
+    h(
+      Modal,
+      {
+        abierto: abierto,
+        titulo: "Crear Nuevo Perfil / Usuario",
+        descripcion: "Registra personal institucional y define sus permisos de acceso.",
+        tamano: "grande",
+        className: "director-modal",
+        classNameFondo: "director-modal-fondo",
+        onCerrar: pedirCierre,
+        acciones,
+        cargando: guardando
+      },
+      cuerpo
+    ),
+    h(Confirmacion, {
+      abierto: avisarDescarte,
+      titulo: "Descartar los datos escritos",
+      mensaje: "Hay cambios sin guardar en el formulario. Si cerrás ahora se pierden.",
+      variante: "advertencia",
+      textoConfirmar: "Descartar cambios",
+      textoCancelar: "Seguir editando",
+      onConfirmar: () => {
+        setAvisarDescarte(false);
+        cerrar();
+      },
+      onCancelar: () => setAvisarDescarte(false)
+    })
   );
 }

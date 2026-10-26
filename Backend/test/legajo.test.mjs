@@ -7,6 +7,7 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { resetStore } from "../database/memory-store.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
+import { asignarTodasLasDivisiones } from "./helpers.mjs";
 
 const PUERTO = 4012;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -34,6 +35,7 @@ async function login(email, password) {
 beforeEach(async () => {
   resetStore();
   await seedDesarrollo();
+  asignarTodasLasDivisiones();
   tokens.secretario = await login("secretario@prece.local", "Secretaria123!");
   tokens.preceptor = await login("preceptor@prece.local", "Preceptor123!");
   tokens.docente = await login("docente@prece.local", "Docente123!");
@@ -89,8 +91,11 @@ test("observaciones: alta validada, responsable del token y listado", async () =
   assert.equal(alta.cuerpo.data.alumno, "Gómez Ruiz, Carla");
   assert.notEqual(alta.cuerpo.data.responsable, "Alguien inventado");
 
-  const delAlumno = await pedir("GET", "/api/v1/students/alu-2/observations", "docente");
+  const delAlumno = await pedir("GET", "/api/v1/students/alu-2/observations", "preceptor");
   const todas = await pedir("GET", "/api/v1/observations", "secretario");
+  /* alu-2 cursa 4° 1°: no es de un curso asignado al docente. */
+  const docenteAjeno = await pedir("GET", "/api/v1/students/alu-2/observations", "docente");
+  assert.equal(docenteAjeno.status, 403);
   assert.ok(delAlumno.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));
   assert.ok(todas.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));
 

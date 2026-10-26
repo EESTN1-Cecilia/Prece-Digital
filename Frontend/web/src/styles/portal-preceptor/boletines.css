@@ -1,0 +1,179 @@
+/* ==========================================================================
+   BOLETINES DEL PORTAL PRECEPTOR
+   Colección de boletines individuales con el diseño del Boletín Digital de
+   Secretaría (styles/documentos/boletin.css): dos por hoja Oficio horizontal
+   (340 x 216 mm), uno a la izquierda y otro a la derecha, en orden de lista.
+
+   Cada boletín se maqueta a 190 mm de ancho (su tamaño natural) y se escala
+   para entrar en su media hoja útil de 160 x 196 mm (boletines-logica.js). La
+   impresión se hace en un documento aislado (utils/imprimir-aislado.js) con
+   la regla @page de márgenes de 10 mm.
+   ========================================================================== */
+
+.boletines-vista {
+  display: grid;
+  gap: 16px;
+}
+
+/* ---- Vista previa en pantalla: las hojas a escala, con desplazamiento ---- */
+
+.boletines-impresion {
+  overflow-x: auto;
+  padding: 4px 0 12px;
+}
+
+.boletines-hojas {
+  display: grid;
+  gap: 18px;
+  justify-content: start;
+  zoom: 0.62;
+}
+
+@media (max-width: 720px) {
+  .boletines-hojas {
+    zoom: 0.3;
+  }
+}
+
+.boletines-hoja {
+  box-sizing: border-box;
+  width: 340mm;
+  height: 216mm;
+  padding: 10mm;
+  display: grid;
+  grid-template-columns: 160mm 160mm;
+  column-gap: 0;
+  align-items: start;
+  background: #ffffff;
+  border: 1px solid #d6dde8;
+  box-shadow: 0 6px 18px rgba(15, 30, 60, 0.12);
+}
+
+.boletines-celda {
+  width: 160mm;
+  height: 196mm;
+  overflow: hidden;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ---- Boletín de solo lectura con el diseño de Secretaría ---- */
+
+.boletin-oficial.boletin-paper-card {
+  width: 190mm;
+  max-width: none;
+  margin: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.boletin-oficial tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Los valores van en texto (no en campos editables) con el mismo aspecto. */
+.boletin-oficial .boletin-valor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.boletin-oficial .boletin-valor.boletin-grade-input:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.boletin-oficial .boletin-valor.boletin-inasistencias-input {
+  display: inline-flex;
+}
+
+.boletin-oficial .boletin-valor.boletin-input-table-pending {
+  min-height: 18px;
+}
+
+.boletin-oficial__faltantes {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* ---- Impresión con Ctrl+P sobre la página (respaldo del botón Imprimir) ----
+   El botón imprime en un documento aislado. Si se usa Ctrl+P, la vista agrega
+   `modo-impresion-boletines` a <html>: se oculta todo lo demás y se apagan el
+   fondo decorativo fijo y los filtros, que Chrome repetía en cada hoja y
+   trababan la impresión. */
+
+html.modo-impresion-boletines,
+html.modo-impresion-boletines body {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+}
+
+html.modo-impresion-boletines body::before,
+html.modo-impresion-boletines body::after {
+  display: none !important;
+}
+
+html.modo-impresion-boletines *,
+html.modo-impresion-boletines *::before,
+html.modo-impresion-boletines *::after {
+  backdrop-filter: none !important;
+  filter: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+html.modo-impresion-boletines body *:has(.boletines-impresion) {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  overflow: visible !important;
+  position: static !important;
+  transform: none !important;
+}
+
+html.modo-impresion-boletines body *:has(.boletines-impresion) > :not(:has(.boletines-impresion)):not(.boletines-impresion) {
+  display: none !important;
+}
+
+html.modo-impresion-boletines .boletines-impresion,
+html.modo-impresion-boletines .boletines-impresion * {
+  visibility: visible !important;
+}
+
+html.modo-impresion-boletines .boletines-impresion {
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+html.modo-impresion-boletines .boletines-hojas {
+  display: block !important;
+  zoom: 1 !important;
+}
+
+html.modo-impresion-boletines .boletines-hoja {
+  width: 320mm;
+  height: 196mm;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  break-after: page;
+  page-break-after: always;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+html.modo-impresion-boletines .boletines-hoja:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}

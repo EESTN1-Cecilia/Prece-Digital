@@ -7,41 +7,44 @@ import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
 import { BoletinDigitalModal } from "./components/boletin-digital-modal.js";
 import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
+import { DocenteCursosService, esSoloDocente } from "../docente/docente-cursos-service.js";
 
-// Cursos de referencia para la cuenta docente institucional
-const ASIGNACIONES_DOCENTE_DEFAULT = [
-  { anio: 1, curso: "1°", division: "1", materia: "Matemática I" },
-  { anio: 2, curso: "2°", division: "1", materia: "Matemática II" },
-  { anio: 3, curso: "3°", division: "3", materia: "Matemática III" }
-];
 
 function normalizarAsignacion(asig) {
   const anio = Number(String(asig.anio || asig.curso || "").replace(/\D/g, "")) || 1;
   const division = String(asig.division || "").trim();
   const cursoStr = `${anio}°`;
-  return { anio, curso: cursoStr, division, materia: asig.materia || "Matemática" };
+  return { anio, curso: cursoStr, division, materia: asig.materia || "" };
 }
 
 export default function BoletinesListView() {
   const user = useUsuarioActual();
 
-  const esDocente =
-    user?.rol === "docente" ||
-    (Array.isArray(user?.roles) &&
-      user.roles.includes("docente") &&
-      !user.roles.includes("admin") &&
-      !user.roles.includes("director") &&
-      !user.roles.includes("secretario") &&
-      !user.roles.includes("secretaria"));
+  /* El docente solo ve los boletines de sus cursos asignados (el backend aplica
+     el mismo alcance en cada consulta de alumnos, perfiles y calificaciones). */
+  const esDocente = esSoloDocente(user);
 
-  const asignacionesDocente = useMemo(() => {
-    if (!esDocente) return null;
-    const raw =
-      user?.assignments && user.assignments.length > 0
-        ? user.assignments
-        : ASIGNACIONES_DOCENTE_DEFAULT;
-    return raw.map(normalizarAsignacion);
-  }, [user, esDocente]);
+  const [asignacionesDocente, setAsignacionesDocente] = useState(null);
+
+  useEffect(() => {
+    if (!esDocente) {
+      setAsignacionesDocente(null);
+      return undefined;
+    }
+
+    let vigente = true;
+    DocenteCursosService.getMisCursos()
+      .then((cursos) => {
+        if (vigente) setAsignacionesDocente(cursos.map(normalizarAsignacion));
+      })
+      .catch(() => {
+        if (vigente) setAsignacionesDocente([]);
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [esDocente, user?.id]);
 
   // Filtros
   const [studentSearch, setStudentSearch] = useState("");
@@ -168,10 +171,21 @@ export default function BoletinesListView() {
 
   // Cargar nómina de alumnos
   const fetchStudents = useCallback(async () => {
+    if (esDocente && !asignacionesDocente) {
+      // Todavía se están cargando los cursos asignados al docente
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      if (esDocente && asignacionesDocente && asignacionesDocente.length > 0) {
+      if (esDocente && asignacionesDocente.length === 0) {
+        setStudents([]);
+        setPagination({ total: 0, page: 1, limit: pageSize, totalPages: 1, hasNextPage: false, hasPrevPage: false });
+        return;
+      }
+
+      if (esDocente) {
         // Enfoque Docente: acotado estrictamente a los cursos y divisiones asignados al docente
         let cursosAConsultar = [];
 
@@ -471,7 +485,15 @@ export default function BoletinesListView() {
     ),
 
     // Banner informativo para el docente con sus cursos a cargo y acceso a la planilla completa
-    esDocente && asignacionesDocente
+    esDocente && asignacionesDocente && asignacionesDocente.length === 0
+      ? h(
+          "div",
+          { className: "alumnos-filter-status-bar", style: { margin: "0 0 16px 0" } },
+          h("span", { className: "filter-status-text" }, "No tenés cursos asignados. Pedile a Dirección que te asigne tus cursos para ver los boletines.")
+        )
+      : null,
+
+    esDocente && asignacionesDocente && asignacionesDocente.length > 0
       ? h(
           "div",
           {

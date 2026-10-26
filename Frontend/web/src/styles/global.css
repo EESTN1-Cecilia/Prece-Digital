@@ -9,6 +9,7 @@
 @import "./base/variables.css";
 @import "./base/layout.css";
 @import "./base/components.css";
+@import "./base/impresion.css";
 
 /* ==========================================================================
    2. AUTENTICACIÓN & IDENTIDAD
@@ -21,6 +22,7 @@
    3. MÓDULO DE DIRECCIÓN, SECRETARÍA & DASHBOARDS
    ========================================================================== */
 @import "./director/director.css";
+@import "./informes/informes.css";
 @import "./secretaria/secretaria.css";
 
 /* ==========================================================================
@@ -44,7 +46,10 @@
 @import "./documentos/legajo.css";
 @import "./documentos/boletin.css";
 @import "./documentos/boletines-list.css";
-@import "./docente/docente.css";
+@import "./docentes/docentes.css";
+@import "./portal-docente/portal-docente.css";
+@import "./portal-preceptor/boletines.css";
+@import "./preceptoria/preceptoria.css";
 
 /* ==========================================================================
    7. MÓDULO DE SERVER, PAÑOL & INVENTARIO

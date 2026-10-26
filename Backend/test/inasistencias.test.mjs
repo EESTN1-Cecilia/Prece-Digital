@@ -14,6 +14,7 @@ import { resetStore } from "../database/memory-store.mjs";
 import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { seedStudents } from "../database/seeds/students.seed.mjs";
 import { seedInasistencias } from "../database/seeds/inasistencias.seed.mjs";
+import { asignarTodasLasDivisiones } from "./helpers.mjs";
 import inasistenciasRepository from "../modules/inasistencias/inasistencias.repository.mjs";
 
 const PUERTO = 4010;
@@ -74,6 +75,7 @@ beforeEach(async () => {
   await seedStudents();
   inasistenciasRepository.resetData();
   seedInasistencias();
+  asignarTodasLasDivisiones();
   preceptor = await login("preceptor@prece.local", "Preceptor123!");
   secretario = await login("secretario@prece.local", "Secretaria123!");
 });

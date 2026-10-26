@@ -4,7 +4,8 @@ import DirectorDashboardView from "../modules/director/director-dashboard-view.j
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
-import DocenteDashboardView from "../modules/docente/docente-dashboard-view.js";
+import PortalInicioView from "../modules/portal-docente/portal-inicio-view.js";
+import PreceptorInicioView from "../modules/portal-preceptor/preceptor-inicio-view.js";
 import { useUsuarioActual } from "../estado/index.js";
 
 const h = React.createElement;
@@ -20,6 +21,7 @@ export default function InicioView() {
   }
   if (rol === "secretaria" || rol === "secretario") return h(SecretariaDashboardView);
   if (rol === "jefe_area") return h(JefaturaDashboardView);
-  if (rol === "docente") return h(DocenteDashboardView);
+  if (rol === "docente") return h(PortalInicioView);
+  if (rol === "preceptor") return h(PreceptorInicioView);
   return h(DashboardView);
 }

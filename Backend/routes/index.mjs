@@ -49,7 +49,14 @@ import * as academicRecordsController from "../modules/academic-records/academic
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
+import * as preceptorController from "../modules/preceptor/preceptor.controller.mjs";
+import * as boletinesController from "../modules/boletines/boletines.controller.mjs";
+import * as reportsController from "../modules/reports/reports.controller.mjs";
+import * as institucionController from "../modules/institucion/institucion.controller.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
+import { conAlcanceEnRespuesta, restringirAlumnoPorCurso } from "../modules/auth/alcance-cursos.service.mjs";
+import * as docenteAlcanceController from "../modules/auth/alcance-cursos.controller.mjs";
+import * as asistenciaClasesController from "../modules/asistencia-clases/asistencia-clases.controller.mjs";
 
 /* Exige un permiso existente: un typo en P.ALGO rompe el arranque en lugar de
    dejar la ruta abierta a cualquier usuario autenticado. */
@@ -61,7 +68,7 @@ function required(permission) {
   return authorize({ permission });
 }
 
-export const apiRoutes = [
+const rutasBase = [
   { method: "GET", path: "/health", handler: healthCheck },
   { method: "GET", path: "/api/v1/modules", handler: listModules },
   { method: "GET", path: "/api/v1/roles", handler: listRoles },
@@ -77,14 +84,31 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/auth/logout", handler: authController.logout },
   { method: "GET", path: "/api/v1/auth/me", middlewares: [verifyToken], handler: authController.me },
   { method: "GET", path: "/api/v1/auth/permissions", middlewares: [verifyToken], handler: authController.permissions },
+  /* Cambio de la propia clave (obligatorio tras el alta, con la clave provisoria). */
+  { method: "POST", path: "/api/v1/auth/cambiar-clave", middlewares: [verifyToken], handler: authController.cambiarClave },
   { method: "GET", path: "/api/v1/users", middlewares: [verifyToken, required(P.USERS_READ)], handler: authController.listUsers },
   { method: "POST", path: "/api/v1/users", middlewares: [verifyToken, required(P.IDENTITY_CREATE)], handler: usersController.createUser },
+  { method: "POST", path: "/api/usuarios", middlewares: [verifyToken, required(P.IDENTITY_CREATE)], handler: usersController.createUser },
   { method: "GET", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.USERS_READ)], handler: usersController.getUser },
   { method: "PATCH", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.updateUser },
   { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.replaceUserRoles },
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
 
   { method: "GET", path: "/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: academicController.listAlumnosDeDivision },
+  /* Cursos asignados al docente autenticado (alcance de alumnos, perfiles y boletines). */
+  { method: "GET", path: "/api/v1/docente/mis-cursos", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: docenteAlcanceController.misCursos },
+  /* Lista de alumnos de un curso asignado: solo datos necesarios para la clase. */
+  { method: "GET", path: "/api/v1/docente/cursos/:cursoId/alumnos", middlewares: [verifyToken, required(P.STUDENTS_READ), required(P.ATTENDANCE_READ)], handler: asistenciaClasesController.alumnosDeCurso },
+
+  /* Asistencia por clase (division + materia + fecha). El alcance por curso del
+     docente lo valida el servicio con la identidad del token. Literales antes
+     que :claseId. */
+  { method: "GET", path: "/api/v1/asistencia-clases/catalogo", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: asistenciaClasesController.catalogo },
+  { method: "GET", path: "/api/v1/asistencia-clases", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: asistenciaClasesController.listar },
+  { method: "POST", path: "/api/v1/asistencia-clases", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: asistenciaClasesController.registrar },
+  { method: "PUT", path: "/api/v1/asistencia-clases/planilla", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: asistenciaClasesController.guardarPlanilla },
+  { method: "GET", path: "/api/v1/asistencia-clases/:claseId", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: asistenciaClasesController.obtener },
+  { method: "PUT", path: "/api/v1/asistencia-clases/:claseId", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: asistenciaClasesController.corregir },
   { method: "GET", path: "/api/v1/students/listas/curso", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarCurso },
   { method: "GET", path: "/api/v1/students/listas/division", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarDivision },
   { method: "GET", path: "/api/v1/students/listas/grupo", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarGrupo },
@@ -118,6 +142,36 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/dashboard/secretaria", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.tableroSecretaria },
   { method: "GET", path: "/api/v1/jefatura/cursos-grupos", middlewares: [verifyToken, required(P.ACADEMICS_READ)], handler: jefaturaController.listCursosGrupos },
   { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
+
+  /* Tablero de preceptoria: alumnos por curso con su asistencia diaria, registro
+     o actualizacion de asistencia y estado de aulas en vivo. Los alias sin /v1
+     mantienen compatibilidad con integraciones que usan /api/preceptor. */
+  { method: "GET", path: "/api/v1/preceptor/mis-cursos", middlewares: [verifyToken], handler: preceptorController.misCursos },
+  { method: "GET", path: "/api/preceptor/mis-cursos", middlewares: [verifyToken], handler: preceptorController.misCursos },
+  { method: "GET", path: "/api/v1/preceptor/curso/:cursoId/alumnos", middlewares: [verifyToken, required(P.STUDENTS_READ), required(P.ATTENDANCE_READ)], handler: preceptorController.listarAlumnos },
+  { method: "GET", path: "/api/v1/preceptor/alumnos/:cursoId", middlewares: [verifyToken, required(P.STUDENTS_READ), required(P.ATTENDANCE_READ)], handler: preceptorController.listarAlumnos },
+  { method: "POST", path: "/api/v1/preceptor/asistencia", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: preceptorController.registrarAsistencia },
+  { method: "GET", path: "/api/v1/preceptor/estado-aulas", middlewares: [verifyToken, required(P.SPACES_READ), required(P.SCHEDULES_READ)], handler: preceptorController.estadoAulas },
+  { method: "GET", path: "/api/v1/preceptor/boletin/:cursoId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: preceptorController.boletinCurso },
+  /* Boletin de calificaciones compartido: Boletin Digital (Secretaria /
+     Direccion), planilla del docente por materia y boletines de preceptoria. */
+  { method: "GET", path: "/api/v1/boletines/alumno/:alumnoId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinesController.obtenerDeAlumno },
+  { method: "PUT", path: "/api/v1/boletines/alumno/:alumnoId", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: auditarAccion({ tabla: "boletines" })(boletinesController.guardarDeAlumno) },
+  { method: "GET", path: "/api/v1/boletines/curso/:cursoId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinesController.deCurso },
+  { method: "PUT", path: "/api/v1/boletines/curso/:cursoId/materia", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: auditarAccion({ tabla: "boletines" })(boletinesController.guardarMateriaDeCurso) },
+  /* Historial de asistencia diaria de los cursos del preceptor. */
+  { method: "GET", path: "/api/v1/preceptor/asistencias", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: preceptorController.listarAsistencias },
+  { method: "GET", path: "/api/v1/preceptor/asistencias/:cursoId/:fecha", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: preceptorController.obtenerAsistenciaDia },
+  /* Direccion asigna el preceptor a cargo de cada division (preceptor_cursos). */
+  { method: "GET", path: "/api/v1/preceptor/asignaciones", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: preceptorController.listarAsignaciones },
+  { method: "PUT", path: "/api/v1/preceptor/asignaciones/:cursoId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: auditarAccion({ tabla: "preceptor_cursos" })(preceptorController.asignarPreceptor) },
+  { method: "DELETE", path: "/api/v1/preceptor/asignaciones/:cursoId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: auditarAccion({ tabla: "preceptor_cursos" })(preceptorController.quitarPreceptor) },
+  { method: "GET", path: "/api/preceptor/boletin/:cursoId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: preceptorController.boletinCurso },
+  { method: "GET", path: "/api/preceptor/curso/:cursoId/alumnos", middlewares: [verifyToken, required(P.STUDENTS_READ), required(P.ATTENDANCE_READ)], handler: preceptorController.listarAlumnos },
+  { method: "GET", path: "/api/preceptor/alumnos/:cursoId", middlewares: [verifyToken, required(P.STUDENTS_READ), required(P.ATTENDANCE_READ)], handler: preceptorController.listarAlumnos },
+  { method: "POST", path: "/api/preceptor/asistencia", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: preceptorController.registrarAsistencia },
+  { method: "GET", path: "/api/preceptor/estado-aulas", middlewares: [verifyToken, required(P.SPACES_READ), required(P.SCHEDULES_READ)], handler: preceptorController.estadoAulas },
+
   { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
 
@@ -571,6 +625,22 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/reassignments/:reassignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_READ)], handler: reassignmentsController.getReassignment },
   { method: "PATCH", path: "/api/v1/reassignments/:reassignmentId", middlewares: [verifyToken, required(P.REASSIGNMENTS_WRITE)], handler: reassignmentsController.updateReassignment },
 
+  /* Informes de Direccion. Los literales (plantillas) van antes que los
+     parametros porque el router gana con la primera coincidencia. */
+  { method: "GET", path: "/api/v1/reports/plantillas", middlewares: [verifyToken, required(P.REPORTS_READ)], handler: reportsController.listTemplates },
+  { method: "GET", path: "/api/v1/reports", middlewares: [verifyToken, required(P.REPORTS_READ)], handler: reportsController.listReports },
+  { method: "POST", path: "/api/v1/reports", middlewares: [verifyToken, required(P.REPORTS_CREATE)], handler: reportsController.createReport },
+  { method: "GET", path: "/api/v1/reports/:reportId", middlewares: [verifyToken, required(P.REPORTS_READ)], handler: reportsController.getReport },
+  { method: "PATCH", path: "/api/v1/reports/:reportId", middlewares: [verifyToken, required(P.REPORTS_WRITE)], handler: reportsController.updateReport },
+  { method: "DELETE", path: "/api/v1/reports/:reportId", middlewares: [verifyToken, required(P.REPORTS_WRITE)], handler: reportsController.deleteReport },
+  { method: "GET", path: "/api/v1/reports/:reportId/versiones", middlewares: [verifyToken, required(P.REPORTS_READ)], handler: reportsController.listVersions },
+  { method: "POST", path: "/api/v1/reports/:reportId/versiones/:versionId/restaurar", middlewares: [verifyToken, required(P.REPORTS_WRITE)], handler: reportsController.restoreVersion },
+  { method: "GET", path: "/api/v1/reports/:reportId/pdf", middlewares: [verifyToken, required(P.REPORTS_EXPORT)], handler: reportsController.exportPdf },
+
+  /* Identidad institucional y catalogos de support: los usa toda la app. */
+  { method: "GET", path: "/api/v1/institucion", middlewares: [verifyToken], handler: institucionController.obtenerInstitucion },
+  { method: "GET", path: "/api/v1/catalogos/areas", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: institucionController.obtenerAreas },
+
   { method: "GET", path: "/api/v1/audit/logs", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.listLogs },
   { method: "GET", path: "/api/v1/audit/logs/:logId", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.getLog },
   { method: "GET", path: "/api/v1/audit/errors", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.listErrors },
@@ -578,6 +648,41 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/audit/report", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.report },
   { method: "GET", path: "/api/v1/audit/export", middlewares: [verifyToken, required(P.AUDIT_EXPORT)], handler: auditarAccion({ tabla: "auditoria", accion: "export" })(auditController.exportCsv) }
 ];
+
+/* Alcance por curso del docente: toda ruta que apunta a un alumno puntual
+   (:studentId / :alumnoId) verifica, despues de los permisos, que el alumno sea
+   de un curso asignado. Ver modules/auth/alcance-cursos.service.mjs. */
+function conAlcanceDeAlumno(ruta) {
+  if (!/\/:(studentId|alumnoId)(\/|$)/.test(ruta.path)) {
+    return ruta;
+  }
+
+  return { ...ruta, middlewares: [...(ruta.middlewares ?? []), restringirAlumnoPorCurso] };
+}
+
+/* Listados y detalles con datos de alumnos que no llevan el alumno en la ruta:
+   la respuesta se recorta a los cursos del docente o preceptor. */
+const PREFIJOS_CON_ALUMNOS = [
+  "/api/v1/observations",
+  "/api/v1/seguimientos-observacion",
+  "/api/v1/particular-conditions",
+  "/api/v1/movimientos-cursos",
+  "/api/v1/book-registry",
+  "/api/v1/situaciones-academicas",
+  "/api/v1/inasistencias",
+  "/api/v1/alertas",
+  "/api/v1/seguimientos-inasistencia"
+];
+
+function conAlcanceEnListado(ruta) {
+  if (ruta.method !== "GET" || !PREFIJOS_CON_ALUMNOS.some((prefijo) => ruta.path === prefijo || ruta.path.startsWith(`${prefijo}/`))) {
+    return ruta;
+  }
+
+  return { ...ruta, handler: conAlcanceEnRespuesta(ruta.handler) };
+}
+
+export const apiRoutes = rutasBase.map(conAlcanceDeAlumno).map(conAlcanceEnListado);
 
 function tokenize(path) {
   return path.split("/").filter(Boolean);

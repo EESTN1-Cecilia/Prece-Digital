@@ -1,4 +1,5 @@
 import { getStore } from "../memory-store.mjs";
+import { nombreArea } from "../../config/areas.config.mjs";
 
 function cloneUser(user) {
   return {
@@ -28,6 +29,16 @@ export const userRepository = {
       apellido: user.apellido ?? null,
       dni: user.dni ?? null,
       telefono: user.telefono ?? null,
+      area: user.area ?? null,
+      materia: user.materia ?? null,
+      situacion_revista: user.situacion_revista ?? null,
+      suplente_de: user.suplente_de ?? null,
+      modulos: user.modulos ?? null,
+      hora_desde: user.hora_desde ?? null,
+      hora_hasta: user.hora_hasta ?? null,
+      dia: user.dia ?? null,
+      /* Clave provisoria pendiente de cambio (ver auth.service). */
+      debeCambiarClave: user.debeCambiarClave ?? false,
       assignments: user.assignments ?? [],
       isActive: user.isActive ?? true,
       deactivatedAt: user.deactivatedAt ?? null,
@@ -69,9 +80,27 @@ export const userRepository = {
     return null;
   },
 
-  list({ includeInactive = false } = {}) {
+  /* El DNI identifica a la persona: no puede haber dos cuentas con el mismo. */
+  findByDni(dni, { includeInactive = true } = {}) {
+    const buscado = String(dni ?? "").trim();
+
+    if (!buscado) {
+      return null;
+    }
+
+    for (const user of getStore().users.values()) {
+      if (user.dni === buscado && (includeInactive || user.isActive)) {
+        return cloneUser(user);
+      }
+    }
+
+    return null;
+  },
+
+  list({ includeInactive = false, area = null } = {}) {
     return [...getStore().users.values()]
       .filter((user) => includeInactive || user.isActive)
+      .filter((user) => !area || user.area === area)
       .map(cloneUser);
   },
 
@@ -117,6 +146,16 @@ export const userRepository = {
       apellido: user.apellido ?? null,
       dni: user.dni ?? null,
       telefono: user.telefono ?? null,
+      area: user.area ?? null,
+      areaNombre: nombreArea(user.area),
+      materia: user.materia ?? null,
+      situacion_revista: user.situacion_revista ?? null,
+      suplente_de: user.suplente_de ?? null,
+      modulos: user.modulos ?? null,
+      hora_desde: user.hora_desde ?? null,
+      hora_hasta: user.hora_hasta ?? null,
+      dia: user.dia ?? null,
+      debeCambiarClave: Boolean(user.debeCambiarClave),
       roles: [...new Set(user.assignments.map((assignment) => assignment.role))],
       assignments: user.assignments,
       isActive: user.isActive,

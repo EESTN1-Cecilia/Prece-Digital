@@ -7,11 +7,28 @@ import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../compone
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
+import { DocenteCursosService, esSoloDocente } from "../docente/docente-cursos-service.js";
 
 export default function AlumnosListView() {
   const user = useUsuarioActual();
   const esPreceptor = user?.rol === "preceptor" || (Array.isArray(user?.roles) && user.roles.includes("preceptor") && !user.roles.includes("admin") && !user.roles.includes("secretario") && !user.roles.includes("director"));
   const puedeCargarAlumno = !esPreceptor && (user?.roles?.length ? puede(user, PERMISOS.alumnosCrear) : true);
+
+  /* Un docente solo ve alumnos de sus cursos asignados: el backend filtra el
+     listado y aca se acotan las opciones de los filtros a esos cursos. */
+  const esDocente = esSoloDocente(user);
+  const [cursosDocente, setCursosDocente] = useState(null);
+
+  useEffect(() => {
+    if (!esDocente) return undefined;
+    let vigente = true;
+    DocenteCursosService.getMisCursos()
+      .then((cursos) => vigente && setCursosDocente(cursos))
+      .catch(() => vigente && setCursosDocente([]));
+    return () => {
+      vigente = false;
+    };
+  }, [esDocente, user?.id]);
 
   // Filtros del Listado de Alumnos
   const [viewMode, setViewMode] = useState("table"); // 'table' | 'card'
@@ -358,14 +375,10 @@ export default function AlumnosListView() {
               setCurrentPage(1);
             },
             options: [
-              { value: "todos", label: "Todos los Años" },
-              { value: "1°", label: "1° Año" },
-              { value: "2°", label: "2° Año" },
-              { value: "3°", label: "3° Año" },
-              { value: "4°", label: "4° Año" },
-              { value: "5°", label: "5° Año" },
-              { value: "6°", label: "6° Año" },
-              { value: "7°", label: "7° Año" }
+              { value: "todos", label: esDocente ? "Todos mis cursos" : "Todos los Años" },
+              ...[1, 2, 3, 4, 5, 6, 7]
+                .filter((anio) => !esDocente || (cursosDocente || []).some((c) => c.anio === anio))
+                .map((anio) => ({ value: `${anio}°`, label: `${anio}° Año` }))
             ]
           }),
           h(CustomSelect, {
@@ -377,12 +390,12 @@ export default function AlumnosListView() {
             },
             options: [
               { value: "todas", label: "Todas las Div." },
-              { value: "1", label: "División 1" },
-              { value: "2", label: "División 2" },
-              { value: "3", label: "División 3" },
-              { value: "4", label: "División 4" },
-              { value: "5", label: "División 5" },
-              { value: "6", label: "División 6" }
+              ...["1", "2", "3", "4", "5", "6"]
+                .filter((div) => !esDocente || (cursosDocente || []).some((c) =>
+                  c.division === div &&
+                  (selectedCurso === "todos" || `${c.anio}°` === selectedCurso)
+                ))
+                .map((div) => ({ value: div, label: `División ${div}` }))
             ]
           }),
           h(CustomSelect, {

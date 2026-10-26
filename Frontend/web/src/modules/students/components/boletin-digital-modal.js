@@ -4,6 +4,7 @@ import { h } from "../../../layouts/site-layout.js";
 import * as XLSX from "xlsx";
 import { obtenerLibroFolioLegajo, StudentsService, formatDni } from "../students-service.js";
 import { pedir } from "../../../services/http.js";
+import { BoletinNotasService } from "../boletin-notas-service.js";
 
 // Definición oficial de materias según Matriz.xlsx y Resoluciones Provinciales PBA
 export const PLANES_BOLETIN = {
@@ -191,6 +192,10 @@ export const PLANES_BOLETIN = {
   }
 };
 
+function filasPendientesVacias() {
+  return [1, 2].map(() => ({ materia: "", anio: "", abrilCalif: "", abrilLF: "", mayoCalif: "", mayoLF: "", agostoCalif: "", agostoLF: "", octubreCalif: "", octubreLF: "" }));
+}
+
 function calcularPromedio(n1, n2) {
   const v1 = parseFloat(String(n1).replace(",", "."));
   const v2 = parseFloat(String(n2).replace(",", "."));
@@ -278,10 +283,7 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
   const [inasistenciasDetalle, setInasistenciasDetalle] = useState(null);
   const [cargandoInasistencias, setCargandoInasistencias] = useState(false);
   const [calificaciones, setCalificaciones] = useState({});
-  const [materiasPendientes, setMateriasPendientes] = useState([
-    { materia: "", anio: "", abrilCalif: "", abrilLF: "", mayoCalif: "", mayoLF: "", agostoCalif: "", agostoLF: "", octubreCalif: "", octubreLF: "" },
-    { materia: "", anio: "", abrilCalif: "", abrilLF: "", mayoCalif: "", mayoLF: "", agostoCalif: "", agostoLF: "", octubreCalif: "", octubreLF: "" }
-  ]);
+  const [materiasPendientes, setMateriasPendientes] = useState(filasPendientesVacias);
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("Calificaciones guardadas correctamente");
 
@@ -297,9 +299,6 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
   const [emailMensaje, setEmailMensaje] = useState("");
   const [enviandoEmail, setEnviandoEmail] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState(null);
-
-  // Clave de almacenamiento local por alumno y año
-  const storageKey = `prece_boletin_${studentId}_anio_${selectedYear}`;
 
   // Traer la sumatoria dinámica de inasistencias desde el backend (/api/v1/inasistencias/alumno/:id/totales)
   useEffect(() => {
@@ -331,30 +330,32 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
     return () => { cancel = true; };
   }, [studentId]);
 
-  // Cargar calificaciones guardadas para el año seleccionado
+  // Cargar del boletín compartido (backend) las calificaciones del año seleccionado:
+  // las mismas que completan los docentes desde su planilla y que imprime preceptoría.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.calificaciones) setCalificaciones(parsed.calificaciones);
-        if (parsed.inasistencias) setInasistencias(parsed.inasistencias);
-        if (parsed.materiasPendientes) setMateriasPendientes(parsed.materiasPendientes);
-        if (parsed.libroFolio) setLibroFolio(parsed.libroFolio);
-        return;
-      }
-    } catch {
-      // Ignorar error de parsing
-    }
+    if (!studentId || studentId === "alu-0") return undefined;
+    let vigente = true;
+    const totalPorDefecto = inasistenciasDetalle?.total !== undefined
+      ? String(inasistenciasDetalle.total)
+      : (selectedYear === initialYear ? String(currentAlumno?.inasistencias?.total ?? 0) : "0");
 
-    // Inicializar vacío si no había nada guardado
-    setCalificaciones({});
-    setInasistencias({
-      total: inasistenciasDetalle?.total !== undefined
-        ? String(inasistenciasDetalle.total)
-        : (selectedYear === initialYear ? String(currentAlumno?.inasistencias?.total ?? 0) : "0")
-    });
-  }, [storageKey, selectedYear, initialYear, currentAlumno, inasistenciasDetalle]);
+    BoletinNotasService.obtener(studentId, selectedYear)
+      .then((boletin) => {
+        if (!vigente) return;
+        setCalificaciones(boletin?.calificaciones ?? {});
+        setInasistencias(boletin?.inasistencias?.total ? boletin.inasistencias : { total: totalPorDefecto });
+        setMateriasPendientes(boletin?.materiasPendientes?.length ? boletin.materiasPendientes : filasPendientesVacias());
+      })
+      .catch(() => {
+        if (!vigente) return;
+        setCalificaciones({});
+        setInasistencias({ total: totalPorDefecto });
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [studentId, selectedYear, initialYear, currentAlumno, inasistenciasDetalle]);
 
   // Manejar cambio de notas
   const handleGradeChange = (materiaKey, field, value) => {
@@ -390,25 +391,19 @@ export function BoletinDigitalModal({ abierto, onCerrar, alumno }) {
     });
   };
 
-  // Guardar calificaciones en localStorage
-  const handleSave = () => {
+  // Guardar en el boletín compartido (backend): lo ven los docentes y preceptoría.
+  const handleSave = async () => {
     try {
-      const dataToSave = {
-        calificaciones,
-        inasistencias,
-        materiasPendientes,
-        libroFolio,
-        actualizadoEn: new Date().toISOString()
-      };
-      localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      await BoletinNotasService.guardar(studentId, { anio: selectedYear, calificaciones, materiasPendientes, inasistencias });
       localStorage.setItem(`prece_student_${studentId}_libro_folio`, JSON.stringify(libroFolio));
       window.dispatchEvent(new CustomEvent("prece:libro-folio-updated", { detail: { studentId, libroFolio } }));
+      window.dispatchEvent(new CustomEvent("prece:calificaciones-updated", { detail: { studentId } }));
       setToastMsg("Calificaciones guardadas correctamente");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2400);
-    } catch (e) {
-      console.error("Error al guardar calificaciones:", e);
+    } catch (fallo) {
+      setToastMsg(fallo?.mensaje || "No se pudieron guardar las calificaciones.");
     }
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2800);
   };
 
   // Buscar boletín directamente ingresando el DNI del alumno

@@ -193,71 +193,28 @@ function IconClose({ className = "w-4 h-4", width = "16", height = "16" }) {
 }
 
 /**
- * Modal para asignar o reasignar un Preceptor a un Curso y División
+ * Modal para asignar o reasignar un Preceptor a un Curso y División.
+ * Solo ofrece cuentas reales con rol Preceptor: la asignacion define que
+ * alumnos puede ver esa cuenta.
  */
-function ModalAsignarPreceptor({ abierto, division, personal, alCerrar, alGuardar }) {
+function ModalAsignarPreceptor({ abierto, division, preceptores, alCerrar, alGuardar }) {
   const [preceptorSeleccionado, setPreceptorSeleccionado] = useState("");
-  const [nombrePersonalizado, setNombrePersonalizado] = useState("");
-  const [emailPersonalizado, setEmailPersonalizado] = useState("");
   const [guardando, setGuardando] = useState(false);
 
-  // Filtrar preceptores disponibles desde el personal registrado
-  const preceptoresDisponibles = useMemo(() => {
-    const filtrados = (personal || []).filter((p) =>
-      p.roles?.some((r) => r.id === "preceptor")
-    );
-    // Si no hay suficientes registrados con rol preceptor, agregamos catálogo institucional
-    const fallback = [
-      { id: "usr-preceptor-1", nombreCompleto: "Preceptor 1° A", email: "preceptor@prece.local" },
-      { id: "usr-preceptor-2", nombreCompleto: "Carlos Ramos", email: "cramos@prece.local" },
-      { id: "usr-preceptor-3", nombreCompleto: "Lucía Giménez", email: "lgimenez@prece.local" },
-      { id: "usr-preceptor-4", nombreCompleto: "Mariano Benítez", email: "mbenitez@prece.local" },
-      { id: "usr-preceptor-5", nombreCompleto: "Valeria Morales", email: "vmorales@prece.local" }
-    ];
-
-    const combinados = [...filtrados];
-    for (const f of fallback) {
-      if (!combinados.some((c) => c.email === f.email || c.id === f.id)) {
-        combinados.push(f);
-      }
-    }
-    return combinados;
-  }, [personal]);
-
   useEffect(() => {
-    if (division?.preceptor) {
-      setPreceptorSeleccionado(division.preceptor.id || "");
-      setNombrePersonalizado(division.preceptor.nombre || "");
-      setEmailPersonalizado(division.preceptor.email || "");
-    } else {
-      setPreceptorSeleccionado(preceptoresDisponibles[0]?.id || "usr-preceptor-1");
-      setNombrePersonalizado("");
-      setEmailPersonalizado("");
-    }
-  }, [division, preceptoresDisponibles]);
+    setPreceptorSeleccionado(division?.preceptor?.id || preceptores[0]?.id || "");
+  }, [division, preceptores]);
 
   if (!abierto || !division) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const encontrado = preceptores.find((p) => p.id === preceptorSeleccionado);
+    if (!encontrado) return;
+
     setGuardando(true);
     try {
-      let datosPreceptor = null;
-      if (preceptorSeleccionado === "otro") {
-        if (!nombrePersonalizado.trim()) return;
-        datosPreceptor = {
-          id: `prec-${Date.now()}`,
-          nombreCompleto: nombrePersonalizado.trim(),
-          email: emailPersonalizado.trim() || "preceptor@prece.local"
-        };
-      } else {
-        const encontrado = preceptoresDisponibles.find((p) => p.id === preceptorSeleccionado);
-        datosPreceptor = encontrado
-          ? { id: encontrado.id, nombreCompleto: encontrado.nombreCompleto, email: encontrado.email }
-          : { id: "usr-preceptor-1", nombreCompleto: "Preceptor Designado", email: "preceptor@prece.local" };
-      }
-
-      await alGuardar(division.id, datosPreceptor);
+      await alGuardar(division.id, { id: encontrado.id, nombreCompleto: encontrado.nombreCompleto, email: encontrado.email });
       alCerrar();
     } finally {
       setGuardando(false);
@@ -313,56 +270,30 @@ function ModalAsignarPreceptor({ abierto, division, personal, alCerrar, alGuarda
           : null,
 
         // Selección de preceptor
-        h(
-          "div",
-          { className: "form-group" },
-          h("label", { className: "form-label" }, "Seleccionar Preceptor del Personal:"),
-          h(
-            "select",
-            {
-              className: "director-filter-select w-full",
-              value: preceptorSeleccionado,
-              onChange: (e) => setPreceptorSeleccionado(e.target.value)
-            },
-            preceptoresDisponibles.map((p) =>
-              h("option", { key: p.id, value: p.id }, `${p.nombreCompleto} (${p.email})`)
-            ),
-            h("option", { value: "otro" }, "➕ Asignar otro preceptor / nuevo nombre...")
-          )
-        ),
-
-        // Campos manuales si seleccionó "otro"
-        preceptorSeleccionado === "otro"
+        preceptores.length
           ? h(
               "div",
-              { className: "asignaciones-custom-fields" },
+              { className: "form-group" },
+              h("label", { className: "form-label", htmlFor: "asignar-preceptor" }, "Seleccionar Preceptor del Personal:"),
               h(
-                "div",
-                { className: "form-group" },
-                h("label", { className: "form-label" }, "Nombre y Apellido del Preceptor:"),
-                h("input", {
-                  type: "text",
-                  className: "search-input",
-                  placeholder: "Ej. Martín Rodríguez",
-                  value: nombrePersonalizado,
-                  onChange: (e) => setNombrePersonalizado(e.target.value),
-                  required: true
-                })
+                "select",
+                {
+                  id: "asignar-preceptor",
+                  className: "director-filter-select w-full",
+                  value: preceptorSeleccionado,
+                  onChange: (e) => setPreceptorSeleccionado(e.target.value)
+                },
+                preceptores.map((p) =>
+                  h("option", { key: p.id, value: p.id }, `${p.nombreCompleto} (${p.email})`)
+                )
               ),
-              h(
-                "div",
-                { className: "form-group" },
-                h("label", { className: "form-label" }, "Correo Institucional:"),
-                h("input", {
-                  type: "email",
-                  className: "search-input",
-                  placeholder: "mrodriguez@prece.local",
-                  value: emailPersonalizado,
-                  onChange: (e) => setEmailPersonalizado(e.target.value)
-                })
-              )
+              h("p", { className: "director-modal-subtitle" }, "El preceptor va a ver solo los alumnos de las divisiones que tenga asignadas.")
             )
-          : null,
+          : h(
+              "p",
+              { className: "asignaciones-current-info" },
+              "No hay cuentas con el rol Preceptor. Creá el perfil desde la sección Personal y volvé a esta pantalla."
+            ),
 
         // Botones de acción
         h(
@@ -375,7 +306,7 @@ function ModalAsignarPreceptor({ abierto, division, personal, alCerrar, alGuarda
           ),
           h(
             "button",
-            { type: "submit", className: "btn-director-primary", disabled: guardando },
+            { type: "submit", className: "btn-director-primary", disabled: guardando || !preceptores.length },
             guardando ? "Guardando..." : "Confirmar Asignación"
           )
         )
@@ -620,6 +551,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
   const [filtroTurnoPreceptores, setFiltroTurnoPreceptores] = useState("todos");
   const [filtroEstadoPreceptores, setFiltroEstadoPreceptores] = useState("todos");
   const [divisionParaAsignar, setDivisionParaAsignar] = useState(null);
+  const [preceptoresDisponibles, setPreceptoresDisponibles] = useState([]);
 
   // Estado de Profesores
   const [catedrasProfesores, setCatedrasProfesores] = useState([]);
@@ -636,10 +568,11 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
     const cargar = async () => {
       try {
         const [precData, profData] = await Promise.all([
-          DirectorService.listarAsignacionesPreceptores(),
+          DirectorService.obtenerAsignacionesPreceptores(),
           DirectorService.listarAsignacionesProfesores()
         ]);
-        setDivisionesPreceptores(precData);
+        setDivisionesPreceptores(precData.divisiones);
+        setPreceptoresDisponibles(precData.preceptores);
         setCatedrasProfesores(profData);
       } catch {
         // Silencioso
@@ -1359,7 +1292,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast }) {
       ? h(ModalAsignarPreceptor, {
           abierto: Boolean(divisionParaAsignar),
           division: divisionParaAsignar,
-          personal,
+          preceptores: preceptoresDisponibles,
           alCerrar: () => setDivisionParaAsignar(null),
           alGuardar: handleGuardarPreceptor
         })

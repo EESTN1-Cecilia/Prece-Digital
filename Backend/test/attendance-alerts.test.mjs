@@ -5,6 +5,7 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { seedAttendanceAlerts } from "../database/seeds/attendance-alerts.seed.mjs";
+import { asignarTodasLasDivisiones } from "./helpers.mjs";
 import attendanceAlertsRepository from "../modules/attendance-alerts/attendance-alerts.repository.mjs";
 import notificationsRepository from "../modules/notifications/notifications.repository.mjs";
 import studentRepository from "../modules/students/students.repository.mjs";
@@ -60,6 +61,7 @@ function notificacionesDe(alertaId) {
 before(async () => {
   await seedAuthData();
   seedAttendanceAlerts();
+  asignarTodasLasDivisiones();
   servidor = createApp(apiRoutes);
   await new Promise((listo) => servidor.listen(PUERTO, listo));
   director = await login("director@prece.local", "Director123!");
@@ -1227,10 +1229,12 @@ test("un usuario de otra escuela no ve alertas ni inasistencias ajenas", async (
   const resumen = await pedir("GET", "/api/v1/alumnos/alu-19/alertas/resumen", otro);
   const porAlumno = await pedir("GET", "/api/v1/alumnos/alu-19/alertas", otro);
 
-  assert.equal(alertas.cuerpo.paginacion.total, 0);
+  /* El preceptor de la otra escuela no tiene divisiones asignadas: el alcance
+     por curso lo frena antes de buscar el alumno. */
+  assert.equal(alertas.status, 403);
   assert.equal(detalle.status, 404);
-  assert.equal(resumen.status, 404);
-  assert.equal(porAlumno.status, 404);
+  assert.equal(resumen.status, 403);
+  assert.equal(porAlumno.status, 403);
 });
 
 test("un usuario de otra escuela no puede modificar ni dar de baja una inasistencia ajena", async () => {

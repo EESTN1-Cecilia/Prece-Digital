@@ -1,12 +1,13 @@
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
-import { errorHttp } from "../../utils/api-error.mjs";
+import { errorDeValidacion, errorHttp } from "../../utils/api-error.mjs";
 import { permissionsForRole } from "../../config/permissions.config.mjs";
 import { evaluateAccess, extractContext, resumenPermisos } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
 import { obtenerIpCliente, registrarFalloLogin, registrarLoginExitoso, revisarLogin } from "./login-throttle.service.mjs";
 
 const dummyHashPromise = bcrypt.hash("__dummy_password__", 10);
+const CLAVE_MINIMA = 8;
 
 function rolesFromAssignments(assignments = []) {
   return [...new Set(assignments.map((assignment) => assignment.role))];
@@ -56,11 +57,17 @@ export const authService = {
     const hash = user?.passwordHash ?? (await dummyHashPromise);
     const matches = await bcrypt.compare(password, hash);
 
-    if (!user || !matches || !user.isActive) {
+    if (!user || !matches) {
       /* El fallo se cuenta por IP siempre, y por cuenta solo cuando la cuenta
          existe, para no permitir bloquear emails inexistentes. */
       registrarFalloLogin(email, ip, { trackEmail: Boolean(user) });
       throw errorHttp(401, "INVALID_CREDENTIALS", "Credenciales inválidas o cuenta desactivada");
+    }
+
+    /* Solo se informa la baja a quien ya demostro conocer la contraseña: no
+       permite averiguar que cuentas existen. */
+    if (!user.isActive) {
+      throw errorHttp(403, "ACCOUNT_INACTIVE", "La cuenta está dada de baja. Comunicate con Dirección para reactivarla.");
     }
 
     registrarLoginExitoso(email);
@@ -90,6 +97,53 @@ export const authService = {
 
   me(user) {
     return sessionData(user);
+  },
+
+  /* Cambio de clave del propio usuario. Es la unica operacion habilitada
+     mientras la cuenta tiene la clave provisoria (el DNI). Pide la clave
+     actual, guarda solo el hash de la nueva, quita la marca y cierra las demas
+     sesiones; devuelve una sesion nueva para seguir sin volver a ingresar. */
+  async cambiarClave(user, { actual, nueva } = {}) {
+    const completo = userRepository.findById(user.id);
+
+    if (!completo) {
+      throw errorHttp(401, "ACCOUNT_INACTIVE", "La cuenta no está activa");
+    }
+
+    const errores = [];
+    const claveNueva = typeof nueva === "string" ? nueva : "";
+
+    if (typeof actual !== "string" || !actual) {
+      errores.push({ field: "actual", message: "Ingresá tu clave actual." });
+    }
+
+    if (claveNueva.length < CLAVE_MINIMA) {
+      errores.push({ field: "nueva", message: `La nueva clave debe tener al menos ${CLAVE_MINIMA} caracteres.` });
+    } else if (!/[A-Za-z]/.test(claveNueva) || !/\d/.test(claveNueva)) {
+      errores.push({ field: "nueva", message: "La nueva clave debe combinar letras y números." });
+    } else if (completo.dni && claveNueva.includes(completo.dni)) {
+      errores.push({ field: "nueva", message: "La nueva clave no puede contener tu DNI." });
+    }
+
+    if (errores.length) {
+      throw errorDeValidacion(errores);
+    }
+
+    if (!(await bcrypt.compare(actual, completo.passwordHash))) {
+      throw errorHttp(422, "VALIDATION_ERROR", "La clave actual no es correcta.", [{ field: "actual", message: "La clave actual no es correcta." }]);
+    }
+
+    if (await bcrypt.compare(claveNueva, completo.passwordHash)) {
+      throw errorHttp(422, "VALIDATION_ERROR", "La nueva clave tiene que ser distinta de la actual.", [{ field: "nueva", message: "Tiene que ser distinta de la actual." }]);
+    }
+
+    const actualizado = userRepository.update(completo.id, {
+      passwordHash: await bcrypt.hash(claveNueva, 10),
+      debeCambiarClave: false
+    });
+
+    revokeUserSessions(completo.id);
+    return sessionPayload(actualizado, signAccessToken(actualizado), createRefreshToken(actualizado.id));
   },
 
   /* Roles, permisos y resumen por modulo del usuario autenticado. Se calculan en

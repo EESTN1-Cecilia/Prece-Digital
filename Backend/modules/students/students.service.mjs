@@ -1,4 +1,5 @@
 import studentRepository from "./students.repository.mjs";
+import { alumnoEnCursos, cursosPermitidos } from "../auth/alcance-cursos.service.mjs";
 import workshopsRepository from "../workshops/workshops.repository.mjs";
 import { conflicto, errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
 import {
@@ -53,6 +54,11 @@ function texto(valor, maximo = 120) {
   if (valor == null) return null;
   const limpio = String(valor).trim();
   return limpio === "" ? null : limpio.slice(0, maximo);
+}
+
+/* "30.123.456" -> "30123456". Usado por la importacion masiva. */
+function soloDigitos(valor) {
+  return String(valor ?? "").replace(/\D/g, "");
 }
 
 function esRequerido(valor) {
@@ -539,6 +545,12 @@ const studentService = {
       registros = registros.filter((registro) => edadDe(registro.fechaNacimiento) === edad);
     }
 
+    /* Un docente solo ve alumnos de sus cursos asignados. */
+    const permitidos = cursosPermitidos(user);
+    if (permitidos) {
+      registros = registros.filter((registro) => alumnoEnCursos(registro, permitidos));
+    }
+
     const total = registros.length;
     const offset = (pagina - 1) * porPagina;
     const datos = registros.slice(offset, offset + porPagina).map(vista);
@@ -668,7 +680,10 @@ function armarListado({ user, contexto, criterios, opciones }) {
     criterios: { estado: opciones.soloActivos ? "activo" : "todos", ...criterios },
     orden: opciones.orden
   });
-  const filtrados = criterios.filtro ? registros.filter(criterios.filtro) : registros;
+  const permitidos = cursosPermitidos(user);
+  const filtrados = registros.filter(
+    (registro) => (!criterios.filtro || criterios.filtro(registro)) && alumnoEnCursos(registro, permitidos)
+  );
   const offset = (opciones.pagina - 1) * opciones.porPagina;
 
   return {
@@ -780,9 +795,13 @@ export function listarPorGrupo({ url, user }) {
    Es la fuente del directorio de cursos del frontend. */
 export function resumenDivisiones(user) {
   const registros = studentRepository.search({ escuelaId: escuelaDel(user), criterios: { estado: "todos" }, orden: "curso" });
+  const permitidos = cursosPermitidos(user);
+  const catalogo = permitidos
+    ? DIVISIONES_CATALOGO.filter(({ anio, division }) => permitidos.has(`${anio}-${division}`))
+    : DIVISIONES_CATALOGO;
 
   return {
-    data: DIVISIONES_CATALOGO.map(({ anio, division, turno, orientacion }) => {
+    data: catalogo.map(({ anio, division, turno, orientacion }) => {
       const propios = registros.filter((registro) => registro.curso === anio && registro.division === division);
       const activos = propios.filter((registro) => registro.isActive).length;
 

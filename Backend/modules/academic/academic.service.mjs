@@ -986,7 +986,7 @@ const academicService = {
 
   /* ---------------- Consultas de alumnos, materias, docentes, horarios --- */
 
-  listAlumnosDeCurso(cursoId, query) {
+  listAlumnosDeCurso(cursoId, query, { divisionesPermitidas = null } = {}) {
     const curso = academicRepository.findCursoById(cursoId);
 
     if (!curso) {
@@ -1003,6 +1003,7 @@ const academicService = {
     const alumnos = academicRepository
       .listMatricula({ cursoId })
       .filter((matricula) => matricula.isActive)
+      .filter((matricula) => !divisionesPermitidas || divisionesPermitidas.has(matricula.divisionId))
       .map((matricula) => {
         const estudiante = academicRepository.findStudentRefById(matricula.estudianteId);
 

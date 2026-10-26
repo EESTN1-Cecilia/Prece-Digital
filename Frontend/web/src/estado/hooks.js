@@ -33,6 +33,9 @@ export function useSesion() {
     aplicacionLista: estado.fase === FASE.lista,
     refrescar: acciones.refrescarSesion,
     iniciarSesion: acciones.iniciarSesion,
+    cambiarClave: acciones.cambiarClave,
+    /* Clave provisoria pendiente: el guardia solo deja ver el cambio de clave. */
+    debeCambiarClave: sesion.estado === SESION.autenticada && Boolean(sesion.usuario?.debeCambiarClave),
     cerrarSesion: acciones.cerrarSesion
   };
 }

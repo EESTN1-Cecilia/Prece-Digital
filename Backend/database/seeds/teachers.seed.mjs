@@ -27,6 +27,7 @@ const DOCENTES = [
     telefono: "11 5555-0001",
     titulo: "Profesora de Matemática",
     especialidades: ["Matemática"],
+    area: "exactas",
     estado: "activo"
   },
   {
@@ -39,6 +40,7 @@ const DOCENTES = [
     telefono: null,
     titulo: "Profesor de Historia",
     especialidades: ["Historia", "Ciencias Sociales"],
+    area: "docencia",
     estado: "activo"
   },
   {
@@ -51,6 +53,7 @@ const DOCENTES = [
     telefono: "11 5555-0003",
     titulo: "Técnica en Programación",
     especialidades: ["Programación", "Bases de Datos"],
+    area: "informatica",
     estado: "activo"
   },
   {
@@ -63,6 +66,7 @@ const DOCENTES = [
     telefono: null,
     titulo: "Profesor de Lengua",
     especialidades: ["Lengua", "Literatura"],
+    area: "docencia",
     estado: "activo"
   },
   {
@@ -75,6 +79,7 @@ const DOCENTES = [
     telefono: null,
     titulo: "Profesora de Educación Física",
     especialidades: ["Ed. Física"],
+    area: "docencia",
     estado: "inactivo",
     fechaBaja: "2025-12-20T00:00:00.000Z"
   }

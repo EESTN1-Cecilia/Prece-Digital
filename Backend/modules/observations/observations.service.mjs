@@ -1,4 +1,6 @@
 import { errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
+import { alumnoEnCursos, cursosPermitidos } from "../auth/alcance-cursos.service.mjs";
+import studentRepository from "../students/students.repository.mjs";
 import observationsRepository from "./observations.repository.mjs";
 import {
   ACCION_MAXIMA,
@@ -488,9 +490,11 @@ const observationsService = {
       throw errorDeValidacion(errores);
     }
 
+    const permitidos = cursosPermitidos(user);
     const lista = ordenar(
       observationsRepository
         .listObservations({ escuelaId: escuelaDel(user), alumnoId, tipo, estado, sector, desde, hasta, q })
+        .filter((registro) => !permitidos || alumnoEnCursos(studentRepository.findById(registro.alumnoId), permitidos))
         .map(vistaObservacion),
       ORDENES_OBSERVACIONES[orden]
     );

@@ -1,0 +1,1282 @@
+/* ==========================================================================
+   PORTAL DOCENTE
+   Identidad institucional en azules y celestes (sin verdes), con una
+   organizacion mas simple que los tableros administrativos: pocas opciones,
+   grandes y claras para usar en clase. Los tokens toman los colores del
+   proyecto (variables.css) cuando existen.
+   ========================================================================== */
+
+/* Tokens del portal en :root: los modales se montan en <body>, fuera de
+   .portal, y tambien los usan. */
+:root {
+  --portal-navy: var(--navy, #232d50);
+  --portal-azul: #2864f0;
+  --portal-azul-fuerte: #1f4fc4;
+  --portal-azul-medio: #438bfa;
+  --portal-celeste: #69c7e8;
+  --portal-celeste-claro: #e8f6ff;
+  --portal-celeste-borde: #b9e3f5;
+  --portal-fondo: #f1f5f9;
+  --portal-texto: #172033;
+  --portal-texto-suave: #71829d;
+  --portal-borde: #dce5f0;
+  --portal-acento: var(--portal-azul);
+  --portal-acento-fuerte: var(--portal-azul-fuerte);
+  --portal-acento-suave: var(--portal-celeste-claro);
+}
+
+.portal {
+  /* Los componentes compartidos (alertas, badges) usan --ui-ok para "exito":
+     dentro del portal ese tono es azul. */
+  --ui-ok: var(--portal-azul);
+  --ui-ok-suave: var(--portal-celeste-claro);
+  width: calc(100% - 48px);
+  max-width: 1400px;
+  margin: 16px auto 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+/* ---- Banda de identidad y navegacion ---- */
+
+.portal__banda {
+  position: relative;
+  /* Recorta la insignia decorativa a las esquinas redondeadas. */
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(120deg, var(--portal-navy) 0%, #2a3768 65%, var(--portal-azul-fuerte) 100%);
+  color: #ffffff;
+  border-radius: 22px;
+  padding: 20px 28px 20px 96px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.35);
+}
+
+/* Insignia institucional de fondo en el lateral izquierdo: capa decorativa
+   (no recibe clics), con poca opacidad, un leve desenfoque y una mascara que
+   la desvanece hacia la derecha. `contain` conserva sus proporciones. */
+.portal__banda::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -10px;
+  top: 50%;
+  width: 128px;
+  height: 128px;
+  transform: translateY(-50%) rotate(-8deg);
+  background: url("/assets/icons/avatar.svg") no-repeat left center / contain;
+  opacity: 0.42;
+  /* El contorno azul oscuro de la insignia se pierde sobre el navy: se aclara
+     un poco para que la forma se lea como una marca de agua. */
+  filter: brightness(1.35) blur(0.5px);
+  /* Llega a transparente antes del borde de la capa para que no se vea el
+     corte del recuadro. */
+  -webkit-mask-image: linear-gradient(to right, #000 15%, rgba(0, 0, 0, 0.5) 45%, transparent 78%);
+  mask-image: linear-gradient(to right, #000 15%, rgba(0, 0, 0, 0.5) 45%, transparent 78%);
+  pointer-events: none;
+}
+
+.portal__identidad {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  /* Sombra suave: el texto se lee igual sobre la insignia. */
+  text-shadow: 0 1px 8px rgba(15, 23, 42, 0.45);
+}
+
+.portal__eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--portal-celeste);
+}
+
+.portal__docente {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.portal__nav {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 4px;
+}
+
+.portal__nav-item {
+  color: #e2e8f0;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 14px;
+  border-radius: 10px;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.portal__nav-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.portal__nav-item--activo {
+  background: #ffffff;
+  color: var(--portal-navy);
+}
+
+.portal__nav-item:focus-visible,
+.portal-boton:focus-visible,
+.portal-clase-opcion:focus-visible,
+.portal-estado__opcion:focus-visible,
+.portal-acceso:focus-visible {
+  outline: 3px solid var(--portal-celeste);
+  outline-offset: 2px;
+}
+
+/* ---- Contenido ---- */
+
+.portal__contenido {
+  background: #ffffff;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  border-radius: 24px;
+  padding: 24px 28px 32px;
+  box-shadow: 0 10px 36px -8px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.portal__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.portal__titulo {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.portal__bajada {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: #64748b;
+  max-width: 720px;
+}
+
+.portal__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---- Botones y enlaces ---- */
+
+.portal-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 11px;
+  background: var(--portal-acento);
+  color: #ffffff;
+  border: 1px solid var(--portal-acento);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.portal-boton:hover {
+  background: var(--portal-acento-fuerte);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.portal-boton--contorno {
+  background: #ffffff;
+  color: var(--portal-acento-fuerte);
+}
+
+.portal-boton--contorno:hover {
+  background: var(--portal-acento-suave);
+  color: var(--portal-acento-fuerte);
+}
+
+.portal-boton--chico {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.portal-enlace {
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* ---- Indicadores ---- */
+
+.portal-indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: 12px;
+}
+
+.portal-indicador {
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid transparent;
+}
+
+.portal-indicador__etiqueta {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.portal-indicador__valor {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.portal-indicador__detalle {
+  font-size: 12px;
+  color: #475569;
+}
+
+.portal-indicador--verde { background: var(--portal-celeste-claro); border-color: var(--portal-celeste-borde); color: var(--portal-azul-fuerte); }
+.portal-indicador--azul { background: #eef4ff; border-color: #c9dafc; color: var(--portal-azul); }
+.portal-indicador--violeta { background: #ffffff; border-color: var(--portal-borde); color: var(--portal-navy); }
+.portal-indicador--ambar { background: var(--portal-fondo); border-color: var(--portal-borde); color: #3b4a66; }
+.portal-indicador--celeste { background: #f0f9ff; border-color: #bfe8f7; color: #0b6e99; }
+
+/* ---- Paneles del inicio ---- */
+
+.portal-inicio {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.portal-inicio__columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.portal-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.portal-panel__titulo {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.portal-panel__titulo--separado {
+  margin-top: 8px;
+}
+
+.portal-panel__texto {
+  margin: 0;
+  font-size: 13.5px;
+  color: #334155;
+}
+
+.portal-panel__texto--suave {
+  margin: 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.portal-clases-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portal-clases-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.portal-clases-lista strong {
+  display: block;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.portal-clases-lista span {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.portal-clases-lista__acciones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.portal-accesos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portal-acceso {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--portal-celeste-borde);
+  background: var(--portal-celeste-claro);
+  text-decoration: none;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.portal-acceso:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(40, 100, 240, 0.14);
+}
+
+.portal-acceso strong {
+  color: var(--portal-acento-fuerte);
+  font-size: 14px;
+}
+
+.portal-acceso span {
+  color: #475569;
+  font-size: 12.5px;
+}
+
+/* ---- Mis Cursos ---- */
+
+.portal-cursos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 14px;
+}
+
+.portal-curso {
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid var(--portal-acento);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.portal-curso__cabecera {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.portal-curso__anio {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--portal-acento-suave);
+  color: var(--portal-acento-fuerte);
+  font-weight: 800;
+  font-size: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portal-curso__materia {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.portal-curso__division {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.portal-curso__datos {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.portal-curso__dato dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.portal-curso__dato dd {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.portal-curso__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+/* ---- Pestañas y filtros ---- */
+
+.portal-pestanas {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.portal-pestanas__btn {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.portal-pestanas__btn--activa {
+  background: #ffffff;
+  color: var(--portal-acento-fuerte);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.portal-filtros {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.portal-filtros__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.portal-filtros__campo input,
+.portal-filtros__campo select {
+  min-height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.portal-tabla td,
+.portal-tabla th {
+  white-space: normal;
+}
+
+/* ---- Flujo de toma de asistencia ---- */
+
+.portal-flujo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.portal-paso {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.portal-paso__titulo {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.portal-paso__numero {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--portal-navy);
+  color: #ffffff;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portal-clases-opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 8px;
+}
+
+.portal-clase-opcion {
+  text-align: left;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.portal-clase-opcion strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.portal-clase-opcion span {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.portal-clase-opcion--activa {
+  border-color: var(--portal-acento);
+  background: var(--portal-celeste-claro);
+  box-shadow: inset 0 0 0 1px var(--portal-acento);
+}
+
+.portal-fecha input {
+  max-width: 220px;
+}
+
+.portal-lista-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.portal-lista-asistencia {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portal-lista-asistencia li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.portal-lista-asistencia__pendiente {
+  border-color: #fde68a !important;
+  background: #fffbeb !important;
+}
+
+.portal-lista-asistencia__orden {
+  width: 26px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.portal-lista-asistencia__nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.portal-estado {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.portal-estado__opcion {
+  min-width: 44px;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.portal-estado__opcion:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.portal-estado__largo {
+  font-weight: 600;
+}
+
+.portal-estado__opcion--presente.portal-estado__opcion--activa { background: var(--portal-celeste-claro); border-color: var(--portal-azul); color: var(--portal-azul-fuerte); }
+.portal-estado__opcion--ausente.portal-estado__opcion--activa { background: var(--portal-navy); border-color: var(--portal-navy); color: #ffffff; }
+.portal-estado__opcion--tarde.portal-estado__opcion--activa { background: #eef2f7; border-color: #8a9bb8; color: #33415c; }
+
+.portal-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.portal-resumen__chip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.portal-resumen__chip--presente { background: var(--portal-celeste-claro); color: var(--portal-azul-fuerte); }
+.portal-resumen__chip--ausente { background: var(--portal-navy); color: #ffffff; }
+.portal-resumen__chip--tarde { background: #eef2f7; color: #33415c; }
+
+.portal-guardar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---- Historial ---- */
+
+.portal-historial {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.portal-tomas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portal-tomas__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.portal-tomas__info {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.portal-tomas__info strong {
+  font-size: 14px;
+  color: #0f172a;
+  text-transform: capitalize;
+}
+
+.portal-tomas__info span {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.portal-tomas__corregida {
+  color: var(--portal-azul) !important;
+  font-weight: 700;
+}
+
+.portal-toma {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.portal-toma__meta {
+  margin: 0;
+  font-weight: 700;
+  color: #334155;
+}
+
+.portal-toma__historial ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: #475569;
+}
+
+/* ---- Login del portal ---- */
+
+.portal-login {
+  min-height: calc(100vh - 220px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+}
+
+.portal-login__tarjeta {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  border-top: 6px solid #2864f0;
+  box-shadow: 0 20px 50px -18px rgba(15, 23, 42, 0.3);
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.portal-login__marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.portal-login__escudo {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.portal-login__eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #2864f0;
+}
+
+.portal-login__titulo {
+  margin: 2px 0 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #222a4c;
+}
+
+.portal-login__bajada {
+  margin: 0;
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.portal-login__alerta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.portal-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.portal-login__campo label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.portal-login__control {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.portal-login__control:focus-within {
+  border-color: #2864f0;
+  box-shadow: 0 0 0 3px rgba(40, 100, 240, 0.18);
+}
+
+.portal-login__control input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 15px;
+  background: transparent;
+}
+
+.portal-login__ver {
+  border: none;
+  background: transparent;
+  color: #2864f0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 0 14px;
+  cursor: pointer;
+  align-self: stretch;
+}
+
+.portal-login__error-campo {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+.portal-login__ingresar {
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: #2864f0;
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 140ms ease;
+}
+
+.portal-login__ingresar:hover:not(:disabled) {
+  background: #1f4fc4;
+}
+
+.portal-login__ingresar:disabled {
+  opacity: 0.8;
+  cursor: progress;
+}
+
+.portal-login__ingresar:focus-visible {
+  outline: 3px solid var(--portal-celeste);
+  outline-offset: 2px;
+}
+
+.portal-login__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  animation: portalGiro 700ms linear infinite;
+}
+
+@keyframes portalGiro {
+  to { transform: rotate(360deg); }
+}
+
+.portal-login__pie {
+  margin: 0;
+  font-size: 12.5px;
+  color: #64748b;
+  text-align: center;
+}
+
+/* ---- Impresion de la lista de alumnos ----
+   La hoja Oficio, la escala y el ocultamiento de la interfaz son el criterio
+   comun (styles/base/impresion.css). Aca solo la tabla de la lista: ancho
+   completo, filas parejas, encabezados visibles y bordes discretos. */
+
+html.modo-impresion .portal-lista-impresa .portal-tabla {
+  width: 100% !important;
+  font-size: 11px !important;
+}
+
+html.modo-impresion .portal-lista-impresa .portal-tabla th,
+html.modo-impresion .portal-lista-impresa .portal-tabla td {
+  border: 0.2mm solid #9ca3af !important;
+  padding: 1.4mm 2mm !important;
+  color: #111827 !important;
+  background: #ffffff !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+}
+
+html.modo-impresion .portal-lista-impresa .portal-tabla thead th {
+  background: #e5e7eb !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+}
+
+html.modo-impresion .portal-lista-impresa .portal-tabla tbody tr:nth-child(even) td {
+  background: #f9fafb !important;
+}
+
+html.modo-impresion .portal-lista-impresa .portal-tabla :is(th, td):first-child {
+  width: 10mm !important;
+  text-align: center !important;
+}
+
+html.modo-impresion .portal-lista-impresa .portal-lista-total {
+  margin: 2.5mm 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 900px) {
+  .portal-inicio__columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .portal {
+    width: calc(100% - 32px);
+  }
+
+  .portal__banda {
+    padding: 18px 20px 18px 84px;
+  }
+
+  .portal__banda::before {
+    width: 132px;
+    height: 132px;
+  }
+}
+
+@media (max-width: 640px) {
+  .portal {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  /* Banda en dos pisos: la insignia acompaña la identidad (arriba a la
+     izquierda) y el menu ocupa todo el ancho abajo. */
+  .portal__banda {
+    padding: 16px 16px 14px 76px;
+  }
+
+  .portal__banda::before {
+    top: 4px;
+    left: -12px;
+    width: 84px;
+    height: 84px;
+    transform: rotate(-8deg);
+  }
+
+  .portal__banda .portal__nav {
+    margin-left: -60px;
+    width: calc(100% + 60px);
+  }
+
+  .portal__contenido {
+    padding: 18px 16px 24px;
+  }
+
+  .portal__nav {
+    width: 100%;
+  }
+
+  .portal__nav-item {
+    flex: 1;
+    text-align: center;
+    padding: 9px 8px;
+    font-size: 12.5px;
+  }
+
+  .portal-lista-asistencia li {
+    flex-wrap: wrap;
+  }
+
+  .portal-lista-asistencia__nombre {
+    flex-basis: calc(100% - 40px);
+  }
+
+  .portal-estado {
+    width: 100%;
+  }
+
+  .portal-estado__opcion {
+    flex: 1;
+  }
+
+  .portal-curso__datos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ==========================================================================
+   PLANILLA MENSUAL INSTITUCIONAL DENTRO DEL PORTAL
+   Misma estructura que la de Preceptoria (asistencias.css); aca solo se
+   cambian los colores a la paleta azul y celeste. Los estados siguen
+   identificandose por su letra (P, A, T, J), no solo por el color.
+   ========================================================================== */
+
+/* Dentro del portal la planilla ya esta en la tarjeta blanca del contenido:
+   sin el margen ni el borde de tarjeta propios de la pantalla de Preceptoria. */
+.portal:has(.portal-planilla) .portal__contenido {
+  padding: 12px 16px 16px;
+  gap: 10px;
+}
+
+.portal-planilla .asistencias-page {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  gap: 10px;
+}
+
+.portal-planilla .secretaria-top-bar,
+.portal-planilla .secretaria-title-row,
+.portal-planilla .asistencias-section-label {
+  display: none;
+}
+
+/* Curso, mes e imprimir en una sola fila: el encabezado de la planilla
+   identifica el curso y el periodo. */
+.portal-planilla .asistencias-controls-panel,
+.portal-planilla .asistencias-controls-panel--portal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+
+.portal-planilla .asistencias-cursos-tabs-wrapper {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.portal-planilla .asistencias-actions-bar {
+  padding-top: 0;
+  border-top: none;
+  margin-left: auto;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.portal-planilla .asistencias-mes-selector-group {
+  min-width: 148px;
+}
+
+.portal-planilla .tabla-registro-asistencias thead th {
+  background: #e8f0fb !important;
+  color: var(--portal-navy);
+}
+
+.portal-planilla .tabla-registro-asistencias .th-dia-weekend {
+  background: #dce5f0 !important;
+  color: var(--portal-texto-suave);
+}
+
+.portal-planilla .th-col-asistencia,
+.portal-planilla .th-col-porcentaje-asist {
+  background: var(--portal-celeste-claro) !important;
+  color: var(--portal-azul-fuerte) !important;
+}
+
+.portal-planilla .th-col-inasistencia-group,
+.portal-planilla .th-sub-in,
+.portal-planilla .th-col-total-inasist {
+  background: #eef2f7 !important;
+  color: var(--portal-navy) !important;
+}
+
+.portal-planilla .td-section-banner {
+  background: var(--portal-navy) !important;
+  color: #ffffff !important;
+}
+
+.portal-planilla .cell-presente {
+  background: var(--portal-celeste-claro) !important;
+  color: var(--portal-azul-fuerte) !important;
+}
+
+.portal-planilla .cell-ausente {
+  background: var(--portal-navy) !important;
+  color: #ffffff !important;
+}
+
+.portal-planilla .cell-tarde {
+  background: #eef2f7 !important;
+  color: #33415c !important;
+}
+
+.portal-planilla .cell-justificada {
+  background: #e3e9ff !important;
+  color: #3043a8 !important;
+}
+
+.portal-planilla .td-presentes,
+.portal-planilla .td-porcentaje.pct-good {
+  background: var(--portal-celeste-claro) !important;
+  color: var(--portal-azul-fuerte) !important;
+}
+
+.portal-planilla .td-porcentaje.pct-warning {
+  background: #eef2f7 !important;
+  color: #33415c !important;
+}
+
+.portal-planilla .td-porcentaje.pct-danger {
+  background: #e3e9ff !important;
+  color: var(--portal-navy) !important;
+  font-weight: 800;
+}
+
+.portal-planilla .tr-total-general td {
+  background: #e8f0fb;
+}
+
+.portal-planilla .save-pill-badge {
+  background: var(--portal-celeste-claro);
+  color: var(--portal-azul-fuerte);
+  border-color: var(--portal-celeste-borde);
+}
+
+.portal-planilla .asistencia-curso-pill.active {
+  background: var(--portal-azul);
+  border-color: var(--portal-azul);
+}
+
+.portal-planilla .asistencia-curso-pill {
+  min-height: 38px;
+  padding: 6px 12px;
+}
+
+.portal-planilla .btn-asistencias-accion {
+  min-height: 38px;
+  height: 38px;
+}
+
+/* La barra de cambios se monta en <body>, fuera de .portal: se identifica por
+   su propia clase. */
+.asistencias-floating-bar--portal .btn-floating-save {
+  background: #2864f0;
+}
+
+.asistencias-floating-bar--portal .btn-floating-save:hover:not(:disabled) {
+  background: #1f4fc4;
+}
+
+.asistencias-floating-bar--portal .btn-floating-save:active:not(:disabled) {
+  background: #232d50;
+}
+
+.asistencias-floating-bar--portal .btn-floating-save:focus-visible,
+.asistencias-floating-bar--portal .btn-floating-cancel:focus-visible {
+  outline: 3px solid #69c7e8;
+  outline-offset: 2px;
+}

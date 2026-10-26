@@ -8,6 +8,7 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { resetStore } from "../database/memory-store.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
+import { asignarTodasLasDivisiones } from "./helpers.mjs";
 
 const PUERTO = 4013;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -35,6 +36,7 @@ async function login(email, password) {
 beforeEach(async () => {
   resetStore();
   await seedDesarrollo();
+  asignarTodasLasDivisiones();
   tokens.secretario = await login("secretario@prece.local", "Secretaria123!");
   tokens.preceptor = await login("preceptor@prece.local", "Preceptor123!");
   tokens.docente = await login("docente@prece.local", "Docente123!");
@@ -182,11 +184,11 @@ test("historial y resumen del alumno", async () => {
 });
 
 test("alumno sin observaciones responde vacio", async () => {
-  const listado = await pedir("GET", "/api/v1/students/alu-2/observations", "docente");
+  const listado = await pedir("GET", "/api/v1/students/alu-2/observations", "preceptor");
   assert.equal(listado.status, 200);
   assert.deepEqual(listado.cuerpo.data, []);
 
-  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/observaciones/resumen", "docente");
+  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/observaciones/resumen", "preceptor");
   assert.equal(resumen.cuerpo.data.tieneObservaciones, false);
   assert.equal(resumen.cuerpo.data.total, 0);
 });

@@ -1,4 +1,15 @@
 import academicService from "./academic.service.mjs";
+import academicRepository from "./academic.repository.mjs";
+import { cursosPermitidos } from "../auth/alcance-cursos.service.mjs";
+import { errorHttp } from "../../utils/api-error.mjs";
+
+/* Clave "<anio>-<division>" de una division del catalogo academico. */
+function claveDivision(division) {
+  const curso = division?.cursoId ? academicRepository.findCursoById(division.cursoId) : null;
+  const anio = curso?.anio ?? division?.anio;
+  const numero = /(\d+)/.exec(String(division?.nombre ?? ""))?.[1];
+  return anio && numero ? `${anio}-${numero}` : null;
+}
 
 function query(url) {
   return Object.fromEntries(url.searchParams.entries());
@@ -68,8 +79,18 @@ export function listDivisionesDeCurso({ params, url }) {
   return academicService.listDivisionesDeCurso(params.cursoId, query(url));
 }
 
-export function listAlumnosDeCurso({ params, url }) {
-  return academicService.listAlumnosDeCurso(params.cursoId, query(url));
+export function listAlumnosDeCurso({ params, url, user }) {
+  const permitidos = cursosPermitidos(user);
+  const divisionesPermitidas = permitidos
+    ? new Set(
+        academicRepository
+          .listDivisiones({ cursoId: params.cursoId })
+          .filter((division) => permitidos.has(claveDivision(division)))
+          .map((division) => division.id)
+      )
+    : null;
+
+  return academicService.listAlumnosDeCurso(params.cursoId, query(url), { divisionesPermitidas });
 }
 
 export function listMateriasDeCurso({ params, url }) {
@@ -104,7 +125,14 @@ export function deactivateDivision({ params, user }) {
   return academicService.deactivateDivision(params.divisionId, user);
 }
 
-export function listAlumnosDeDivision({ params, url }) {
+export function listAlumnosDeDivision({ params, url, user }) {
+  const permitidos = cursosPermitidos(user);
+  const division = permitidos ? academicRepository.findDivisionById(params.divisionId) : null;
+
+  if (permitidos && division && !permitidos.has(claveDivision(division))) {
+    throw errorHttp(403, "FORBIDDEN", "Solo puede consultar alumnos de los cursos que tiene asignados.");
+  }
+
   return academicService.listAlumnosDeDivision(params.divisionId, query(url));
 }
 

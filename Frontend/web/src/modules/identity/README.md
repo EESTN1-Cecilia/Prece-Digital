@@ -43,7 +43,7 @@ están en `src/utils/permisos.js`.
 | `PUT /api/v1/authorization/roles/:codigo/permissions` | cuerpo `{ "permisos": ["identity.read"] }` |
 | `GET /api/v1/users` | listado; filtros `q`, `rol`, `estado` (la paginación es local) |
 | `GET /api/v1/users/:userId` | detalle |
-| `POST /api/v1/users` | alta; nombre, apellido, email, dni, roles. Devuelve `passwordTemporal` una sola vez |
+| `POST /api/v1/users` | alta; nombre, apellido, email, dni, roles. La clave provisoria es el DNI (solo se guarda el hash) y la cuenta queda con `debeCambiarClave` |
 | `PATCH /api/v1/users/:userId` | edición y baja lógica: `{ "estado": "inactivo" }` |
 | `PUT /api/v1/users/:userId/roles` | cuerpo `{ "roles": ["preceptor"] }` |
 

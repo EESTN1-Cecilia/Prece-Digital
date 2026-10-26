@@ -1,0 +1,200 @@
+/* ==========================================================================
+   IMPRESIÓN DE DOCUMENTOS INSTITUCIONALES (Oficio horizontal)
+   Criterio único para planillas de asistencia y listas de alumnos de todos
+   los módulos. utils/impresion.js agrega `modo-impresion` a <html> antes de
+   imprimir, fija la hoja Oficio (340 x 216 mm) y calcula la escala.
+
+   Prioridades en papel: contraste, legibilidad y ahorro de tinta. Fondos
+   claros, líneas finas, texto oscuro; los estados se leen por su letra, no
+   por el color, así que el documento sirve también en blanco y negro.
+   ========================================================================== */
+
+.solo-impresion {
+  display: none;
+}
+
+/* ---- Solo el documento: todo lo demás se oculta ---- */
+
+html.modo-impresion,
+html.modo-impresion body {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+}
+
+/* Contenedores que llevan al documento (layout, portal, tarjetas): sin
+   márgenes, bordes, sombras ni anchos máximos que agreguen hojas. */
+html.modo-impresion body *:has(.documento-oficio) {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  gap: 0 !important;
+  overflow: visible !important;
+  position: static !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+/* Hermanos de esa cadena (menús, encabezados, banda del portal, pestañas,
+   pie del sitio, barras flotantes): fuera. */
+html.modo-impresion body *:has(.documento-oficio) > :not(:has(.documento-oficio)):not(.documento-oficio) {
+  display: none !important;
+}
+
+/* ---- El documento ---- */
+
+html.modo-impresion .documento-oficio {
+  display: block !important;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: #ffffff !important;
+  color: #111827;
+  max-width: none !important;
+  animation: none !important;
+  font-size: 10px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Otros documentos (boletin, matriz, perfil) ocultan todo el body al imprimir
+   con visibility: hidden. El documento Oficio se hace visible por su cuenta. */
+html.modo-impresion .documento-oficio,
+html.modo-impresion .documento-oficio * {
+  visibility: visible !important;
+}
+
+html.modo-impresion .documento-oficio .solo-impresion {
+  display: flex;
+}
+
+/* Controles de pantalla: no se imprimen. */
+html.modo-impresion .documento-oficio :is(.no-print, .portal-no-imprimir, button, select, input[type="search"]) {
+  display: none !important;
+}
+
+/* Tablas: completas, sin desplazamiento ni columnas fijas. */
+html.modo-impresion .documento-oficio :is(.ui-tabla__scroll, .planilla-table-scroll-container) {
+  overflow: visible !important;
+  max-height: none !important;
+  border: 0 !important;
+}
+
+html.modo-impresion .documento-oficio table {
+  border-collapse: collapse !important;
+}
+
+html.modo-impresion .documento-oficio thead {
+  display: table-header-group;
+}
+
+html.modo-impresion .documento-oficio tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+html.modo-impresion .documento-oficio img {
+  max-width: 100%;
+}
+
+/* ---- Encabezado institucional ---- */
+
+.impresion-encabezado {
+  align-items: center;
+  gap: 4mm;
+  padding-bottom: 1.5mm;
+  margin-bottom: 2mm;
+  border-bottom: 0.6mm solid #232d50;
+}
+
+.impresion-encabezado__logo {
+  height: 13mm;
+  width: 13mm;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.impresion-encabezado__institucion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8mm;
+  min-width: 0;
+}
+
+.impresion-encabezado__nombre {
+  font-size: 15px;
+  font-weight: 800;
+  color: #172033;
+  letter-spacing: 0.01em;
+}
+
+.impresion-encabezado__titulo {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #232d50;
+}
+
+.impresion-encabezado__datos {
+  margin: 0 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1.2mm 5mm;
+  max-width: 62%;
+}
+
+.impresion-encabezado__dato {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.impresion-encabezado__dato dt {
+  font-size: 7.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #4b5563;
+}
+
+.impresion-encabezado__dato dd {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* ---- Aviso de varias hojas ---- */
+
+html.modo-impresion .documento-oficio .impresion-aviso-varias-hojas {
+  display: none;
+}
+
+html.modo-impresion .documento-oficio[data-varias-hojas] .impresion-aviso-varias-hojas {
+  display: block;
+  margin: 2mm 0 0;
+  font-size: 8.5px;
+  font-style: italic;
+  color: #374151;
+}
+
+/* ---- Respaldo si el navegador no avisa antes de imprimir ---- */
+
+@media print {
+  .site-header,
+  .site-footer,
+  .portal__banda,
+  .asistencias-floating-bar {
+    display: none !important;
+  }
+}

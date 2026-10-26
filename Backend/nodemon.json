@@ -13,7 +13,8 @@
   ],
   "ext": "js,mjs,json",
   "ignore": [
-    "test"
+    "test",
+    "database/imports"
   ],
   "exec": "node src/server.mjs"
 }

@@ -8,6 +8,7 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { resetStore } from "../database/memory-store.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
+import { asignarTodasLasDivisiones } from "./helpers.mjs";
 
 const PUERTO = 4014;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -35,6 +36,7 @@ async function login(email, password) {
 beforeEach(async () => {
   resetStore();
   await seedDesarrollo();
+  asignarTodasLasDivisiones();
   tokens.secretario = await login("secretario@prece.local", "Secretaria123!");
   tokens.preceptor = await login("preceptor@prece.local", "Preceptor123!");
   tokens.docente = await login("docente@prece.local", "Docente123!");
@@ -197,14 +199,16 @@ test("historial y resumen del alumno", async () => {
 });
 
 test("listar las condiciones de un alumno por su id y alumno sin condiciones", async () => {
-  const delAlumno = await pedir("GET", "/api/v1/students/alu-3/particular-conditions", "docente");
+  /* alu-2 y alu-3 cursan 4° 1: los consulta el preceptor (en este archivo tiene
+     todas las divisiones); el docente de prueba no tiene ese curso. */
+  const delAlumno = await pedir("GET", "/api/v1/students/alu-3/particular-conditions", "preceptor");
   assert.equal(delAlumno.status, 200);
   assert.equal(delAlumno.cuerpo.data.length, 1);
 
-  const sinCondiciones = await pedir("GET", "/api/v1/students/alu-2/particular-conditions", "docente");
+  const sinCondiciones = await pedir("GET", "/api/v1/students/alu-2/particular-conditions", "preceptor");
   assert.deepEqual(sinCondiciones.cuerpo.data, []);
 
-  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/condiciones/resumen", "docente");
+  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/condiciones/resumen", "preceptor");
   assert.equal(resumen.cuerpo.data.tieneCondiciones, false);
   assert.equal(resumen.cuerpo.data.total, 0);
 });

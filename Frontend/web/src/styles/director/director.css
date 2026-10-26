@@ -500,6 +500,37 @@
   color: #d97706;
 }
 
+.director-sidebar-icon--doc {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* Acceso de la pantalla abierta: resaltado y anunciado con aria-current. */
+.director-sidebar-item--activo,
+.director-sidebar-item--activo:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  box-shadow: inset 3px 0 0 #2563eb;
+  transform: none;
+}
+
+.director-sidebar-item--activo .director-sidebar-item-arrow {
+  color: #2563eb;
+}
+
+.director-sidebar-sub-btn--activo,
+.director-sidebar-sub-btn--activo:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af !important;
+}
+
+.director-sidebar-item:focus-visible,
+.director-sidebar-sub-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .director-sidebar-item-text {
   display: flex;
   flex-direction: column;
@@ -3123,4 +3154,239 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* ==========================================================================
+   GESTIÓN DE PERSONAL: FORMULARIO EN DOS COLUMNAS, TARJETAS Y VISTAS
+   ========================================================================== */
+
+/* Formulario de alta de perfil: dos columnas en pantalla ancha, una sola en
+   pantalla chica. Cada campo aparece una sola vez. */
+.director-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.director-form-grid__completo {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .director-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Datos academicos del area de Docencia: bloque propio, solo visible cuando el
+   area institucional elegida es Docencia. */
+.director-academic-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.director-academic-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Casilla real de la tarjeta de rol: es un <input type="checkbox"> del
+   navegador, estilizado para verse como el resto del sistema. */
+.director-role-card__casilla {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.director-role-card__casilla:disabled {
+  cursor: not-allowed;
+}
+
+/* Modal de gestión de personal: centrado en la pantalla, con fondo difuminado
+   y sombra suave. */
+.director-modal-fondo {
+  align-items: center;
+  padding: 24px 18px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.director-modal {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+}
+
+.director-modal .ui-modal__cabecera {
+  background: #f8fafc;
+}
+
+.director-modal .ui-modal__titulo {
+  color: #1f2937;
+  font-weight: 800;
+}
+
+/* Selector de forma de ver el listado (Lista / Tarjetas). */
+.director-vista-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  margin-left: auto;
+}
+
+.director-vista-toggle__boton {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.director-vista-toggle__boton:hover {
+  color: #2563eb;
+}
+
+.director-vista-toggle__boton--activo {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* Contador de resultados del filtro: dice cuantos members quedan. */
+.director-personal-contador {
+  margin: 0;
+  padding: 10px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* Vista de tarjetas del personal. */
+.director-personal-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 18px;
+  background: #f3f6fb;
+}
+
+.director-personal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.director-personal-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+}
+
+.director-personal-card--inactivo {
+  background: #fbfcfd;
+}
+
+.director-personal-card--inactivo .director-personal-card__nombre {
+  color: #64748b;
+}
+
+.director-personal-card__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.director-personal-card__cabecera > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.director-personal-card__nombre {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.director-user-avatar--grande {
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+}
+
+.director-personal-card__datos {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 6px 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 12.5px;
+}
+
+.director-personal-card__datos dt {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.director-personal-card__datos dd {
+  margin: 0;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.director-personal-card__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Aviso de que un bloque no tiene datos: se muestra "—" y la explicacion,
+   nunca una cifra inventada. */
+.director-kpi-sin-datos {
+  margin: 0;
+  align-self: center;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.director-alerts-vacio {
+  margin: 0;
+  padding: 18px;
+  color: #64748b;
+  font-size: 13.5px;
+  text-align: center;
 }

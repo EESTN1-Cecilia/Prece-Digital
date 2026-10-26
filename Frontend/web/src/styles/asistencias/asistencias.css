@@ -759,61 +759,258 @@
 }
 
 /* ==========================================================================
-   OPTIMIZACIÓN DE IMPRESIÓN OFICIAL (@media print)
+   IMPRESIÓN DE LA PLANILLA MENSUAL (Oficio horizontal)
+   El tamaño de hoja, la escala y el ocultamiento de la interfaz los resuelven
+   utils/impresion.js y styles/base/impresion.css (criterio común a todos los
+   documentos). Acá solo va la distribución propia de la planilla: columnas de
+   días compactas y uniformes, nombre con espacio suficiente, totales y
+   estadísticas completos. Los estados se distinguen por su letra; el color es
+   mínimo para ahorrar tinta y leerse en blanco y negro.
    ========================================================================== */
 
-@media print {
-  @page {
-    size: landscape;
-    margin: 8mm;
-  }
+html.modo-impresion .documento-oficio .registro-diario-header,
+html.modo-impresion .documento-oficio .secretaria-top-bar,
+html.modo-impresion .documento-oficio .secretaria-title-row,
+html.modo-impresion .documento-oficio .asistencias-controls-panel {
+  display: none !important;
+}
 
-  body {
-    background: #ffffff !important;
-    font-size: 10px;
-  }
+html.modo-impresion .documento-oficio .planilla-asistencia-card {
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: #ffffff !important;
+}
 
-  .site-header,
-  .site-sidebar,
-  .no-print,
-  .app-toast-container {
-    display: none !important;
-  }
+/* Anchos fijos (la primera fila manda): los días ocupan el espacio
+   sobrante en partes iguales y nada se sale de la hoja. */
+html.modo-impresion .tabla-registro-asistencias {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  font-size: 8.5px !important;
+}
 
-  .asistencias-page {
-    padding: 0 !important;
-    gap: 10px !important;
-  }
+html.modo-impresion .tabla-registro-asistencias th,
+html.modo-impresion .tabla-registro-asistencias td {
+  border: 0.2mm solid #9ca3af !important;
+  padding: calc(0.15mm + var(--impresion-relleno-extra, 0px)) 0.2mm !important;
+  height: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  font-size: var(--impresion-letra, 8.5px) !important;
+  line-height: 1.15 !important;
+  overflow: hidden;
+  color: #111827 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
 
-  .planilla-asistencia-card {
-    border: 1px solid #000000 !important;
-    box-shadow: none !important;
-  }
+/* Columnas fijas en pantalla: en papel, en su lugar. */
+html.modo-impresion .tabla-registro-asistencias .sticky-col {
+  position: static !important;
+  left: auto !important;
+}
 
-  .registro-diario-header {
-    background: #ffffff !important;
-    border-bottom: 1px solid #000000 !important;
-    padding: 8px 12px !important;
-  }
+html.modo-impresion .tabla-registro-asistencias thead th {
+  background: #e5e7eb !important;
+  font-weight: 800 !important;
+}
 
-  .tabla-registro-asistencias th,
-  .tabla-registro-asistencias td {
-    border: 1px solid #000000 !important;
-    font-size: 9px !important;
-    padding: 2px 1px !important;
-  }
+html.modo-impresion .tabla-registro-asistencias .th-col-orden,
+html.modo-impresion .tabla-registro-asistencias .td-orden {
+  width: 5mm !important;
+  text-align: center !important;
+}
 
-  .asistencia-footer-balances-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 8px !important;
-    page-break-inside: avoid;
-  }
+/* Nombre con espacio propio; uno muy largo pasa a dos lineas, no se recorta. */
+html.modo-impresion .tabla-registro-asistencias .th-col-nombre,
+html.modo-impresion .tabla-registro-asistencias .td-nombre {
+  width: 50mm !important;
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere;
+  text-align: left !important;
+  padding-left: 1mm !important;
+}
 
-  .balance-box-card {
-    border: 1px solid #000000 !important;
-    box-shadow: none !important;
-    padding: 8px !important;
-  }
+html.modo-impresion .tabla-registro-asistencias .th-dia-num,
+html.modo-impresion .tabla-registro-asistencias .th-dia-letra,
+html.modo-impresion .tabla-registro-asistencias .td-celda-asistencia,
+html.modo-impresion .tabla-registro-asistencias .td-tot-col {
+  width: auto !important;
+  text-align: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Las celdas de dia tienen tamaño propio en pantalla (28px, 12px): en papel
+   usan el mismo cuerpo que el resto de la tabla. */
+html.modo-impresion .tabla-registro-asistencias td.td-celda-asistencia {
+  font-size: var(--impresion-letra, 8.5px) !important;
+  line-height: 1.15 !important;
+  padding: calc(0.15mm + var(--impresion-relleno-extra, 0px)) 0 !important;
+  height: auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+/* Encabezados de totales: texto chico y en dos líneas si hace falta, para
+   no ensanchar la columna. */
+html.modo-impresion .tabla-registro-asistencias :is(.th-col-asistencia, .th-col-inasistencia-group, .th-sub-in, .th-col-total-inasist, .th-col-porcentaje-asist, .th-col-observaciones) {
+  white-space: normal !important;
+  word-break: break-word;
+  font-size: calc(var(--impresion-letra, 8.5px) - 1.5px) !important;
+  line-height: 1.1 !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .th-dia-weekend,
+html.modo-impresion .tabla-registro-asistencias .is-inactive-cell,
+html.modo-impresion .tabla-registro-asistencias .cell-inactivo {
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+}
+
+/* Estados: la letra manda. Ausente en negrita sobre gris claro; tarde en
+   cursiva; justificada subrayada. */
+html.modo-impresion .tabla-registro-asistencias .cell-ausente {
+  background: #e5e7eb !important;
+  font-weight: 900 !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .cell-tarde {
+  font-style: italic !important;
+  font-weight: 700 !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .cell-justificada {
+  text-decoration: underline !important;
+  font-weight: 700 !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias :is(.th-col-asistencia, .th-col-total-inasist) {
+  width: 9mm !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .th-col-inasistencia-group {
+  width: 24mm !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .th-col-porcentaje-asist {
+  width: 10mm !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .th-col-observaciones,
+html.modo-impresion .tabla-registro-asistencias .td-observaciones-input {
+  width: 24mm !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .input-obs-alumno {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  line-height: 1.15 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 7.5px !important;
+  color: #111827 !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .input-obs-alumno::placeholder {
+  color: transparent !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .td-section-banner {
+  background: #ffffff !important;
+  border-top: 0.5mm solid #232d50 !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+  padding: 0.4mm 1mm !important;
+  height: auto !important;
+}
+
+/* El titulo de seccion es sticky en pantalla; en papel va en su lugar. */
+html.modo-impresion .tabla-registro-asistencias .sticky-section-title {
+  position: static !important;
+  display: inline !important;
+  left: auto !important;
+  transform: none !important;
+  font-size: var(--impresion-letra, 8.5px) !important;
+  color: #111827 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .tr-total-balance td {
+  background: #f9fafb !important;
+  font-weight: 700 !important;
+}
+
+html.modo-impresion .tabla-registro-asistencias .tr-total-general td {
+  background: #eef2f7 !important;
+}
+
+/* Balance mensual, observaciones del mes y firmas: en una fila de cuatro. */
+html.modo-impresion .documento-oficio .asistencia-footer-balances-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 3mm !important;
+  margin-top: 2mm !important;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+html.modo-impresion .documento-oficio .balance-box-card {
+  border: 0.25mm solid #9ca3af !important;
+  border-radius: 1.5mm !important;
+  box-shadow: none !important;
+  padding: 1.2mm 2mm !important;
+  background: #ffffff !important;
+  font-size: 8.5px !important;
+}
+
+html.modo-impresion .documento-oficio .balance-box-card :is(p, span, .firma-label, .firma-subtext, .efemerides-list) {
+  font-size: 8.5px !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+}
+
+html.modo-impresion .documento-oficio .firma-area {
+  gap: 0.4mm !important;
+  padding: 0 !important;
+}
+
+/* Firmas lado a lado, con espacio real para firmar. */
+html.modo-impresion .documento-oficio .balance-box-firmas {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  align-items: end !important;
+  gap: 3mm !important;
+}
+
+html.modo-impresion .documento-oficio .firma-line {
+  margin-top: 9mm !important;
+  width: 100% !important;
+}
+
+html.modo-impresion .documento-oficio .balance-box-title {
+  font-size: 8.5px !important;
+  margin: 0 0 0.8mm !important;
+  padding: 0 !important;
+  color: #232d50 !important;
+}
+
+html.modo-impresion .documento-oficio .balance-mini-table td {
+  font-size: 8.5px !important;
+  padding: 0.2mm 0 !important;
+  color: #111827 !important;
+  background: transparent !important;
 }
 
 /* Responsividad en Pantallas Medianas / Pequeñas */
@@ -994,3 +1191,66 @@
   }
 }
 
+
+/* ==========================================================================
+   PLANILLA CON FUENTE EXTERNA (Portal Docente)
+   Clases que solo aparecen cuando la planilla recibe una `fuente`; la planilla
+   de Preceptoria no las usa.
+   ========================================================================== */
+
+/* Dia sin asistencia registrada: celda vacia y editable. */
+.cell-vacio {
+  background: #ffffff !important;
+  color: #94a3b8 !important;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+/* Encabezado de dia que marca a todos presentes. */
+.th-dia-marcable {
+  cursor: pointer;
+}
+
+.th-dia-marcable:hover,
+.th-dia-marcable:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+.pill-materia {
+  font-size: 10.5px;
+  font-weight: 700;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.badge-materia-activa {
+  background: #e8f6ff;
+  color: #1f4fc4;
+  border: 1px solid #b9e3f5;
+}
+
+.planilla-error-carga {
+  margin: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.floating-bar-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fecaca;
+  max-width: 460px;
+}
+
+.tr-total-sin-genero td {
+  background: #f8fafc;
+}
