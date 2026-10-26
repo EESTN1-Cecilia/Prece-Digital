@@ -64,13 +64,40 @@ export function usePermisos() {
 export function useNotificaciones() {
   const { estado, acciones } = contexto();
   const { items, cargando, error, origen } = estado.notificaciones;
+  const { usuario, roles } = estado.sesion;
 
-  const noLeidas = useMemo(() => items.filter((item) => !item.leida).length, [items]);
+  const itemsFiltrados = useMemo(() => {
+    if (!roles || roles.length === 0) return items;
+    const codigosRoles = roles.map((r) => (typeof r === "string" ? r : r?.id)).filter(Boolean);
+    const esDirector = codigosRoles.includes("director") || codigosRoles.includes("admin");
+    const esDocente = codigosRoles.includes("docente") || codigosRoles.includes("profesor");
+    const esPreceptor = codigosRoles.includes("preceptor");
+    const esSecretario = codigosRoles.includes("secretario") || codigosRoles.includes("secretaria");
+    const esServer = codigosRoles.includes("server");
+
+    return items.filter((item) => {
+      // Filtrar por ID de destinatario explícito
+      if (item.recipientId && usuario?.id && item.recipientId !== usuario.id) {
+        return false;
+      }
+      // Filtrar por rol de destinatario
+      if (item.destinatarioRol) {
+        if (item.destinatarioRol === "director" && !esDirector) return false;
+        if (item.destinatarioRol === "docente" && !esDocente) return false;
+        if (item.destinatarioRol === "preceptor" && !esPreceptor) return false;
+        if (item.destinatarioRol === "secretaria" && !esSecretario) return false;
+        if (item.destinatarioRol === "server" && !esServer) return false;
+      }
+      return true;
+    });
+  }, [items, roles, usuario]);
+
+  const noLeidas = useMemo(() => itemsFiltrados.filter((item) => !item.leida).length, [itemsFiltrados]);
 
   return {
-    items,
+    items: itemsFiltrados,
     noLeidas,
-    total: items.length,
+    total: itemsFiltrados.length,
     cargando,
     error,
     origen,
