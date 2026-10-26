@@ -131,16 +131,78 @@ export function CustomSelect({
     if (onClose) onClose();
   };
 
-  // Opciones filtradas por búsqueda
+  // Opciones filtradas por búsqueda con soporte para tildes
   const filteredOptions = useMemo(() => {
     if (!busqueda.trim()) return normalizedOptions;
-    const q = busqueda.toLowerCase().trim();
-    return normalizedOptions.filter((opt) => opt.label.toLowerCase().includes(q));
+    const normalizeStr = (str) =>
+      String(str || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+
+    const q = normalizeStr(busqueda);
+    return normalizedOptions.filter((opt) => normalizeStr(opt.label).includes(q));
   }, [normalizedOptions, busqueda]);
 
   // Determinar texto del disparador
   let triggerContent;
-  if (isFilter) {
+  if (isOpen && isSearchable) {
+    const inputPlaceholder = selectedOption
+      ? selectedOption.label
+      : placeholder || label || "Buscar...";
+
+    triggerContent = h(
+      "div",
+      { className: "custom-select__trigger-input-wrap" },
+      h("input", {
+        ref: searchInputRef,
+        type: "text",
+        className: `custom-select__trigger-input ${hasSelection ? "custom-select__trigger-input--has-selection" : ""}`,
+        value: busqueda,
+        placeholder: inputPlaceholder,
+        autoFocus: true,
+        onChange: (e) => setBusqueda(e.target.value),
+        onClick: (e) => e.stopPropagation(),
+        onKeyDown: (e) => {
+          if (e.key === "Escape") {
+            e.stopPropagation();
+            setIsOpen(false);
+            setBusqueda("");
+            if (onClose) onClose();
+          } else if (e.key === "Enter" && filteredOptions.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSelect(filteredOptions[0].value);
+          }
+        }
+      }),
+      busqueda
+        ? h(
+            "button",
+            {
+              type: "button",
+              className: "custom-select__trigger-clear",
+              "aria-label": "Borrar búsqueda",
+              onClick: (e) => {
+                e.stopPropagation();
+                setBusqueda("");
+                if (searchInputRef.current) searchInputRef.current.focus();
+              }
+            },
+            h(
+              "svg",
+              { viewBox: "0 0 20 20", fill: "currentColor", width: 14, height: 14 },
+              h("path", {
+                fillRule: "evenodd",
+                d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
+                clipRule: "evenodd"
+              })
+            )
+          )
+        : null
+    );
+  } else if (isFilter) {
     const isDefault = stringValue === "todos" || stringValue === "todas" || !stringValue;
     triggerContent = h(
       "span",
@@ -185,15 +247,22 @@ export function CustomSelect({
         })
       : null,
 
-    // Botón disparador (Trigger)
+    // Botón / Contenedor disparador (Trigger)
     h(
-      "button",
+      isSearchable ? "div" : "button",
       {
-        type: "button",
+        type: !isSearchable ? "button" : undefined,
         id: id ? `${id}-trigger` : undefined,
-        className: `custom-select__trigger ${isFilter && hasSelection ? "custom-select__trigger--active" : ""} ${isOpen ? "custom-select__trigger--open" : ""} ${disabled ? "is-disabled" : ""}`,
+        tabIndex: disabled ? -1 : 0,
+        className: `custom-select__trigger ${isFilter && hasSelection ? "custom-select__trigger--active" : ""} ${isOpen ? "custom-select__trigger--open" : ""} ${disabled ? "is-disabled" : ""} ${isSearchable ? "custom-select__trigger--searchable" : ""}`,
         onClick: handleToggle,
-        disabled: disabled || undefined,
+        onKeyDown: (e) => {
+          if (!isOpen && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
+            e.preventDefault();
+            handleToggle();
+          }
+        },
+        disabled: !isSearchable && disabled ? true : undefined,
         "aria-haspopup": "listbox",
         "aria-expanded": isOpen,
         "aria-label": ariaLabel || label || placeholder
@@ -216,7 +285,7 @@ export function CustomSelect({
       )
     ),
 
-    // Menú flotante con las opciones diseñadas
+    // Menú flotante con las opciones diseñadas (sin input redundante abajo)
     isOpen && !disabled
       ? h(
           "div",
@@ -225,25 +294,11 @@ export function CustomSelect({
             role: "listbox",
             "aria-label": label || placeholder
           },
-          isSearchable
-            ? h(
-                "div",
-                { className: "custom-select__search-box", onClick: (e) => e.stopPropagation() },
-                h("input", {
-                  ref: searchInputRef,
-                  type: "text",
-                  className: "custom-select__search-input",
-                  placeholder: "Buscar...",
-                  value: busqueda,
-                  onChange: (e) => setBusqueda(e.target.value)
-                })
-              )
-            : null,
           h(
             "div",
             { className: "custom-select__options-list" },
             filteredOptions.length === 0
-              ? h("div", { className: "custom-select__empty" }, "No hay opciones")
+              ? h("div", { className: "custom-select__empty" }, "No se encontraron resultados")
               : filteredOptions.map((opt, index) => {
                   const isSelected = opt.value === stringValue;
                   const isFirstAll = opt.value === "todos" || opt.value === "todas";

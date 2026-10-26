@@ -277,7 +277,9 @@ export function ProveedorEstado({ children }) {
     despachar({ tipo: "notificaciones/cargando" });
 
     try {
-      const { data, origen } = await listarNotificaciones();
+      const usuario = estado.sesion.usuario;
+      const roles = estado.sesion.roles;
+      const { data, origen } = await listarNotificaciones({ usuario, roles });
 
       if (vigente.current) {
         despachar({ tipo: "notificaciones/listas", items: data, origen });
@@ -287,7 +289,7 @@ export function ProveedorEstado({ children }) {
         despachar({ tipo: "notificaciones/error", error });
       }
     }
-  }, []);
+  }, [estado.sesion.usuario, estado.sesion.roles]);
 
   /* Las notificaciones se piden una vez resuelta la sesion, no antes: sin usuario
      no hay a quien notificar. */
@@ -295,7 +297,7 @@ export function ProveedorEstado({ children }) {
     if (estado.sesion.estado === SESION.autenticada) {
       cargarNotificaciones();
     }
-  }, [estado.sesion.estado, cargarNotificaciones]);
+  }, [estado.sesion.estado, estado.sesion.usuario?.id, cargarNotificaciones]);
 
   /* Al volver a la pestana se relee la sesion. Si mientras tanto le cambiaron los
      permisos, la interfaz deja de mostrar los viejos. */

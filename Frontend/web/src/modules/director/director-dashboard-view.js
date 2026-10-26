@@ -7,10 +7,8 @@ import { DirectorService, ROLES_DISPONIBLES } from "./director-service.js";
 import { NuevoPerfilModal } from "./components/nuevo-perfil-modal.js";
 import { EditarRolesModal } from "./components/editar-roles-modal.js";
 import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.js";
-import { AsignacionesSection } from "./components/asignaciones-section.js";
+import { AsignacionesSection, calcularMetricasAsignaciones } from "./components/asignaciones-section.js";
 import { fecha } from "../../utils/formato.js";
-
-
 
 // Íconos auxiliares con dimensiones explícitas (Sin emojis)
 function IconPlus({ className = "w-4 h-4", width = "16", height = "16" }) {
@@ -148,6 +146,11 @@ export default function DirectorDashboardView() {
   const MOSTRAR_JEFATURA = false;
   const MOSTRAR_HABILITAR_PEDIDOS = false;
 
+  // Asignaciones para Tablero General
+  const [divisionesPreceptores, setDivisionesPreceptores] = useState([]);
+  const [catedrasProfesores, setCatedrasProfesores] = useState([]);
+  const [subpestanaAsignaciones, setSubpestanaAsignaciones] = useState("preceptores");
+
   // Filtros de personal
   const [busquedaPersonal, setBusquedaPersonal] = useState("");
   const [filtroRol, setFiltroRol] = useState("todos");
@@ -163,20 +166,28 @@ export default function DirectorDashboardView() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const [resumenData, personalData, pedidosData] = await Promise.all([
+      const [resumenData, personalData, pedidosData, precData, profData] = await Promise.all([
         DirectorService.getDashboardConsolidado(),
         DirectorService.listarPerfiles(),
-        DirectorService.listarPedidos()
+        DirectorService.listarPedidos(),
+        DirectorService.listarAsignacionesPreceptores(),
+        DirectorService.listarAsignacionesProfesores()
       ]);
       setResumen(resumenData);
       setPersonal(personalData);
       setPedidos(pedidosData);
+      setDivisionesPreceptores(precData || []);
+      setCatedrasProfesores(profData || []);
     } catch {
       // Ignorar fallback silencioso
     } finally {
       setCargando(false);
     }
   };
+
+  const metricasAsignaciones = useMemo(() => {
+    return calcularMetricasAsignaciones(personal, divisionesPreceptores, catedrasProfesores);
+  }, [personal, divisionesPreceptores, catedrasProfesores]);
 
   useEffect(() => {
     cargarDatos();
@@ -355,6 +366,33 @@ export default function DirectorDashboardView() {
             { key: "side-link-asist", href: "#/asistencias", className: "director-sidebar-sub-btn" },
             h(IconClock, { width: "15", height: "15" }),
             h("span", null, "Asistencias")
+          ),
+
+          // --- Docentes ---
+          h("div", { key: "side-div-doc", className: "director-sidebar-divider-label" }, "Docentes"),
+          h(
+            "a",
+            { key: "side-link-doc", href: "#/docente", className: "director-sidebar-item director-sidebar-item--doc" },
+            h("div", { className: "director-sidebar-icon director-sidebar-icon--doc" }, h(IconSchool, { width: "16", height: "16" })),
+            h(
+              "div",
+              { className: "director-sidebar-item-text" },
+              h("strong", null, "Docentes"),
+              h("span", null, "Clases y Calificaciones")
+            ),
+            h("span", { className: "director-sidebar-item-arrow" }, "➔")
+          ),
+          h(
+            "a",
+            { key: "side-link-doc-asist", href: "#/docente/asistencias", className: "director-sidebar-sub-btn" },
+            h(IconClipboard, { width: "15", height: "15" }),
+            h("span", null, "Planilla de Asistencia")
+          ),
+          h(
+            "a",
+            { key: "side-link-doc-calif", href: "#/boletines", className: "director-sidebar-sub-btn" },
+            h(IconAward, { width: "15", height: "15" }),
+            h("span", null, "Planilla de Calificaciones")
           ),
 
           // --- Server (deshabilitado según configuración) ---
@@ -887,9 +925,10 @@ export default function DirectorDashboardView() {
             ),
 
             // KPI 3: Personal (Ubicado abajo, 1 cuadrado como antes)
+            // KPI 3: Personal
             h(
               "div",
-              { className: "director-kpi-card director-kpi-card--purple" },
+              { className: "director-kpi-card director-kpi-card--purple director-kpi-card--third" },
               h(
                 "div",
                 { className: "director-kpi-card__header" },
@@ -904,27 +943,67 @@ export default function DirectorDashboardView() {
               )
             ),
 
-            // KPI 4: Pañol (deshabilitado si !MOSTRAR_SERVER)
-            MOSTRAR_SERVER
-              ? h(
+            // KPI 4: Preceptores (Cantidad y estado de asignación a curso)
+            h(
+              "div",
+              {
+                className: "director-kpi-card director-kpi-card--clickable director-kpi-card--third",
+                onClick: () => {
+                  setSubpestanaAsignaciones("preceptores");
+                  setPestanaActiva("asignaciones");
+                },
+                title: "Ver y gestionar asignaciones de preceptores a cursos"
+              },
+              h(
                 "div",
-                { className: "director-kpi-card director-kpi-card--amber" },
-                h(
-                  "div",
-                  { className: "director-kpi-card__header" },
-                  h("span", { className: "director-kpi-label" }, "Pañol"),
-                  h("span", { className: "director-kpi-badge director-kpi-badge--amber" }, "Recursos")
-                ),
-                h("div", { className: "director-kpi-value" }, `${resumen?.serverPañol?.totalItems ?? 24} ítems`),
-                h(
-                  "div",
-                  { className: "director-kpi-footer" },
-                  h("span", { className: "text-amber-700 font-medium" }, `${resumen?.serverPañol?.solicitudesPendientes ?? 2} solicitudes pend.`),
-                  h("span", null, `·`),
-                  h("span", { className: "text-rose-600 font-medium" }, `${resumen?.serverPañol?.sinStock ?? 2} sin stock`)
-                )
+                { className: "director-kpi-card__header" },
+                h("span", { className: "director-kpi-label" }, "Preceptores"),
+                h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, `${metricasAsignaciones.preceptores.total} Cargos`)
+              ),
+              h("div", { className: "director-kpi-value" }, `${metricasAsignaciones.preceptores.total}`),
+              h(
+                "div",
+                { className: "director-kpi-assignment-breakdown" },
+                h("span", { className: "director-kpi-status-dot director-kpi-status-dot--assigned" }, `● ${metricasAsignaciones.preceptores.asignados} asignados`),
+                h("span", { className: "director-kpi-status-dot director-kpi-status-dot--unassigned" }, `○ ${metricasAsignaciones.preceptores.sinAsignar} sin asignar`)
+              ),
+              h(
+                "div",
+                { className: "director-kpi-footer" },
+                h("span", { className: "director-kpi-link-btn" }, "Gestionar asignaciones →")
               )
-              : null
+            ),
+
+            // KPI 5: Profesores (Cantidad y estado de asignación a curso)
+            h(
+              "div",
+              {
+                className: "director-kpi-card director-kpi-card--clickable director-kpi-card--third",
+                onClick: () => {
+                  setSubpestanaAsignaciones("profesores");
+                  setPestanaActiva("asignaciones");
+                },
+                title: "Ver y gestionar asignaciones de docentes a cursos"
+              },
+              h(
+                "div",
+                { className: "director-kpi-card__header" },
+                h("span", { className: "director-kpi-label" }, "Docentes"),
+                h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, `${metricasAsignaciones.profesores.total} Registrados`)
+              ),
+              h("div", { className: "director-kpi-value" }, `${metricasAsignaciones.profesores.total}`),
+              h(
+                "div",
+                { className: "director-kpi-assignment-breakdown" },
+                h("span", { className: "director-kpi-status-dot director-kpi-status-dot--assigned" }, `● ${metricasAsignaciones.profesores.asignados} asignados`),
+                h("span", { className: "director-kpi-status-dot director-kpi-status-dot--unassigned" }, `○ ${metricasAsignaciones.profesores.sinAsignar} sin asignar`)
+              ),
+              h(
+                "div",
+                { className: "director-kpi-footer" },
+                h("span", { className: "director-kpi-link-btn" }, "Gestionar asignaciones →")
+              )
+            )
           ),
 
           // Accesos Rápidos de Supervisión Directiva (si Server o Jefatura estuviesen activos)
@@ -1172,7 +1251,8 @@ export default function DirectorDashboardView() {
                             {
                               className: `director-status-tag ${p.estado === "activo" ? "director-status-tag--active" : "director-status-tag--inactive"}`
                             },
-                            p.estado === "activo" ? "● Activo" : "○ Inactivo"
+                            h("span", { className: "director-status-dot", "aria-hidden": "true" }, p.estado === "activo" ? "●" : "○"),
+                            h("span", null, p.estado === "activo" ? "Activo" : "Inactivo")
                           )
                         ),
 
@@ -1221,7 +1301,8 @@ export default function DirectorDashboardView() {
       !cargando && pestanaActiva === "asignaciones"
         ? h(AsignacionesSection, {
           personal,
-          onMostrarToast: mostrarToast
+          onMostrarToast: mostrarToast,
+          subpestanaInicial: subpestanaAsignaciones
         })
         : null,
 
