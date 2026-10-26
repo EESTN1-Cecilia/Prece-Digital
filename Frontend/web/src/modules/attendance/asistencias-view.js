@@ -10,28 +10,36 @@ import {
   MESES_DEL_ANIO
 } from "./asistencias-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
+import { DocenteCursosService } from "../docente/docente-cursos-service.js";
+import { AvisoVariasHojas, EncabezadoImpresion } from "../../components/impresion/encabezado-impresion.js";
+import { imprimirDocumento } from "../../utils/impresion.js";
 
 const ESTADOS_ASISTENCIA = {
   P: { label: "Presente", clase: "cell-presente" },
   A: { label: "Ausente", clase: "cell-ausente" },
   J: { label: "Justificada", clase: "cell-justificada" },
   T: { label: "Tarde / Media falta", clase: "cell-tarde" },
-  "—": { label: "Sin clase / Feriado", clase: "cell-inactivo" }
+  "—": { label: "Sin clase / Feriado", clase: "cell-inactivo" },
+  /* Solo con una fuente externa (Portal Docente): dia sin asistencia registrada. */
+  "": { label: "Sin registrar", clase: "cell-vacio" }
 };
 
 const LETRAS_DIAS = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
 
-const ASIGNACIONES_DOCENTE_DEFAULT = [
-  { id: "1-1", anio: 1, curso: "1°", division: "1", materia: "Matemática I", turno: "Mañana", orientacion: "Ciclo Básico" },
-  { id: "2-1", anio: 2, curso: "2°", division: "1", materia: "Matemática II", turno: "Mañana", orientacion: "Ciclo Básico" },
-  { id: "3-3", anio: 3, curso: "3°", division: "3", materia: "Matemática III", turno: "Tarde", orientacion: "Ciclo Básico" }
-];
 
-export default function AsistenciasView({ modoDocente = false }) {
+/* Planilla mensual institucional.
+
+   Sin `fuente` funciona como siempre (Preceptoria / Secretaria / Direccion).
+   Con `fuente` (Portal Docente) los cursos, la carga y el guardado salen de
+   ese adaptador: { cursos, seleccionInicial, cargar, guardar, esDiaEditable,
+   estadosCiclo, volverA, observacionesHabilitadas }. La estructura, los
+   calculos y la impresion de la planilla son los mismos en ambos casos. */
+export default function AsistenciasView({ modoDocente = false, fuente = null }) {
   const user = useUsuarioActual();
   const tabsRef = useRef(null);
 
   const esDocente =
+    Boolean(fuente) ||
     modoDocente ||
     user?.rol === "docente" ||
     (Array.isArray(user?.roles) &&
@@ -48,7 +56,8 @@ export default function AsistenciasView({ modoDocente = false }) {
   };
 
   // Lista de cursos disponibles dinámicos
-  const [cursos, setCursos] = useState(() => (esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : CURSOS_DISPONIBLES));
+  const [cursos, setCursos] = useState(() => (esDocente ? [] : CURSOS_DISPONIBLES));
+  const [cursosDocenteCargados, setCursosDocenteCargados] = useState(false);
 
   // Estados de navegación y selección de curso/mes
   const [selectedCursoId, setSelectedCursoId] = useState(() => {
@@ -68,37 +77,57 @@ export default function AsistenciasView({ modoDocente = false }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [errorCarga, setErrorCarga] = useState(null);
+  const [errorGuardado, setErrorGuardado] = useState(null);
+
+  /* Con fuente externa un dia sin dato queda vacio; en la planilla de
+     Preceptoria un dia habil sin dato cuenta como presente. */
+  const valorPorDefecto = fuente ? "" : "P";
 
   // Cargar lista dinámica de cursos según rol
   useEffect(() => {
     let montado = true;
 
-    if (esDocente) {
-      const asigs =
-        user?.assignments && user.assignments.length > 0
-          ? user.assignments.map((a) => {
-              const anioLimpio = String(a.anio || a.curso || "1").replace(/\D/g, "");
-              const divLimpia = String(a.division || "1").trim();
-              return {
-                id: `${anioLimpio}-${divLimpia}`,
-                curso: a.curso || `${anioLimpio}°`,
-                division: divLimpia,
-                turno: a.turno || (Number(anioLimpio) === 3 ? "Tarde" : "Mañana"),
-                materia: a.materia || "Matemática",
-                orientacion: "Ciclo Básico",
-                preceptor: `Docente: ${user?.nombre || "Docente"}`
-              };
-            })
-          : ASIGNACIONES_DOCENTE_DEFAULT;
+    if (fuente) {
+      fuente
+        .cursos(user)
+        .catch(() => [])
+        .then((lista) => {
+          if (!montado) return;
+          setCursos(lista);
+          setCursosDocenteCargados(true);
+          setSelectedCursoId((actual) => (lista.some((c) => c.id === actual) ? actual : fuente.seleccionInicial(lista) ?? actual));
+        });
+      return () => {
+        montado = false;
+      };
+    }
 
-      if (montado) {
-        setCursos(asigs);
-        const hash = window.location.hash || "";
-        if (!hash.includes("?curso=") && asigs.length > 0) {
-          setSelectedCursoId(asigs[0].id);
-        }
-      }
-      return;
+    if (esDocente) {
+      // Solo los cursos asignados al docente (los resuelve el backend)
+      DocenteCursosService.getMisCursos()
+        .catch(() => [])
+        .then((asignados) => {
+          if (!montado) return;
+          const asigs = asignados.map((a) => ({
+            id: a.id,
+            curso: a.curso,
+            division: a.division,
+            turno: a.turno || "Mañana",
+            materia: a.materia || "",
+            orientacion: "Ciclo Básico",
+            preceptor: `Docente: ${user?.nombre || "Docente"}`
+          }));
+          setCursos(asigs);
+          setCursosDocenteCargados(true);
+          // Si la URL apunta a un curso que no es suyo, se usa el primero asignado
+          setSelectedCursoId((actual) =>
+            asigs.some((c) => c.id === actual) ? actual : asigs[0]?.id ?? actual
+          );
+        });
+      return () => {
+        montado = false;
+      };
     }
 
     AsistenciasService.getCursosDisponibles().then((lista) => {
@@ -109,10 +138,14 @@ export default function AsistenciasView({ modoDocente = false }) {
     return () => {
       montado = false;
     };
-  }, [esDocente, user]);
+  }, [esDocente, user, fuente]);
 
   // Leer parámetros de URL si cambian
   useEffect(() => {
+    if (fuente) {
+      return undefined;
+    }
+
     const handleHashChange = () => {
       const hash = window.location.hash || "";
       if (hash.includes("?")) {
@@ -126,7 +159,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     };
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
+  }, [fuente]);
 
   // Datos de la planilla
   const [planilla, setPlanilla] = useState(null);
@@ -150,8 +183,30 @@ export default function AsistenciasView({ modoDocente = false }) {
 
   // Cargar planilla al cambiar de curso o mes (con materia si es docente)
   const cargarPlanilla = useCallback(async () => {
+    // El docente solo puede abrir la planilla de un curso asignado
+    if (esDocente && !cursos.some((c) => c.id === selectedCursoId)) {
+      return;
+    }
+
     setLoading(true);
     setSaveSuccess(false);
+    setErrorCarga(null);
+    setErrorGuardado(null);
+
+    if (fuente) {
+      try {
+        const data = await fuente.cargar(cursoActual, selectedMes, selectedAnio);
+        setPlanilla(data);
+        setPlanillaOriginal(JSON.parse(JSON.stringify(data)));
+      } catch (err) {
+        setPlanilla(null);
+        setErrorCarga(err?.mensaje ?? err?.message ?? "No se pudo cargar la planilla.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       const materiaDocente = esDocente ? (cursoActual.materia || "Matemática") : null;
       const data = await AsistenciasService.getPlanilla(
@@ -167,7 +222,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia]);
+  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual, cursos, fuente]);
 
   useEffect(() => {
     cargarPlanilla();
@@ -188,8 +243,8 @@ export default function AsistenciasView({ modoDocente = false }) {
       const currDias = currReg[orden] || {};
       const allDias = new Set([...Object.keys(origDias), ...Object.keys(currDias)]);
       allDias.forEach((dia) => {
-        const valOrig = origDias[dia] != null ? origDias[dia] : "P";
-        const valCurr = currDias[dia] != null ? currDias[dia] : "P";
+        const valOrig = origDias[dia] != null ? origDias[dia] : valorPorDefecto;
+        const valCurr = currDias[dia] != null ? currDias[dia] : valorPorDefecto;
         if (valOrig !== valCurr) {
           count++;
         }
@@ -208,7 +263,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     });
 
     return count;
-  }, [planilla, planillaOriginal]);
+  }, [planilla, planillaOriginal, valorPorDefecto]);
 
   // Días del mes actual
   const diasMes = useMemo(() => {
@@ -225,19 +280,42 @@ export default function AsistenciasView({ modoDocente = false }) {
         numero: d,
         letra: letraDia,
         esFinDeSemana,
-        efemeride: efemeride ? efemeride.descripcion : null
+        efemeride: efemeride ? efemeride.descripcion : null,
+        /* Con fuente externa: un dia futuro todavia no se puede registrar. */
+        bloqueado: Boolean(fuente) && !esFinDeSemana && !fuente.esDiaEditable(selectedAnio, selectedMes, d)
       });
     }
     return dias;
-  }, [selectedMes, selectedAnio, planilla]);
+  }, [selectedMes, selectedAnio, planilla, fuente]);
+
+  /* Dias con al menos un alumno registrado. Con fuente externa son las clases
+     dictadas: los demas dias no suman ni en totales ni en dias computados. */
+  const diasConRegistro = useMemo(() => {
+    const dias = new Set();
+    Object.values(planilla?.registros || {}).forEach((porDia) => {
+      Object.entries(porDia || {}).forEach(([dia, valor]) => {
+        if (valor && valor !== "—") dias.add(Number(dia));
+      });
+    });
+    return dias;
+  }, [planilla]);
+
+  /* Con fuente externa, el encabezado de un dia habil marca a todos presentes. */
+  const diaMarcable = (d) => Boolean(fuente) && !d.esFinDeSemana && !d.efemeride && !d.bloqueado;
+
+  const sinClase = (d) => d.esFinDeSemana || Boolean(d.efemeride) || (Boolean(fuente) && !diasConRegistro.has(d.numero));
 
   // Alternar estado de una celda con un clic
   const handleToggleEstado = (ordenAlumno, diaNumero, esInactivo) => {
     if (esInactivo) return; // No editar fines de semana ni feriados directos
 
-    const actual = planilla?.registros?.[ordenAlumno]?.[diaNumero] || "P";
+    const actual = planilla?.registros?.[ordenAlumno]?.[diaNumero] || valorPorDefecto;
     let siguiente = "P";
-    if (actual === "P") siguiente = "A";
+    if (fuente) {
+      const ciclo = fuente.estadosCiclo;
+      const indice = ciclo.indexOf(actual);
+      siguiente = indice === -1 ? ciclo[0] : ciclo[(indice + 1) % ciclo.length];
+    } else if (actual === "P") siguiente = "A";
     else if (actual === "A") siguiente = "J";
     else if (actual === "J") siguiente = "T";
     else if (actual === "T") siguiente = "P";
@@ -260,7 +338,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     setPlanilla((prev) => {
       const nextRegistros = { ...prev.registros };
       prev.alumnos.forEach((al) => {
-        if (!nextRegistros[al.orden]) nextRegistros[al.orden] = {};
+        nextRegistros[al.orden] = { ...(nextRegistros[al.orden] || {}) };
         if (nextRegistros[al.orden][diaNumero] !== "—") {
           nextRegistros[al.orden][diaNumero] = "P";
         }
@@ -280,6 +358,24 @@ export default function AsistenciasView({ modoDocente = false }) {
   const handleGuardarPlanilla = async () => {
     if (!planilla) return;
     setSaving(true);
+    setErrorGuardado(null);
+
+    if (fuente) {
+      try {
+        const recargada = await fuente.guardar(planilla, planillaOriginal, cursoActual);
+        setPlanilla(recargada);
+        setPlanillaOriginal(JSON.parse(JSON.stringify(recargada)));
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3500);
+      } catch (e) {
+        /* Lo marcado no se pierde: sigue en pantalla para corregir y reintentar. */
+        setErrorGuardado(e?.mensaje ?? e?.message ?? "No se pudo guardar la asistencia.");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     try {
       await AsistenciasService.guardarPlanilla(planilla);
       setPlanillaOriginal(JSON.parse(JSON.stringify(planilla)));
@@ -294,7 +390,7 @@ export default function AsistenciasView({ modoDocente = false }) {
 
   // Imprimir planilla en formato oficio / apaisado
   const handleImprimir = () => {
-    window.print();
+    imprimirDocumento();
   };
 
   // Separación de alumnos en Varones y Mujeres (según formato oficial de la foto)
@@ -304,6 +400,13 @@ export default function AsistenciasView({ modoDocente = false }) {
 
   const mujeres = useMemo(() => {
     return (planilla?.alumnos || []).filter((a) => a.genero === "F");
+  }, [planilla]);
+
+  /* Alumnos sin genero cargado en el legajo: se listan aparte en lugar de
+     sumarlos a varones o mujeres. La planilla de Preceptoria siempre trae el
+     dato, asi que alli este grupo no aparece. */
+  const sinGenero = useMemo(() => {
+    return (planilla?.alumnos || []).filter((a) => a.genero !== "M" && a.genero !== "F");
   }, [planilla]);
 
   // Cálculos por alumno (totales de la fila)
@@ -346,8 +449,9 @@ export default function AsistenciasView({ modoDocente = false }) {
       totalInasistencias,
       baseEvaluada,
       porcentajeNumero,
-      porcentajeAsistencia: `${porcentajeNumero}%`,
-      porcentajeClass
+      /* Con fuente externa, sin clases registradas no hay porcentaje que mostrar. */
+      porcentajeAsistencia: fuente && baseEvaluada === 0 ? "—" : `${porcentajeNumero}%`,
+      porcentajeClass: fuente && baseEvaluada === 0 ? "" : porcentajeClass
     };
   };
 
@@ -361,12 +465,26 @@ export default function AsistenciasView({ modoDocente = false }) {
     const mujeresAusentes = {};
     const totalPresentes = {};
     const totalAusentes = {};
+    const sinGeneroPresentes = {};
+    const sinGeneroAusentes = {};
 
     diasMes.forEach((d) => {
       let vP = 0,
         vA = 0,
         mP = 0,
-        mA = 0;
+        mA = 0,
+        sP = 0,
+        sA = 0;
+
+      sinGenero.forEach((al) => {
+        const val = planilla.registros?.[al.orden]?.[d.numero];
+        if (val === "P") sP++;
+        else if (val === "A" || val === "J") sA++;
+        else if (val === "T") {
+          sP += 0.5;
+          sA += 0.5;
+        }
+      });
 
       varones.forEach((al) => {
         const val = planilla.registros?.[al.orden]?.[d.numero];
@@ -392,8 +510,10 @@ export default function AsistenciasView({ modoDocente = false }) {
       varonesAusentes[d.numero] = vA;
       mujeresPresentes[d.numero] = mP;
       mujeresAusentes[d.numero] = mA;
-      totalPresentes[d.numero] = vP + mP;
-      totalAusentes[d.numero] = vA + mA;
+      sinGeneroPresentes[d.numero] = sP;
+      sinGeneroAusentes[d.numero] = sA;
+      totalPresentes[d.numero] = vP + mP + sP;
+      totalAusentes[d.numero] = vA + mA + sA;
     });
 
     return {
@@ -401,10 +521,12 @@ export default function AsistenciasView({ modoDocente = false }) {
       varonesAusentes,
       mujeresPresentes,
       mujeresAusentes,
+      sinGeneroPresentes,
+      sinGeneroAusentes,
       totalPresentes,
       totalAusentes
     };
-  }, [planilla, diasMes, varones, mujeres]);
+  }, [planilla, diasMes, varones, mujeres, sinGenero]);
 
   // Estadísticas globales del mes para los cuadros finales
   const balanceMensual = useMemo(() => {
@@ -415,7 +537,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     let diasHabilesEfectivos = 0;
 
     diasMes.forEach((d) => {
-      if (!d.esFinDeSemana && !d.efemeride) {
+      if (!sinClase(d)) {
         diasHabilesEfectivos++;
         totalAsistenciasAcumuladas += totalesDiarios.totalPresentes?.[d.numero] || 0;
         totalInasistenciasAcumuladas += totalesDiarios.totalAusentes?.[d.numero] || 0;
@@ -432,7 +554,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     const porcentajeAsistencia =
       basePosible > 0
         ? ((totalAsistenciasAcumuladas / basePosible) * 100).toFixed(1)
-        : "100";
+        : fuente ? null : "100";
 
     return {
       matriculaInicial: totalMatricula,
@@ -442,98 +564,189 @@ export default function AsistenciasView({ modoDocente = false }) {
       totalAsistencia: Math.round(totalAsistenciasAcumuladas),
       totalInasistencia: Math.round(totalInasistenciasAcumuladas),
       asistenciaMedia,
-      porcentajeAsistencia: `${porcentajeAsistencia}%`,
+      porcentajeAsistencia: porcentajeAsistencia === null ? "—" : `${porcentajeAsistencia}%`,
       diasHabiles: diasHabilesEfectivos
     };
-  }, [planilla, diasMes, totalesDiarios]);
+  }, [planilla, diasMes, totalesDiarios, diasConRegistro, fuente]);
+
+  const filaAlumno = (alumno) => {
+    const totales = calcularTotalesAlumno(alumno.orden);
+    return h(
+      "tr",
+      { key: `al-${alumno.orden}`, className: "tr-alumno-fila" },
+      h("td", { className: "td-orden sticky-col col-1" }, alumno.orden),
+      h("td", { className: "td-nombre sticky-col col-2" }, `${alumno.apellido}, ${alumno.nombre}`),
+
+      // Celdas de días
+      diasMes.map((dia) => {
+        const valor = planilla?.registros?.[alumno.orden]?.[dia.numero] || (dia.esFinDeSemana || dia.efemeride ? "—" : valorPorDefecto);
+        const esInactivo = dia.esFinDeSemana || Boolean(dia.efemeride) || dia.bloqueado;
+        const estadoInfo = ESTADOS_ASISTENCIA[valor] || { label: "", clase: "" };
+
+        return h(
+          "td",
+          {
+            key: `celda-${alumno.orden}-${dia.numero}`,
+            className: `td-celda-asistencia ${estadoInfo.clase} ${esInactivo ? "is-inactive-cell" : ""}`,
+            onClick: () => handleToggleEstado(alumno.orden, dia.numero, esInactivo),
+            title: esInactivo
+              ? (dia.efemeride || (dia.bloqueado ? "Día futuro: todavía no se puede registrar" : "Fin de semana"))
+              : `${alumno.apellido}: ${estadoInfo.label} (Clic para cambiar)`
+          },
+          valor
+        );
+      }),
+
+      // Totales
+      h("td", { className: "td-total td-presentes" }, totales.presentes),
+      h("td", { className: "td-total td-just" }, totales.ausentesJust || "—"),
+      h("td", { className: "td-total td-injust" }, totales.ausentesInjust || "—"),
+      h("td", { className: "td-total td-ef" }, totales.ef || "—"),
+      h("td", { className: "td-total td-inasist-total" }, totales.totalInasistencias || "0"),
+      h(
+        "td",
+        {
+          className: `td-total td-porcentaje ${totales.porcentajeClass}`,
+          title: `${totales.porcentajeAsistencia} de asistencia (${totales.presentes} presentes de ${totales.baseEvaluada} días computados)`
+        },
+        totales.porcentajeAsistencia
+      ),
+      h("td", { className: "td-observaciones-input" },
+        h("input", {
+          type: "text",
+          className: "input-obs-alumno",
+          placeholder: fuente && !fuente.observacionesHabilitadas ? "No disponible" : "Observaciones...",
+          disabled: Boolean(fuente) && !fuente.observacionesHabilitadas,
+          title: fuente && !fuente.observacionesHabilitadas ? "Las observaciones de alumnos se registran en el módulo de Observaciones." : undefined,
+          value: planilla?.observacionesPorAlumno?.[alumno.orden] || "",
+          onChange: (e) => {
+            const val = e.target.value;
+            setPlanilla((prev) => ({
+              ...prev,
+              observacionesPorAlumno: {
+                ...prev.observacionesPorAlumno,
+                [alumno.orden]: val
+              }
+            }));
+          }
+        })
+      )
+    );
+  };
 
   const mesInfo = MESES_DEL_ANIO.find((m) => m.id === selectedMes) || MESES_DEL_ANIO[6];
 
+  if (esDocente && cursosDocenteCargados && cursos.length === 0) {
+    return h(
+      "section",
+      { className: "asistencias-page secretaria-dashboard" },
+      h(EmptyState, { mensaje: "No tenés cursos asignados. Pedile a Dirección que te asigne tus cursos para tomar asistencia." })
+    );
+  }
+
   return h(
     "section",
-    { className: "asistencias-page secretaria-dashboard" },
+    { className: "asistencias-page secretaria-dashboard documento-oficio", "data-ajuste": "hoja" },
 
-    // =========================================================================
-    // BARRA SUPERIOR INSTITUCIONAL
-    // =========================================================================
-    h(
-      "div",
-      { className: "secretaria-top-bar no-print" },
-      h(
-        "button",
-        {
-          type: "button",
-          className: "btn-volver-atras",
-          onClick: () => {
-            if (window.history.length > 1) {
-              window.history.back();
-            } else {
-              window.location.hash = esDocente ? "#/inicio" : "#/cursos";
-            }
-          },
-          title: esDocente ? "Volver atrás" : "Volver a Directorio de Cursos"
-        },
-        h(
-          "svg",
-          {
-            className: "btn-volver-atras__icon",
-            viewBox: "0 0 20 20",
-            fill: "currentColor"
-          },
-          h("path", {
-            fillRule: "evenodd",
-            d: "M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z",
-            clipRule: "evenodd"
-          })
+    // Encabezado institucional (solo en la impresion)
+    h(EncabezadoImpresion, {
+      titulo: "Registro de asistencia",
+      datos: [
+        { etiqueta: "Año", valor: cursoActual.curso },
+        { etiqueta: "División", valor: cursoActual.division ? `${cursoActual.division}°` : null },
+        { etiqueta: "Turno", valor: cursoActual.turno && cursoActual.turno !== "—" ? cursoActual.turno : null },
+        { etiqueta: "Materia", valor: esDocente ? cursoActual.materia : null },
+        { etiqueta: "Mes", valor: `${mesInfo.nombre} ${selectedAnio}` },
+        fuente
+          ? { etiqueta: "Clases registradas", valor: balanceMensual.diasHabiles ?? 0 }
+          : { etiqueta: "Días hábiles", valor: balanceMensual.diasHabiles || mesInfo.diasHabiles }
+      ]
+    }),
+
+
+    /* En el Portal Docente el marco ya identifica al docente y la planilla
+       lleva el encabezado institucional (escuela, curso, materia, mes).
+       Volver / título / badges duplicarían esos datos. */
+    fuente
+      ? null
+      : h(
+          "div",
+          { className: "secretaria-top-bar no-print" },
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-volver-atras",
+              onClick: () => {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.hash = fuente?.volverA ?? (esDocente ? "#/inicio" : "#/cursos");
+                }
+              },
+              title: esDocente ? "Volver atrás" : "Volver a Directorio de Cursos"
+            },
+            h(
+              "svg",
+              {
+                className: "btn-volver-atras__icon",
+                viewBox: "0 0 20 20",
+                fill: "currentColor"
+              },
+              h("path", {
+                fillRule: "evenodd",
+                d: "M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z",
+                clipRule: "evenodd"
+              })
+            ),
+            h("span", null, esDocente ? "Volver Atrás" : "Volver a Directorio de Cursos")
+          ),
+          h(
+            "div",
+            { className: "secretaria-eyebrow" },
+            esDocente
+              ? `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · LIBRO DE ASISTENCIA POR MATERIA · CICLO 2026`
+              : `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · LIBRO DE ASISTENCIA DIARIA · CICLO 2026`
+          )
         ),
-        h("span", null, esDocente ? "Volver Atrás" : "Volver a Directorio de Cursos")
-      ),
-      h(
-        "div",
-        { className: "secretaria-eyebrow" },
-        esDocente
-          ? `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · LIBRO DE ASISTENCIA POR MATERIA · CICLO 2026`
-          : `${user.escuela || "E.E.S.T N°1 MONTE GRANDE"} · LIBRO DE ASISTENCIA DIARIA · CICLO 2026`
-      )
-    ),
 
-    // =========================================================================
-    // ENCABEZADO Y TÍTULO DE LA PLANILLA
-    // =========================================================================
-    h(
-      "div",
-      { className: "secretaria-title-row no-print" },
-      h(
-        "div",
-        null,
-        h("h1", { className: "secretaria-title" }, "Planilla de Registro de Asistencias"),
-        esDocente && cursoActual.materia
-          ? h("p", { style: { margin: "4px 0 0", color: "#64748b", fontSize: "14px", fontWeight: "600" } }, `Cátedra: ${cursoActual.materia}`)
-          : null
-      ),
-      h(
-        "div",
-        { className: "asistencia-badge-info" },
-        h("span", { className: "badge-curso-activo" }, `${cursoActual.curso} ${cursoActual.division}°`),
-        esDocente && cursoActual.materia
-          ? h("span", { className: "badge-curso-activo", style: { background: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" } }, cursoActual.materia)
-          : null,
-        h("span", { className: "badge-turno-activo" }, `Turno ${cursoActual.turno}`)
-      )
-    ),
+    fuente
+      ? null
+      : h(
+          "div",
+          { className: "secretaria-title-row no-print" },
+          h(
+            "div",
+            null,
+            h("h1", { className: "secretaria-title" }, "Planilla de Registro de Asistencias"),
+            esDocente && cursoActual.materia
+              ? h("p", { style: { margin: "4px 0 0", color: "#64748b", fontSize: "14px", fontWeight: "600" } }, `Cátedra: ${cursoActual.materia}`)
+              : null
+          ),
+          h(
+            "div",
+            { className: "asistencia-badge-info" },
+            h("span", { className: "badge-curso-activo" }, `${cursoActual.curso} ${cursoActual.division}°`),
+            esDocente && cursoActual.materia
+              ? h("span", { className: "badge-curso-activo badge-materia-activa" }, cursoActual.materia)
+              : null,
+            h("span", { className: "badge-turno-activo" }, `Turno ${cursoActual.turno}`)
+          )
+        ),
 
     // =========================================================================
     // SELECTOR DE CURSOS RÁPIDOS Y MES (TABS & CONTROLES)
     // =========================================================================
     h(
       "div",
-      { className: "asistencias-controls-panel no-print" },
+      { className: `asistencias-controls-panel no-print${fuente ? " asistencias-controls-panel--portal" : ""}` },
 
-      // Selector de Cursos por Botones / Tabs con Flechas en los Extremos
       h(
         "div",
         { className: "asistencias-cursos-tabs-wrapper" },
-        h("span", { className: "asistencias-section-label" }, "CURSOS Y DIVISIONES:"),
+        fuente
+          ? null
+          : h("span", { className: "asistencias-section-label" }, "CURSOS Y DIVISIONES:"),
         h(
           "div",
           { className: "asistencias-cursos-carousel" },
@@ -567,9 +780,10 @@ export default function AsistenciasView({ modoDocente = false }) {
                   type: "button",
                   className: `asistencia-curso-pill ${isActive ? "active" : ""}`,
                   onClick: () => setSelectedCursoId(c.id),
-                  title: `${c.curso} Año - División ${c.division}° (${c.turno})`
+                  title: `${c.curso} Año - División ${c.division}° (${c.turno})${fuente && c.materia ? ` - ${c.materia}` : ""}`
                 },
                 h("strong", null, `${c.curso} ${c.division}°`),
+                fuente && c.materia ? h("span", { className: "pill-materia" }, c.materia) : null,
                 h("span", { className: "pill-turno" }, c.turno.charAt(0))
               );
             })
@@ -605,9 +819,10 @@ export default function AsistenciasView({ modoDocente = false }) {
           { className: "asistencias-mes-selector-group" },
           h(CustomSelect, {
             value: String(selectedMes),
+            ariaLabel: "Mes de la planilla",
             options: MESES_DEL_ANIO.map((m) => ({
               value: String(m.id),
-              label: `Mes: ${m.nombre} 2026`
+              label: fuente ? m.nombre : `Mes: ${m.nombre} ${selectedAnio}`
             })),
             onChange: (val) => setSelectedMes(parseInt(val, 10))
           })
@@ -669,13 +884,17 @@ export default function AsistenciasView({ modoDocente = false }) {
           { className: "registro-header-right" },
           h("div", { className: "registro-header-box" }, h("span", null, "MES DE:"), h("strong", null, mesInfo.nombre.toUpperCase())),
           h("div", { className: "registro-header-box" }, h("span", null, "DEL:"), h("strong", null, String(selectedAnio))),
-          h("div", { className: "registro-header-box" }, h("span", null, "DÍAS HÁBILES:"), h("strong", null, String(balanceMensual.diasHabiles || mesInfo.diasHabiles)))
+          fuente
+            ? h("div", { className: "registro-header-box" }, h("span", null, "CLASES REGISTRADAS:"), h("strong", null, String(balanceMensual.diasHabiles ?? 0)))
+            : h("div", { className: "registro-header-box" }, h("span", null, "DÍAS HÁBILES:"), h("strong", null, String(balanceMensual.diasHabiles || mesInfo.diasHabiles)))
         )
       ),
 
       loading
         ? h(LoadingState, { mensaje: "Cargando nómina y registro de asistencias del curso..." })
-        : h(
+        : errorCarga
+          ? h("div", { className: "planilla-error-carga", role: "alert" }, errorCarga)
+          : h(
             "div",
             { className: "planilla-table-scroll-container" },
             h(
@@ -698,8 +917,25 @@ export default function AsistenciasView({ modoDocente = false }) {
                       "th",
                       {
                         key: `d-${dia.numero}`,
-                        className: `th-dia-num ${dia.esFinDeSemana ? "th-dia-weekend" : ""} ${dia.efemeride ? "th-dia-jornada" : ""}`,
-                        title: dia.efemeride ? `Día ${dia.numero}: ${dia.efemeride}` : `Día ${dia.numero}`
+                        className: `th-dia-num ${dia.esFinDeSemana ? "th-dia-weekend" : ""} ${dia.efemeride ? "th-dia-jornada" : ""} ${diaMarcable(dia) ? "th-dia-marcable" : ""}`,
+                        title: dia.efemeride
+                          ? `Día ${dia.numero}: ${dia.efemeride}`
+                          : diaMarcable(dia)
+                            ? `Día ${dia.numero}: clic para marcar a todos presentes (se deshace con Cancelar)`
+                            : `Día ${dia.numero}`,
+                        ...(diaMarcable(dia)
+                          ? {
+                              onClick: () => handleMarcarDiaTodosPresentes(dia.numero),
+                              onKeyDown: (evento) => {
+                                if (evento.key === "Enter" || evento.key === " ") {
+                                  evento.preventDefault();
+                                  handleMarcarDiaTodosPresentes(dia.numero);
+                                }
+                              },
+                              role: "button",
+                              tabIndex: 0
+                            }
+                          : {})
                       },
                       String(dia.numero)
                     )
@@ -758,66 +994,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   )
                 ),
 
-                varones.map((alumno) => {
-                  const totales = calcularTotalesAlumno(alumno.orden);
-                  return h(
-                    "tr",
-                    { key: `al-${alumno.orden}`, className: "tr-alumno-fila" },
-                    h("td", { className: "td-orden sticky-col col-1" }, alumno.orden),
-                    h("td", { className: "td-nombre sticky-col col-2" }, `${alumno.apellido}, ${alumno.nombre}`),
-
-                    // Celdas de días
-                    diasMes.map((dia) => {
-                      const valor = planilla?.registros?.[alumno.orden]?.[dia.numero] || (dia.esFinDeSemana || dia.efemeride ? "—" : "P");
-                      const esInactivo = dia.esFinDeSemana || Boolean(dia.efemeride);
-                      const estadoInfo = ESTADOS_ASISTENCIA[valor] || { label: "", clase: "" };
-
-                      return h(
-                        "td",
-                        {
-                          key: `celda-${alumno.orden}-${dia.numero}`,
-                          className: `td-celda-asistencia ${estadoInfo.clase} ${esInactivo ? "is-inactive-cell" : ""}`,
-                          onClick: () => handleToggleEstado(alumno.orden, dia.numero, esInactivo),
-                          title: esInactivo ? (dia.efemeride || "Fin de semana") : `${alumno.apellido}: ${estadoInfo.label} (Clic para cambiar)`
-                        },
-                        valor
-                      );
-                    }),
-
-                    // Totales
-                    h("td", { className: "td-total td-presentes" }, totales.presentes),
-                    h("td", { className: "td-total td-just" }, totales.ausentesJust || "—"),
-                    h("td", { className: "td-total td-injust" }, totales.ausentesInjust || "—"),
-                    h("td", { className: "td-total td-ef" }, totales.ef || "—"),
-                    h("td", { className: "td-total td-inasist-total" }, totales.totalInasistencias || "0"),
-                    h(
-                      "td",
-                      {
-                        className: `td-total td-porcentaje ${totales.porcentajeClass}`,
-                        title: `${totales.porcentajeAsistencia} de asistencia (${totales.presentes} presentes de ${totales.baseEvaluada} días computados)`
-                      },
-                      totales.porcentajeAsistencia
-                    ),
-                    h("td", { className: "td-observaciones-input" },
-                      h("input", {
-                        type: "text",
-                        className: "input-obs-alumno",
-                        placeholder: "Observaciones...",
-                        value: planilla?.observacionesPorAlumno?.[alumno.orden] || "",
-                        onChange: (e) => {
-                          const val = e.target.value;
-                          setPlanilla((prev) => ({
-                            ...prev,
-                            observacionesPorAlumno: {
-                              ...prev.observacionesPorAlumno,
-                              [alumno.orden]: val
-                            }
-                          }));
-                        }
-                      })
-                    )
-                  );
-                }),
+                varones.map(filaAlumno),
 
                 // Totales de Varones al pie de la sección
                 h(
@@ -826,7 +1003,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   h("td", { className: "td-orden sticky-col col-1" }, ""),
                   h("td", { className: "td-nombre sticky-col col-2" }, "VARONES PRESENTES"),
                   diasMes.map((d) =>
-                    h("td", { key: `vp-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.varonesPresentes[d.numero])
+                    h("td", { key: `vp-${d.numero}`, className: "td-tot-col" }, sinClase(d) ? "—" : totalesDiarios.varonesPresentes[d.numero])
                   ),
                   h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
@@ -836,7 +1013,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   h("td", { className: "td-orden sticky-col col-1" }, ""),
                   h("td", { className: "td-nombre sticky-col col-2" }, "VARONES AUSENTES"),
                   diasMes.map((d) =>
-                    h("td", { key: `va-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.varonesAusentes[d.numero])
+                    h("td", { key: `va-${d.numero}`, className: "td-tot-col" }, sinClase(d) ? "—" : totalesDiarios.varonesAusentes[d.numero])
                   ),
                   h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
@@ -864,66 +1041,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   )
                 ),
 
-                mujeres.map((alumno) => {
-                  const totales = calcularTotalesAlumno(alumno.orden);
-                  return h(
-                    "tr",
-                    { key: `al-${alumno.orden}`, className: "tr-alumno-fila" },
-                    h("td", { className: "td-orden sticky-col col-1" }, alumno.orden),
-                    h("td", { className: "td-nombre sticky-col col-2" }, `${alumno.apellido}, ${alumno.nombre}`),
-
-                    // Celdas de días
-                    diasMes.map((dia) => {
-                      const valor = planilla?.registros?.[alumno.orden]?.[dia.numero] || (dia.esFinDeSemana || dia.efemeride ? "—" : "P");
-                      const esInactivo = dia.esFinDeSemana || Boolean(dia.efemeride);
-                      const estadoInfo = ESTADOS_ASISTENCIA[valor] || { label: "", clase: "" };
-
-                      return h(
-                        "td",
-                        {
-                          key: `celda-${alumno.orden}-${dia.numero}`,
-                          className: `td-celda-asistencia ${estadoInfo.clase} ${esInactivo ? "is-inactive-cell" : ""}`,
-                          onClick: () => handleToggleEstado(alumno.orden, dia.numero, esInactivo),
-                          title: esInactivo ? (dia.efemeride || "Fin de semana") : `${alumno.apellido}: ${estadoInfo.label} (Clic para cambiar)`
-                        },
-                        valor
-                      );
-                    }),
-
-                    // Totales
-                    h("td", { className: "td-total td-presentes" }, totales.presentes),
-                    h("td", { className: "td-total td-just" }, totales.ausentesJust || "—"),
-                    h("td", { className: "td-total td-injust" }, totales.ausentesInjust || "—"),
-                    h("td", { className: "td-total td-ef" }, totales.ef || "—"),
-                    h("td", { className: "td-total td-inasist-total" }, totales.totalInasistencias || "0"),
-                    h(
-                      "td",
-                      {
-                        className: `td-total td-porcentaje ${totales.porcentajeClass}`,
-                        title: `${totales.porcentajeAsistencia} de asistencia (${totales.presentes} presentes de ${totales.baseEvaluada} días computados)`
-                      },
-                      totales.porcentajeAsistencia
-                    ),
-                    h("td", { className: "td-observaciones-input" },
-                      h("input", {
-                        type: "text",
-                        className: "input-obs-alumno",
-                        placeholder: "Observaciones...",
-                        value: planilla?.observacionesPorAlumno?.[alumno.orden] || "",
-                        onChange: (e) => {
-                          const val = e.target.value;
-                          setPlanilla((prev) => ({
-                            ...prev,
-                            observacionesPorAlumno: {
-                              ...prev.observacionesPorAlumno,
-                              [alumno.orden]: val
-                            }
-                          }));
-                        }
-                      })
-                    )
-                  );
-                }),
+                mujeres.map(filaAlumno),
 
                 // Totales de Mujeres al pie de la sección
                 h(
@@ -932,7 +1050,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   h("td", { className: "td-orden sticky-col col-1" }, ""),
                   h("td", { className: "td-nombre sticky-col col-2" }, "MUJERES PRESENTES"),
                   diasMes.map((d) =>
-                    h("td", { key: `mp-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.mujeresPresentes[d.numero])
+                    h("td", { key: `mp-${d.numero}`, className: "td-tot-col" }, sinClase(d) ? "—" : totalesDiarios.mujeresPresentes[d.numero])
                   ),
                   h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
@@ -942,7 +1060,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   h("td", { className: "td-orden sticky-col col-1" }, ""),
                   h("td", { className: "td-nombre sticky-col col-2" }, "MUJERES AUSENTES"),
                   diasMes.map((d) =>
-                    h("td", { key: `ma-${d.numero}`, className: "td-tot-col" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.mujeresAusentes[d.numero])
+                    h("td", { key: `ma-${d.numero}`, className: "td-tot-col" }, sinClase(d) ? "—" : totalesDiarios.mujeresAusentes[d.numero])
                   ),
                   h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
@@ -958,6 +1076,52 @@ export default function AsistenciasView({ modoDocente = false }) {
                 ),
 
                 // -------------------------------------------------------------
+                // SECCIÓN: SIN DATO DE GÉNERO (solo si hay alumnos sin el dato)
+                // -------------------------------------------------------------
+                ...(sinGenero.length
+                  ? [
+                      h(
+                        "tr",
+                        { key: "div-sg", className: "tr-section-divider" },
+                        h(
+                          "td",
+                          { colSpan: diasMes.length + 9, className: "td-section-banner" },
+                          h("span", { className: "sticky-section-title" }, "SIN DATO DE GÉNERO EN EL LEGAJO")
+                        )
+                      ),
+                      ...sinGenero.map(filaAlumno),
+                      h(
+                        "tr",
+                        { key: "sg-p", className: "tr-total-balance tr-total-sin-genero" },
+                        h("td", { className: "td-orden sticky-col col-1" }, ""),
+                        h("td", { className: "td-nombre sticky-col col-2" }, "PRESENTES"),
+                        diasMes.map((d) =>
+                          h("td", { key: `sp-${d.numero}`, className: "td-tot-col" }, sinClase(d) ? "—" : totalesDiarios.sinGeneroPresentes[d.numero])
+                        ),
+                        h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
+                      ),
+                      h(
+                        "tr",
+                        { key: "sg-a", className: "tr-total-balance tr-total-sin-genero" },
+                        h("td", { className: "td-orden sticky-col col-1" }, ""),
+                        h("td", { className: "td-nombre sticky-col col-2" }, "AUSENTES"),
+                        diasMes.map((d) =>
+                          h("td", { key: `sa-${d.numero}`, className: "td-tot-col" }, sinClase(d) ? "—" : totalesDiarios.sinGeneroAusentes[d.numero])
+                        ),
+                        h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
+                      ),
+                      h(
+                        "tr",
+                        { key: "sg-i", className: "tr-total-balance tr-total-sin-genero" },
+                        h("td", { className: "td-orden sticky-col col-1" }, ""),
+                        h("td", { className: "td-nombre sticky-col col-2" }, "INSCRIPTOS"),
+                        diasMes.map((d) => h("td", { key: `si-${d.numero}`, className: "td-tot-col" }, sinGenero.length)),
+                        h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
+                      )
+                    ]
+                  : []),
+
+                // -------------------------------------------------------------
                 // RESUMEN GENERAL DIARIO DEL CURSO
                 // -------------------------------------------------------------
                 h(
@@ -966,7 +1130,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   h("td", { className: "td-orden sticky-col col-1" }, ""),
                   h("td", { className: "td-nombre sticky-col col-2" }, "ALUMNOS PRESENTES"),
                   diasMes.map((d) =>
-                    h("td", { key: `tp-${d.numero}`, className: "td-tot-col td-tot-highlight" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.totalPresentes[d.numero])
+                    h("td", { key: `tp-${d.numero}`, className: "td-tot-col td-tot-highlight" }, sinClase(d) ? "—" : totalesDiarios.totalPresentes[d.numero])
                   ),
                   h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
@@ -976,7 +1140,7 @@ export default function AsistenciasView({ modoDocente = false }) {
                   h("td", { className: "td-orden sticky-col col-1" }, ""),
                   h("td", { className: "td-nombre sticky-col col-2" }, "ALUMNOS AUSENTES"),
                   diasMes.map((d) =>
-                    h("td", { key: `ta-${d.numero}`, className: "td-tot-col td-tot-highlight" }, d.esFinDeSemana || d.efemeride ? "—" : totalesDiarios.totalAusentes[d.numero])
+                    h("td", { key: `ta-${d.numero}`, className: "td-tot-col td-tot-highlight" }, sinClase(d) ? "—" : totalesDiarios.totalAusentes[d.numero])
                   ),
                   h("td", { colSpan: 7, className: "td-empty-spacer" }, "")
                 ),
@@ -1011,10 +1175,10 @@ export default function AsistenciasView({ modoDocente = false }) {
           "table",
           { className: "balance-mini-table" },
           h("tbody", null,
-            h("tr", null, h("td", null, "MATRICULADAS/OS 1° DÍA"), h("td", { className: "val" }, balanceMensual.matriculaInicial || 30)),
+            h("tr", null, h("td", null, "MATRICULADAS/OS 1° DÍA"), h("td", { className: "val" }, balanceMensual.matriculaInicial ?? 0)),
             h("tr", null, h("td", null, "ENTRADAS"), h("td", { className: "val" }, balanceMensual.entradas || 0)),
             h("tr", null, h("td", null, "SALIDAS"), h("td", { className: "val" }, balanceMensual.salidas || 0)),
-            h("tr", { className: "tr-resaltada" }, h("td", null, "MATRICULADAS/OS ÚLTIMO DÍA"), h("td", { className: "val" }, balanceMensual.matriculaFinal || 30))
+            h("tr", { className: "tr-resaltada" }, h("td", null, "MATRICULADAS/OS ÚLTIMO DÍA"), h("td", { className: "val" }, balanceMensual.matriculaFinal ?? 0))
           )
         )
       ),
@@ -1031,7 +1195,7 @@ export default function AsistenciasView({ modoDocente = false }) {
             h("tr", null, h("td", null, "TOTAL DE ASISTENCIA"), h("td", { className: "val" }, balanceMensual.totalAsistencia || 0)),
             h("tr", null, h("td", null, "TOTAL DE INASISTENCIA"), h("td", { className: "val" }, balanceMensual.totalInasistencia || 0)),
             h("tr", null, h("td", null, "ASISTENCIA MEDIA"), h("td", { className: "val" }, balanceMensual.asistenciaMedia || "0.0")),
-            h("tr", { className: "tr-resaltada" }, h("td", null, "% DE ASISTENCIA"), h("td", { className: "val font-bold" }, balanceMensual.porcentajeAsistencia || "100%"))
+            h("tr", { className: "tr-resaltada" }, h("td", null, "% DE ASISTENCIA"), h("td", { className: "val font-bold" }, balanceMensual.porcentajeAsistencia || (fuente ? "—" : "100%")))
           )
         )
       ),
@@ -1078,6 +1242,8 @@ export default function AsistenciasView({ modoDocente = false }) {
       )
     ),
 
+    h(AvisoVariasHojas, { texto: "La planilla ocupa más de una hoja: se mantuvo un tamaño de letra legible en lugar de reducirla más." }),
+
     // =========================================================================
     // MODAL / BARRA FLOTANTE FIJA AL VIEWPORT DE PANTALLA (PORTAL EN BODY)
     // =========================================================================
@@ -1085,7 +1251,7 @@ export default function AsistenciasView({ modoDocente = false }) {
       ? createPortal(
           h(
             "div",
-            { className: "asistencias-floating-bar no-print" },
+            { className: `asistencias-floating-bar no-print${fuente ? " asistencias-floating-bar--portal" : ""}` },
             h(
               "div",
               { className: "floating-bar-info" },
@@ -1096,7 +1262,8 @@ export default function AsistenciasView({ modoDocente = false }) {
                 cambiosCount === 1
                   ? "Tienes 1 cambio sin guardar en el registro"
                   : `Tienes ${cambiosCount} cambios sin guardar en el registro`
-              )
+              ),
+              errorGuardado ? h("span", { className: "floating-bar-error", role: "alert" }, errorGuardado) : null
             ),
             h(
               "div",

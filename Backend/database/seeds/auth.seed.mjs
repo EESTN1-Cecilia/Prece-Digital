@@ -34,6 +34,7 @@ export async function seedAuthData() {
     email: "admin@prece.local",
     passwordHash: adminHash,
     displayName: "Administrador",
+    area: "direccion",
     assignments: [{ role: ROLES.ADMIN }]
   });
 
@@ -41,6 +42,7 @@ export async function seedAuthData() {
     email: "director@prece.local",
     passwordHash: directorHash,
     displayName: "Director Escuela 1",
+    area: "direccion",
     assignments: [{ role: ROLES.DIRECTOR, schoolId: "esc-1" }]
   });
 
@@ -48,6 +50,7 @@ export async function seedAuthData() {
     email: "docente@prece.local",
     passwordHash: docenteHash,
     displayName: "Prof. María Villatoro",
+    area: "docencia",
     nombre: "María",
     apellido: "Villatoro",
     assignments: [
@@ -94,12 +97,16 @@ export async function seedAuthData() {
     email: "preceptor@prece.local",
     passwordHash: preceptorHash,
     displayName: "Preceptor 1° A",
+    area: "preceptoria",
     assignments: [
       {
         role: ROLES.PRECEPTOR,
         schoolId: "esc-1",
         courseId: "cur-1",
         divisionId: "div-a",
+        anio: 1,
+        curso: "1°",
+        division: "1",
         shiftId: "manana",
         periodId: "2026"
       }
@@ -110,6 +117,7 @@ export async function seedAuthData() {
     email: "inactivo@prece.local",
     passwordHash: inactiveHash,
     displayName: "Cuenta desactivada",
+    area: "docencia",
     assignments: [{ role: ROLES.DOCENTE, schoolId: "esc-1" }],
     isActive: false,
     deactivatedAt: new Date().toISOString()
@@ -119,6 +127,7 @@ export async function seedAuthData() {
     email: "jefearea@prece.local",
     passwordHash: jefeAreaHash,
     displayName: "Jefe de Área",
+    area: "informatica",
     assignments: [{ role: ROLES.JEFE_AREA, schoolId: "esc-1" }]
   });
 
@@ -126,6 +135,7 @@ export async function seedAuthData() {
     email: "server@prece.local",
     passwordHash: serverHash,
     displayName: "Server",
+    area: "servidor",
     assignments: [{ role: ROLES.SERVER, schoolId: "esc-1" }]
   });
 
@@ -133,6 +143,7 @@ export async function seedAuthData() {
     email: "secretaria@prece.local",
     passwordHash: secretarioHash,
     displayName: "Secretaría",
+    area: "secretaria",
     assignments: [{ role: ROLES.SECRETARIO, schoolId: "esc-1" }]
   });
 
@@ -140,6 +151,7 @@ export async function seedAuthData() {
     email: "secretario@prece.local",
     passwordHash: secretarioHash,
     displayName: "Secretaría General",
+    area: "secretaria",
     assignments: [{ role: ROLES.SECRETARIO, schoolId: "esc-1" }]
   });
 }

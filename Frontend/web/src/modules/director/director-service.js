@@ -6,6 +6,25 @@
 import { pedir } from "../../services/http.js";
 import { roles as ROLES_CATALOGO } from "../../../../../Shared/src/domain.mjs";
 
+/* Forma que usa la seccion de asignaciones de Direccion. */
+function vistaDivisionPreceptor(division) {
+  const turno = division.turno === "tarde" ? "Tarde" : "Mañana";
+  return {
+    id: division.id,
+    anio: division.anio,
+    curso: `${division.anio}°`,
+    division: `División ${division.division}`,
+    numDivision: division.division,
+    turno,
+    orientacion: division.orientacion || "Ciclo Básico",
+    activos: division.activos,
+    preceptor: division.preceptor
+      ? { ...division.preceptor, avatar: String(division.preceptor.nombre || "P").charAt(0).toUpperCase() }
+      : null,
+    estado: division.estado
+  };
+}
+
 export const ROLES_DISPONIBLES = ROLES_CATALOGO.map((rol) => ({
   id: rol.id,
   nombre: rol.name,
@@ -30,195 +49,279 @@ export const ROLES_DISPONIBLES = ROLES_CATALOGO.map((rol) => ({
   }[rol.id] || "#64748b"
 }));
 
+/* Traduce un usuario del backend a la forma que usan las vistas del panel.
+   El area se guarda como identificador (area) y se muestra con su nombre
+   (areaNombre): el texto viene del catalogo institucional del servidor. */
+export function mapearPerfil(u = {}) {
+  const rawRoles = u.roles || u.assignments?.map((a) => a.role || a) || [];
+  const roles = rawRoles
+    .map((r) => {
+      const id = typeof r === "string" ? r : (r?.id || r?.role || r?.codigo);
+      const catalogo = ROLES_DISPONIBLES.find((c) => c.id === id);
+      return {
+        id,
+        nombre: catalogo?.nombre || id,
+        color: catalogo?.color || "#64748b"
+      };
+    })
+    .filter((rol) => Boolean(rol.id));
+
+  const nombreCompleto =
+    u.displayName || [u.nombre, u.apellido].filter(Boolean).join(" ") || u.email || "";
+
+  return {
+    id: u.id,
+    nombre: u.nombre || nombreCompleto.split(" ")[0] || "",
+    apellido: u.apellido || nombreCompleto.split(" ").slice(1).join(" ") || "",
+    nombreCompleto,
+    email: u.email,
+    dni: u.dni || "—",
+    telefono: u.telefono || "—",
+    area: u.area ?? null,
+    areaNombre: u.areaNombre ?? null,
+    roles,
+    estado: u.isActive === false || u.estado === "inactivo" ? "inactivo" : "activo",
+    ultimoAcceso: u.ultimoAcceso || u.lastLoginAt || null,
+    creadoEn: u.creadoEn || u.createdAt || null
+  };
+}
+
 export const DirectorService = {
   /**
    * Obtiene las métricas consolidadas de la institución para el Director.
+   *
+   * Cada bloque se arma con lo que devuelve el backend. Cuando un módulo no
+   * está disponible (o el usuario no tiene permiso para verlo) el bloque
+   * queda con `disponible: false` y la vista lo dice, en lugar de mostrar una
+   * cifra inventada.
    */
   async getDashboardConsolidado() {
     const resumen = {
       alumnos: {
-        totalActivos: 840,
-        turnoManana: 450,
-        turnoTarde: 390,
-        turnoTaller: 525,
-        divisiones: 32,
-        promedioPorDivision: 26,
-        alumnosEnRiesgo: 12
+        disponible: false,
+        totalActivos: 0,
+        total: 0,
+        porTurno: [],
+        divisiones: 0,
+        alumnosEnRiesgo: 0,
+        casosDestacados: [],
+        alertas: []
       },
       personal: {
+        disponible: false,
         totalUsuarios: 0,
         activos: 0,
-        porRol: {
-          director: 0,
-          secretario: 0,
-          preceptor: 0,
-          docente: 0,
-          jefe_area: 0,
-          server: 0,
-          admin: 0
-        }
+        inactivos: 0,
+        porRol: {}
       },
       asistencia: {
-        tasaGeneral: 94.2,
-        presentesHoy: 791,
-        ausentesHoy: 49,
-        alertasConsecutivas: 3
+        disponible: false,
+        totalInasistencias: 0,
+        justificadas: 0,
+        noJustificadas: 0,
+        pendientes: 0,
+        alumnosEnRiesgo: 0,
+        porDivision: []
       },
       serverPañol: {
+        disponible: false,
         totalItems: 0,
         sinStock: 0,
         stockBajo: 0,
         solicitudesPendientes: 0,
-        reservasActivas: 0
+        reservasActivas: 0,
+        alertas: []
       },
       academico: {
-        totalMaterias: 68,
-        alumnosConPrevias: 28,
-        materiasCriticas: ["Matemática 4°", "Física 3°", "Sistemas Operativos 5°"]
+        disponible: false,
+        totalMateriasPendientes: 0,
+        totalMateriasDesaprobadas: 0,
+        cambiosCursoPendientes: 0,
+        casosDestacados: []
       }
     };
 
-    // 1. Obtener usuarios y desglosar personal
+    // 1. Personal: el mismo listado que usa la pestana de gestion de roles.
     try {
-      const usuarios = await pedir("/api/v1/users");
-      const lista = Array.isArray(usuarios) ? usuarios : (usuarios?.items ?? usuarios?.data ?? []);
-      if (lista.length > 0) {
-        resumen.personal.totalUsuarios = lista.length;
-        resumen.personal.activos = lista.filter((u) => u.isActive !== false && u.estado !== "inactivo").length;
+      const { items } = await this.listarPerfiles();
+      resumen.personal.disponible = true;
+      resumen.personal.totalUsuarios = items.length;
+      resumen.personal.activos = items.filter((u) => u.estado === "activo").length;
+      resumen.personal.inactivos = items.length - resumen.personal.activos;
 
-        for (const u of lista) {
-          const roles = u.roles || u.assignments?.map((a) => a.role) || [];
-          for (const r of roles) {
-            const rolId = typeof r === "string" ? r : (r?.id || r?.role);
-            if (resumen.personal.porRol[rolId] !== undefined) {
-              resumen.personal.porRol[rolId] += 1;
-            }
-          }
+      for (const u of items) {
+        for (const rol of u.roles) {
+          resumen.personal.porRol[rol.id] = (resumen.personal.porRol[rol.id] ?? 0) + 1;
         }
       }
     } catch {
-      // Fallback a conteos aproximados
-      resumen.personal.totalUsuarios = 42;
-      resumen.personal.activos = 40;
-      resumen.personal.porRol = {
-        director: 2,
-        secretario: 3,
-        preceptor: 8,
-        docente: 24,
-        jefe_area: 2,
-        server: 2,
-        admin: 1
-      };
+      // El bloque queda marcado como no disponible: la vista lo informa.
     }
 
-    // 2. Obtener datos de Secretaría
+    // 2. Secretaria: matricula, turnos, divisiones y alertas academicas.
     try {
       const dashSec = await pedir("/api/v1/dashboard/secretaria");
-      if (dashSec) {
-        if (dashSec.matriculaActiva) resumen.alumnos.totalActivos = dashSec.matriculaActiva;
-        if (Array.isArray(dashSec.alumnosPorCurso)) resumen.alumnos.divisiones = dashSec.alumnosPorCurso.length;
-        if (Array.isArray(dashSec.porTurno)) {
-          const tm = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("mañ"));
-          const tt = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tard"));
-          const tall = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tall"));
-          if (tm) resumen.alumnos.turnoManana = tm.cantidad;
-          if (tt) resumen.alumnos.turnoTarde = tt.cantidad;
-          if (tall) resumen.alumnos.turnoTaller = tall.cantidad;
-        }
-        if (Array.isArray(dashSec.alertas)) {
-          resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;
-        }
+      const alumnos = dashSec?.resumenAlumnos;
+
+      if (alumnos) {
+        resumen.alumnos.disponible = true;
+        resumen.alumnos.totalActivos = alumnos.activos ?? 0;
+        resumen.alumnos.total = alumnos.total ?? 0;
+        resumen.alumnos.porTurno = Array.isArray(alumnos.porTurno) ? alumnos.porTurno : [];
+      }
+
+      if (Array.isArray(dashSec?.alumnosPorCurso)) {
+        resumen.alumnos.divisiones = dashSec.alumnosPorCurso.length;
+      }
+
+      if (Array.isArray(dashSec?.alertas)) {
+        resumen.alumnos.alertas = dashSec.alertas;
+        resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;
+      }
+
+      if (dashSec?.situacionesAcademicas) {
+        resumen.academico.disponible = true;
+        resumen.academico.totalMateriasPendientes = dashSec.situacionesAcademicas.totalMateriasPendientes ?? 0;
+        resumen.academico.totalMateriasDesaprobadas = dashSec.situacionesAcademicas.totalMateriasDesaprobadas ?? 0;
+        resumen.academico.cambiosCursoPendientes = dashSec.situacionesAcademicas.cambiosCursoPendientes ?? 0;
+        resumen.academico.casosDestacados = Array.isArray(dashSec.situacionesAcademicas.casosDestacados)
+          ? dashSec.situacionesAcademicas.casosDestacados
+          : [];
+        resumen.alumnos.casosDestacados = resumen.academico.casosDestacados;
+      }
+
+      if (dashSec?.inasistencias) {
+        /* El tablero de Secretaria todavia no tiene modulo de asistencia: de
+           ahi solo sale la cantidad de alumnos en riesgo. */
+        resumen.asistencia.alumnosEnRiesgo = dashSec.inasistencias.alumnosEnRiesgo ?? 0;
       }
     } catch {
-      // Silencioso
+      // Silencioso: el bloque queda marcado como no disponible.
     }
 
-    // 3. Obtener datos de Server y Pañol
+    /* 2b. Inasistencias: el modulo de asistencia tiene los registros reales.
+       Las totales y el detalle pordivision se calculan en el servidor, asi
+       que el tablero no inventa ninguna cifra. */
     try {
-      const dashServer = await pedir("/api/v1/dashboard/server");
-      if (dashServer) {
-        if (dashServer.totales) {
-          resumen.serverPañol.totalItems = dashServer.totales.totalItems ?? dashServer.totales.totalMateriales ?? 0;
-          resumen.serverPañol.sinStock = dashServer.totales.sinStock ?? 0;
-          resumen.serverPañol.stockBajo = dashServer.totales.stockBajo ?? 0;
-          resumen.serverPañol.solicitudesPendientes = dashServer.totales.solicitudesPendientes ?? 0;
-          resumen.serverPañol.reservasActivas = dashServer.totales.reservasActivas ?? 0;
-        }
+      const estadisticas = await pedir("/api/v1/inasistencias/estadisticas");
+      const totales = estadisticas?.totales;
+
+      if (totales) {
+        resumen.asistencia.disponible = true;
+        resumen.asistencia.totalInasistencias = totales.total ?? 0;
+        resumen.asistencia.justificadas = totales.justificadas ?? 0;
+        resumen.asistencia.noJustificadas = totales.noJustificadas ?? 0;
+        resumen.asistencia.pendientes = totales.pendientes ?? 0;
+      }
+
+      if (Array.isArray(estadisticas?.porDivision)) {
+        resumen.asistencia.porDivision = estadisticas.porDivision;
       }
     } catch {
-      // Silencioso
+      // Silencioso: el bloque queda marcado como no disponible.
+    }
+
+    // 3. Server y Pañol: stock, solicitudes y reservas.
+    try {
+      const dashServer = await pedir("/api/v1/dashboard/server");
+      const stock = dashServer?.resumenStock;
+
+      if (stock) {
+        resumen.serverPañol.disponible = true;
+        resumen.serverPañol.totalItems = stock.totalMateriales ?? 0;
+        resumen.serverPañol.sinStock = stock.sinStock ?? 0;
+        resumen.serverPañol.stockBajo = stock.stockBajo ?? 0;
+        resumen.serverPañol.reservasActivas = stock.reservados ?? 0;
+      }
+
+      if (Array.isArray(dashServer?.solicitudesPendientes)) {
+        resumen.serverPañol.solicitudesPendientes = dashServer.solicitudesPendientes.length;
+      }
+
+      if (Array.isArray(dashServer?.alertas)) {
+        resumen.serverPañol.alertas = dashServer.alertas;
+      }
+    } catch {
+      // Silencioso: el bloque queda marcado como no disponible.
     }
 
     return resumen;
   },
 
   /**
-   * Lista todos los usuarios/perfiles registrados con filtros opcionales.
+   * Lista el personal registrado con filtros opcionales.
+   *
+   * Devuelve `{ items, paginacion }`: la lista ya normalizada para las vistas
+   * y la paginacion que calculo el backend.
    */
   async listarPerfiles(filtros = {}) {
     const params = new URLSearchParams();
     if (filtros.q) params.set("q", filtros.q);
     if (filtros.rol) params.set("rol", filtros.rol);
     if (filtros.estado) params.set("estado", filtros.estado);
+    if (filtros.area) params.set("area", filtros.area);
+    if (filtros.pagina) params.set("pagina", String(filtros.pagina));
+    if (filtros.porPagina) params.set("porPagina", String(filtros.porPagina));
 
     const queryStr = params.toString() ? `?${params.toString()}` : "";
-    const respuesta = await pedir(`/api/v1/users${queryStr}`);
-    const lista = Array.isArray(respuesta) ? respuesta : (respuesta?.items ?? respuesta?.data ?? []);
+    const envelope = await pedir(`/api/v1/users${queryStr}`, { crudo: true });
+    const lista = Array.isArray(envelope) ? envelope : (envelope?.data ?? envelope?.items ?? []);
 
-    return lista.map((u) => {
-      const rawRoles = u.roles || u.assignments?.map((a) => a.role || a) || [];
-      const roles = rawRoles.map((r) => {
-        const id = typeof r === "string" ? r : (r?.id || r?.role || r?.codigo);
-        const catalogo = ROLES_DISPONIBLES.find((c) => c.id === id);
-        return {
-          id,
-          nombre: catalogo?.nombre || id,
-          color: catalogo?.color || "#64748b"
-        };
-      });
+    return {
+      items: lista.map(mapearPerfil),
+      paginacion: envelope?.paginacion ?? null
+    };
+  },
 
-      const nombreCompleto = u.displayName || [u.nombre, u.apellido].filter(Boolean).join(" ") || u.email;
+  /**
+   * Catalogo institucional de areas por las que se puede asignar personal.
+   * Es la unica fuente: el frontend no escribe los sectores a mano.
+   */
+  async listarAreas() {
+    const areas = await pedir("/api/v1/catalogos/areas");
+    return Array.isArray(areas) ? areas : [];
+  },
 
-      return {
-        id: u.id,
-        nombre: u.nombre || nombreCompleto.split(" ")[0] || "",
-        apellido: u.apellido || nombreCompleto.split(" ").slice(1).join(" ") || "",
-        nombreCompleto,
-        email: u.email,
-        dni: u.dni || "-",
-        telefono: u.telefono || "-",
-        area: u.area || u.schoolId || "E.E.S.T N°1",
-        roles,
-        estado: (u.isActive === false || u.estado === "inactivo") ? "inactivo" : "activo",
-        ultimoAcceso: u.ultimoAcceso || u.lastLoginAt || null,
-        creadoEn: u.creadoEn || u.createdAt || null
-      };
-    });
+  /**
+   * Identidad institucional (nombre, dependencia, ciclo lectivo, turno).
+   */
+  async obtenerInstitucion() {
+    return pedir("/api/v1/institucion");
   },
 
   /**
    * Crea un nuevo perfil de usuario asignando sus roles correspondientes.
-   * Devuelve la información del usuario creado incluyendo la contraseña temporal.
+   * Devuelve la informacion del usuario creado con la clave temporal, que el
+   * backend muestra una sola vez.
    */
   async crearPerfil(datos) {
+    const area = String(datos.area || "").trim();
     const payload = {
       nombre: String(datos.nombre || "").trim(),
       apellido: String(datos.apellido || "").trim(),
       email: String(datos.email || "").trim().toLowerCase(),
       dni: String(datos.dni || "").trim().replace(/\D/g, ""),
       telefono: datos.telefono ? String(datos.telefono).trim() : undefined,
-      area: datos.area || "E.E.S.T N°1",
-      roles: Array.isArray(datos.roles) ? datos.roles : [datos.roles].filter(Boolean),
-      schoolId: datos.schoolId || "esc-1"
+      area,
+      roles: Array.isArray(datos.roles) ? datos.roles : [datos.roles].filter(Boolean)
     };
+
+    if (area === "docencia") {
+      payload.materia = String(datos.materia || "").trim();
+      payload.situacion_revista = String(datos.situacion_revista || "").trim();
+      payload.suplente_de = datos.suplente_de ? String(datos.suplente_de).trim() : null;
+      payload.modulos = Number.parseInt(String(datos.modulos ?? ""), 10);
+      payload.dia = String(datos.dia || "").trim();
+      payload.hora_desde = String(datos.hora_desde || "").trim();
+      payload.hora_hasta = String(datos.hora_hasta || "").trim();
+    }
 
     const res = await pedir("/api/v1/users", {
       method: "POST",
       body: JSON.stringify(payload)
     });
 
-    const creado = res?.data ?? res?.body?.data ?? res;
-    return creado;
+    return res?.data ?? res?.body?.data ?? res;
   },
 
   /**
@@ -478,170 +581,41 @@ export const DirectorService = {
   // =========================================================================
 
   /**
-   * Obtiene el listado de las 27 divisiones institucionales con sus preceptores asignados.
+   * Divisiones del catalogo con el preceptor a cargo de cada una, y los
+   * preceptores con cuenta activa. La asignacion vive en el backend y define
+   * que cursos ve cada preceptor (pantallas y autorizacion).
    */
+  async obtenerAsignacionesPreceptores() {
+    const respuesta = await pedir("/api/v1/preceptor/asignaciones", { crudo: true, recurso: "las asignaciones de preceptores" });
+    return {
+      divisiones: (respuesta?.data ?? []).map(vistaDivisionPreceptor),
+      preceptores: (respuesta?.preceptores ?? []).map((preceptor) => ({ ...preceptor, nombreCompleto: preceptor.nombre }))
+    };
+  },
+
   async listarAsignacionesPreceptores() {
-    const STORAGE_KEY = "prece_asignaciones_preceptores";
-    try {
-      const guardado = localStorage.getItem(STORAGE_KEY);
-      if (guardado) {
-        return JSON.parse(guardado);
-      }
-    } catch {
-      // Ignorar error de storage
-    }
-
-    const DIVISIONES_DEF = [
-      { anio: 1, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 4, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 4, division: "2", turno: "Tarde", orientacion: "Técnico en Informática" },
-      { anio: 4, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-      { anio: 4, division: "4", turno: "Tarde", orientacion: "Técnico en Programación" },
-      { anio: 5, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 5, division: "2", turno: "Tarde", orientacion: "Técnico en Informática" },
-      { anio: 5, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-      { anio: 5, division: "4", turno: "Tarde", orientacion: "Técnico en Programación" },
-      { anio: 6, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 6, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-      { anio: 7, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 7, division: "2", turno: "Tarde", orientacion: "Técnico en Programación" }
-    ];
-
-    const iniciales = DIVISIONES_DEF.map((d) => {
-      const id = `${d.anio}-${d.division}`;
-      // Asignar por defecto 1° 1° y 2° 1° para reflejar 2 de 27 asignadas como en la maqueta
-      if (d.anio === 1 && d.division === "1") {
-        return {
-          id,
-          anio: d.anio,
-          curso: `${d.anio}°`,
-          division: `División ${d.division}`,
-          numDivision: d.division,
-          turno: d.turno,
-          orientacion: d.orientacion,
-          preceptor: {
-            id: "usr-preceptor-1",
-            nombre: "Preceptor 1° A",
-            email: "preceptor@prece.local",
-            avatar: "P"
-          },
-          estado: "asignado",
-          actualizadoEn: "2026-03-02"
-        };
-      }
-      if (d.anio === 2 && d.division === "1") {
-        return {
-          id,
-          anio: d.anio,
-          curso: `${d.anio}°`,
-          division: `División ${d.division}`,
-          numDivision: d.division,
-          turno: d.turno,
-          orientacion: d.orientacion,
-          preceptor: {
-            id: "usr-preceptor-2",
-            nombre: "Carlos Ramos",
-            email: "cramos@prece.local",
-            avatar: "C"
-          },
-          estado: "asignado",
-          actualizadoEn: "2026-03-02"
-        };
-      }
-      return {
-        id,
-        anio: d.anio,
-        curso: `${d.anio}°`,
-        division: `División ${d.division}`,
-        numDivision: d.division,
-        turno: d.turno,
-        orientacion: d.orientacion,
-        preceptor: null,
-        estado: "sin_asignar",
-        actualizadoEn: null
-      };
-    });
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
-    } catch {
-      // Silencioso
-    }
-
-    return iniciales;
+    return (await this.obtenerAsignacionesPreceptores()).divisiones;
   },
 
   /**
-   * Guarda o reasigna un preceptor para una división específica.
+   * Asigna (o reasigna) el preceptor a cargo de una division "<anio>-<division>".
+   * Devuelve el listado actualizado.
    */
   async guardarAsignacionPreceptor(divisionId, preceptorData) {
-    const STORAGE_KEY = "prece_asignaciones_preceptores";
-    const lista = await this.listarAsignacionesPreceptores();
-    const actualizada = lista.map((item) => {
-      if (item.id === divisionId) {
-        return {
-          ...item,
-          preceptor: {
-            id: preceptorData.id || `prec-${Date.now()}`,
-            nombre: preceptorData.nombreCompleto || preceptorData.nombre || "Preceptor Asignado",
-            email: preceptorData.email || "preceptor@prece.local",
-            avatar: (preceptorData.nombreCompleto || preceptorData.nombre || "P").charAt(0).toUpperCase()
-          },
-          estado: "asignado",
-          actualizadoEn: new Date().toISOString().split("T")[0]
-        };
-      }
-      return item;
+    await pedir(`/api/v1/preceptor/asignaciones/${encodeURIComponent(divisionId)}`, {
+      method: "PUT",
+      body: JSON.stringify({ preceptorId: preceptorData.id }),
+      crudo: true
     });
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
-    } catch {
-      // Silencioso
-    }
-
-    return actualizada;
+    return this.listarAsignacionesPreceptores();
   },
 
   /**
    * Quita la asignación de preceptor de una división.
    */
   async quitarAsignacionPreceptor(divisionId) {
-    const STORAGE_KEY = "prece_asignaciones_preceptores";
-    const lista = await this.listarAsignacionesPreceptores();
-    const actualizada = lista.map((item) => {
-      if (item.id === divisionId) {
-        return {
-          ...item,
-          preceptor: null,
-          estado: "sin_asignar",
-          actualizadoEn: new Date().toISOString().split("T")[0]
-        };
-      }
-      return item;
-    });
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
-    } catch {
-      // Silencioso
-    }
-
-    return actualizada;
+    await pedir(`/api/v1/preceptor/asignaciones/${encodeURIComponent(divisionId)}`, { method: "DELETE", crudo: true });
+    return this.listarAsignacionesPreceptores();
   },
 
   /**

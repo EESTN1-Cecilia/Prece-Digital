@@ -21,7 +21,7 @@ import React, { createContext, useCallback, useEffect, useMemo, useReducer, useR
 
 const h = React.createElement;
 import { EVENTO_SESION_EXPIRADA, reiniciarSesionExpirada } from "../services/http.js";
-import { cerrarSesionRemota, iniciarSesion as iniciarSesionApi, obtenerSesion } from "../services/identity-api.js";
+import { cambiarClave as cambiarClaveApi, cerrarSesionRemota, iniciarSesion as iniciarSesionApi, obtenerSesion } from "../services/identity-api.js";
 import { descartarNotificacionApi, listarNotificaciones, marcarNotificacionLeida, marcarTodasLasNotificacionesLeidas } from "../services/notificaciones-api.js";
 
 export const ContextoEstado = createContext(null);
@@ -291,11 +291,14 @@ export function ProveedorEstado({ children }) {
 
   /* Las notificaciones se piden una vez resuelta la sesion, no antes: sin usuario
      no hay a quien notificar. */
+  /* Con la clave provisoria pendiente la API solo permite cambiarla: no se piden. */
+  const debeCambiarClave = Boolean(estado.sesion.usuario?.debeCambiarClave);
+
   useEffect(() => {
-    if (estado.sesion.estado === SESION.autenticada) {
+    if (estado.sesion.estado === SESION.autenticada && !debeCambiarClave) {
       cargarNotificaciones();
     }
-  }, [estado.sesion.estado, cargarNotificaciones]);
+  }, [estado.sesion.estado, debeCambiarClave, cargarNotificaciones]);
 
   /* Al volver a la pestana se relee la sesion. Si mientras tanto le cambiaron los
      permisos, la interfaz deja de mostrar los viejos. */
@@ -325,6 +328,12 @@ export function ProveedorEstado({ children }) {
         } finally {
           despachar({ tipo: "carga/terminar", clave: "login" });
         }
+      },
+
+      async cambiarClave(datos) {
+        const { data, origen } = await cambiarClaveApi(datos);
+        despachar({ tipo: "sesion/lista", datos: data, origen });
+        return data;
       },
 
       async cerrarSesion() {

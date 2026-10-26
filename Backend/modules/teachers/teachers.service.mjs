@@ -1,4 +1,5 @@
-import { errorDeValidacion, noEncontrado, conflicto } from "../../utils/api-error.mjs";
+import { errorDeValidacion, errorHttp, noEncontrado, conflicto } from "../../utils/api-error.mjs";
+import { esAreaValida, listarAreas, nombreArea } from "../../config/areas.config.mjs";
 import academicRepository from "../academic/academic.repository.mjs";
 import {
   ESTADOS_ASIGNACION,
@@ -24,6 +25,16 @@ import {
   normalizarTexto
 } from "./catalogo.mjs";
 import teachersRepository from "./teachers.repository.mjs";
+import { userRepository } from "../../database/repositories/user.repository.mjs";
+import { sincronizarCuenta, verificarCuentaDisponible } from "./docente-cuenta.service.mjs";
+
+/* Nadie da de baja su propia cuenta docente: la baja la decide otra persona
+   autorizada. */
+function impedirBajaPropia(docente, user) {
+  if (docente.userId && user?.id && docente.userId === user.id) {
+    throw errorHttp(403, "FORBIDDEN", "No puede dar de baja su propio registro docente.");
+  }
+}
 
 const POR_PAGINA_MAXIMO = 100;
 const POR_PAGINA_DEFECTO = 20;
@@ -108,6 +119,8 @@ function publicDocente(docente) {
     telefono: docente.telefono ?? null,
     titulo: docente.titulo ?? null,
     especialidades: [...(docente.especialidades ?? [])],
+    area: docente.area ?? null,
+    areaNombre: nombreArea(docente.area) ?? null,
     escuelaId: docente.escuelaId,
     estado: docente.estado,
     creadoEn: docente.creadoEn,
@@ -116,6 +129,97 @@ function publicDocente(docente) {
     actualizadoPor: docente.actualizadoPor ?? null,
     fechaBaja: docente.fechaBaja ?? null
   };
+}
+
+function etiquetaCurso(cursoId, divisionId) {
+  const curso = cursoId ? academicRepository.findCursoById(cursoId) : null;
+  const division = divisionId ? academicRepository.findDivisionById(divisionId) : null;
+
+  if (!curso) {
+    return division?.nombre ?? null;
+  }
+
+  return division ? `${curso.anio}° año ${division.nombre}` : `${curso.anio}° año`;
+}
+
+/* Materia declarada en el alta del perfil (Datos Academicos de la cuenta
+   vinculada). Si coincide con una materia del plan se usa su id, asi el filtro
+   por materia la encuentra igual que a una asignacion; si no, se identifica por
+   el texto normalizado. */
+const PREFIJO_DECLARADA = "declarada:";
+
+function materiasDeclaradas(docente) {
+  const cuenta = docente.userId ? userRepository.findById(docente.userId, { includeInactive: true }) : null;
+  const texto = String(cuenta?.materia ?? "").trim();
+  const clave = normalizarTexto(texto);
+
+  if (!clave) {
+    return [];
+  }
+
+  const materia = academicRepository.listSubjectsRef().find((item) => normalizarTexto(item.nombre) === clave);
+  return [{ id: materia?.id ?? `${PREFIJO_DECLARADA}${clave}`, nombre: materia?.nombre ?? texto }];
+}
+
+/* Lo que el docente tiene asignado hoy (solo asignaciones activas). Alimenta las
+   columnas de materias y cursos del listado y el aviso previo a una baja. */
+function resumenAsignaciones(docenteId, docente = null) {
+  const deMateria = teachersRepository.listAsignacionesMateria({ docenteId, estado: "activo" });
+  const deCurso = teachersRepository.listAsignacionesCurso({ docenteId, estado: "activo" });
+  const materias = new Map();
+  const cursos = new Map();
+
+  for (const asignacion of deMateria) {
+    if (!materias.has(asignacion.materiaId)) {
+      const materia = academicRepository.findSubjectRefById(asignacion.materiaId);
+      materias.set(asignacion.materiaId, { id: asignacion.materiaId, nombre: materia?.nombre ?? asignacion.materiaId });
+    }
+  }
+
+  for (const asignacion of [...deMateria, ...deCurso]) {
+    const clave = `${asignacion.cursoId ?? ""}|${asignacion.divisionId ?? ""}`;
+    const etiqueta = etiquetaCurso(asignacion.cursoId, asignacion.divisionId);
+
+    if (etiqueta && !cursos.has(clave)) {
+      cursos.set(clave, { cursoId: asignacion.cursoId ?? null, divisionId: asignacion.divisionId ?? null, etiqueta });
+    }
+  }
+
+  return {
+    materias: [...materias.values()].sort((una, otra) => collator.compare(una.nombre, otra.nombre)),
+    /* Materias declaradas en el perfil que todavia no tienen asignacion: el
+       listado las muestra para que el alta se vea completa desde el primer dia. */
+    materiasDeclaradas: docente ? materiasDeclaradas(docente).filter((materia) => !materias.has(materia.id)) : [],
+    cursos: [...cursos.values()].sort((uno, otro) => collator.compare(uno.etiqueta, otro.etiqueta)),
+    asignacionesMateria: deMateria.length,
+    asignacionesCurso: deCurso.length,
+    totalActivas: deMateria.length + deCurso.length
+  };
+}
+
+function docenteConResumen(docente) {
+  return { ...publicDocente(docente), asignaciones: resumenAsignaciones(docente.id, docente) };
+}
+
+/* El area es opcional y siempre sale del catalogo institucional. Devuelve
+   undefined cuando el valor es invalido (y deja el error cargado). */
+function normalizarArea(valor, errores) {
+  if (valor === undefined) {
+    return undefined;
+  }
+
+  if (valor === null || valor === "") {
+    return null;
+  }
+
+  const area = String(valor).trim();
+
+  if (!esAreaValida(area)) {
+    errores.push({ field: "area", message: "El area no pertenece al catalogo institucional." });
+    return undefined;
+  }
+
+  return area;
 }
 
 function docenteRef(docente) {
@@ -418,7 +522,26 @@ function resolverAlcance({ cursoId, divisionId }, errores) {
 /* ---------------- Servicio ----------------------------------------------- */
 
 const teachersService = {
-  getCatalogos() {
+  getCatalogos(user) {
+    /* Materias que hoy dicta algun docente: son las que tiene sentido ofrecer
+       como filtro del listado. */
+    const materias = new Map();
+
+    for (const asignacion of teachersRepository.listAsignacionesMateria({ estado: "activo" })) {
+      if (!materias.has(asignacion.materiaId)) {
+        const materia = academicRepository.findSubjectRefById(asignacion.materiaId);
+        materias.set(asignacion.materiaId, { id: asignacion.materiaId, nombre: materia?.nombre ?? asignacion.materiaId });
+      }
+    }
+
+    for (const docente of teachersRepository.listDocentes({ escuelaId: user ? escuelaDel(user, {}) : null, estado: "activo" })) {
+      for (const materia of materiasDeclaradas(docente)) {
+        if (!materias.has(materia.id)) {
+          materias.set(materia.id, materia);
+        }
+      }
+    }
+
     return {
       statusCode: 200,
       body: {
@@ -426,7 +549,9 @@ const teachersService = {
           estados: ESTADOS_DOCENTE,
           tiposDocumento: TIPOS_DOCUMENTO,
           rolesAsignacion: ROLES_ASIGNACION,
-          estadosAsignacion: ESTADOS_ASIGNACION
+          estadosAsignacion: ESTADOS_ASIGNACION,
+          areas: listarAreas().map(({ id, nombre }) => ({ id, nombre })),
+          materias: [...materias.values()].sort((una, otra) => collator.compare(una.nombre, otra.nombre))
         }
       }
     };
@@ -467,7 +592,8 @@ const teachersService = {
       errores.push({ field: "telefono", message: "El telefono no tiene un formato valido." });
     }
 
-    const titulo = data?.titulo === undefined ? null : (typeof data.titulo === "string" ? data.titulo.trim() || null : undefined);
+    /* Igual que en la modificacion: sin titulo, null o texto vacio es "sin titulo". */
+    const titulo = data?.titulo === undefined || data?.titulo === null ? null : (typeof data.titulo === "string" ? data.titulo.trim() || null : undefined);
 
     if (titulo === undefined) {
       errores.push({ field: "titulo", message: "El titulo debe ser texto." });
@@ -476,6 +602,7 @@ const teachersService = {
     }
 
     const especialidades = normalizarEspecialidades(data?.especialidades, errores);
+    const area = normalizarArea(data?.area, errores);
     const estado = data?.estado ?? ESTADO_POR_DEFECTO;
 
     if (!ESTADOS_VALIDOS.includes(estado)) {
@@ -503,6 +630,7 @@ const teachersService = {
       telefono: data.telefono ? String(data.telefono).trim() : null,
       titulo,
       especialidades: especialidades ?? [],
+      area: area ?? null,
       escuelaId,
       estado,
       creadoPor: actorDel(user)
@@ -526,7 +654,7 @@ const teachersService = {
       throw noEncontrado("El docente");
     }
 
-    return { statusCode: 200, body: { data: publicDocente(docente) } };
+    return { statusCode: 200, body: { data: docenteConResumen(docente) } };
   },
 
   listDocentes(query, user) {
@@ -543,6 +671,14 @@ const teachersService = {
       errores.push({ field: "orden", message: "Orden invalido." });
     }
 
+    const area = query.area || null;
+
+    if (area && !esAreaValida(area)) {
+      errores.push({ field: "area", message: "El area no pertenece al catalogo institucional." });
+    }
+
+    const materiaId = query.materiaId || null;
+
     validarPagina(query, errores);
 
     if (errores.length > 0) {
@@ -550,15 +686,27 @@ const teachersService = {
     }
 
     const escuelaId = escuelaDel(user, query);
+
+    /* Filtro por materia: docentes con al menos una asignacion activa de esa
+       materia. */
+    const conMateria = materiaId
+      ? new Set(teachersRepository.listAsignacionesMateria({ materiaId, estado: "activo" }).map((asignacion) => asignacion.docenteId))
+      : null;
+    const dictaMateria = (docente) =>
+      conMateria.has(docente.id) || materiasDeclaradas(docente).some((materia) => materia.id === materiaId);
+
     const lista = ordenar(
-      teachersRepository.listDocentes({ escuelaId, estado, q: query.q }).map(publicDocente),
+      teachersRepository
+        .listDocentes({ escuelaId, estado, q: query.q, area })
+        .filter((docente) => !conMateria || dictaMateria(docente))
+        .map(publicDocente),
       ORDENES_DOCENTES[orden]
     );
 
-    return {
-      statusCode: 200,
-      body: paginar(lista, query, { q: query.q ?? null, estado, orden })
-    };
+    const pagina = paginar(lista, query, { q: query.q ?? null, estado, area, materiaId, orden });
+    pagina.data = pagina.data.map((docente) => ({ ...docente, asignaciones: resumenAsignaciones(docente.id, docente) }));
+
+    return { statusCode: 200, body: pagina };
   },
 
   updateDocente(id, data, user) {
@@ -636,6 +784,11 @@ const teachersService = {
       if (especialidades !== undefined) cambios.especialidades = especialidades;
     }
 
+    if (data?.area !== undefined) {
+      const area = normalizarArea(data.area, errores);
+      if (area !== undefined) cambios.area = area;
+    }
+
     if (data?.estado !== undefined) {
       if (!ESTADOS_VALIDOS.includes(data.estado)) {
         errores.push({ field: "estado", message: "El estado debe ser activo o inactivo." });
@@ -649,11 +802,21 @@ const teachersService = {
     }
 
     if (Object.keys(cambios).length === 0) {
-      return { statusCode: 200, body: { data: publicDocente(actual) } };
+      return { statusCode: 200, body: { data: docenteConResumen(actual) } };
     }
 
+    if (cambios.estado === "inactivo") {
+      impedirBajaPropia(actual, user);
+    }
+
+    verificarCuentaDisponible(actual, { email: cambios.email, documento: cambios.documento });
+
     cambios.actualizadoPor = actorDel(user);
+    if (cambios.estado === "inactivo" && actual.estado !== "inactivo") {
+      cambios.fechaBaja = new Date().toISOString();
+    }
     const actualizado = teachersRepository.updateDocente(id, cambios);
+    sincronizarCuenta(actualizado);
     teachersRepository.registrarAuditoria({
       accion: "docente:update",
       actorId: actorDel(user),
@@ -663,7 +826,7 @@ const teachersService = {
       despues: publicDocente(actualizado)
     });
 
-    return { statusCode: 200, body: { data: publicDocente(actualizado) } };
+    return { statusCode: 200, body: { data: docenteConResumen(actualizado) } };
   },
 
   deactivateDocente(id, user) {
@@ -673,7 +836,10 @@ const teachersService = {
       throw noEncontrado("El docente");
     }
 
+    impedirBajaPropia(actual, user);
+
     const actualizado = teachersRepository.deactivateDocente(id);
+    sincronizarCuenta(actualizado);
     teachersRepository.registrarAuditoria({
       accion: "docente:deactivate",
       actorId: actorDel(user),
@@ -683,7 +849,7 @@ const teachersService = {
       despues: publicDocente(actualizado)
     });
 
-    return { statusCode: 200, body: { data: publicDocente(actualizado) } };
+    return { statusCode: 200, body: { data: docenteConResumen(actualizado) } };
   },
 
   /* ---------------- Consultas inversas ------------------------------------ */

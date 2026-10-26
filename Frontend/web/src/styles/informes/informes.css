@@ -1,0 +1,777 @@
+/**
+ * PRECE DIGITAL - MODULO DE INFORMES DE DIRECCION
+ *
+ * Estilos del editor de informes: una columna lateral con historial,
+ * plantillas, estado y acciones, mas la columna principal con la fila de
+ * metadatos y el editor con su barra de formato de dos filas. La hoja A4 se
+ * muestra solo en el modal de vista previa.
+ *
+ * Paleta: se reutilizan los mismos tokens que usa el resto del panel de
+ * Direccion (primario #2563EB, secundario #3B82F6, azul claro #EFF6FF,
+ * fondo #F3F6FB, texto #1F2937, texto secundario #64748B, bordes #E2E8F0).
+ */
+
+/* ==========================================================================
+   1. ESTRUCTURA GENERAL
+   ========================================================================== */
+
+.informes-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  /* El modulo se mide a si mismo (y no contra la pantalla) para decidir
+     cuando la vista previa pasa a un panel propio a la derecha. */
+  container-type: inline-size;
+  container-name: informes;
+}
+
+/* Columnas del editor: lateral de controles y area principal. */
+.informes-panel__principal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  min-width: 0;
+}
+
+@container informes (min-width: 620px) {
+  .informes-panel__principal {
+    grid-template-columns: minmax(190px, 25%) minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   2. COLUMNA LATERAL (23% - 26% del ancho)
+   ========================================================================== */
+
+.informes-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.informes-lateral__cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.informes-lateral__titulo {
+  margin: 0;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.informes-lateral__subtitulo {
+  margin: 0;
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.informes-lateral__acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.informes-lateral__bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.informes-lateral__titulo-bloque {
+  margin: 0;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.informes-lateral__vacio {
+  margin: 0;
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.informes-lateral__baja {
+  align-self: flex-start;
+  border: 0;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.informes-lateral__baja:hover {
+  background: #fee2e2;
+}
+
+.informes-lateral__pie {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ==========================================================================
+   3. HISTORIAL DE INFORMES
+   ========================================================================== */
+
+.informes-historial {
+  display: flex;
+  max-height: 260px;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.informes-historial__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px 10px;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.informes-historial__item:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.informes-historial__item--activo {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.informes-historial__marca {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.informes-historial__item--activo .informes-historial__marca {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.informes-historial__texto {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.informes-historial__titulo {
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.informes-historial__meta {
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+/* ==========================================================================
+   4. PLANTILLAS INSTITUCIONALES
+   ========================================================================== */
+
+.informes-plantillas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.informes-plantilla {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  padding: 10px 12px;
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.informes-plantilla:hover {
+  border-color: #bfdbfe;
+  background: #f8fafc;
+}
+
+.informes-plantilla--activa {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+}
+
+.informes-plantilla strong {
+  color: #1f2937;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.informes-plantilla__descripcion {
+  color: #64748b;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   5. VERSIONES DEL INFORME
+   ========================================================================== */
+
+.informes-versiones {
+  display: flex;
+  max-height: 180px;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.informes-version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #ffffff;
+  cursor: pointer;
+  padding: 7px 10px;
+  text-align: left;
+}
+
+.informes-version:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.informes-version strong {
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.informes-version__meta {
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+/* ==========================================================================
+   6. FILA DE METADATOS
+   ========================================================================== */
+
+.informes-area {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.informes-area__aviso {
+  margin: 0;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 12px;
+}
+
+/* Formulario de metadatos y acciones. Los campos van primero y los
+   botones quedan siempre debajo del ultimo campo. */
+.informes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.informes-form__campos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.informes-form__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.informes-form__acciones .ui-boton {
+  min-width: 140px;
+}
+
+/* Responsive: en pantallas chicas los botones ocupan todo el ancho y se apilan. */
+@media (max-width: 520px) {
+  .informes-form__acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .informes-form__acciones .ui-boton {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.informes-area__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.informes-area__contador {
+  margin: 0;
+  color: #64748b;
+  font-size: 11.5px;
+  text-align: right;
+}
+
+.informes-metadatos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.informes-metadatos__campo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.informes-metadatos__campo--autor {
+  grid-column: span 1;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   7. EDITOR Y BARRA DE FORMATO (DOS FILAS)
+   ========================================================================== */
+
+.informes-editor {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.informes-barra {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 6px 8px;
+}
+
+.informes-barra__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.informes-barra__boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #1f2937;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.informes-barra__boton:hover {
+  border-color: #e2e8f0;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.informes-barra__boton--activo {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.informes-barra__boton:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+.informes-barra__icono {
+  width: 17px;
+  height: 17px;
+}
+
+.informes-barra__letra {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.informes-barra__letra--negrita {
+  font-weight: 800;
+}
+
+.informes-barra__letra--cursiva {
+  font-style: italic;
+}
+
+.informes-barra__letra--subrayado {
+  text-decoration: underline;
+}
+
+.informes-barra__letra--tachado {
+  text-decoration: line-through;
+}
+
+.informes-barra__separador {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: #e2e8f0;
+}
+
+.informes-editor__area {
+  min-height: 380px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.65;
+  padding: 18px 20px;
+  overflow-y: auto;
+}
+
+.informes-editor__area:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+.informes-editor__area:empty::before {
+  color: #94a3b8;
+  content: attr(data-placeholder);
+}
+
+.informes-editor__error {
+  margin: 0;
+  border-top: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 14px;
+}
+
+/* ==========================================================================
+   8. HOJA DEL DOCUMENTO (A4)
+   ========================================================================== */
+
+.informes-hoja {
+  display: flex;
+  width: 210mm;
+  min-height: 297mm;
+  flex-direction: column;
+  /* La hoja se ancla a la derecha del panel que la contiene. */
+  margin: 0 0 0 auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.09);
+  color: #1f2937;
+  font-size: 12.5px;
+  line-height: 1.6;
+  padding: 16mm 16mm 12mm;
+}
+
+.informes-hoja__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 2px solid #2563eb;
+  padding-bottom: 10px;
+}
+
+.informes-hoja__marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Logo institucional: se muestra con la proporcion original del archivo
+   (object-fit: contain) para no deformarlo. */
+.informes-hoja__logo {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.informes-hoja__identidad {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.informes-hoja__institucion {
+  margin: 0;
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.informes-hoja__dependencia {
+  margin: 0;
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.informes-hoja__ciclo {
+  margin: 0;
+  color: #2563eb;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.informes-hoja__titulos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 14px 0 10px;
+}
+
+.informes-hoja__titulo {
+  margin: 0;
+  color: #1f2937;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.informes-hoja__asunto {
+  margin: 0;
+  color: #64748b;
+  font-size: 12.5px;
+}
+
+.informes-hoja__cuerpo {
+  flex: 1;
+  min-height: 120px;
+}
+
+.informes-hoja__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 10.5px;
+  padding-top: 8px;
+}
+
+.informes-hoja__pagina {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+/* Tipografia del contenido enriquecido dentro de la hoja. */
+.informes-hoja__cuerpo h1,
+.informes-hoja__cuerpo h2,
+.informes-hoja__cuerpo h3,
+.informes-hoja__cuerpo h4 {
+  margin: 16px 0 6px;
+  color: #1f2937;
+  font-weight: 800;
+}
+
+.informes-hoja__cuerpo h1 {
+  font-size: 17px;
+}
+
+.informes-hoja__cuerpo h2 {
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14.5px;
+  padding-bottom: 4px;
+}
+
+.informes-hoja__cuerpo h3 {
+  font-size: 13.5px;
+}
+
+.informes-hoja__cuerpo h4 {
+  font-size: 12.5px;
+}
+
+.informes-hoja__cuerpo p {
+  margin: 0 0 9px;
+}
+
+.informes-hoja__cuerpo ul,
+.informes-hoja__cuerpo ol {
+  margin: 0 0 9px;
+  padding-left: 20px;
+}
+
+.informes-hoja__cuerpo li {
+  margin-bottom: 3px;
+}
+
+.informes-hoja__cuerpo blockquote {
+  margin: 0 0 10px;
+  border-left: 3px solid #3b82f6;
+  background: #eff6ff;
+  color: #1f2937;
+  padding: 8px 12px;
+}
+
+.informes-hoja__cuerpo hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.informes-hoja__cuerpo a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.informes-hoja__cuerpo table {
+  width: 100%;
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.informes-hoja__cuerpo th,
+.informes-hoja__cuerpo td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.informes-hoja__cuerpo th {
+  background: #eff6ff;
+  color: #1f2937;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   9. VISTA PREVIA (MODAL)
+   ========================================================================== */
+
+.informes-modal .ui-modal__cuerpo {
+  background: #f3f6fb;
+  container-type: inline-size;
+}
+
+/* La hoja del modal tambien se escala de forma uniforme para no deformar la
+   pagina cuando el modal es mas angosto que una hoja A4. */
+.informes-modal .informes-hoja {
+  margin: 0 auto;
+  zoom: min(1, calc(100cqw / 210mm));
+}
+
+/* ==========================================================================
+   10. RESPONSIVE
+   ========================================================================== */
+
+/* El modulo decide su distribucion con su propio ancho (container queries),
+   asi que estas reglas solo adjusts detalles internos de la hoja y de los
+   metadatos cuando la pantalla es chica. */
+
+@media (max-width: 860px) {
+  .informes-metadatos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .informes-metadatos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .informes-hoja__cabecera {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .informes-hoja__ciclo {
+    text-align: left;
+  }
+
+  .informes-historial {
+    max-height: 220px;
+  }
+}

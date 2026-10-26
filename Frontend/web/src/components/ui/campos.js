@@ -186,6 +186,8 @@ export function Select({
    pantalla, que es la que sabe a que API le pega. */
 export function Busqueda({
   id = "busqueda",
+  /* Nombre del icono en /assets/icons. */
+  icono = "user-search",
   valor = "",
   onChange,
   onLimpiar,
@@ -195,7 +197,7 @@ export function Busqueda({
   return h(
     "div",
     { className: "ui-busqueda" },
-    h(IconoFigma, { className: "ui-busqueda__icono", nombre: "user-search" }),
+    h(IconoFigma, { className: "ui-busqueda__icono", nombre: icono }),
     h("input", {
       id,
       type: "search",

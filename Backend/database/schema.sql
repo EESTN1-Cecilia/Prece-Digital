@@ -57,7 +57,15 @@ CREATE TABLE usuarios (
   dni             VARCHAR(20)  NOT NULL,
   email           VARCHAR(150) NOT NULL,
   telefono        VARCHAR(30)  NULL,
+  materia         VARCHAR(120) NULL COMMENT 'Solo area docencia',
+  situacion_revista VARCHAR(20) NULL COMMENT 'Titular, Provisional o Suplente',
+  suplente_de     VARCHAR(120) NULL COMMENT 'Docente titular reemplazado',
+  modulos         TINYINT UNSIGNED NULL COMMENT 'Carga horaria: 2, 3, 4 o 6',
+  hora_desde      TIME         NULL,
+  hora_hasta      TIME         NULL,
+  dia             ENUM('Lunes','Martes','Miercoles','Jueves','Viernes') NULL COMMENT 'Dia de cursada de la carga horaria',
   password_hash   VARCHAR(255) NOT NULL,
+  debe_cambiar_clave TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Clave provisoria pendiente de cambio',
   activo          TINYINT(1)   NOT NULL DEFAULT 1,
   ultimo_acceso   DATETIME     NULL,
   creado_en       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -228,6 +236,28 @@ CREATE TABLE asignaciones_docentes (
   CONSTRAINT fk_asig_taller    FOREIGN KEY (grupo_taller_id) REFERENCES grupos_taller(id)
 ) ENGINE=InnoDB;
 
+-- Cursos asignados a cada preceptor. Es la fuente de verdad del filtro estricto
+-- del tablero de preceptoría: un preceptor solo puede operar sobre las divisiones
+-- vinculadas acá. Se guarda por ciclo lectivo y con baja lógica para conservar
+-- el historial de asignaciones entre años.
+CREATE TABLE preceptor_cursos (
+  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id        INT UNSIGNED NOT NULL,
+  preceptor_id      INT UNSIGNED NOT NULL COMMENT 'FK a usuarios con rol preceptor',
+  ciclo_lectivo_id  INT UNSIGNED NOT NULL,
+  anio_division_id  INT UNSIGNED NOT NULL COMMENT 'Curso/división a cargo',
+  turno             ENUM('mañana','tarde') NULL COMMENT 'Turno en el que acompaña',
+  activo            TINYINT(1)   NOT NULL DEFAULT 1,
+  creado_en         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_preceptor_curso (preceptor_id, anio_division_id, ciclo_lectivo_id),
+  KEY ix_preceptor_cursos_curso (anio_division_id),
+  CONSTRAINT fk_pc_escuela     FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_pc_preceptor   FOREIGN KEY (preceptor_id) REFERENCES usuarios(id),
+  CONSTRAINT fk_pc_ciclo       FOREIGN KEY (ciclo_lectivo_id) REFERENCES ciclos_lectivos(id),
+  CONSTRAINT fk_pc_aniodiv     FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id)
+) ENGINE=InnoDB;
+
 -- =====================================================================================
 -- MÓDULO: DOCENTES
 -- Tablas: docentes, docentes_asignaciones_materias, docentes_asignaciones_cursos
@@ -253,6 +283,7 @@ CREATE TABLE docentes (
   telefono         VARCHAR(30)  NULL,
   titulo           VARCHAR(150) NULL,
   especialidades   JSON         NULL COMMENT 'Lista de especialidades declaradas',
+  area             VARCHAR(40)  NULL COMMENT 'Id del catalogo de areas institucionales',
   estado           ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
   activo           TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '0 cuando estado=inactivo (compatibilidad)',
   creado_por       INT UNSIGNED NULL,
@@ -262,6 +293,7 @@ CREATE TABLE docentes (
   fecha_baja       DATETIME     NULL,
   UNIQUE KEY uq_docente_documento (escuela_id, documento),
   UNIQUE KEY uq_docente_email (escuela_id, email),
+  KEY idx_docente_area (escuela_id, area),
   CONSTRAINT fk_docente_escuela FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
   CONSTRAINT fk_docente_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
@@ -438,20 +470,57 @@ CREATE TABLE asistencias_diarias (
   CONSTRAINT fk_asisd_usuario    FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
+-- Toma de asistencia por clase (division + materia + fecha) del docente
+CREATE TABLE tomas_asistencia_materia (
+  id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id         INT UNSIGNED NOT NULL,
+  anio_division_id   INT UNSIGNED NOT NULL,
+  materia_id         INT UNSIGNED NOT NULL,
+  fecha              DATE         NOT NULL,
+  docente_id         INT UNSIGNED NULL COMMENT 'FK a docentes',
+  registrado_por     INT UNSIGNED NOT NULL COMMENT 'FK a usuarios (identidad del token)',
+  actualizado_por    INT UNSIGNED NULL,
+  creado_en          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_toma_clase (anio_division_id, materia_id, fecha),
+  KEY idx_toma_docente (registrado_por, fecha),
+  CONSTRAINT fk_toma_escuela   FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_toma_division  FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id),
+  CONSTRAINT fk_toma_materia   FOREIGN KEY (materia_id) REFERENCES materias(id),
+  CONSTRAINT fk_toma_docente   FOREIGN KEY (docente_id) REFERENCES docentes(id),
+  CONSTRAINT fk_toma_usuario   FOREIGN KEY (registrado_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_toma_actualiza FOREIGN KEY (actualizado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
 -- Asistencia por materia
 CREATE TABLE asistencias_materia (
   id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   estudiante_id           INT UNSIGNED NOT NULL,
   asignacion_docente_id   INT UNSIGNED NOT NULL,
+  toma_id                 INT UNSIGNED NULL COMMENT 'Toma de la que forma parte',
   fecha                   DATE         NOT NULL,
   estado                  ENUM('presente','ausente','tarde','media_falta') NOT NULL,
   justificada             TINYINT(1)   NOT NULL DEFAULT 0,
   registrado_por          INT UNSIGNED NULL COMMENT 'FK a usuarios',
   creado_en               DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_asis_materia (estudiante_id, asignacion_docente_id, fecha),
+  UNIQUE KEY uq_asis_toma_alumno (toma_id, estudiante_id),
   CONSTRAINT fk_asism_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id),
   CONSTRAINT fk_asism_asignacion FOREIGN KEY (asignacion_docente_id) REFERENCES asignaciones_docentes(id),
+  CONSTRAINT fk_asism_toma       FOREIGN KEY (toma_id) REFERENCES tomas_asistencia_materia(id),
   CONSTRAINT fk_asism_usuario    FOREIGN KEY (registrado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Correcciones de una toma: como estaban los registros, quien y cuando
+CREATE TABLE tomas_asistencia_correcciones (
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  toma_id               INT UNSIGNED NOT NULL,
+  modificado_por        INT UNSIGNED NOT NULL,
+  modificado_en         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  registros_anteriores  JSON         NOT NULL COMMENT 'Estados por alumno antes de la correccion',
+  KEY idx_correccion_toma (toma_id),
+  CONSTRAINT fk_corr_toma    FOREIGN KEY (toma_id) REFERENCES tomas_asistencia_materia(id),
+  CONSTRAINT fk_corr_usuario FOREIGN KEY (modificado_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
 -- Conflictos de asistencia (ej: discrepancias entre registro diario y por materia, o de sincronización)
@@ -884,6 +953,32 @@ CREATE TABLE calificaciones_cuatrimestrales (
   CONSTRAINT fk_cc_asignacion FOREIGN KEY (asignacion_docente_id) REFERENCES asignaciones_docentes(id),
   CONSTRAINT fk_cc_ciclo      FOREIGN KEY (ciclo_lectivo_id) REFERENCES ciclos_lectivos(id),
   CONSTRAINT fk_cc_usuario    FOREIGN KEY (cerrado_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB;
+
+-- Boletín digital por alumno y período. Consolida el resumen de calificaciones,
+-- asistencia y observaciones que el preceptor consulta desde su tablero. Se
+-- guarda un snapshot por período para que el documento entregado no cambie si
+-- luego se corrige una nota y para conservar el historial de boletines emitidos.
+CREATE TABLE boletines (
+  id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  escuela_id         INT UNSIGNED NOT NULL,
+  estudiante_id      INT UNSIGNED NOT NULL,
+  ciclo_lectivo_id   INT UNSIGNED NOT NULL,
+  anio_division_id   INT UNSIGNED NOT NULL,
+  periodo            VARCHAR(40)  NOT NULL COMMENT 'Ej: primer_cuatrimestre, anual',
+  resumen            JSON         NULL COMMENT 'Promedios, materias adeudadas y asistencia',
+  observaciones      TEXT         NULL,
+  estado             ENUM('borrador','emitido','rectificado') NOT NULL DEFAULT 'emitido',
+  emitido_por        INT UNSIGNED NULL COMMENT 'FK a usuarios (preceptor o secretaría)',
+  emitido_en         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_boletin (estudiante_id, ciclo_lectivo_id, periodo),
+  KEY ix_boletines_curso (anio_division_id, ciclo_lectivo_id),
+  CONSTRAINT fk_bol_escuela    FOREIGN KEY (escuela_id) REFERENCES escuelas(id),
+  CONSTRAINT fk_bol_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id),
+  CONSTRAINT fk_bol_ciclo      FOREIGN KEY (ciclo_lectivo_id) REFERENCES ciclos_lectivos(id),
+  CONSTRAINT fk_bol_aniodiv    FOREIGN KEY (anio_division_id) REFERENCES anios_divisiones(id),
+  CONSTRAINT fk_bol_usuario    FOREIGN KEY (emitido_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB;
 
 -- Instancias de intensificación / apoyo (ej: diciembre, febrero, mesas de examen)

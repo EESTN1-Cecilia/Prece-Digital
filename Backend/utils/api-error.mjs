@@ -52,8 +52,10 @@ export function noEncontrado(recurso = "El recurso solicitado") {
   return new ApiError("NOT_FOUND", `${recurso} no existe.`);
 }
 
-export function conflicto(message = "La operacion entra en conflicto con datos existentes.") {
-  return new ApiError("CONFLICT", message);
+/* `details` opcional ([{ field, message }]) indica que campo choca, para que el
+   formulario lo muestre junto al dato a corregir. */
+export function conflicto(message = "La operacion entra en conflicto con datos existentes.", details) {
+  return new ApiError("CONFLICT", message, { details });
 }
 
 /* Para casos puntuales que no cubren los helpers de arriba (por ejemplo codigos

@@ -35,6 +35,13 @@ export function me({ user }) {
   };
 }
 
+export async function cambiarClave({ user, body }) {
+  return {
+    statusCode: 200,
+    body: await authService.cambiarClave(user, { actual: body?.actual, nueva: body?.nueva })
+  };
+}
+
 export function permissions({ user }) {
   return {
     statusCode: 200,
@@ -43,9 +50,11 @@ export function permissions({ user }) {
 }
 
 export function listUsers({ url }) {
+  const resultado = usersService.list(Object.fromEntries(url.searchParams.entries()));
+
   return {
     statusCode: 200,
-    body: { data: usersService.list(Object.fromEntries(url.searchParams.entries())) }
+    body: { data: resultado.items, paginacion: resultado.paginacion }
   };
 }
 

@@ -21,6 +21,8 @@ export function Modal({
   titulo,
   descripcion,
   tamano = "medio",
+  className,
+  classNameFondo,
   onCerrar,
   acciones,
   cargando = false,
@@ -30,13 +32,22 @@ export function Modal({
   const caja = useRef(null);
   const previo = useRef(null);
 
+  /* `onCerrar` y `cargando` cambian en cada render de quien usa el modal (las
+     pantallas pasan funciones nuevas). Se leen desde una ref para que el efecto
+     de foco dependa solo de `abierto`: si dependiera de ellos, cada tecla
+     escrita en un campo re-ejecutaria el efecto, que devuelve el foco al boton
+     que abrio el modal y lo vuelve a poner en el primer control, y el campo
+     perderia el foco a cada caracter. */
+  const ultimo = useRef({ onCerrar, cargando });
+  ultimo.current = { onCerrar, cargando };
+
   const cerrar = useCallback(() => {
     /* Mientras hay una operacion en curso el modal no se cierra: evita dejar a
        medias algo que ya se envio al servidor. */
-    if (!cargando) {
-      onCerrar?.();
+    if (!ultimo.current.cargando) {
+      ultimo.current.onCerrar?.();
     }
-  }, [cargando, onCerrar]);
+  }, []);
 
   useEffect(() => {
     if (!abierto) {
@@ -45,10 +56,21 @@ export function Modal({
 
     previo.current = document.activeElement;
 
-    const primero = caja.current?.querySelector(FOCALIZABLES);
+    /* El foco inicial va al primer control del contenido (no a la "x" de la
+       cabecera), asi se puede empezar a escribir apenas se abre. */
+    const primero =
+      caja.current?.querySelector(`.ui-modal__cuerpo :is(${FOCALIZABLES})`) ??
+      caja.current?.querySelector(FOCALIZABLES);
     (primero ?? caja.current)?.focus();
 
     const alTeclear = (evento) => {
+      /* Con dos modales abiertos (por ejemplo, la confirmacion de descarte
+         sobre el formulario) solo responde el de arriba. */
+      const fondos = document.querySelectorAll(".ui-modal__fondo");
+      if (fondos.length && fondos[fondos.length - 1] !== caja.current?.parentElement) {
+        return;
+      }
+
       if (evento.key === "Escape") {
         evento.preventDefault();
         cerrar();
@@ -87,7 +109,7 @@ export function Modal({
       document.body.style.overflow = desbordePrevio;
       previo.current?.focus?.();
     };
-  }, [abierto, cerrar]);
+  }, [abierto, cerrar]); // `cerrar` es estable: el efecto corre solo al abrir y al cerrar.
 
   if (!abierto || typeof document === "undefined") {
     return null;
@@ -101,7 +123,7 @@ export function Modal({
     h(
       "div",
       {
-        className: "ui-modal__fondo",
+        className: ["ui-modal__fondo", classNameFondo].filter(Boolean).join(" "),
         onMouseDown: (evento) => {
           if (cerrarConFondo && evento.target === evento.currentTarget) {
             cerrar();
@@ -111,7 +133,7 @@ export function Modal({
       h(
         "div",
         {
-          className: `ui-modal ui-modal--${medida}`,
+          className: ["ui-modal", `ui-modal--${medida}`, className].filter(Boolean).join(" "),
           role: "dialog",
           "aria-modal": "true",
           "aria-labelledby": titulo ? idTitulo : undefined,

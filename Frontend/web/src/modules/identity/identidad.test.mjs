@@ -100,6 +100,7 @@ test("normalizarUsuario descarta campos sensibles y unifica alias", () => {
     "apellido",
     "area",
     "creadoEn",
+    "debeCambiarClave",
     "dni",
     "email",
     "estado",

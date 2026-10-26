@@ -1,0 +1,655 @@
+/* ==========================================================================
+   MÓDULO DE GESTIÓN DE DOCENTES
+   Reutiliza el layout de Dirección (director-page-container, panel de accesos,
+   director-dashboard-wrapper, hero) y agrega solo lo propio del listado.
+   ========================================================================== */
+
+/* Sin Panel de Accesos (roles que no son Dirección): el contenido ocupa todo. */
+.docentes-sin-panel {
+  max-width: 1480px;
+}
+
+/* ---- Totales del encabezado ---- */
+
+.docentes-totales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.docentes-total {
+  font-size: 12px;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.docentes-total strong {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.docentes-total--principal {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.docentes-total--principal strong {
+  color: #1d4ed8;
+}
+
+/* ---- Barra de busqueda, filtros y modo de vista ---- */
+
+.docentes-filtros {
+  --docentes-filtro-alto: 42px;
+  --docentes-filtro-borde: #dbe3ee;
+  --docentes-filtro-foco: #2563eb;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  /* Los quiebres dependen del ancho del panel (que cambia con el Panel de
+     Accesos al costado), no del de la ventana. */
+  container-type: inline-size;
+  container-name: docentes-filtros;
+}
+
+/* Fila 1: buscador a todo el ancho. */
+.docentes-filtros__busqueda {
+  min-width: 0;
+}
+
+.docentes-filtros .ui-busqueda {
+  height: var(--docentes-filtro-alto);
+  box-sizing: border-box;
+  gap: 10px;
+  padding: 0 14px;
+  border-color: var(--docentes-filtro-borde);
+  border-radius: 12px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.docentes-filtros .ui-busqueda:focus-within {
+  border-color: var(--docentes-filtro-foco);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.docentes-filtros .ui-busqueda__icono {
+  width: 18px;
+  height: 18px;
+  opacity: 0.85;
+}
+
+.docentes-filtros .ui-busqueda input {
+  height: 100%;
+  padding: 0;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.docentes-filtros .ui-busqueda input::placeholder {
+  color: #94a3b8;
+}
+
+/* Fila 2: filtros repartidos en partes iguales y, al final, las acciones. */
+.docentes-filtros__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+}
+
+.docentes-filtros__campos {
+  flex: 1 1 520px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px 14px;
+}
+
+/* Etiqueta arriba, pegada a su selector. */
+.docentes-filtros .ui-filtro {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.docentes-filtros .ui-filtro select {
+  width: 100%;
+  min-width: 0;
+  height: var(--docentes-filtro-alto);
+  box-sizing: border-box;
+  padding: 0 34px 0 12px;
+  border-color: var(--docentes-filtro-borde);
+  border-radius: 12px;
+  font-size: 13.5px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.docentes-filtros .ui-filtro select:hover {
+  border-color: #b6c3d6;
+}
+
+.docentes-filtros .ui-filtro select:focus-visible {
+  border-color: var(--docentes-filtro-foco);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Con cuatro filtros (la vista de tarjetas suma "Ordenar por") no entran
+   junto a las acciones: ocupan toda la fila en columnas iguales y las acciones
+   bajan, alineadas a la derecha, en lugar de dejar un filtro suelto. */
+.docentes-filtros__campos:has(> :nth-child(4)) {
+  flex-basis: 100%;
+}
+
+.docentes-filtros__acciones {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.docentes-filtros__limpiar {
+  height: var(--docentes-filtro-alto);
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.docentes-filtros__limpiar:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.docentes-filtros__limpiar:not(:disabled):hover {
+  color: #1e3a8a;
+}
+
+.docentes-filtros__limpiar:focus-visible {
+  outline: 2px solid var(--docentes-filtro-foco);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.docentes-vistas {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: var(--docentes-filtro-alto, 40px);
+  align-items: center;
+  background: #eef2f7;
+  border: 1px solid var(--docentes-filtro-borde, #e2e8f0);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.docentes-vistas__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.docentes-vistas__btn:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.docentes-vistas__btn--activo {
+  background: #ffffff;
+  color: #1e40af;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.docentes-vistas__btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.docentes-resumen {
+  margin: -4px 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+/* ---- Avatar con iniciales ---- */
+
+.docentes-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 1.5px solid transparent;
+}
+
+.docentes-avatar--grande {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+.docentes-avatar--azul { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
+.docentes-avatar--violeta { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+.docentes-avatar--verde { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.docentes-avatar--ambar { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+.docentes-avatar--celeste { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+.docentes-avatar--rosa { background: #fce7f3; color: #be185d; border-color: #fbcfe8; }
+
+/* ---- Celdas de la tabla ---- */
+
+.docentes-celda-docente {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 170px;
+}
+
+/* La tabla compartida no corta lineas; aca nombre, correo y materias pueden
+   ajustarse para que el listado entre completo en escritorio. */
+.docentes-modulo .ui-tabla td:nth-child(1),
+.docentes-modulo .ui-tabla td:nth-child(3),
+.docentes-modulo .ui-tabla td:nth-child(6) {
+  white-space: normal;
+}
+
+.docentes-celda-docente strong {
+  display: block;
+  font-size: 13.5px;
+  color: #0f172a;
+}
+
+.docentes-celda-docente span:not(.docentes-avatar) {
+  display: block;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.docentes-enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #1d4ed8;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.docentes-enlace:hover {
+  text-decoration: underline;
+}
+
+.docentes-sin-dato {
+  color: #94a3b8;
+  font-size: 12.5px;
+}
+
+.docentes-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.docentes-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.docentes-chip--declarada {
+  color: #1e40af;
+  background: #ffffff;
+  border-style: dashed;
+  border-color: #93c5fd;
+}
+
+.docentes-chip--mas {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  cursor: help;
+}
+
+/* ---- Vista de tarjetas ---- */
+
+.docentes-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.docentes-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+
+.docentes-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.docentes-card--inactivo {
+  background: #fafbfc;
+}
+
+.docentes-card--inactivo .docentes-card__nombre,
+.docentes-card--inactivo .docentes-avatar {
+  opacity: 0.7;
+}
+
+.docentes-card__cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.docentes-card__identidad {
+  flex: 1;
+  min-width: 0;
+}
+
+.docentes-card__nombre {
+  margin: 2px 0 2px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.docentes-card__titulo {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.docentes-card__datos {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  padding: 12px 0 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+.docentes-card__datos > div:first-child {
+  grid-column: 1 / -1;
+}
+
+.docentes-card__datos dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.docentes-card__datos dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #1e293b;
+  overflow-wrap: anywhere;
+}
+
+.docentes-card__asignaciones {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docentes-card__etiqueta {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.docentes-card__cursos {
+  font-size: 12px;
+  color: #475569;
+}
+
+.docentes-card__acciones {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+
+/* ---- Formulario y detalle ---- */
+
+.docentes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.docentes-form__seccion {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #2563eb;
+}
+
+.docentes-detalle__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.docentes-detalle__nombre {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.docentes-detalle__sub {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.docentes-pestanas {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 5px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.docentes-detalle__asignaciones {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.docentes-detalle__bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.docentes-detalle__fila--baja td {
+  color: #94a3b8;
+}
+
+.docentes-detalle__vacio {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ---- Responsive ---- */
+
+/* Panel angosto (tablet, o escritorio con poco espacio): los filtros toman
+   toda la fila (en dos o mas columnas, segun entren) y las acciones bajan a
+   una fila propia, con el modo de vista a la derecha. */
+@container docentes-filtros (max-width: 760px) {
+  .docentes-filtros__campos {
+    flex-basis: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .docentes-filtros__acciones {
+    flex-basis: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+}
+
+/* Movil: filtros en una columna y botones de vista a todo el ancho, comodos
+   para usar con el dedo. */
+@container docentes-filtros (max-width: 400px) {
+  .docentes-filtros .ui-busqueda input {
+    font-size: 13px;
+  }
+
+  .docentes-filtros__campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .docentes-filtros__acciones {
+    flex-wrap: wrap;
+  }
+
+  .docentes-vistas {
+    flex: 1 1 100%;
+  }
+
+  .docentes-vistas__btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .docentes-filtros {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .docentes-modulo {
+    padding: 18px 16px 24px;
+  }
+
+  .docentes-modulo .director-hero-banner {
+    padding: 18px;
+  }
+
+  .docentes-modulo .director-hero-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .docentes-modulo .director-hero-actions,
+  .docentes-modulo .btn-director-hero-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .docentes-card__datos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Acciones compactas de la tabla ---- */
+
+.docentes-accion {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.docentes-accion:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.docentes-accion--peligro:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.docentes-accion--exito:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.docentes-accion:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}

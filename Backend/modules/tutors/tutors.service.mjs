@@ -2,6 +2,7 @@ import { errorDeValidacion, noEncontrado, conflicto } from "../../utils/api-erro
 import { CAMPOS_TUTOR, DNI_RE, EMAIL_RE, ESTADOS_VALIDOS, ORDENES_TUTORES, PARENTESCOS_VALIDOS, TELEFONO_RE, normalizarParentesco } from "./validacion.mjs";
 import studentRepository from "../students/students.repository.mjs";
 import tutorsRepository from "./tutors.repository.mjs";
+import { algunAlumnoEnCursos, alumnoEnCursos, cursosPermitidos, exigirAccesoAAlgunAlumno } from "../auth/alcance-cursos.service.mjs";
 
 const POR_PAGINA_MAXIMO = 100;
 const POR_PAGINA_DEFECTO = 20;
@@ -10,6 +11,13 @@ const collator = new Intl.Collator("es", { sensitivity: "base" });
 
 function escuelaDel(user, data) {
   return data?.escuelaId ?? user.assignments?.find((a) => a.schoolId)?.schoolId ?? null;
+}
+
+/* Alumnos con vinculo activo con el tutor. Definen que tutores ve una cuenta
+   con alcance por curso (preceptor o docente): los vinculados a al menos un
+   alumno de sus divisiones. */
+function alumnosDelTutor(tutorId) {
+  return tutorsRepository.listRelations({ tutorId, estado: "activo" }).map((relacion) => relacion.studentId);
 }
 
 function actorDel(user) {
@@ -157,7 +165,7 @@ const tutorsService = {
     return { statusCode: 201, body: { data: tutor } };
   },
 
-  getById(id) {
+  getById(id, user) {
     if (!id) {
       throw noEncontrado("El tutor");
     }
@@ -167,6 +175,8 @@ const tutorsService = {
     if (!tutor) {
       throw noEncontrado("El tutor");
     }
+
+    exigirAccesoAAlgunAlumno(user, alumnosDelTutor(tutor.id));
 
     const { isActive, createdBy, ...publico } = tutor;
     return { statusCode: 200, body: { data: { ...publico, estado: isActive ? "activo" : "inactivo" } } };
@@ -208,14 +218,17 @@ const tutorsService = {
     }
 
     const escuelaId = user.assignments?.find((a) => a.schoolId)?.schoolId ?? query.schoolId;
+    const permitidos = cursosPermitidos(user);
     const tutores = ordenarTutores(
-      tutorsRepository.listTutors({
-        escuelaId,
-        apellido: query.apellido,
-        nombre: query.nombre,
-        dni: query.dni,
-        estado
-      }),
+      tutorsRepository
+        .listTutors({
+          escuelaId,
+          apellido: query.apellido,
+          nombre: query.nombre,
+          dni: query.dni,
+          estado
+        })
+        .filter((tutor) => algunAlumnoEnCursos(alumnosDelTutor(tutor.id), permitidos)),
       orden
     );
 
@@ -403,12 +416,16 @@ const tutorsService = {
     return { statusCode: 200, body: { data: relaciones } };
   },
 
-  listTutorStudents(tutorId, query) {
+  listTutorStudents(tutorId, query, user) {
     const tutor = tutorsRepository.findTutorById(tutorId);
 
     if (!tutor) {
       throw noEncontrado("El tutor");
     }
+
+    exigirAccesoAAlgunAlumno(user, alumnosDelTutor(tutor.id));
+    /* Si el tutor tiene hijos en otras divisiones, esos alumnos no se muestran. */
+    const permitidos = cursosPermitidos(user);
 
     const estado = query?.estado ?? "activo";
 
@@ -432,7 +449,7 @@ const tutorsService = {
             : null
         };
       })
-      .filter((relacion) => relacion.alumno);
+      .filter((relacion) => relacion.alumno && alumnoEnCursos(studentRepository.findById(relacion.studentId), permitidos));
 
     return { statusCode: 200, body: { data: alumnos } };
   },

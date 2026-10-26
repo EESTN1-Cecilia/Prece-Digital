@@ -23,6 +23,7 @@ export const modules = [
   { id: "grades", name: "Calificaciones", description: "Notas y evaluaciones." },
   { id: "schools", name: "Escuelas", description: "Instituciones educativas." },
   { id: "documents", name: "Documentos", description: "Documentacion academica." },
+  { id: "reports", name: "Informes", description: "Informes institucionales: redaccion, historial y exportacion." },
   { id: "spaces", name: "Espacios", description: "Aulas, talleres, laboratorios, edificios y carreras." },
   { id: "schedules", name: "Horarios", description: "Turnos, franjas y asignaciones horarias." },
   { id: "teachers", name: "Docentes", description: "Docentes y sus materias." },

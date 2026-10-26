@@ -89,6 +89,11 @@ const academicRepository = {
     return item ? clone(item) : null;
   },
 
+  listSubjectsRef() {
+    this.init();
+    return [...getStore().academicSubjectsRef.values()].map(clone);
+  },
+
   setSchedulesRef(lista) {
     this.init();
     for (const item of lista) {

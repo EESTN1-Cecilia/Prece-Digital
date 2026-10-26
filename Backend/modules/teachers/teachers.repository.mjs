@@ -134,6 +134,7 @@ const teachersRepository = {
       telefono: data.telefono ?? null,
       titulo: data.titulo ?? null,
       especialidades: Array.isArray(data.especialidades) ? [...data.especialidades] : [],
+      area: data.area ?? null,
       escuelaId: data.escuelaId,
       estado: data.estado,
       isActive: data.estado !== "inactivo",
@@ -237,7 +238,7 @@ const teachersRepository = {
     return null;
   },
 
-  listDocentes({ escuelaId, estado, q } = {}) {
+  listDocentes({ escuelaId, estado, q, area } = {}) {
     this.init();
     const buscado = normalizarTexto(q);
 
@@ -248,6 +249,10 @@ const teachersRepository = {
         }
 
         if (estado && estado !== "todos" && docente.estado !== estado) {
+          return false;
+        }
+
+        if (area && (docente.area ?? null) !== area) {
           return false;
         }
 

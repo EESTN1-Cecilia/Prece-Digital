@@ -2,6 +2,7 @@ import { seedAuthData } from "./auth.seed.mjs";
 import { seedStudents } from "./students.seed.mjs";
 import { seedAcademic } from "./academic.seed.mjs";
 import { seedTeachers } from "./teachers.seed.mjs";
+import { seedPreceptoria } from "./preceptoria.seed.mjs";
 import { seedGrades } from "./grades.seed.mjs";
 import { seedAcademicRecords } from "./academic-records.seed.mjs";
 import { seedAttendanceFollowups } from "./attendance-followups.seed.mjs";
@@ -13,6 +14,7 @@ import { seedInventory } from "./inventory.seed.mjs";
 import { seedAttendanceAlerts } from "./attendance-alerts.seed.mjs";
 import { seedInasistencias } from "./inasistencias.seed.mjs";
 import { seedCourseChanges } from "./course-changes.seed.mjs";
+import { seedReports } from "./reports.seed.mjs";
 
 /* Carga los datos de desarrollo de todos los modulos sobre el store en memoria.
    Todos comparten los mismos alumnos (students.seed.mjs). El seed de seguimiento
@@ -22,6 +24,7 @@ export async function seedDesarrollo() {
   seedStudents();
   seedAcademic();
   seedTeachers();
+  seedPreceptoria();
   seedGrades();
   seedAcademicRecords();
   seedInasistencias();
@@ -33,5 +36,6 @@ export async function seedDesarrollo() {
   seedBookRegistry();
   seedParticularConditions();
   seedObservations();
+  seedReports();
 }
 

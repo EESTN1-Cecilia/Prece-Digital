@@ -950,3 +950,24 @@
     width: calc(100% - 28px);
   }
 }
+
+/* ---- Cambio obligatorio de la clave provisoria ---- */
+
+.cambiar-clave-card {
+  max-width: 480px;
+}
+
+.cambiar-clave-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cambiar-clave-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}

@@ -6,8 +6,11 @@ import { useUsuarioActual } from "../../estado/index.js";
 import { DirectorService, ROLES_DISPONIBLES } from "./director-service.js";
 import { NuevoPerfilModal } from "./components/nuevo-perfil-modal.js";
 import { EditarRolesModal } from "./components/editar-roles-modal.js";
+import { PersonalView } from "./components/personal-view.js";
 import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.js";
 import { AsignacionesSection } from "./components/asignaciones-section.js";
+import { PanelAccesos } from "./components/panel-accesos.js";
+import { InformesView } from "../informes/informes-view.js";
 import { fecha } from "../../utils/formato.js";
 
 
@@ -95,15 +98,6 @@ function IconClipboard({ className = "w-5 h-5", width = "20", height = "20" }) {
   );
 }
 
-function IconClock({ className = "w-5 h-5", width = "20", height = "20" }) {
-  return h(
-    "svg",
-    { className, width, height, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", style: { flexShrink: 0 } },
-    h("circle", { cx: "12", cy: "12", r: "10" }),
-    h("polyline", { points: "12 6 12 12 16 14" })
-  );
-}
-
 function IconServer({ className = "w-5 h-5", width = "20", height = "20" }) {
   return h(
     "svg",
@@ -138,8 +132,11 @@ export default function DirectorDashboardView() {
   const [resumen, setResumen] = useState(null);
   const [personal, setPersonal] = useState([]);
   const [pedidos, setPedidos] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [institucion, setInstitucion] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'supervision' | 'pedidos' | 'alertas'
+  const [errorPersonal, setErrorPersonal] = useState(null);
+  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'supervision' | 'informes' | 'pedidos' | 'alertas'
   const [modoAsistencia, setModoAsistencia] = useState("porcentaje"); // 'porcentaje' | 'cantidad'
   const [modoAlumnos, setModoAlumnos] = useState("cantidad"); // 'cantidad' | 'porcentaje'
 
@@ -147,11 +144,6 @@ export default function DirectorDashboardView() {
   const MOSTRAR_SERVER = false;
   const MOSTRAR_JEFATURA = false;
   const MOSTRAR_HABILITAR_PEDIDOS = false;
-
-  // Filtros de personal
-  const [busquedaPersonal, setBusquedaPersonal] = useState("");
-  const [filtroRol, setFiltroRol] = useState("todos");
-  const [filtroEstado, setFiltroEstado] = useState("todos");
 
   // Modales
   const [modalNuevoAbierto, setModalNuevoAbierto] = useState(false);
@@ -162,20 +154,41 @@ export default function DirectorDashboardView() {
 
   const cargarDatos = async () => {
     setCargando(true);
-    try {
-      const [resumenData, personalData, pedidosData] = await Promise.all([
+    setErrorPersonal(null);
+
+    const [resumenResultado, personalResultado, pedidosResultado, areasResultado, institucionResultado] =
+      await Promise.allSettled([
         DirectorService.getDashboardConsolidado(),
         DirectorService.listarPerfiles(),
-        DirectorService.listarPedidos()
+        DirectorService.listarPedidos(),
+        DirectorService.listarAreas(),
+        DirectorService.obtenerInstitucion()
       ]);
-      setResumen(resumenData);
-      setPersonal(personalData);
-      setPedidos(pedidosData);
-    } catch {
-      // Ignorar fallback silencioso
-    } finally {
-      setCargando(false);
+
+    if (resumenResultado.status === "fulfilled") {
+      setResumen(resumenResultado.value);
     }
+
+    if (personalResultado.status === "fulfilled") {
+      setPersonal(personalResultado.value.items);
+    } else {
+      setPersonal([]);
+      setErrorPersonal(personalResultado.reason);
+    }
+
+    if (pedidosResultado.status === "fulfilled") {
+      setPedidos(pedidosResultado.value);
+    }
+
+    if (areasResultado.status === "fulfilled") {
+      setAreas(areasResultado.value);
+    }
+
+    if (institucionResultado.status === "fulfilled") {
+      setInstitucion(institucionResultado.value);
+    }
+
+    setCargando(false);
   };
 
   useEffect(() => {
@@ -221,6 +234,93 @@ export default function DirectorDashboardView() {
     return pedidos.filter((p) => p.estado === "pendiente").length;
   }, [pedidos]);
 
+  /* Alertas institucionales: se arman con lo que reporta cada modulo. Si un
+     modulo no esta disponible (o no se tiene permiso) no se inventa ninguna
+     alerta: simplemente no aparece. */
+  const alertas = useMemo(() => {
+    const lista = [];
+
+    for (const alerta of resumen?.alumnos?.alertas ?? []) {
+      lista.push({
+        id: alerta.id,
+        tipo: "academica",
+        badge: alerta.tipo ?? "Académica",
+        titulo: alerta.titulo,
+        detalle: [alerta.alumno, alerta.descripcion].filter(Boolean).join(" · "),
+        area: "Secretaría",
+        link: alerta.recurso ?? null
+      });
+    }
+
+    for (const alerta of resumen?.serverPañol?.alertas ?? []) {
+      lista.push({
+        id: alerta.id,
+        tipo: "recursos",
+        badge: alerta.tipo === "solicitud_urgente" ? "Solicitud" : "Pañol & Server",
+        titulo: alerta.titulo,
+        detalle: alerta.descripcion,
+        area: "Server y Pañol",
+        link: "#/inventario"
+      });
+    }
+
+    return lista;
+  }, [resumen]);
+
+  const alertasTotales = alertas.length;
+
+  /* Asistencias: los porcentajes y el detalle por division se calculan con los
+     totales reales del modulo de inasistencias. Cuando ese modulo no esta
+     disponible la vista lo dice en lugar de mostrar una cifra inventada. */
+  const asistencias = useMemo(() => {
+    const bloque = resumen?.asistencia;
+    const disponible = Boolean(bloque?.disponible);
+
+    const total = disponible ? (bloque.totalInasistencias ?? 0) : 0;
+    const justificadas = disponible ? (bloque.justificadas ?? 0) : 0;
+    const sinJustificar = disponible ? (bloque.noJustificadas ?? 0) : 0;
+    const pendientes = disponible ? (bloque.pendientes ?? 0) : 0;
+
+    const filas = (bloque?.porDivision ?? [])
+      .map((division) => {
+        const cantidad = division.total ?? 0;
+        const sinJustificarDivision = division.noJustificadas ?? 0;
+
+        return {
+          id: `${division.curso}-${division.division}`,
+          label: `${division.curso}° ${division.division}`,
+          cantidad,
+          sinJustificar: sinJustificarDivision,
+          porcentaje: cantidad > 0 ? Math.round((sinJustificarDivision / cantidad) * 1000) / 10 : 0
+        };
+      })
+      .sort((una, otra) => otra.cantidad - una.cantidad);
+
+    return {
+      disponible,
+      total,
+      justificadas,
+      sinJustificar,
+      pendientes,
+      filas,
+      maximo: filas.reduce((mayor, fila) => Math.max(mayor, fila.cantidad), 0),
+      porcentajeSinJustificar: total > 0 ? Math.round((sinJustificar / total) * 1000) / 10 : 0
+    };
+  }, [resumen]);
+
+  /* Roles que estan en uso: sale del listado real de personal, no de un numero
+     fijo. */
+  const rolesEnUso = useMemo(
+    () => Object.keys(resumen?.personal?.porRol ?? {}).length,
+    [resumen]
+  );
+
+  /* Preceptores activos: cuenta de personas con el rol, sobre el personal real. */
+  const preceptoresActivos = useMemo(
+    () => personal.filter((u) => u.estado === "activo" && (u.roles ?? []).some((rol) => rol.id === "preceptor")).length,
+    [personal]
+  );
+
   const handlePerfilCreado = (nuevo) => {
     mostrarToast(`Perfil de ${nuevo.displayName || nuevo.nombre} creado con éxito.`);
     cargarDatos();
@@ -255,23 +355,6 @@ export default function DirectorDashboardView() {
     }
   };
 
-  // Filtrar personal
-  const personalFiltrado = useMemo(() => {
-    return personal.filter((p) => {
-      if (filtroEstado !== "todos" && p.estado !== filtroEstado) return false;
-      if (filtroRol !== "todos" && !p.roles.some((r) => r.id === filtroRol)) return false;
-      if (busquedaPersonal.trim()) {
-        const q = busquedaPersonal.trim().toLowerCase();
-        const enNombre = p.nombreCompleto.toLowerCase().includes(q);
-        const enEmail = p.email.toLowerCase().includes(q);
-        const enDni = String(p.dni).includes(q);
-        const enArea = String(p.area).toLowerCase().includes(q);
-        if (!enNombre && !enEmail && !enDni && !enArea) return false;
-      }
-      return true;
-    });
-  }, [personal, busquedaPersonal, filtroRol, filtroEstado]);
-
   const fechaHoy = new Intl.DateTimeFormat("es-AR", {
     weekday: "long",
     day: "numeric",
@@ -294,121 +377,7 @@ export default function DirectorDashboardView() {
       : null,
 
     // Panel Lateral a la Izquierda (Fuera del dashboard)
-    h(
-      "aside",
-      { className: "director-sidebar-access", "aria-label": "Accesos Rápidos Institucionales" },
-      h(
-        "div",
-        { className: "director-sidebar-access__header" },
-        h("span", { className: "director-sidebar-access__tag" }, "Accesos Rápidos"),
-        h("h2", { className: "director-sidebar-access__title" }, "Panel de Accesos"),
-        h("p", { className: "director-sidebar-access__subtitle" }, "Navegación directa por áreas y sectores")
-      ),
-      h(
-        "nav",
-        { className: "director-sidebar-nav-grouped" },
-
-        [
-          // --- Secretaría ---
-          h("div", { key: "side-div-sec", className: "director-sidebar-divider-label" }, "Secretaría"),
-          h(
-            "a",
-            { key: "side-link-sec", href: "#/secretaria", className: "director-sidebar-item director-sidebar-item--sec" },
-            h("div", { className: "director-sidebar-icon director-sidebar-icon--sec" }, h(IconClipboard, { width: "16", height: "16" })),
-            h(
-              "div",
-              { className: "director-sidebar-item-text" },
-              h("strong", null, "Secretaría"),
-              h("span", null, "Legajos y Documentación")
-            ),
-            h("span", { className: "director-sidebar-item-arrow" }, "➔")
-          ),
-          h(
-            "a",
-            { key: "side-link-alu", href: "#/alumnos", className: "director-sidebar-sub-btn" },
-            h(IconUsers, { width: "15", height: "15" }),
-            h("span", null, "Alumnos")
-          ),
-          h(
-            "a",
-            { key: "side-link-cur", href: "#/cursos", className: "director-sidebar-sub-btn" },
-            h(IconSchool, { width: "15", height: "15" }),
-            h("span", null, "Cursos")
-          ),
-
-          // --- Preceptoría ---
-          h("div", { key: "side-div-prec", className: "director-sidebar-divider-label" }, "Preceptoría"),
-          h(
-            "a",
-            { key: "side-link-prec", href: "#/preceptoria", className: "director-sidebar-item director-sidebar-item--prec" },
-            h("div", { className: "director-sidebar-icon director-sidebar-icon--prec" }, h(IconClock, { width: "16", height: "16" })),
-            h(
-              "div",
-              { className: "director-sidebar-item-text" },
-              h("strong", null, "Preceptoría"),
-              h("span", null, "Asistencias y Cursos")
-            ),
-            h("span", { className: "director-sidebar-item-arrow" }, "➔")
-          ),
-          h(
-            "a",
-            { key: "side-link-asist", href: "#/asistencias", className: "director-sidebar-sub-btn" },
-            h(IconClock, { width: "15", height: "15" }),
-            h("span", null, "Asistencias")
-          ),
-
-          // --- Server (deshabilitado según configuración) ---
-          ...(MOSTRAR_SERVER
-            ? [
-              h("div", { key: "side-div-srv", className: "director-sidebar-divider-label" }, "Server"),
-              h(
-                "a",
-                { key: "side-link-srv", href: "#/server", className: "director-sidebar-item director-sidebar-item--srv" },
-                h("div", { className: "director-sidebar-icon director-sidebar-icon--srv" }, h(IconServer, { width: "16", height: "16" })),
-                h(
-                  "div",
-                  { className: "director-sidebar-item-text" },
-                  h("strong", null, "Server"),
-                  h("span", null, "Stock y Equipamiento")
-                ),
-                h("span", { className: "director-sidebar-item-arrow" }, "➔")
-              ),
-              h(
-                "a",
-                { key: "side-link-inv", href: "#/inventario", className: "director-sidebar-sub-btn" },
-                h(IconServer, { width: "15", height: "15" }),
-                h("span", null, "Inventario")
-              )
-            ]
-            : []),
-
-          // --- Jefatura (deshabilitado según configuración) ---
-          ...(MOSTRAR_JEFATURA
-            ? [
-              h("div", { key: "side-div-jef", className: "director-sidebar-divider-label" }, "Jefatura"),
-              h(
-                "a",
-                { key: "side-link-jef", href: "#/jefatura", className: "director-sidebar-item director-sidebar-item--jef" },
-                h("div", { className: "director-sidebar-icon director-sidebar-icon--jef" }, h(IconWrench, { width: "16", height: "16" })),
-                h(
-                  "div",
-                  { className: "director-sidebar-item-text" },
-                  h("strong", null, "Jefatura"),
-                  h("span", null, "Talleres y Grillas")
-                ),
-                h("span", { className: "director-sidebar-item-arrow" }, "➔")
-              ),
-              h(
-                "a",
-                { key: "side-link-tal", href: "#/jefatura", className: "director-sidebar-sub-btn" },
-                h(IconWrench, { width: "15", height: "15" }),
-                h("span", null, "Talleres")
-              )
-            ]
-            : [])
-        ]
-      )
-    ),
+    h(PanelAccesos, { mostrarServer: MOSTRAR_SERVER, mostrarJefatura: MOSTRAR_JEFATURA }),
 
     // Dashboard a la Derecha (No centrado, ocupando el espacio restante)
     h(
@@ -422,14 +391,18 @@ export default function DirectorDashboardView() {
         h(
           "div",
           { className: "director-top-title-wrap" },
-          h("span", { className: "director-badge-main" }, "Dirección General"),
-          h("span", { className: "badge-institucion" }, "E.E.S.T N°1 Monte Grande")
+          h("span", { className: "director-badge-main" }, institucion?.dependencia ?? "Dirección General"),
+          h("span", { className: "badge-institucion" }, institucion?.nombre ?? "—")
         ),
         h(
           "div",
           { className: "alumnos-top-badges" },
-          h("span", { className: "badge-ciclo" }, `Ciclo Lectivo ${new Date().getFullYear()}`),
-          h("span", { className: "badge-ciclo badge-ciclo--status" }, "● Turno Activo")
+          h("span", { className: "badge-ciclo" }, `Ciclo Lectivo ${institucion?.cicloLectivo ?? "—"}`),
+          h(
+            "span",
+            { className: "badge-ciclo badge-ciclo--status" },
+            institucion?.turnoActivo ? "Turno Activo" : "Turno Inactivo"
+          )
         )
       ),
 
@@ -496,6 +469,7 @@ export default function DirectorDashboardView() {
           { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
           { id: "asignaciones", label: "Asignaciones", icon: IconSchool },
           { id: "supervision", label: "Supervisión de Áreas", icon: IconSchool },
+          { id: "informes", label: "Informes", icon: IconClipboard },
           ...(MOSTRAR_HABILITAR_PEDIDOS
             ? [
               {
@@ -562,7 +536,13 @@ export default function DirectorDashboardView() {
                   h(
                     "div",
                     { className: "director-asistencia-header-badge-float" },
-                    h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
+                    h(
+                      "span",
+                      { className: "director-kpi-badge director-kpi-badge--blue" },
+                      resumen?.alumnos?.disponible
+                        ? `${resumen.alumnos.divisiones} ${resumen.alumnos.divisiones === 1 ? "Curso" : "Cursos"}`
+                        : "Sin datos"
+                    )
                   ),
                   h(
                     "div",
@@ -593,9 +573,11 @@ export default function DirectorDashboardView() {
                   h(
                     "div",
                     { className: "director-kpi-value" },
-                    modoAlumnos === "porcentaje"
-                      ? "100%"
-                      : `${resumen?.alumnos?.totalActivos ?? 840}`
+                    !resumen?.alumnos?.disponible
+                      ? "—"
+                      : modoAlumnos === "porcentaje"
+                        ? "100%"
+                        : `${resumen.alumnos.totalActivos}`
                   ),
                   h(
                     "div",
@@ -603,66 +585,62 @@ export default function DirectorDashboardView() {
                     h(
                       "span",
                       null,
-                      modoAlumnos === "porcentaje"
-                        ? `${resumen?.alumnos?.totalActivos ?? 840} alumnos matriculados`
-                        : "32 divisiones activas"
+                      !resumen?.alumnos?.disponible
+                        ? "Datos de matrícula no disponibles"
+                        : modoAlumnos === "porcentaje"
+                          ? `${resumen.alumnos.totalActivos} alumnos matriculados`
+                          : `${resumen.alumnos.divisiones} divisiones activas`
                     )
                   )
                 ),
 
-                // Lado derecho: Gráfico Horizontal de cantidad/porcentaje por cada turno
+                // Lado derecho: Grafico horizontal con la distribucion por turno
                 (() => {
-                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 840;
-                  const turnoManana = resumen?.alumnos?.turnoManana ?? 450;
-                  const turnoTarde = resumen?.alumnos?.turnoTarde ?? 390;
-                  const turnoTaller = resumen?.alumnos?.turnoTaller ?? 525;
+                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 0;
+                  const porTurno = resumen?.alumnos?.porTurno ?? [];
 
-                  const pctManana = Math.round(((turnoManana / totalAlumnos) * 100) * 10) / 10;
-                  const pctTarde = Math.round(((turnoTarde / totalAlumnos) * 100) * 10) / 10;
-                  const pctTaller = Math.round(((turnoTaller / totalAlumnos) * 100) * 10) / 10;
+                  const COLORES = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6"];
 
-                  const datosTurnosAlumnos = [
-                    {
-                      label: "Mañana",
-                      porcentaje: pctManana,
-                      cantidad: turnoManana,
-                      color: "#10b981",
-                      anchoPct: modoAlumnos === "porcentaje"
-                        ? pctManana
-                        : Math.min(100, (turnoManana / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Tarde",
-                      porcentaje: pctTarde,
-                      cantidad: turnoTarde,
-                      color: "#3b82f6",
-                      anchoPct: modoAlumnos === "porcentaje"
-                        ? pctTarde
-                        : Math.min(100, (turnoTarde / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Taller",
-                      porcentaje: pctTaller,
-                      cantidad: turnoTaller,
-                      color: "#f59e0b",
-                      anchoPct: modoAlumnos === "porcentaje"
-                        ? pctTaller
-                        : Math.min(100, (turnoTaller / totalAlumnos) * 100)
-                    }
-                  ];
+                  const datosTurnosAlumnos = porTurno.map((turno, indice) => {
+                    const cantidad = turno.cantidad ?? 0;
+                    const porcentaje =
+                      totalAlumnos > 0
+                        ? Math.round((cantidad / totalAlumnos) * 1000) / 10
+                        : (turno.porcentaje ?? 0);
+
+                    return {
+                      label: turno.turno ?? "Turno",
+                      porcentaje,
+                      cantidad,
+                      color: COLORES[indice % COLORES.length],
+                      anchoPct:
+                        modoAlumnos === "porcentaje"
+                          ? porcentaje
+                          : totalAlumnos > 0
+                            ? Math.min(100, (cantidad / totalAlumnos) * 100)
+                            : 0
+                    };
+                  });
+
+                  if (!datosTurnosAlumnos.length) {
+                    return h(
+                      "p",
+                      { className: "director-kpi-sin-datos" },
+                      "La distribucion por turno no esta disponible."
+                    );
+                  }
 
                   const posicionMediaAlumnosPct = modoAlumnos === "porcentaje"
                     ? 50
-                    : Math.min(100, Math.max(0, (500 / totalAlumnos) * 100));
+                    : Math.min(100, Math.max(0, (totalAlumnos / 2 / totalAlumnos) * 100));
 
                   const marcasEje = modoAlumnos === "porcentaje"
                     ? ["0%", "50%", "100%"]
-                    : ["0", "500", String(totalAlumnos)];
+                    : ["0", String(Math.round(totalAlumnos / 2)), String(totalAlumnos)];
 
                   return h(
                     "div",
                     { className: "director-hchart-container" },
-                    // Eje X superior con marcas de escala (0, 500, 840 o 0%, 50%, 100%)
                     h(
                       "div",
                       { className: "director-hchart-axis-x" },
@@ -673,7 +651,6 @@ export default function DirectorDashboardView() {
                       }, marcasEje[1]),
                       h("span", { className: "director-hchart-axis-mark director-hchart-axis-mark--end" }, marcasEje[2])
                     ),
-                    // Área de trazado con líneas guía verticales detrás y barras
                     h(
                       "div",
                       { className: "director-hchart-plot-area" },
@@ -718,14 +695,14 @@ export default function DirectorDashboardView() {
               )
             ),
 
-            // KPI 2: Asistencias (Ocupa 2 columnas con gráfico horizontal y selector % / num)
+            // KPI 2: Asistencias (datos reales del modulo de inasistencias)
             h(
               "div",
               { className: "director-kpi-card director-kpi-card--emerald director-kpi-card--wide" },
               h(
                 "div",
                 { className: "director-kpi-asistencias-layout" },
-                // Lado izquierdo: Tasa global, badge con toggle, y alertas
+                // Lado izquierdo: total de inasistencias, badge con toggle y desglose
                 h(
                   "div",
                   { className: "director-kpi-asistencias-left" },
@@ -738,7 +715,11 @@ export default function DirectorDashboardView() {
                   h(
                     "div",
                     { className: "director-asistencia-header-badge-float" },
-                    h("span", { className: "director-kpi-badge director-kpi-badge--emerald" }, "Promedio Hoy")
+                    h(
+                      "span",
+                      { className: "director-kpi-badge director-kpi-badge--emerald" },
+                      asistencias.disponible ? "Inasistencias" : "Sin datos"
+                    )
                   ),
                   h(
                     "div",
@@ -769,66 +750,79 @@ export default function DirectorDashboardView() {
                   h(
                     "div",
                     { className: "director-kpi-value" },
-                    modoAsistencia === "porcentaje"
-                      ? `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`
-                      : `${resumen?.asistencia?.presentesHoy ?? 791}`
+                    !asistencias.disponible
+                      ? "—"
+                      : modoAsistencia === "porcentaje"
+                        ? `${asistencias.porcentajeSinJustificar}%`
+                        : `${asistencias.total}`
                   ),
                   h(
                     "div",
                     { className: "director-kpi-footer" },
-                    h(
-                      "span",
-                      null,
-                      modoAsistencia === "porcentaje"
-                        ? `${resumen?.asistencia?.presentesHoy ?? 791} presentes`
-                        : `de ${resumen?.alumnos?.totalActivos ?? 840} alumnos`
-                    ),
-                    h("span", null, `·`),
-                    h("span", { className: "text-rose-600 font-semibold" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} alertas faltas`)
+                    !asistencias.disponible
+                      ? h("span", null, "El módulo de asistencia no está disponible.")
+                      : [
+                          h("span", { key: "justificadas" }, `${asistencias.justificadas} justificadas`),
+                          h("span", { key: "sep1" }, `·`),
+                          h(
+                            "span",
+                            { key: "sin-justificar", className: "text-rose-600 font-semibold" },
+                            `${asistencias.sinJustificar} sin justificar`
+                          ),
+                          h("span", { key: "sep2" }, `·`),
+                          h("span", { key: "pendientes" }, `${asistencias.pendientes} pendientes`)
+                        ]
                   )
                 ),
 
                 // Lado derecho: Gráfico Horizontal con escala numérica/porcentaje ARRIBA
                 (() => {
-                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 840;
-                  // Datos de cada turno (porcentaje y cantidad de alumnos)
-                  const datosTurnos = [
-                    {
-                      label: "Mañana",
-                      porcentaje: 94.2,
-                      cantidad: 424,
-                      color: "#10b981",
-                      anchoPct: modoAsistencia === "porcentaje" ? 94.2 : Math.min(100, (424 / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Tarde",
-                      porcentaje: 92.8,
-                      cantidad: 362,
-                      color: "#3b82f6",
-                      anchoPct: modoAsistencia === "porcentaje" ? 92.8 : Math.min(100, (362 / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Taller",
-                      porcentaje: 96.4,
-                      cantidad: 505,
-                      color: "#f59e0b",
-                      anchoPct: modoAsistencia === "porcentaje" ? 96.4 : Math.min(100, (505 / totalAlumnos) * 100)
-                    }
-                  ];
+                  if (!asistencias.disponible) {
+                    return h(
+                      "p",
+                      { className: "director-kpi-sin-datos" },
+                      "No hay datos de asistencia para mostrar."
+                    );
+                  }
 
-                  const posicionMediaAsistenciaPct = modoAsistencia === "porcentaje"
-                    ? 50
-                    : Math.min(100, Math.max(0, (500 / totalAlumnos) * 100));
+                  if (!asistencias.filas.length) {
+                    return h(
+                      "p",
+                      { className: "director-kpi-sin-datos" },
+                      "No hay inasistencias registradas en el período."
+                    );
+                  }
 
-                  // Marcas del eje superior (0%, 50%, 100% o 0, 500, 840)
+                  /* El color de cada barra sale de la proporción real de
+                     inasistencias sin justificar de la division. */
+                  const colorDe = (porcentaje) => {
+                    if (porcentaje >= 50) return "#e11d48";
+                    if (porcentaje >= 25) return "#f59e0b";
+                    return "#10b981";
+                  };
+
+                  const filas = asistencias.filas.map((fila) => ({
+                    ...fila,
+                    anchoPct:
+                      modoAsistencia === "porcentaje"
+                        ? fila.porcentaje
+                        : asistencias.maximo > 0
+                          ? Math.min(100, (fila.cantidad / asistencias.maximo) * 100)
+                          : 0,
+                    color: colorDe(fila.porcentaje)
+                  }));
+
+                  const posicionMediaAsistenciaPct = 50;
+
+                  // Marcas del eje superior (0%, 50%, 100% o 0, mitad, maximo)
                   const marcasEje = modoAsistencia === "porcentaje"
                     ? ["0%", "50%", "100%"]
-                    : ["0", "500", String(totalAlumnos)];
+                    : ["0", String(Math.round(asistencias.maximo / 2)), String(asistencias.maximo)];
 
                   return h(
                     "div",
                     { className: "director-hchart-container" },
-                    // 1. Eje X superior con etiquetas de escala (0%, 50%, 100% o 0, 500, 840)
+                    // 1. Eje X superior con etiquetas de escala
                     h(
                       "div",
                       { className: "director-hchart-axis-x" },
@@ -855,10 +849,10 @@ export default function DirectorDashboardView() {
                         h("div", { className: "director-hchart-grid-line director-hchart-grid-line--end" })
                       ),
                       // Filas de barras horizontales
-                      datosTurnos.map((item) =>
+                      filas.map((item) =>
                         h(
                           "div",
-                          { key: item.label, className: "director-hchart-row" },
+                          { key: item.id, className: "director-hchart-row" },
                           h("span", { className: "director-hchart-label" }, item.label),
                           h(
                             "div",
@@ -894,13 +888,23 @@ export default function DirectorDashboardView() {
                 "div",
                 { className: "director-kpi-card__header" },
                 h("span", { className: "director-kpi-label" }, "Personal"),
-                h("span", { className: "director-kpi-badge director-kpi-badge--purple" }, "7 Roles")
+                h(
+                  "span",
+                  { className: "director-kpi-badge director-kpi-badge--purple" },
+                  resumen?.personal?.disponible ? `${rolesEnUso} Roles` : "Sin datos"
+                )
               ),
-              h("div", { className: "director-kpi-value" }, `${resumen?.personal?.totalUsuarios ?? personal.length}`),
+              h(
+                "div",
+                { className: "director-kpi-value" },
+                resumen?.personal?.disponible ? `${resumen.personal.totalUsuarios}` : "—"
+              ),
               h(
                 "div",
                 { className: "director-kpi-footer" },
-                h("span", null, `${resumen?.personal?.activos ?? personal.length} usuarios activos`)
+                resumen?.personal?.disponible
+                  ? h("span", null, `${resumen.personal.activos} usuarios activos`)
+                  : h("span", null, "Datos de personal no disponibles")
               )
             ),
 
@@ -915,13 +919,17 @@ export default function DirectorDashboardView() {
                   h("span", { className: "director-kpi-label" }, "Pañol"),
                   h("span", { className: "director-kpi-badge director-kpi-badge--amber" }, "Recursos")
                 ),
-                h("div", { className: "director-kpi-value" }, `${resumen?.serverPañol?.totalItems ?? 24} ítems`),
+                h("div", { className: "director-kpi-value" }, resumen?.serverPañol?.disponible ? `${resumen.serverPañol.totalItems} ítems` : "—"),
                 h(
                   "div",
                   { className: "director-kpi-footer" },
-                  h("span", { className: "text-amber-700 font-medium" }, `${resumen?.serverPañol?.solicitudesPendientes ?? 2} solicitudes pend.`),
-                  h("span", null, `·`),
-                  h("span", { className: "text-rose-600 font-medium" }, `${resumen?.serverPañol?.sinStock ?? 2} sin stock`)
+                  resumen?.serverPañol?.disponible
+                    ? [
+                        h("span", { key: "sol", className: "text-amber-700 font-medium" }, `${resumen.serverPañol.solicitudesPendientes} solicitudes pend.`),
+                        h("span", { key: "sep" }, `·`),
+                        h("span", { key: "stock", className: "text-rose-600 font-medium" }, `${resumen.serverPañol.sinStock} sin stock`)
+                      ]
+                    : h("span", null, "Datos de Server no disponibles")
                 )
               )
               : null
@@ -994,7 +1002,7 @@ export default function DirectorDashboardView() {
             {
               title: "Gestión de Personal y Asignación de Roles",
               icon: "people",
-              badge: `${personalFiltrado.length} de ${personal.length} miembros`,
+              badge: `${personal.length} ${personal.length === 1 ? "miembro" : "miembros"}`,
               className: "dashboard-card--highlight director-main-card",
               collapsible: false,
               actions: h(
@@ -1009,208 +1017,15 @@ export default function DirectorDashboardView() {
               )
             },
 
-            // Toolbar de Filtros y Búsqueda de Personal
-            h(
-              "div",
-              { className: "director-personal-toolbar" },
-
-              // Buscador
-              h(
-                "div",
-                { className: "search-input-wrapper director-search-wrap" },
-                h(IconoFigma, { className: "search-input-icon", nombre: "search" }),
-                h("input", {
-                  type: "text",
-                  className: "search-input",
-                  placeholder: "Buscar por nombre, apellido, DNI, email o área...",
-                  value: busquedaPersonal,
-                  onChange: (e) => setBusquedaPersonal(e.target.value),
-                  "aria-label": "Buscar personal"
-                }),
-                busquedaPersonal
-                  ? h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "search-clear-btn",
-                      onClick: () => setBusquedaPersonal(""),
-                      "aria-label": "Limpiar"
-                    },
-                    "✕"
-                  )
-                  : null
-              ),
-
-              // Selector de Rol
-              h(
-                "select",
-                {
-                  className: "director-filter-select",
-                  value: filtroRol,
-                  onChange: (e) => setFiltroRol(e.target.value),
-                  "aria-label": "Filtrar por rol"
-                },
-                h("option", { value: "todos" }, "Todos los Roles"),
-                ROLES_DISPONIBLES.map((rol) =>
-                  h("option", { key: rol.id, value: rol.id }, `Rol: ${rol.nombre}`)
-                )
-              ),
-
-              // Selector de Estado
-              h(
-                "select",
-                {
-                  className: "director-filter-select",
-                  value: filtroEstado,
-                  onChange: (e) => setFiltroEstado(e.target.value),
-                  "aria-label": "Filtrar por estado"
-                },
-                h("option", { value: "todos" }, "Todos los Estados"),
-                h("option", { value: "activo" }, "Solo Activos"),
-                h("option", { value: "inactivo" }, "Solo Inactivos")
-              )
-            ),
-
-            // Tabla de Personal
-            personalFiltrado.length === 0
-              ? h(EmptyState, {
-                mensaje: busquedaPersonal || filtroRol !== "todos" || filtroEstado !== "todos"
-                  ? "No hay personal que coincida con los filtros aplicados."
-                  : "No hay usuarios registrados en el sistema."
-              })
-              : h(
-                "div",
-                { className: "director-table-responsive" },
-                h(
-                  "table",
-                  { className: "director-table" },
-                  h(
-                    "thead",
-                    null,
-                    h(
-                      "tr",
-                      null,
-                      h("th", null, "Personal / Usuario"),
-                      h("th", null, "Contacto y DNI"),
-                      h("th", null, "Área / Sector"),
-                      h("th", null, "Roles Asignados"),
-                      h("th", null, "Estado"),
-                      h("th", { style: { textAlign: "right" } }, "Acciones")
-                    )
-                  ),
-                  h(
-                    "tbody",
-                    null,
-                    personalFiltrado.map((p) =>
-                      h(
-                        "tr",
-                        { key: p.id, className: p.estado === "inactivo" ? "director-row--inactive" : "" },
-
-                        // Columna 1: Nombre y Avatar
-                        h(
-                          "td",
-                          null,
-                          h(
-                            "div",
-                            { className: "director-user-cell" },
-                            h(
-                              "div",
-                              { className: "director-user-avatar" },
-                              p.nombreCompleto.charAt(0).toUpperCase()
-                            ),
-                            h(
-                              "div",
-                              null,
-                              h("strong", { className: "director-user-name" }, p.nombreCompleto),
-                              h("span", { className: "director-user-id" }, `ID: ${p.id}`)
-                            )
-                          )
-                        ),
-
-                        // Columna 2: Contacto
-                        h(
-                          "td",
-                          null,
-                          h("div", { className: "director-contact-email" }, p.email),
-                          h("span", { className: "director-contact-dni" }, `DNI: ${p.dni}`)
-                        ),
-
-                        // Columna 3: Área
-                        h(
-                          "td",
-                          null,
-                          h("span", { className: "director-area-badge" }, p.area)
-                        ),
-
-                        // Columna 4: Roles
-                        h(
-                          "td",
-                          null,
-                          h(
-                            "div",
-                            { className: "director-roles-badges-wrap" },
-                            p.roles.map((r) =>
-                              h(
-                                "span",
-                                {
-                                  key: r.id,
-                                  className: `director-role-pill director-role-pill--${r.id}`,
-                                  style: { borderLeftColor: r.color }
-                                },
-                                r.nombre
-                              )
-                            )
-                          )
-                        ),
-
-                        // Columna 5: Estado
-                        h(
-                          "td",
-                          null,
-                          h(
-                            "span",
-                            {
-                              className: `director-status-tag ${p.estado === "activo" ? "director-status-tag--active" : "director-status-tag--inactive"}`
-                            },
-                            p.estado === "activo" ? "● Activo" : "○ Inactivo"
-                          )
-                        ),
-
-                        // Columna 6: Acciones
-                        h(
-                          "td",
-                          { style: { textAlign: "right" } },
-                          h(
-                            "div",
-                            { className: "director-actions-cell" },
-                            h(
-                              "button",
-                              {
-                                type: "button",
-                                className: "btn-director-action-edit-roles",
-                                onClick: () => setUsuarioEditandoRoles(p),
-                                title: "Modificar roles del usuario"
-                              },
-                              h(IconSettings, { width: "13", height: "13" }),
-                              h("span", null, "Roles")
-                            ),
-                            h(
-                              "button",
-                              {
-                                type: "button",
-                                className: `btn-director-action-toggle ${p.estado === "activo" ? "btn-director-action-toggle--deactivate" : "btn-director-action-toggle--activate"}`,
-                                onClick: () => handleToggleEstado(p),
-                                title: p.estado === "activo" ? "Desactivar cuenta" : "Reactivar cuenta"
-                              },
-                              p.estado === "activo" ? "Suspender" : "Activar"
-                            )
-                          )
-                        )
-                      )
-                    )
-                  )
-                )
-              )
+            h(PersonalView, {
+              personal,
+              areas,
+              error: errorPersonal,
+              onReintentar: cargarDatos,
+              onEditarRoles: (persona) => setUsuarioEditandoRoles(persona),
+              onCambiarEstado: handleToggleEstado,
+              onCrearPerfil: () => setModalNuevoAbierto(true)
+            })
           )
         )
         : null,
@@ -1256,19 +1071,31 @@ export default function DirectorDashboardView() {
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Matrícula Activa"),
-                    h("strong", { className: "director-metric-mini__val" }, resumen?.alumnos?.totalActivos ?? 840)
+                    h(
+                      "strong",
+                      { className: "director-metric-mini__val" },
+                      resumen?.alumnos?.disponible ? `${resumen.alumnos.totalActivos}` : "—"
+                    )
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Cursos Totales"),
-                    h("strong", { className: "director-metric-mini__val" }, "32 Divisiones")
+                    h(
+                      "strong",
+                      { className: "director-metric-mini__val" },
+                      resumen?.alumnos?.disponible ? `${resumen.alumnos.divisiones} Divisiones` : "—"
+                    )
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Alumnos en Riesgo"),
-                    h("strong", { className: "director-metric-mini__val text-rose-600" }, `${resumen?.alumnos?.alumnosEnRiesgo ?? 12} casos`)
+                    h(
+                      "strong",
+                      { className: "director-metric-mini__val text-rose-600" },
+                      resumen?.alumnos?.disponible ? `${resumen.alumnos.alumnosEnRiesgo} casos` : "—"
+                    )
                   )
                 ),
                 h(
@@ -1298,20 +1125,28 @@ export default function DirectorDashboardView() {
                   h(
                     "div",
                     { className: "director-metric-mini" },
-                    h("span", { className: "director-metric-mini__label" }, "Asistencia General"),
-                    h("strong", { className: "director-metric-mini__val" }, `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`)
+                    h("span", { className: "director-metric-mini__label" }, "Inasistencias Registradas"),
+                    h(
+                      "strong",
+                      { className: "director-metric-mini__val" },
+                      asistencias.disponible ? `${asistencias.total}` : "—"
+                    )
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
-                    h("span", { className: "director-metric-mini__label" }, "Preceptores"),
-                    h("strong", { className: "director-metric-mini__val" }, "8 Asignados")
+                    h("span", { className: "director-metric-mini__label" }, "Preceptores Activos"),
+                    h("strong", { className: "director-metric-mini__val" }, `${preceptoresActivos}`),
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
-                    h("span", { className: "director-metric-mini__label" }, "Inasistencias Críticas"),
-                    h("strong", { className: "director-metric-mini__val text-amber-600" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} en seguimiento`)
+                    h("span", { className: "director-metric-mini__label" }, "Inasistencias Sin Justificar"),
+                    h(
+                      "strong",
+                      { className: "director-metric-mini__val text-amber-600" },
+                      asistencias.disponible ? `${asistencias.sinJustificar} en seguimiento` : "—"
+                    )
                   )
                 ),
                 h(
@@ -1343,19 +1178,31 @@ export default function DirectorDashboardView() {
                       "div",
                       { className: "director-metric-mini" },
                       h("span", { className: "director-metric-mini__label" }, "Materiales Registrados"),
-                      h("strong", { className: "director-metric-mini__val" }, resumen?.serverPañol?.totalItems ?? 24)
+                      h(
+                        "strong",
+                        { className: "director-metric-mini__val" },
+                        resumen?.serverPañol?.disponible ? `${resumen.serverPañol.totalItems}` : "—"
+                      )
                     ),
                     h(
                       "div",
                       { className: "director-metric-mini" },
                       h("span", { className: "director-metric-mini__label" }, "Sin Stock"),
-                      h("strong", { className: "director-metric-mini__val text-rose-600" }, `${resumen?.serverPañol?.sinStock ?? 2} ítems`)
+                      h(
+                        "strong",
+                        { className: "director-metric-mini__val text-rose-600" },
+                        resumen?.serverPañol?.disponible ? `${resumen.serverPañol.sinStock} ítems` : "—"
+                      )
                     ),
                     h(
                       "div",
                       { className: "director-metric-mini" },
                       h("span", { className: "director-metric-mini__label" }, "Solicitudes de Taller"),
-                      h("strong", { className: "director-metric-mini__val text-blue-600" }, `${resumen?.serverPañol?.solicitudesPendientes ?? 2} pendientes`)
+                      h(
+                        "strong",
+                        { className: "director-metric-mini__val text-blue-600" },
+                        resumen?.serverPañol?.disponible ? `${resumen.serverPañol.solicitudesPendientes} pendientes` : "—"
+                      )
                     )
                   ),
                   h(
@@ -1372,6 +1219,14 @@ export default function DirectorDashboardView() {
         : null,
 
       // =========================================================================
+      // =========================================================================
+      // PESTAÑA: INFORMES DE DIRECCIÓN
+      // =========================================================================
+      !cargando && pestanaActiva === "informes"
+        ? h(InformesView, { institucion, onAviso: mostrarToast })
+        : null,
+
+      // =========================================================================
       // PESTAÑA 4: ALERTAS INSTITUCIONALES CONSOLIDADAS
       // =========================================================================
       !cargando && pestanaActiva === "alertas"
@@ -1384,62 +1239,40 @@ export default function DirectorDashboardView() {
             {
               title: "Alertas y Novedades Institucionales",
               icon: "alert",
-              badge: "Atención Requerida",
+              badge: alertasTotales > 0 ? `${alertasTotales} activas` : "Sin alertas",
               className: "dashboard-card--highlight",
               collapsible: false
             },
-            h(
-              "div",
-              { className: "director-alerts-list" },
-              [
-                {
-                  id: "alt-1",
-                  tipo: "academica",
-                  badge: "Académica",
-                  titulo: "12 Alumnos con más de 3 materias previas para mesa de examen",
-                  detalle: "Se requiere coordinar el cronograma de tutorías e intensificación del Ciclo Superior.",
-                  area: "Secretaría",
-                  link: "#/secretaria"
-                },
-                {
-                  id: "alt-2",
-                  tipo: "asistencia",
-                  badge: "Asistencia",
-                  titulo: "3 Alumnos con inasistencias consecutivas sin justificar",
-                  detalle: "Pérez Martín (3° 1°) y dos alumnos más acumulan 3 o más faltas seguidas en el turno mañana.",
-                  area: "Preceptoría",
-                  link: "#/preceptoria"
-                },
-                {
-                  id: "alt-3",
-                  tipo: "recursos",
-                  badge: "Pañol & Server",
-                  titulo: "Stock crítico de cables UTP y fichas RJ45 en Pañol",
-                  detalle: "Insumos agotados para la próxima clase práctica de Redes y Telecomunicaciones.",
-                  area: "Server",
-                  link: "#/inventario"
-                }
-              ].map((alerta) =>
-                h(
-                  "div",
-                  { key: alerta.id, className: `director-alert-item director-alert-item--${alerta.tipo}` },
-                  h(
-                    "div",
-                    { className: "director-alert-item__top" },
-                    h("span", { className: `director-alert-badge director-alert-badge--${alerta.tipo}` }, alerta.badge),
-                    h("span", { className: "director-alert-area" }, `Área: ${alerta.area}`)
-                  ),
-                  h("h4", { className: "director-alert-title" }, alerta.titulo),
-                  h("p", { className: "director-alert-detail" }, alerta.detalle),
-                  h("a", { href: alerta.link, className: "director-alert-link" }, "Ver detalle de la situación ➔")
+            alertasTotales === 0
+              ? h(
+                  "p",
+                  { className: "director-alerts-vacio" },
+                  "No hay alertas registradas en los módulos de la institución."
                 )
-              )
-            )
+              : h(
+                  "div",
+                  { className: "director-alerts-list" },
+                  alertas.map((alerta) =>
+                    h(
+                      "div",
+                      { key: alerta.id, className: `director-alert-item director-alert-item--${alerta.tipo}` },
+                      h(
+                        "div",
+                        { className: "director-alert-item__top" },
+                        h("span", { className: `director-alert-badge director-alert-badge--${alerta.tipo}` }, alerta.badge),
+                        h("span", { className: "director-alert-area" }, `Área: ${alerta.area}`)
+                      ),
+                      h("h4", { className: "director-alert-title" }, alerta.titulo),
+                      h("p", { className: "director-alert-detail" }, alerta.detalle),
+                      alerta.link
+                        ? h("a", { href: alerta.link, className: "director-alert-link" }, "Ver detalle de la situación")
+                        : null
+                    )
+                  )
+                )
           )
         )
         : null,
-
-      // =========================================================================
       // PESTAÑA 5: HABILITACIÓN DE PEDIDOS (deshabilitada según configuración)
       // =========================================================================
       !cargando && pestanaActiva === "pedidos" && MOSTRAR_HABILITAR_PEDIDOS

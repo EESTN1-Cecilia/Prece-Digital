@@ -88,7 +88,9 @@ export function normalizarUsuario(crudo) {
     estado: normalizarEstado(crudo),
     creadoEn: primero(crudo, ["creadoEn", "creado_en", "createdAt", "created_at"]),
     actualizadoEn: primero(crudo, ["actualizadoEn", "actualizado_en", "updatedAt", "updated_at"]),
-    ultimoAcceso: primero(crudo, ["ultimoAcceso", "ultimo_acceso", "lastLoginAt", "last_login_at"])
+    ultimoAcceso: primero(crudo, ["ultimoAcceso", "ultimo_acceso", "lastLoginAt", "last_login_at"]),
+    /* Solo la marca: la clave provisoria nunca llega al cliente. */
+    debeCambiarClave: crudo?.debeCambiarClave === true
   };
 }
 
@@ -287,6 +289,22 @@ export async function iniciarSesion({ email, password }) {
   const data = await pedir("/api/v1/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password })
+  });
+
+  if (!data?.accessToken || !data?.refreshToken) {
+    throw new ErrorApi(500, "El servidor no devolvio una sesion valida.", { alcance: "global" });
+  }
+
+  guardarCredenciales(data);
+  return { data: normalizarSesionAutenticada(data), origen: "api" };
+}
+
+/* Cambio de la propia clave (obligatorio con la clave provisoria). El backend
+   cierra las sesiones anteriores y devuelve una nueva. */
+export async function cambiarClave({ actual, nueva }) {
+  const data = await pedir("/api/v1/auth/cambiar-clave", {
+    method: "POST",
+    body: JSON.stringify({ actual, nueva })
   });
 
   if (!data?.accessToken || !data?.refreshToken) {

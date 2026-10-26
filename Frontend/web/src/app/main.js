@@ -4,9 +4,11 @@ import { h, SiteLayout } from "../layouts/site-layout.js";
 import { CargandoPantalla, ErrorGlobal } from "../components/ui/index.js";
 import { PaginaNoEncontrada } from "./pagina-no-encontrada.js";
 import { AccesoDenegado } from "./acceso-denegado.js";
+import CambiarClaveView from "../modules/auth/cambiar-clave-view.js";
 import { ACCESO, decidirAcceso, resolverRuta } from "./navegacion.js";
 import { RUTAS, RUTA_LOGIN } from "./rutas.js";
 import { ProveedorEstado, useCarga, useErrorGlobal, useSesion } from "../estado/index.js";
+import { instalarImpresion } from "../utils/impresion.js";
 
 /* Ruta actual sin la query (#/alumnos?curso=1 -> #/alumnos). */
 function rutaActual() {
@@ -31,6 +33,12 @@ function Guardia({ ruta }) {
       window.location.hash = RUTA_LOGIN;
     }
   }, [decision.tipo, ruta]);
+
+  /* Primer ingreso con la clave provisoria: nada mas que el cambio de clave
+     hasta completarlo (el backend aplica la misma restriccion). */
+  if (sesion.debeCambiarClave) {
+    return h(CambiarClaveView);
+  }
 
   switch (decision.tipo) {
     case ACCESO.esperar:
@@ -74,5 +82,8 @@ function App() {
     inicializando ? h(CargandoPantalla, { texto: "Iniciando Prece Digital..." }) : h(Guardia, { ruta })
   );
 }
+
+/* Planillas y listas se imprimen en Oficio horizontal (ver utils/impresion.js). */
+instalarImpresion();
 
 createRoot(document.querySelector("#root")).render(h(ProveedorEstado, null, h(App)));

@@ -326,3 +326,114 @@ test("las consultas inversas rechazan referencias inexistentes (404)", async () 
   const division = await pedir("GET", "/api/v1/teachers/by-division/div-999", "director");
   assert.equal(division.status, 404);
 });
+
+/* ---------------- Area, filtros del listado y resumen de asignaciones ----- */
+
+test("el catalogo expone las areas institucionales y las materias dictadas", async () => {
+  const catalogo = await pedir("GET", "/api/v1/teachers/catalogos", "secretario");
+  assert.equal(catalogo.status, 200);
+  assert.ok(catalogo.cuerpo.data.areas.some((area) => area.id === "informatica"));
+  assert.deepEqual(catalogo.cuerpo.data.materias.map((materia) => materia.id).sort(), ["his", "lng", "mat", "prog"]);
+});
+
+test("el docente dado de alta desde Crear Perfil aparece con su materia declarada y se filtra por ella", async () => {
+  const alta = await pedir("POST", "/api/v1/users", "director", {
+    nombre: "Juan", apellido: "Perez", email: "juan.perez@institucion.edu.ar", dni: "30123456",
+    area: "docencia", roles: ["docente"], materia: "Matemática", situacion_revista: "Titular",
+    modulos: "4", dia: "Lunes", hora_desde: "07:30", hora_hasta: "11:30"
+  });
+  assert.equal(alta.status, 201);
+  assert.ok(alta.cuerpo.data.docenteId);
+
+  const listado = await pedir("GET", "/api/v1/teachers?q=30123456", "director");
+  assert.equal(listado.cuerpo.data.length, 1);
+  const [docente] = listado.cuerpo.data;
+  assert.equal(docente.id, alta.cuerpo.data.docenteId);
+  assert.equal(docente.area, "docencia");
+  assert.deepEqual(docente.asignaciones.materiasDeclaradas, [{ id: "mat", nombre: "Matemática" }]);
+
+  const porMateria = await pedir("GET", "/api/v1/teachers?materiaId=mat&area=docencia", "director");
+  assert.ok(porMateria.cuerpo.data.some((item) => item.id === docente.id));
+
+  /* Una materia fuera del plan tambien se ofrece en el filtro y lo encuentra. */
+  const otra = await pedir("POST", "/api/v1/users", "director", {
+    nombre: "Laura", apellido: "Diaz", email: "laura.diaz@institucion.edu.ar", dni: "30123457",
+    area: "docencia", roles: ["docente"], materia: "Robótica", situacion_revista: "Titular",
+    modulos: "2", dia: "Martes", hora_desde: "08:00", hora_hasta: "10:00"
+  });
+  assert.equal(otra.status, 201);
+  const catalogo = await pedir("GET", "/api/v1/teachers/catalogos", "director");
+  const robotica = catalogo.cuerpo.data.materias.find((materia) => materia.nombre === "Robótica");
+  assert.ok(robotica);
+  const porRobotica = await pedir("GET", `/api/v1/teachers?materiaId=${encodeURIComponent(robotica.id)}`, "director");
+  assert.deepEqual(porRobotica.cuerpo.data.map((item) => item.id), [otra.cuerpo.data.docenteId]);
+});
+
+test("alta y edicion validan el area contra el catalogo institucional", async () => {
+  const invalida = await pedir("POST", "/api/v1/teachers", "director", {
+    apellido: "Paz", nombre: "Juan", documento: "30000010", email: "juan.paz@prece.local", area: "inventada"
+  });
+  assert.equal(invalida.status, 422);
+  assert.ok(invalida.cuerpo.error.details.some((detalle) => detalle.field === "area"));
+
+  const creado = await pedir("POST", "/api/v1/teachers", "director", {
+    apellido: "Paz", nombre: "Juan", documento: "30000010", email: "juan.paz@prece.local", area: "taller"
+  });
+  assert.equal(creado.status, 201);
+  assert.equal(creado.cuerpo.data.area, "taller");
+  assert.equal(creado.cuerpo.data.areaNombre, "Taller");
+
+  const sinArea = await pedir("PATCH", `/api/v1/teachers/${creado.cuerpo.data.id}`, "director", { area: null });
+  assert.equal(sinArea.status, 200);
+  assert.equal(sinArea.cuerpo.data.area, null);
+});
+
+test("el listado filtra por area y por materia e incluye el resumen de asignaciones", async () => {
+  const porArea = await pedir("GET", "/api/v1/teachers?area=informatica", "director");
+  assert.equal(porArea.status, 200);
+  assert.deepEqual(porArea.cuerpo.data.map((docente) => docente.id), ["tch-3"]);
+  assert.equal(porArea.cuerpo.filtros.area, "informatica");
+
+  const porMateria = await pedir("GET", "/api/v1/teachers?materiaId=lng", "director");
+  assert.deepEqual(porMateria.cuerpo.data.map((docente) => docente.id), ["tch-4"]);
+
+  const maria = (await pedir("GET", "/api/v1/teachers?q=villatoro", "director")).cuerpo.data[0];
+  assert.deepEqual(maria.asignaciones.materias, [{ id: "mat", nombre: "Matemática" }]);
+  assert.equal(maria.asignaciones.totalActivas, 2);
+  assert.ok(maria.asignaciones.cursos.length >= 1);
+
+  const areaInvalida = await pedir("GET", "/api/v1/teachers?area=inventada", "director");
+  assert.equal(areaInvalida.status, 422);
+});
+
+test("el listado ordena por documento y email", async () => {
+  const porDocumento = await pedir("GET", "/api/v1/teachers?orden=documento_desc", "director");
+  assert.equal(porDocumento.status, 200);
+  assert.equal(porDocumento.cuerpo.data[0].documento, "20000005");
+
+  const porEmail = await pedir("GET", "/api/v1/teachers?orden=email", "director");
+  assert.equal(porEmail.cuerpo.data[0].email, "ana.gomez@prece.local");
+});
+
+test("la baja logica conserva las asignaciones y las informa", async () => {
+  const baja = await pedir("DELETE", "/api/v1/teachers/tch-1", "director");
+  assert.equal(baja.status, 200);
+  assert.equal(baja.cuerpo.data.estado, "inactivo");
+  assert.equal(baja.cuerpo.data.asignaciones.totalActivas, 2);
+
+  const jefe = await pedir("DELETE", "/api/v1/teachers/tch-2", "jefeArea");
+  assert.equal(jefe.status, 403);
+
+  const reactivado = await pedir("PATCH", "/api/v1/teachers/tch-1", "director", { estado: "activo" });
+  assert.equal(reactivado.status, 200);
+  assert.equal(reactivado.cuerpo.data.fechaBaja, null);
+});
+
+test("el alta acepta titulo y telefono nulos (formulario sin datos opcionales)", async () => {
+  const creado = await pedir("POST", "/api/v1/teachers", "director", {
+    apellido: "Nulo", nombre: "Titulo", documento: "30000011", email: "titulo.nulo@prece.local",
+    titulo: null, telefono: null, area: null, especialidades: []
+  });
+  assert.equal(creado.status, 201);
+  assert.equal(creado.cuerpo.data.titulo, null);
+});

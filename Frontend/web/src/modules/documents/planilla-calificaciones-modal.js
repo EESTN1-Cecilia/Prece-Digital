@@ -5,6 +5,7 @@ import { getFechaActual, BotonCerrarBarra } from "./document-helpers.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { StudentsService } from "../students/students-service.js";
 import { PLANES_BOLETIN } from "../students/components/boletin-digital-modal.js";
+import { BoletinNotasService } from "../students/boletin-notas-service.js";
 import * as XLSX from "xlsx";
 
 // Cursos de referencia por defecto para docentes si no vienen en la sesión
@@ -169,66 +170,36 @@ export function PlanillaCalificacionesModal({
     return String(raw).toUpperCase();
   }, [asignacionActual, anioNum]);
 
-  // Clave de almacenamiento en caché para la planilla completa
-  const planillaStorageKey = `prece_planilla_${anioNum}_${divisionStr}_${encodeURIComponent(materiaStr)}`;
-
-  // Función para cargar notas existentes de un alumno
-  const cargarNotasAlumno = useCallback((studentId) => {
-    const boletinKey = `prece_boletin_${studentId}_anio_${anioNum}`;
+  // Notas de un alumno tomadas del boletín compartido (backend). `boletines`
+  // es { [alumnoId]: calificaciones } del curso; se busca la materia por sus
+  // nombres equivalentes del plan.
+  const notasDesdeBoletin = useCallback((calificacionesAlumno = {}) => {
     let c1 = "", c2 = "", dic = "-", feb = "-", final = "";
-    let p1 = "", p2 = "", v1 = "", f1 = 0, p3 = "", p4 = "", v2 = "", f2 = 0;
+    let detalle = {};
 
-    try {
-      // 1. Leer del boletín digital (sincronización principal)
-      const rawBoletin = localStorage.getItem(boletinKey);
-      if (rawBoletin) {
-        const parsed = JSON.parse(rawBoletin);
-        const califs = parsed.calificaciones || {};
-        const keys = obtenerClavesMateriaBoletin(materiaStr, anioNum);
-        for (const k of keys) {
-          if (califs[k]) {
-            const entry = califs[k];
-            c1 = entry.informe1 || "";
-            c2 = entry.informe2 || "";
-            dic = entry.diciembre || "-";
-            feb = entry.febrero || "-";
-            final = entry.definitiva || entry.promedioAnual || "";
-            break;
-          }
-        }
+    for (const clave of obtenerClavesMateriaBoletin(materiaStr, anioNum)) {
+      const entrada = calificacionesAlumno[clave];
+      if (entrada) {
+        c1 = entrada.informe1 || "";
+        c2 = entrada.informe2 || "";
+        dic = entrada.diciembre || "-";
+        feb = entrada.febrero || "-";
+        final = entrada.definitiva || entrada.promedioAnual || "";
+        detalle = entrada.detalle || {};
+        break;
       }
-
-      // 2. Leer detalles finos de la planilla si existen
-      const rawPlanilla = localStorage.getItem(planillaStorageKey);
-      if (rawPlanilla) {
-        const parsedP = JSON.parse(rawPlanilla);
-        const stData = parsedP[studentId];
-        if (stData) {
-          p1 = stData.p1 || "";
-          p2 = stData.p2 || "";
-          v1 = stData.v1 || "";
-          f1 = stData.f1 ?? 0;
-          p3 = stData.p3 || "";
-          p4 = stData.p4 || "";
-          v2 = stData.v2 || "";
-          f2 = stData.f2 ?? 0;
-          if (stData.c1) c1 = stData.c1;
-          if (stData.c2) c2 = stData.c2;
-          if (stData.final) final = stData.final;
-          if (stData.dic) dic = stData.dic;
-          if (stData.feb) feb = stData.feb;
-        }
-      }
-    } catch (e) {
-      console.warn("Error leyendo calificaciones guardadas:", e);
     }
+
+    const p1 = detalle.p1 || "", p2 = detalle.p2 || "", p3 = detalle.p3 || "", p4 = detalle.p4 || "";
+    let v1 = detalle.v1 || "", v2 = detalle.v2 || "";
+    const f1 = Number(detalle.f1) || 0, f2 = Number(detalle.f2) || 0;
 
     // Sugerir valoraciones iniciales si hay nota
     if (c1 && !v1) v1 = parseFloat(c1) >= 7 ? "TEA" : "TEP";
     if (c2 && !v2) v2 = parseFloat(c2) >= 7 ? "TEA" : "TEP";
 
     return { p1, p2, v1, c1, f1, p3, p4, v2, c2, f2, dic, feb, final };
-  }, [anioNum, materiaStr, planillaStorageKey]);
+  }, [anioNum, materiaStr]);
 
   // Cargar estudiantes de la división actual estrictamente desde la base de datos
   const cargarEstudiantes = useCallback(async () => {
@@ -269,10 +240,13 @@ export function PlanillaCalificacionesModal({
         }
       }
 
-      // Mapear con sus notas guardadas
+      // Notas guardadas en el boletín compartido del curso
+      const boletinesDelCurso = await BoletinNotasService.deCurso(`${anioNum}-${divisionStr}`).catch(() => []);
+      const calificacionesPorAlumno = new Map(boletinesDelCurso.map((item) => [item.alumno.id, item.boletin?.calificaciones ?? {}]));
+
       const listConNotas = rawList.map((alu, idx) => {
         const studentId = alu.id || `alu-row-${idx + 1}`;
-        const notas = cargarNotasAlumno(studentId);
+        const notas = notasDesdeBoletin(calificacionesPorAlumno.get(studentId));
 
         return {
           id: studentId,
@@ -296,7 +270,7 @@ export function PlanillaCalificacionesModal({
     divisionStr,
     estudiantesIniciales,
     alumnoInicial,
-    cargarNotasAlumno
+    notasDesdeBoletin
   ]);
 
   useEffect(() => {
@@ -369,67 +343,28 @@ export function PlanillaCalificacionesModal({
     );
   };
 
-  // Guardar calificaciones y sincronizarlas automáticamente con el Boletín Oficial
-  const handleGuardarCalificaciones = () => {
+  // Guardar la planilla en el boletín compartido: las notas aparecen en el
+  // Boletín Digital de Secretaría y en los boletines de preceptoría.
+  const [guardando, setGuardando] = useState(false);
+  const handleGuardarCalificaciones = async () => {
+    const limpiar = (valor) => (valor && valor !== "-" ? String(valor).trim() : "");
+    setGuardando(true);
     try {
-      const keysMateria = obtenerClavesMateriaBoletin(materiaStr, anioNum);
-      const planillaState = {};
-
-      estudiantes.forEach((st) => {
-        const studentId = st.id;
-        planillaState[studentId] = {
-          p1: st.p1,
-          p2: st.p2,
-          v1: st.v1,
-          c1: st.c1,
-          f1: st.f1,
-          p3: st.p3,
-          p4: st.p4,
-          v2: st.v2,
-          c2: st.c2,
-          f2: st.f2,
-          dic: st.dic,
-          feb: st.feb,
-          final: st.final
-        };
-
-        // Actualizar el Boletín Oficial del Alumno
-        const boletinKey = `prece_boletin_${studentId}_anio_${anioNum}`;
-        let boletinData = {};
-        try {
-          const raw = localStorage.getItem(boletinKey);
-          if (raw) boletinData = JSON.parse(raw);
-        } catch {}
-
-        if (!boletinData.calificaciones) boletinData.calificaciones = {};
-
-        const califItem = {
-          informe1: String(st.c1 || "").trim(),
-          informe2: String(st.c2 || "").trim(),
-          promedioAnual: String(st.final || "").trim(),
-          diciembre: st.dic && st.dic !== "-" ? String(st.dic).trim() : "",
-          febrero: st.feb && st.feb !== "-" ? String(st.feb).trim() : "",
-          definitiva: String(st.final || "").trim()
-        };
-
-        // Guardar bajo todas las claves de materia correspondientes
-        keysMateria.forEach((k) => {
-          boletinData.calificaciones[k] = califItem;
-        });
-
-        boletinData.actualizadoEn = new Date().toISOString();
-        localStorage.setItem(boletinKey, JSON.stringify(boletinData));
-
-        // Marcar que el estudiante ya tiene calificaciones asentadas
-        if (st.c1 || st.c2 || st.final) {
-          localStorage.setItem(`prece_student_${studentId}_boletin_calificaciones`, "1");
-        }
+      await BoletinNotasService.guardarMateria(`${anioNum}-${divisionStr}`, {
+        materias: obtenerClavesMateriaBoletin(materiaStr, anioNum),
+        notas: estudiantes.map((st) => ({
+          alumnoId: st.id,
+          informe1: limpiar(st.c1),
+          informe2: limpiar(st.c2),
+          promedioAnual: limpiar(st.final),
+          diciembre: limpiar(st.dic),
+          febrero: limpiar(st.feb),
+          definitiva: limpiar(st.final),
+          detalle: { p1: st.p1, p2: st.p2, v1: st.v1, f1: st.f1, p3: st.p3, p4: st.p4, v2: st.v2, f2: st.f2 }
+        }))
       });
 
-      // Guardar caché de planilla de la materia
-      localStorage.setItem(planillaStorageKey, JSON.stringify(planillaState));
-
-      // Disparar eventos globales para actualizar otras vistas (listados de boletines, tableros)
+      // Avisar a otras vistas abiertas (listados de boletines, tableros)
       window.dispatchEvent(
         new CustomEvent("prece:calificaciones-updated", {
           detail: { curso: cursoStr, division: divisionStr, materia: materiaStr }
@@ -437,14 +372,13 @@ export function PlanillaCalificacionesModal({
       );
       window.dispatchEvent(new CustomEvent("prece:boletin-updated"));
 
-      setToastMsg("✓ Calificaciones guardadas y sincronizadas con el Boletín Oficial");
+      setToastMsg("✓ Calificaciones guardadas: ya figuran en el Boletín");
+    } catch (fallo) {
+      setToastMsg(fallo?.mensaje || "No se pudieron guardar las calificaciones.");
+    } finally {
+      setGuardando(false);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    } catch (e) {
-      console.error("Error al guardar calificaciones:", e);
-      setToastMsg("Error al guardar calificaciones");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      setTimeout(() => setShowToast(false), 3500);
     }
   };
 
@@ -630,7 +564,8 @@ export function PlanillaCalificacionesModal({
               type: "button",
               className: "matriz-btn matriz-btn--primary",
               onClick: handleGuardarCalificaciones,
-              title: "Guardar notas y sincronizar con el boletín del alumno"
+              disabled: guardando,
+              title: "Guardar notas: se cargan automáticamente en el boletín del alumno"
             },
             h(
               "svg",
@@ -639,7 +574,7 @@ export function PlanillaCalificacionesModal({
               h("polyline", { points: "17 21 17 13 7 13 7 21" }),
               h("polyline", { points: "7 3 7 8 15 8" })
             ),
-            h("span", null, "Guardar Calificaciones")
+            h("span", null, guardando ? "Guardando..." : "Guardar Calificaciones")
           ),
 
           // Alternar orden

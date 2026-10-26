@@ -6,7 +6,7 @@ estructura académica, con historial por período y baja lógica.
 
 ## Modelo
 
-- **Docente**: `apellido`, `nombre`, `tipoDocumento` (`dni`, `lc`, `le`, `ci`, `pasaporte`), `documento`, `email`, `telefono`, `titulo`, `especialidades[]` y `estado` (`activo` / `inactivo`).
+- **Docente**: `apellido`, `nombre`, `tipoDocumento` (`dni`, `lc`, `le`, `ci`, `pasaporte`), `documento`, `email`, `telefono`, `titulo`, `especialidades[]`, `area` (opcional, id del catálogo de áreas institucionales de `config/areas.config.mjs`) y `estado` (`activo` / `inactivo`).
 - Unicidad por `(escuelaId, documento)` y `(escuelaId, email)`.
 - **Asignación de materia**: docente + materia, con alcance opcional (curso y/o división) y período.
 - **Asignación de curso/división**: docente + curso y/o división, con `rol` (`titular`, `suplente`, `ayudante`) y período.
@@ -20,9 +20,9 @@ estructura académica, con historial por período y baja lógica.
 
 ### Docentes
 
-- GET /api/v1/teachers/catalogos — estados, tipos de documento, roles y estados de asignación
+- GET /api/v1/teachers/catalogos — estados, tipos de documento, roles y estados de asignación, áreas y materias dictadas
 - POST /api/v1/teachers — registrar docente
-- GET /api/v1/teachers — listar con filtros (`q`, `estado`, `orden`) y paginación
+- GET /api/v1/teachers — listar con filtros (`q`, `estado`, `area`, `materiaId`, `orden`) y paginación; cada docente trae `asignaciones` (materias y cursos activos)
 - GET /api/v1/teachers/:teacherId — ver un docente
 - PATCH /api/v1/teachers/:teacherId — modificar datos del docente
 - DELETE /api/v1/teachers/:teacherId — baja lógica
@@ -58,3 +58,18 @@ estructura académica, con historial por período y baja lógica.
 
 Los listados responden `{ data, filtros, paginacion }`; los recursos simples, `{ data }`.
 Las operaciones protegidas responden 401 sin token y 403 sin permisos.
+
+## Cuenta de acceso
+
+Una persona con rol Docente tiene una cuenta (`usuarios`) y un registro docente
+ligados por `userId` (`docente-cuenta.service.mjs`):
+
+- Al crear un perfil con rol Docente (`POST /api/v1/users`) se crea su registro
+  docente, o se reusa el que ya existía sin cuenta si DNI, correo, nombre y
+  apellido son de la misma persona; si no coinciden, responde 409 y no pisa datos.
+- Editar el docente actualiza la cuenta y viceversa; correo y DNI no pueden
+  chocar con otra cuenta ni con otro docente (409).
+- La baja (`DELETE`, o `estado: "inactivo"`) desactiva la cuenta y cierra sus
+  sesiones: el docente deja de poder ingresar al Portal Docente. Nadie puede
+  darse de baja a sí mismo (403).
+- Quitarle el rol Docente a la cuenta deja inactivo el registro docente.

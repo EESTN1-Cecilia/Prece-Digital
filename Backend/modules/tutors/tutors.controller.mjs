@@ -4,8 +4,8 @@ export function createTutor({ body, user }) {
   return tutorsService.create(body, user);
 }
 
-export function getTutor({ params }) {
-  return tutorsService.getById(params.tutorId);
+export function getTutor({ params, user }) {
+  return tutorsService.getById(params.tutorId, user);
 }
 
 export function listTutors({ url, user }) {
@@ -30,9 +30,9 @@ export function listStudentTutors({ params, url }) {
   return tutorsService.listStudentTutors(params.studentId, query);
 }
 
-export function listTutorStudents({ params, url }) {
+export function listTutorStudents({ params, url, user }) {
   const query = Object.fromEntries(url.searchParams.entries());
-  return tutorsService.listTutorStudents(params.tutorId, query);
+  return tutorsService.listTutorStudents(params.tutorId, query, user);
 }
 
 export function updateRelation({ params, body, user }) {

@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 458 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -42,6 +42,7 @@ Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/auth/logout` | publica |
 | GET | `/api/v1/auth/me` | sesion valida |
 | GET | `/api/v1/auth/permissions` | sesion valida |
+| POST | `/api/v1/auth/cambiar-clave` | sesion valida |
 
 ## users
 
@@ -54,11 +55,35 @@ Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | PUT | `/api/v1/users/:userId/roles` | `identity.update` |
 | PATCH | `/api/v1/users/:userId/deactivate` | `users.deactivate` |
 
+## api
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/usuarios` | `identity.create` |
+
 ## schools
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
 | GET | `/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students` | `students.read` |
+
+## docente
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/docente/mis-cursos` | `students.read` |
+| GET | `/api/v1/docente/cursos/:cursoId/alumnos` | `students.read`, `attendance.read` |
+
+## asistencia-clases
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/asistencia-clases/catalogo` | `attendance.read` |
+| GET | `/api/v1/asistencia-clases` | `attendance.read` |
+| POST | `/api/v1/asistencia-clases` | `attendance.write` |
+| PUT | `/api/v1/asistencia-clases/planilla` | `attendance.write` |
+| GET | `/api/v1/asistencia-clases/:claseId` | `attendance.read` |
+| PUT | `/api/v1/asistencia-clases/:claseId` | `attendance.write` |
 
 ## students
 
@@ -116,6 +141,7 @@ Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones/resumen` | `observations.read` |
 | GET | `/api/v1/alumnos/:alumnoId/observaciones` | `observations.read` |
+| GET | `/api/preceptor/alumnos/:cursoId` | `students.read`, `attendance.read` |
 | GET | `/api/v1/alumnos/:alumnoId/condiciones/resumen` | `particular-conditions.read` |
 | GET | `/api/v1/alumnos/:alumnoId/condiciones` | `particular-conditions.read` |
 | GET | `/api/v1/alumnos/:alumnoId/movimientos-cursos` | `course-changes.read` |
@@ -147,6 +173,61 @@ Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/jefatura/cursos-grupos` | `academics.read` |
 | GET | `/api/v1/jefatura/grilla` | `schedules.read` |
+
+## preceptor
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/preceptor/mis-cursos` | sesion valida |
+| GET | `/api/v1/preceptor/curso/:cursoId/alumnos` | `students.read`, `attendance.read` |
+| GET | `/api/v1/preceptor/alumnos/:cursoId` | `students.read`, `attendance.read` |
+| POST | `/api/v1/preceptor/asistencia` | `attendance.write` |
+| GET | `/api/v1/preceptor/estado-aulas` | `spaces.read`, `schedules.read` |
+| GET | `/api/v1/preceptor/boletin/:cursoId` | `students.read` |
+| GET | `/api/v1/preceptor/asistencias` | `attendance.read` |
+| GET | `/api/v1/preceptor/asistencias/:cursoId/:fecha` | `attendance.read` |
+| GET | `/api/v1/preceptor/asignaciones` | `identity.update` |
+| PUT | `/api/v1/preceptor/asignaciones/:cursoId` | `identity.update` |
+| DELETE | `/api/v1/preceptor/asignaciones/:cursoId` | `identity.update` |
+
+## mis-cursos
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/preceptor/mis-cursos` | sesion valida |
+
+## boletines
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/boletines/alumno/:alumnoId` | `students.read` |
+| PUT | `/api/v1/boletines/alumno/:alumnoId` | `students.write` |
+| GET | `/api/v1/boletines/curso/:cursoId` | `students.read` |
+| PUT | `/api/v1/boletines/curso/:cursoId/materia` | `grades.write` |
+
+## boletin
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/preceptor/boletin/:cursoId` | `students.read` |
+
+## curso
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/preceptor/curso/:cursoId/alumnos` | `students.read`, `attendance.read` |
+
+## asistencia
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/preceptor/asistencia` | `attendance.write` |
+
+## estado-aulas
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/preceptor/estado-aulas` | `spaces.read`, `schedules.read` |
 
 ## alerts
 
@@ -587,6 +668,14 @@ Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/notifications/:notificationId/read` | `notifications.write` |
 | POST | `/api/v1/notifications/:notificationId/archive` | `notifications.write` |
 
+## devices
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| POST | `/api/v1/devices` | sesion valida |
+| GET | `/api/v1/devices` | sesion valida |
+| DELETE | `/api/v1/devices/:deviceId` | sesion valida |
+
 ## curriculum
 
 | Metodo | Ruta | Permiso |
@@ -700,6 +789,32 @@ Total: 413 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/reassignments/:reassignmentId/revert` | `reassignments.write` |
 | GET | `/api/v1/reassignments/:reassignmentId` | `reassignments.read` |
 | PATCH | `/api/v1/reassignments/:reassignmentId` | `reassignments.write` |
+
+## reports
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/reports/plantillas` | `reports.read` |
+| GET | `/api/v1/reports` | `reports.read` |
+| POST | `/api/v1/reports` | `reports.create` |
+| GET | `/api/v1/reports/:reportId` | `reports.read` |
+| PATCH | `/api/v1/reports/:reportId` | `reports.write` |
+| DELETE | `/api/v1/reports/:reportId` | `reports.write` |
+| GET | `/api/v1/reports/:reportId/versiones` | `reports.read` |
+| POST | `/api/v1/reports/:reportId/versiones/:versionId/restaurar` | `reports.write` |
+| GET | `/api/v1/reports/:reportId/pdf` | `reports.export` |
+
+## institucion
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/institucion` | sesion valida |
+
+## catalogos
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/catalogos/areas` | `identity.read` |
 
 ## audit
 

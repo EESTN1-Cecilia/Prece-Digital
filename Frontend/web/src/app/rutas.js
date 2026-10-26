@@ -27,15 +27,26 @@ import DirectorDashboardView from "../modules/director/director-dashboard-view.j
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
-import DocenteDashboardView from "../modules/docente/docente-dashboard-view.js";
-import DocenteAsistenciasView from "../modules/docente/docente-asistencias-view.js";
-import DocenteCursosView from "../modules/docente/docente-cursos-view.js";
+import PortalInicioView from "../modules/portal-docente/portal-inicio-view.js";
+import PortalLoginView from "../modules/portal-docente/portal-login-view.js";
+import MisCursosView from "../modules/portal-docente/mis-cursos-view.js";
+import CursoDetalleView from "../modules/portal-docente/curso-detalle-view.js";
+import PortalPlanillaView from "../modules/portal-docente/portal-planilla-view.js";
+import HistorialAsistenciasView from "../modules/portal-docente/historial-asistencias-view.js";
 import BoletinesListView from "../modules/students/boletines-list-view.js";
 import CursosListView from "../modules/schools/cursos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
 import AlumnosListView from "../modules/students/alumnos-list-view.js";
 import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
 import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
+import PreceptorDashboardView from "../modules/preceptoria/preceptor-dashboard.js";
+import PreceptorInicioView from "../modules/portal-preceptor/preceptor-inicio-view.js";
+import PreceptorCursosView from "../modules/portal-preceptor/preceptor-cursos-view.js";
+import PreceptorCursoDetalleView from "../modules/portal-preceptor/preceptor-curso-detalle-view.js";
+import PreceptorPlanillaView from "../modules/portal-preceptor/preceptor-planilla-view.js";
+import PreceptorHistorialView from "../modules/portal-preceptor/preceptor-historial-view.js";
+import PreceptorBoletinesView from "../modules/portal-preceptor/preceptor-boletines-view.js";
+import PreceptorBoletinesCursoView from "../modules/portal-preceptor/preceptor-boletines-curso-view.js";
 import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
 import AsistenciasView from "../modules/attendance/asistencias-view.js";
 import NotificacionesView from "../modules/notifications/notificaciones-view.js";
@@ -49,6 +60,7 @@ import PerfilView from "../modules/identity/perfil-view.js";
 import InventarioListView from "../modules/server/inventario/inventario-list-view.js";
 import MaterialFormView from "../modules/server/inventario/material-form-view.js";
 import MaterialDetalleView from "../modules/server/inventario/material-detalle-view.js";
+import DocentesView from "../modules/docentes/docentes-view.js";
 import { PERMISOS } from "../utils/permisos.js";
 import InicioView from "./inicio.js";
 
@@ -57,6 +69,12 @@ export const RUTAS = [
     patron: "#/login",
     titulo: "Iniciar sesion",
     vista: LoginView,
+    publica: true
+  },
+  {
+    patron: "#/portal-docente",
+    titulo: "Portal Docente",
+    vista: PortalLoginView,
     publica: true
   },
   {
@@ -81,6 +99,8 @@ export const RUTAS = [
     seccion: "General",
     icono: "academic",
     padre: "#/inicio",
+    /* Un docente no entra a Direccion aunque tenga students.read. */
+    roles: ["admin", "director", "secretario", "secretaria", "preceptor", "jefe_area", "server"],
     permisos: [PERMISOS.usuariosLeer, PERMISOS.alumnosLeer],
     enMenu: true
   },
@@ -89,12 +109,13 @@ export const RUTAS = [
     titulo: "Tablero de Dirección",
     vista: DirectorDashboardView,
     padre: "#/inicio",
+    roles: ["admin", "director", "secretario", "secretaria", "preceptor", "jefe_area", "server"],
     permisos: [PERMISOS.usuariosLeer]
   },
   {
     patron: "#/preceptoria",
     titulo: "Tablero de preceptoria",
-    vista: DashboardView,
+    vista: PreceptorDashboardView,
     seccion: "General",
     icono: "attendance",
     padre: "#/inicio",
@@ -132,38 +153,133 @@ export const RUTAS = [
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosEditar]
   },
+  /* Portal Docente: lo que ve cada docente de sus propios cursos. El backend
+     limita los datos a sus asignaciones con la identidad del token. */
   {
     patron: "#/docente",
-    titulo: "Tablero Docente",
-    vista: DocenteDashboardView,
+    titulo: "Portal Docente",
+    vista: PortalInicioView,
     padre: "#/inicio",
     roles: ["docente", "director", "admin"]
   },
   {
     patron: "#/docente/cursos",
-    titulo: "Cursos a Cargo",
-    vista: DocenteCursosView,
-    seccion: "General",
+    titulo: "Mis Cursos",
+    vista: MisCursosView,
+    seccion: "Portal Docente",
     icono: "academic",
-    padre: "#/inicio",
+    padre: "#/docente",
     roles: ["docente", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
   {
+    patron: "#/docente/cursos/:cursoId",
+    titulo: "Curso",
+    vista: CursoDetalleView,
+    padre: "#/docente/cursos",
+    roles: ["docente", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
     patron: "#/cursos-a-cargo",
-    titulo: "Cursos a Cargo",
-    vista: DocenteCursosView,
-    padre: "#/inicio",
-    roles: ["docente", "director", "admin"]
+    titulo: "Mis Cursos",
+    vista: MisCursosView,
+    padre: "#/docente",
+    roles: ["docente", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer]
   },
   {
     patron: "#/docente/asistencias",
-    titulo: "Asistencia de Clase",
-    vista: DocenteAsistenciasView,
-    seccion: "General",
+    titulo: "Tomar Asistencia",
+    vista: PortalPlanillaView,
+    seccion: "Portal Docente",
     icono: "clipboard",
-    padre: "#/inicio",
+    padre: "#/docente",
     roles: ["docente", "director", "admin"],
+    permisos: [PERMISOS.asistenciaEscribir],
+    enMenu: true
+  },
+  {
+    patron: "#/docente/historial",
+    titulo: "Historial de asistencias",
+    vista: HistorialAsistenciasView,
+    seccion: "Portal Docente",
+    icono: "activity",
+    padre: "#/docente",
+    roles: ["docente", "director", "admin"],
+    permisos: [PERMISOS.asistenciaLeer],
+    enMenu: true
+  },
+  /* Portal Preceptor: las divisiones que Direccion asigno al preceptor. El
+     backend limita cursos, alumnos, asistencia y boletines con la identidad
+     del token (403 para cualquier otra division). */
+  {
+    patron: "#/preceptor",
+    titulo: "Portal Preceptor",
+    vista: PreceptorInicioView,
+    padre: "#/inicio",
+    roles: ["preceptor", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/preceptor/cursos",
+    titulo: "Mis cursos",
+    vista: PreceptorCursosView,
+    seccion: "Portal Preceptor",
+    icono: "academic",
+    padre: "#/preceptor",
+    roles: ["preceptor", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/preceptor/cursos/:cursoId/boletines",
+    titulo: "Boletines del curso",
+    vista: PreceptorBoletinesCursoView,
+    padre: "#/preceptor/cursos/:cursoId",
+    roles: ["preceptor", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/preceptor/cursos/:cursoId",
+    titulo: "Curso",
+    vista: PreceptorCursoDetalleView,
+    padre: "#/preceptor/cursos",
+    roles: ["preceptor", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer]
+  },
+  {
+    patron: "#/preceptor/asistencia",
+    titulo: "Planilla de asistencia",
+    vista: PreceptorPlanillaView,
+    seccion: "Portal Preceptor",
+    icono: "clipboard",
+    padre: "#/preceptor",
+    roles: ["preceptor", "director", "admin"],
+    permisos: [PERMISOS.asistenciaLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/preceptor/historial",
+    titulo: "Historial de asistencia",
+    vista: PreceptorHistorialView,
+    seccion: "Portal Preceptor",
+    icono: "activity",
+    padre: "#/preceptor",
+    roles: ["preceptor", "director", "admin"],
+    permisos: [PERMISOS.asistenciaLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/preceptor/boletines",
+    titulo: "Boletines",
+    vista: PreceptorBoletinesView,
+    seccion: "Portal Preceptor",
+    icono: "academic",
+    padre: "#/preceptor",
+    roles: ["preceptor", "director", "admin"],
+    permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
   {
@@ -171,7 +287,7 @@ export const RUTAS = [
     titulo: "Planilla de Asistencia",
     vista: AsistenciasView,
     padre: "#/asistencias",
-    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
+    roles: ["secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer]
   },
   {
@@ -182,7 +298,8 @@ export const RUTAS = [
     icono: "clipboard",
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosLeer],
-    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
+    /* El docente y el preceptor toman asistencia desde su portal. */
+    roles: ["secretario", "secretaria", "director", "admin"],
     enMenu: true
   },
   {
@@ -193,7 +310,8 @@ export const RUTAS = [
     icono: "academic",
     padre: "#/inicio",
     permisos: [PERMISOS.alumnosLeer],
-    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
+    /* El preceptor imprime los boletines desde su portal (solo lectura). */
+    roles: ["docente", "secretario", "secretaria", "director", "admin"],
     enMenu: true
   },
   {
@@ -329,6 +447,16 @@ export const RUTAS = [
     padre: "#/inicio",
     roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/docentes",
+    titulo: "Docentes",
+    vista: DocentesView,
+    seccion: "General",
+    icono: "people",
+    padre: "#/inicio",
+    permisos: [PERMISOS.docentesLeer],
     enMenu: true
   },
   {

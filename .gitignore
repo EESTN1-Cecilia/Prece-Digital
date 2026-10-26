@@ -8,3 +8,5 @@ coverage/
 .DS_Store
 Thumbs.db
 .Expo
+# Importaciones con datos personales (salidas de Backend/scripts/importar-listas-alumnos.mjs)
+Backend/database/imports/
