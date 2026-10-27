@@ -15,3 +15,6 @@ build/
 *.swo
 tmp/
 temp/
+
+# Datos reales de alumnos para desarrollo local (no se versionan)
+*.local.json
