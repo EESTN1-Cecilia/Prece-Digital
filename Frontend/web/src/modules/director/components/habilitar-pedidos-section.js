@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { h } from "../../../layouts/site-layout.js";
+import { CustomSelect } from "../../../components/common/custom-select.js";
 
 // Íconos auxiliares
 function IconCheck({ className = "w-4 h-4", width = "16", height = "16" }) {
@@ -253,18 +254,19 @@ export function HabilitarPedidosSection({
       h(
         "div",
         { className: "director-pedidos-secondary-filters" },
-        h(
-          "select",
-          {
-            className: "director-pedidos-select",
-            value: filtroSector,
-            onChange: (e) => setFiltroSector(e.target.value)
-          },
-          h("option", { value: "todos" }, "Todos los sectores"),
-          h("option", { value: "Server" }, "Server y Pañol"),
-          h("option", { value: "Secretaría" }, "Secretaría Académica"),
-          h("option", { value: "Preceptoría" }, "Preceptoría")
-        ),
+        h(CustomSelect, {
+          id: "filtro-sector-pedidos",
+          value: filtroSector,
+          onChange: setFiltroSector,
+          options: [
+            { value: "todos", label: "Todos los sectores" },
+            { value: "Server", label: "Server y Pañol" },
+            { value: "Secretaría", label: "Secretaría Académica" },
+            { value: "Preceptoría", label: "Preceptoría" }
+          ],
+          ariaLabel: "Filtrar por sector",
+          className: "director-pedidos-custom-select"
+        }),
         h("input", {
           type: "text",
           className: "director-pedidos-search",

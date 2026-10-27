@@ -1468,81 +1468,489 @@
   background: #bbf7d0;
 }
 
-/* Bloques de Supervisión Detallada */
-.director-supervision-detailed-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+/* =========================================================================
+   SUPERVISIÓN DE ÁREAS INSTITUCIONALES (DISEÑO RENOVADO Y PREMIUM)
+   ========================================================================= */
+
+.director-supervision-wrapper {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
+  width: 100%;
 }
 
-.director-supervision-block {
+/* Cabecera / Banner de Supervisión */
+.director-supervision-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.director-supervision-header__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.director-supervision-header__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.director-supervision-header__desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.director-supervision-header__badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.director-supervision-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.director-supervision-pill--blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.director-supervision-pill--active {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+/* Grid de Tarjetas de Áreas: 3 Columnas */
+.director-supervision-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .director-supervision-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .director-supervision-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tarjeta de Área Individual */
+.director-supervision-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.director-supervision-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.director-supervision-card--secretaria:hover {
+  border-color: #93c5fd;
+}
+
+.director-supervision-card--preceptoria:hover {
+  border-color: #c4b5fd;
+}
+
+.director-supervision-card--docente:hover {
+  border-color: #86efac;
+}
+
+/* Franja superior decorativa */
+.director-supervision-card__bar {
+  height: 4px;
+  width: 100%;
+}
+
+.director-supervision-card__bar--secretaria {
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+}
+
+.director-supervision-card__bar--preceptoria {
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+}
+
+.director-supervision-card__bar--docente {
+  background: linear-gradient(90deg, #059669, #34d399);
+}
+
+/* Header de la tarjeta */
+.director-supervision-card__header {
+  padding: 18px 20px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.director-supervision-card__title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.director-supervision-card__icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.director-supervision-card__icon-wrap--secretaria {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.director-supervision-card__icon-wrap--preceptoria {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.director-supervision-card__icon-wrap--docente {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.director-supervision-card__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.director-supervision-card__subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.director-supervision-card__badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.director-supervision-card__badge--secretaria {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.director-supervision-card__badge--preceptoria {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.director-supervision-card__badge--docente {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Contenido / Métricas de la tarjeta */
+.director-supervision-card__body {
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.director-metrics-mini-row {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.director-metric-mini {
+  gap: 14px;
   flex: 1;
-  min-width: 100px;
+}
+
+/* Grilla 2x2 de métricas dentro de cada tarjeta */
+.director-supervision-metrics-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.director-supervision-metric-tile {
   background: #f8fafc;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  transition: background 0.14s ease;
 }
 
-.director-metric-mini__label {
+.director-supervision-metric-tile:hover {
+  background: #f1f5f9;
+}
+
+.director-supervision-metric-tile__label {
   font-size: 11px;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-.director-metric-mini__val {
+.director-supervision-metric-tile__val {
   font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.director-supervision-metric-tile__sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+/* Barra de progreso de cobertura / estado */
+.director-supervision-progress-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+}
+
+.director-supervision-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.director-supervision-progress-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.director-supervision-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.director-supervision-progress-fill--blue {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.director-supervision-progress-fill--purple {
+  background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+}
+
+.director-supervision-progress-fill--green {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+/* Footer de acciones rápidas */
+.director-supervision-card__footer {
+  padding: 14px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #fcfdfe;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.director-supervision-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  width: 100%;
+  font-family: inherit;
+}
+
+.director-supervision-btn-primary--secretaria {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.director-supervision-btn-primary--secretaria:hover {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.director-supervision-btn-primary--preceptoria {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.director-supervision-btn-primary--preceptoria:hover {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.director-supervision-btn-primary--docente {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.director-supervision-btn-primary--docente:hover {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.director-supervision-secondary-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.director-supervision-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  padding: 4px 6px;
+  border-radius: 5px;
+  transition: all 0.12s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.director-supervision-link:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+}
+
+/* Tira inferior de Indicadores Ejecutivos Consolidados */
+.director-supervision-summary-strip {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.director-supervision-summary-strip__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.director-supervision-summary-strip__title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+}
+
+.director-supervision-summary-strip__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .director-supervision-summary-strip__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 550px) {
+  .director-supervision-summary-strip__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.director-supervision-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+}
+
+.director-supervision-summary-item__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.director-supervision-summary-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.director-supervision-summary-item__val {
+  font-size: 15px;
   font-weight: 800;
   color: #0f172a;
 }
 
-.director-card-quick-links {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.director-link-btn {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.director-link-btn:hover {
-  text-decoration: underline;
-}
-
-.director-link-btn-outline {
-  font-size: 12px;
+.director-supervision-summary-item__label {
+  font-size: 11px;
   color: #64748b;
-  text-decoration: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid #cbd5e1;
-}
-
-.director-link-btn-outline:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  font-weight: 600;
 }
 
 /* Alertas directivas */
@@ -1672,9 +2080,16 @@
   display: none;
 }
 
-/* Modal de alta de perfil: mas ancho y sin scroll interno en los roles */
+/* Modal de alta de perfil: mas ancho y adaptable para dos columnas al costado */
 .director-modal-container--perfil {
-  width: min(760px, 100%);
+  width: min(840px, 96vw);
+  max-width: 840px;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.director-modal-container--perfil.director-modal-container--wide-docente {
+  width: min(1180px, 96vw) !important;
+  max-width: 1180px !important;
 }
 
 .director-modal-container--perfil .director-roles-grid {
@@ -1887,6 +2302,27 @@
   transition: all 140ms ease;
 }
 
+.director-role-card__radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 140ms ease;
+  background: #ffffff;
+}
+
+.director-role-card__radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 .director-role-card__title {
   font-size: 13px;
   font-weight: 700;
@@ -1901,15 +2337,54 @@
   padding-left: 26px;
 }
 
-/* Datos del cargo docente (visible con el rol Docente) */
+/* Layout dividido: datos personales a la izquierda y datos docentes a la derecha */
+.director-modal-perfil-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.director-modal-perfil-grid--split {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .director-modal-perfil-grid--split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.director-modal-perfil-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.director-modal-perfil-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 10px;
+}
+
+.director-roles-grid--compact {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+}
+
+/* Datos del cargo docente (visible con el rol Docente al costado derecho) */
 .director-docente-section {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 16px;
+  padding: 18px;
   border-radius: 12px;
   border: 1.5px solid #bfdbfe;
   background: #eff6ff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   animation: directorFadeIn 160ms ease;
 }
 
@@ -3116,6 +3591,242 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+/* Custom Selects en los toolbars de Director (Preceptoría, Docentes, Personal y Pedidos) */
+.asignaciones-toolbar .custom-select-wrapper,
+.director-personal-toolbar .custom-select-wrapper,
+.director-pedidos-secondary-filters .custom-select-wrapper {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 140px;
+}
+
+.asignaciones-filter-custom-select .custom-select__trigger,
+.director-filter-custom-select .custom-select__trigger,
+.director-pedidos-custom-select .custom-select__trigger {
+  height: 38px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.asignaciones-filter-custom-select .custom-select__trigger:hover,
+.director-filter-custom-select .custom-select__trigger:hover,
+.director-pedidos-custom-select .custom-select__trigger:hover {
+  border-color: #94a3b8;
+  background: #ffffff;
+}
+
+.asignaciones-filter-custom-select--materia {
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.director-filter-custom-select {
+  min-width: 155px;
+}
+
+.director-pedidos-custom-select {
+  min-width: 175px;
+}
+
+.director-form-custom-select .custom-select__trigger {
+  height: 42px;
+  min-height: 42px;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+/* Cabecera y Filtros dentro de los Modales de Asignaciones (Materia y Curso en una sola línea) */
+.asignaciones-multicursos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.asignaciones-multicursos-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.asignaciones-multicursos-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.asignaciones-modal-filter-select {
+  flex: 0 0 auto;
+}
+
+.asignaciones-modal-filter-select--materia {
+  width: 185px;
+  min-width: 185px;
+}
+
+.asignaciones-modal-filter-select--curso {
+  width: 165px;
+  min-width: 165px;
+}
+
+.asignaciones-modal-filter-select .custom-select__trigger {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  transition: all 140ms ease;
+  white-space: nowrap;
+}
+
+.asignaciones-modal-filter-select .custom-select__trigger:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.asignaciones-modal-filter-select .custom-select__trigger--open {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  background: #ffffff !important;
+}
+
+.asignaciones-btn-desmarcar {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: #f0f7ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.asignaciones-btn-desmarcar:hover {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.asignaciones-modal-filter-select .custom-select__dropdown {
+  min-width: 100%;
+  max-width: 280px;
+  z-index: 1050;
+}
+
+/* Alerta de validación en modal de asignaciones */
+.asignaciones-modal-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  color: #991b1b;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  animation: asignaciones-shake 0.35s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.asignaciones-modal-alert-banner:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.14);
+}
+
+.asignaciones-modal-alert-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #dc2626;
+}
+
+.asignaciones-modal-alert-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.asignaciones-badge-modulos-mini--zero {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fca5a5 !important;
+  font-weight: 700 !important;
+}
+
+.asignaciones-materia-card--invalid {
+  border-color: #ef4444 !important;
+  background-color: #fff8f8 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+  scroll-margin: 20px;
+}
+
+.asignaciones-materia-card--pulse {
+  animation: asignaciones-card-pulse 1.8s ease-in-out;
+}
+
+@keyframes asignaciones-card-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.85);
+    border-color: #dc2626 !important;
+  }
+  30% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.35);
+    border-color: #dc2626 !important;
+  }
+  60% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+  }
+}
+
+@keyframes asignaciones-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
 .asignaciones-table {
   width: 100%;
   border-collapse: collapse;
@@ -3665,6 +4376,7 @@
   gap: 6px;
   max-height: 160px;
   overflow-y: auto;
+  scroll-behavior: smooth;
   margin-top: 4px;
 }
 
@@ -3672,16 +4384,6 @@
   flex: 1;
   min-height: 280px;
   max-height: 480px;
-}
-
-.asignaciones-multicursos-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #475569;
-  padding-bottom: 4px;
 }
 
 /* Footer de asignaciones con herramientas de selección y acciones alineadas */
