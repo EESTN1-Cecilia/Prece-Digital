@@ -34,14 +34,14 @@ export const DirectorService = {
    */
   async getDashboardConsolidado() {
     const resumen = {
+      // Alumnos y asistencia salen del tablero de secretaría: null = sin datos
       alumnos: {
-        totalActivos: 840,
-        turnoManana: 450,
-        turnoTarde: 390,
-        turnoTaller: 525,
-        divisiones: 32,
-        promedioPorDivision: 26,
-        alumnosEnRiesgo: 12
+        totalActivos: null,
+        turnoManana: null,
+        turnoTarde: null,
+        divisiones: null,
+        divisionesConAlumnos: null,
+        alumnosEnRiesgo: null
       },
       personal: {
         totalUsuarios: 0,
@@ -57,10 +57,11 @@ export const DirectorService = {
         }
       },
       asistencia: {
-        tasaGeneral: 94.2,
-        presentesHoy: 791,
-        ausentesHoy: 49,
-        alertasConsecutivas: 3
+        tasaGeneral: null,
+        presentesHoy: null,
+        ausentesHoy: null,
+        porTurno: [],
+        alertasConsecutivas: null
       },
       serverPañol: {
         totalItems: 0,
@@ -112,20 +113,25 @@ export const DirectorService = {
     // 2. Obtener datos de Secretaría
     try {
       const dashSec = await pedir("/api/v1/dashboard/secretaria");
-      if (dashSec) {
-        if (dashSec.matriculaActiva) resumen.alumnos.totalActivos = dashSec.matriculaActiva;
-        if (Array.isArray(dashSec.alumnosPorCurso)) resumen.alumnos.divisiones = dashSec.alumnosPorCurso.length;
-        if (Array.isArray(dashSec.porTurno)) {
-          const tm = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("mañ"));
-          const tt = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tard"));
-          const tall = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tall"));
-          if (tm) resumen.alumnos.turnoManana = tm.cantidad;
-          if (tt) resumen.alumnos.turnoTarde = tt.cantidad;
-          if (tall) resumen.alumnos.turnoTaller = tall.cantidad;
-        }
-        if (Array.isArray(dashSec.alertas)) {
-          resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;
-        }
+      const alumnos = dashSec?.resumenAlumnos;
+      if (alumnos) {
+        const delTurno = (lista, nombre) => (lista ?? []).find((t) => String(t.turno).toLowerCase().startsWith(nombre));
+        resumen.alumnos.totalActivos = alumnos.matricula ?? alumnos.activos;
+        resumen.alumnos.turnoManana = delTurno(alumnos.porTurno, "mañ")?.cantidad ?? 0;
+        resumen.alumnos.turnoTarde = delTurno(alumnos.porTurno, "tard")?.cantidad ?? 0;
+        resumen.alumnos.divisiones = alumnos.divisiones ?? dashSec.alumnosPorCurso?.length ?? null;
+        resumen.alumnos.divisionesConAlumnos = alumnos.divisionesConAlumnos ?? null;
+      }
+      if (Array.isArray(dashSec?.alertas)) {
+        resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;
+        resumen.asistencia.alertasConsecutivas = dashSec.alertas.filter((a) => /asist/i.test(`${a.tipo} ${a.titulo}`)).length;
+      }
+      const hoy = dashSec?.asistenciaHoy;
+      if (hoy) {
+        resumen.asistencia.tasaGeneral = hoy.porcentaje;
+        resumen.asistencia.presentesHoy = hoy.presentes;
+        resumen.asistencia.ausentesHoy = hoy.ausentes;
+        resumen.asistencia.porTurno = hoy.porTurno ?? [];
       }
     } catch {
       // Silencioso

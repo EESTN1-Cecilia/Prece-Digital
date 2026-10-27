@@ -2,6 +2,7 @@ import { appConfig } from "../config/app.config.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
+import { seedAlumnosLocales } from "../database/seeds/students.seed.mjs";
 import { createApp } from "./app.mjs";
 
 const port = appConfig.apiPort;
@@ -13,6 +14,10 @@ async function startServer() {
     await seedAuthData();
   } else {
     await seedDesarrollo();
+    const locales = seedAlumnosLocales();
+    if (locales > 0) {
+      console.log(`Nomina local: ${locales} alumnos cargados desde alumnos.local.json`);
+    }
   }
 
   const server = createApp(apiRoutes);

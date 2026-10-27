@@ -8,13 +8,17 @@
    - observaciones: modulo observations
    - pases, constancias y alertas descartadas: students.repository
 
-   Asistencia todavia no tiene modulo en el backend: los bloques de inasistencias
-   se devuelven en cero con `disponible: false`, sin inventar datos. */
+   - asistencia del dia en el tablero: modulo inasistencias (presentes = matricula
+     menos alumnos con inasistencia cargada hoy)
+
+   El resumen mensual de inasistencias del tablero todavia se devuelve en cero con
+   `disponible: false`, sin inventar datos. */
 
 import studentRepository from "./students.repository.mjs";
 import { buscarDivision, CURSOS_VALIDOS, DIVISIONES_CATALOGO } from "./catalogo.mjs";
 import { vistaAlumno } from "./students.service.mjs";
 import tutorsRepository from "../tutors/tutors.repository.mjs";
+import inasistenciasRepository from "../inasistencias/inasistencias.repository.mjs";
 import academicRecordsRepository from "../academic-records/academic-records.repository.mjs";
 import observationsRepository from "../observations/observations.repository.mjs";
 import { vistaObservacion } from "../observations/observations.service.mjs";
@@ -508,6 +512,27 @@ const legajoService = {
       }
     }
 
+    const mesActual = hoy().slice(0, 7);
+
+    // Asistencia de hoy: un alumno activo está presente salvo que tenga una inasistencia cargada hoy
+    const ausentesHoy = new Set(inasistenciasRepository.list({ escuelaId, fecha: hoy() }).map((registro) => registro.alumnoId));
+    const resumenAsistencia = (grupo) => {
+      const ausentes = grupo.filter((alumno) => ausentesHoy.has(alumno.id)).length;
+      return {
+        matricula: grupo.length,
+        presentes: grupo.length - ausentes,
+        ausentes,
+        porcentaje: grupo.length ? Math.round(((grupo.length - ausentes) / grupo.length) * 1000) / 10 : 0
+      };
+    };
+    const asistenciaHoy = {
+      fecha: hoy(),
+      ...resumenAsistencia(activos),
+      porTurno: ["mañana", "tarde"].map((turno) => ({
+        turno: capitalizar(turno),
+        ...resumenAsistencia(activos.filter((alumno) => alumno.turno === turno))
+      }))
+    };
     const pases = studentRepository.listarPases();
     const actividadReciente = studentRepository
       .listarTrazaGeneral()
@@ -527,15 +552,22 @@ const legajoService = {
     return {
       data: {
         institucion: { nombre: INSTITUCION, cicloLectivo: anioLectivo(), periodo: `Ciclo Lectivo ${anioLectivo()}` },
+        /* Matrícula = alumnos activos. Es la cifra que muestran todos los tableros. */
         resumenAlumnos: {
           total: alumnos.length,
           activos: activos.length,
           inactivos: alumnos.length - activos.length,
+          matricula: activos.length,
+          altasDelMes: activos.filter((alumno) => String(alumno.fechaAlta ?? "").startsWith(mesActual)).length,
+          bajasDelMes: alumnos.filter((alumno) => !alumno.isActive && String(alumno.fechaBaja ?? "").startsWith(mesActual)).length,
+          divisiones: alumnosPorCurso.length,
+          divisionesConAlumnos: alumnosPorCurso.filter((curso) => curso.cantidad > 0).length,
           periodo: `Ciclo Lectivo ${anioLectivo()}`,
           ultimaActualizacion: new Date().toISOString(),
           porTurno
         },
         alumnosPorCurso,
+        asistenciaHoy,
         inasistencias: {
           totalInasistencias: 0,
           justificadas: 0,

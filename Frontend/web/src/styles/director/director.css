@@ -993,7 +993,7 @@
   }
 }
 
-/* Eje X Superior con etiquetas de escala (0%, 50%, 100% o 0, 500, 840) */
+/* Eje X Superior con etiquetas de escala (0%, 50%, 100% o 0, mitad y total) */
 .director-hchart-axis-x {
   position: relative;
   height: 18px;
@@ -2382,10 +2382,10 @@
   gap: 14px;
   padding: 18px;
   border-radius: 12px;
-  border: 1.5px solid #cbd5e1;
-  background: #f8fafc;
+  border: 1.5px solid #bfdbfe;
+  background: #eff6ff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  animation: directorFadeIn 200ms ease;
+  animation: directorFadeIn 160ms ease;
 }
 
 .director-docente-section__header {
@@ -2404,8 +2404,8 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: #dcfce7;
-  color: #16a34a;
+  background: #dbeafe;
+  color: #2563eb;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2415,7 +2415,7 @@
 .director-docente-section__title {
   font-size: 14px;
   font-weight: 800;
-  color: #14532d;
+  color: #1e3a8a;
 }
 
 .director-docente-section .director-form-input {
@@ -2458,14 +2458,14 @@
 
 .director-segmented__btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 .director-segmented__btn--active,
 .director-segmented__btn--active:hover {
-  background: #16a34a;
+  background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
 .director-horario-row {
