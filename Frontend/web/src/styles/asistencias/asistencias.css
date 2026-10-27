@@ -265,6 +265,19 @@
   border-bottom: 2px solid #cbd5e1;
 }
 
+.registro-escuela-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* El título ocupa el espacio entre el escudo y los datos del mes */
+.registro-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
 .registro-escuela-name {
   font-size: 11px;
   font-weight: 800;
@@ -759,61 +772,162 @@
 }
 
 /* ==========================================================================
-   OPTIMIZACIÓN DE IMPRESIÓN OFICIAL (@media print)
+   IMPRESIÓN OFICIAL EN HOJA OFICIO
    ========================================================================== */
 
-@media print {
-  @page {
-    size: landscape;
-    margin: 8mm;
-  }
+/* Diseño de hoja: imprimirEnHojaOficio copia la planilla a un iframe con
+   <body class="asistencias-imprimiendo">, la mide y la escala para que entre
+   entera en una hoja oficio apaisada (el @page lo define ese iframe). */
+/* Sin transiciones: la medición se hace en el mismo instante en que cambia el diseño. */
+body.asistencias-imprimiendo .asistencias-page,
+body.asistencias-imprimiendo .asistencias-page * {
+  transition: none !important;
+  animation: none !important;
+}
 
-  body {
-    background: #ffffff !important;
-    font-size: 10px;
-  }
+body.asistencias-imprimiendo .no-print {
+  display: none !important;
+}
 
-  .site-header,
-  .site-sidebar,
-  .no-print,
-  .app-toast-container {
-    display: none !important;
-  }
+body.asistencias-imprimiendo .asistencias-page {
+  width: var(--print-ancho);
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 6px !important;
+  background: #ffffff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 
-  .asistencias-page {
-    padding: 0 !important;
-    gap: 10px !important;
-  }
+body.asistencias-imprimiendo .planilla-asistencia-card {
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
 
-  .planilla-asistencia-card {
-    border: 1px solid #000000 !important;
-    box-shadow: none !important;
-  }
+body.asistencias-imprimiendo .registro-diario-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #000000 !important;
+  padding: 4px 8px !important;
+}
 
-  .registro-diario-header {
-    background: #ffffff !important;
-    border-bottom: 1px solid #000000 !important;
-    padding: 8px 12px !important;
-  }
+body.asistencias-imprimiendo .registro-escuela-logo {
+  width: 40px;
+  height: 40px;
+}
 
-  .tabla-registro-asistencias th,
-  .tabla-registro-asistencias td {
-    border: 1px solid #000000 !important;
-    font-size: 9px !important;
-    padding: 2px 1px !important;
-  }
+body.asistencias-imprimiendo .registro-main-title {
+  font-size: 13px !important;
+}
 
-  .asistencia-footer-balances-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 8px !important;
-    page-break-inside: avoid;
-  }
+body.asistencias-imprimiendo .registro-header-box {
+  padding: 2px 6px;
+  font-size: 10px;
+}
 
-  .balance-box-card {
-    border: 1px solid #000000 !important;
-    box-shadow: none !important;
-    padding: 8px !important;
-  }
+body.asistencias-imprimiendo .planilla-table-scroll-container {
+  overflow: visible !important;
+}
+
+body.asistencias-imprimiendo .tabla-registro-asistencias th,
+body.asistencias-imprimiendo .tabla-registro-asistencias td {
+  position: static;
+  min-width: 0;
+  height: 14px;
+  border: 1px solid #000000 !important;
+  font-size: 10px !important;
+  line-height: 1.1;
+  padding: 1px !important;
+  box-shadow: none !important;
+}
+
+body.asistencias-imprimiendo .tabla-registro-asistencias .col-1 {
+  width: 24px;
+  max-width: 24px;
+}
+
+/* El nombre completo entra siempre: la columna toma el ancho del más largo. */
+body.asistencias-imprimiendo .tabla-registro-asistencias .col-2 {
+  width: auto;
+  max-width: none;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  text-overflow: clip;
+}
+
+body.asistencias-imprimiendo .th-dia-num,
+body.asistencias-imprimiendo .td-celda-asistencia {
+  width: 22px;
+}
+
+body.asistencias-imprimiendo .sticky-section-title {
+  position: static;
+  padding: 1px 8px;
+  font-size: 9px;
+}
+
+body.asistencias-imprimiendo .input-obs-alumno {
+  padding: 0 2px;
+  font-size: 8px;
+}
+
+body.asistencias-imprimiendo .input-obs-alumno::placeholder {
+  color: transparent;
+}
+
+body.asistencias-imprimiendo .asistencia-footer-balances-grid {
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 6px !important;
+}
+
+body.asistencias-imprimiendo .balance-box-card {
+  border: 1px solid #000000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 4px 6px !important;
+}
+
+body.asistencias-imprimiendo .balance-box-title {
+  font-size: 9px;
+  margin-bottom: 2px;
+  padding-bottom: 2px;
+}
+
+body.asistencias-imprimiendo .balance-mini-table,
+body.asistencias-imprimiendo .efemerides-list {
+  font-size: 9px;
+  gap: 2px;
+}
+
+body.asistencias-imprimiendo .balance-mini-table td {
+  padding: 1px 4px;
+}
+
+body.asistencias-imprimiendo .efemeride-dia {
+  font-size: 9px;
+}
+
+/* Firmas lado a lado, con espacio para firmar sobre la línea */
+body.asistencias-imprimiendo .balance-box-firmas {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 10px;
+  padding-top: 30px !important;
+}
+
+body.asistencias-imprimiendo .firma-area {
+  flex: 1;
+}
+
+body.asistencias-imprimiendo .firma-line {
+  margin-bottom: 2px;
+}
+
+body.asistencias-imprimiendo .firma-label,
+body.asistencias-imprimiendo .firma-subtext {
+  font-size: 8.5px;
 }
 
 /* Responsividad en Pantallas Medianas / Pequeñas */

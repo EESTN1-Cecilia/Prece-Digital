@@ -21,6 +21,123 @@ const ESTADOS_ASISTENCIA = {
 
 const LETRAS_DIAS = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
 
+// Hoja oficio apaisada (356 × 216 mm) y su área útil con márgenes de 1 cm, en px CSS.
+const MM_A_PX = 96 / 25.4;
+const MARGEN_HOJA = 10 * MM_A_PX;
+const AREA_IMPRESION_OFICIO = { ancho: 336 * MM_A_PX, alto: 196 * MM_A_PX };
+
+/* Los márgenes van como padding del body y no en @page: así se respetan aunque el
+   diálogo de impresión tenga "Márgenes: Ninguno". La planilla va dentro de un
+   recuadro del tamaño del área útil que recorta lo que sobre: nunca pasa a otra
+   hoja. Sin padding abajo queda 1 cm de holgura por si el diálogo agrega margen. */
+const ESTILO_HOJA_OFICIO = `
+  @page { size: legal landscape; margin: 0; }
+  html { margin: 0 !important; padding: 0 !important; background: #ffffff !important; }
+  body { margin: 0 !important; padding: 10mm 10mm 0 !important; background: #ffffff !important; }
+  body::before, body::after { content: none !important; display: none !important; }
+  .hoja-oficio {
+    width: 336mm;
+    height: 195mm;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    break-inside: avoid;
+  }
+  .hoja-oficio > .asistencias-page { flex: none; }
+`;
+
+/* Reglas de pantalla del sitio, sin las de impresión: el boletín, la matriz y el
+   perfil ocultan todo (body * { visibility: hidden }) y fijan A4 al imprimir. */
+function reglasDePantalla() {
+  const reglas = [];
+  const recorrer = (lista) => {
+    for (const regla of lista) {
+      if (regla instanceof CSSImportRule) {
+        if (regla.styleSheet) recorrer(regla.styleSheet.cssRules);
+      } else if (regla instanceof CSSPageRule) {
+        continue;
+      } else if (regla instanceof CSSMediaRule && /\bprint\b/.test(regla.media.mediaText)) {
+        continue;
+      } else {
+        reglas.push(regla.cssText);
+      }
+    }
+  };
+  const externas = [];
+  for (const hoja of document.styleSheets) {
+    try {
+      recorrer(hoja.cssRules);
+    } catch {
+      if (hoja.href) externas.push(hoja.href); // fuentes de otro dominio
+    }
+  }
+  return { css: reglas.join("\n"), externas };
+}
+
+/* Imprime la planilla sola, dentro de un iframe: así no salen el fondo del sitio,
+   el encabezado ni hojas en blanco. La escala se calcula para que entre entera en
+   una hoja oficio apaisada. */
+async function imprimirEnHojaOficio(original) {
+  const { ancho, alto } = AREA_IMPRESION_OFICIO;
+  const marco = document.createElement("iframe");
+  marco.setAttribute("aria-hidden", "true");
+  Object.assign(marco.style, { position: "fixed", left: "-10000px", top: "0", width: `${ancho + 2 * MARGEN_HOJA}px`, height: `${alto + 2 * MARGEN_HOJA}px`, border: "0" });
+  document.body.appendChild(marco);
+
+  const { css, externas } = reglasDePantalla();
+  const doc = marco.contentDocument;
+  doc.open();
+  doc.write(
+    `<!doctype html><html><head><meta charset="utf-8"><title>Planilla de asistencia</title>` +
+      externas.map((href) => `<link rel="stylesheet" href="${href}">`).join("") +
+      `<style>${css}</style><style>${ESTILO_HOJA_OFICIO}</style></head>` +
+      `<body class="asistencias-imprimiendo"><div class="hoja-oficio"></div></body></html>`
+  );
+  doc.close();
+
+  const hoja = doc.importNode(original, true);
+  // cloneNode no copia lo que se escribió en los inputs (observaciones)
+  const inputs = original.querySelectorAll("input");
+  hoja.querySelectorAll("input").forEach((input, i) => {
+    input.setAttribute("value", inputs[i]?.value ?? "");
+    input.removeAttribute("placeholder");
+  });
+  doc.querySelector(".hoja-oficio").appendChild(hoja);
+
+  await Promise.all(
+    [...doc.querySelectorAll('link[rel="stylesheet"]')].map(
+      (link) => link.sheet || new Promise((listo) => { link.onload = listo; link.onerror = listo; })
+    )
+  );
+  await doc.fonts?.ready;
+  await Promise.all([...doc.images].map((img) => img.decode().catch(() => {})));
+
+  // Con la planilla maquetada al ancho útil se mide cuánto hay que reducirla para
+  // que entre en el alto; luego se ensancha en la misma proporción para que,
+  // reducida, siga ocupando todo el ancho de la hoja.
+  const medirEscala = () => Math.min(1, alto / hoja.scrollHeight, ancho / hoja.scrollWidth);
+  let escala = 1;
+  for (let i = 0; i < 3; i++) {
+    hoja.style.setProperty("--print-ancho", `${ancho / escala}px`);
+    escala = medirEscala();
+  }
+  hoja.style.setProperty("--print-ancho", `${ancho / escala}px`);
+  escala = Math.min(escala, medirEscala());
+
+  // Margen de seguridad: al imprimir, cada fila escalada se redondea a píxeles enteros
+  // y el texto puede medir distinto que en pantalla. El ancho se recalcula con el zoom
+  // final para que la planilla ocupe toda la hoja de lado a lado; el recuadro la centra.
+  const zoom = escala * 0.92;
+  hoja.style.setProperty("--print-ancho", `${ancho / zoom}px`);
+  hoja.style.zoom = String(zoom);
+
+  const ventana = marco.contentWindow;
+  ventana.addEventListener("afterprint", () => setTimeout(() => marco.remove(), 0));
+  ventana.focus();
+  ventana.print();
+}
+
 const ASIGNACIONES_DOCENTE_DEFAULT = [
   { id: "1-1", anio: 1, curso: "1°", division: "1", materia: "Matemática I", turno: "Mañana", orientacion: "Ciclo Básico" },
   { id: "2-1", anio: 2, curso: "2°", division: "1", materia: "Matemática II", turno: "Mañana", orientacion: "Ciclo Básico" },
@@ -30,6 +147,7 @@ const ASIGNACIONES_DOCENTE_DEFAULT = [
 export default function AsistenciasView({ modoDocente = false }) {
   const user = useUsuarioActual();
   const tabsRef = useRef(null);
+  const paginaRef = useRef(null);
 
   const esDocente =
     modoDocente ||
@@ -292,9 +410,11 @@ export default function AsistenciasView({ modoDocente = false }) {
     }
   };
 
-  // Imprimir planilla en formato oficio / apaisado
+  // Imprimir planilla en una sola hoja oficio apaisada con márgenes de 1 cm
   const handleImprimir = () => {
-    window.print();
+    if (paginaRef.current) {
+      imprimirEnHojaOficio(paginaRef.current);
+    }
   };
 
   // Separación de alumnos en Varones y Mujeres (según formato oficial de la foto)
@@ -451,7 +571,7 @@ export default function AsistenciasView({ modoDocente = false }) {
 
   return h(
     "section",
-    { className: "asistencias-page secretaria-dashboard" },
+    { className: "asistencias-page secretaria-dashboard", ref: paginaRef },
 
     // =========================================================================
     // BARRA SUPERIOR INSTITUCIONAL
@@ -652,6 +772,11 @@ export default function AsistenciasView({ modoDocente = false }) {
       h(
         "div",
         { className: "registro-diario-header" },
+        h("img", {
+          className: "registro-escuela-logo",
+          src: "/assets/logo_tec.png",
+          alt: "Escudo E.E.S.T. N° 1"
+        }),
         h(
           "div",
           { className: "registro-header-left" },
