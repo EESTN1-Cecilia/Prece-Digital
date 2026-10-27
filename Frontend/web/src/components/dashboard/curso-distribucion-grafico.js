@@ -76,7 +76,7 @@ export function CursoDistribucionGrafico({
       return anioNum === cfg.anio || cursoStr.startsWith(String(cfg.anio)) || cursoStr === `${cfg.anio}°`;
     });
 
-    const totalAlumnos = divisionesAnio.reduce((acc, c) => acc + (Number(c.cantidad) || 0), 0);
+    const totalAlumnos = divisionesAnio.reduce((acc, c) => acc + (Number(c.activos ?? c.cantidad) || 0), 0);
     const cantDivisiones = divisionesAnio.length;
 
     return {

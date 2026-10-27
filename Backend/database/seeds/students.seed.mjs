@@ -76,6 +76,7 @@ export function seedStudents() {
       division,
       condicion,
       fechaNacimiento,
+      fechaAlta: `${new Date().getFullYear()}-03-01`,
       email: dni.charAt(0) === "4" ? `${nombre.toLowerCase()}.${apellido.toLowerCase()}@alumno.prece.to` : null
     });
 
@@ -118,7 +119,9 @@ export function seedAlumnosLocales() {
       division: String(division),
       turno,
       orientacion,
-      condicion: "regular"
+      condicion: "regular",
+      // Matrícula del ciclo lectivo: no son altas del mes en que arranca el servidor
+      fechaAlta: `${new Date().getFullYear()}-03-01`
     });
     cargados++;
   });
