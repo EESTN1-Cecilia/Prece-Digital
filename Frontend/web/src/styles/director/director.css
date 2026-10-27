@@ -1908,8 +1908,8 @@
   gap: 14px;
   padding: 16px;
   border-radius: 12px;
-  border: 1.5px solid #bbf7d0;
-  background: #f0fdf4;
+  border: 1.5px solid #bfdbfe;
+  background: #eff6ff;
   animation: directorFadeIn 160ms ease;
 }
 
@@ -1929,8 +1929,8 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: #dcfce7;
-  color: #16a34a;
+  background: #dbeafe;
+  color: #2563eb;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1940,7 +1940,7 @@
 .director-docente-section__title {
   font-size: 14px;
   font-weight: 800;
-  color: #14532d;
+  color: #1e3a8a;
 }
 
 .director-docente-section .director-form-input {
@@ -1983,14 +1983,14 @@
 
 .director-segmented__btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 .director-segmented__btn--active,
 .director-segmented__btn--active:hover {
-  background: #16a34a;
+  background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
 .director-horario-row {
