@@ -600,7 +600,7 @@ export default function DirectorDashboardView() {
                   h(
                     "div",
                     { className: "director-asistencia-header-badge-float" },
-                    h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, "32 Cursos")
+                    h("span", { className: "director-kpi-badge director-kpi-badge--blue" }, `${resumen?.alumnos?.divisiones ?? "—"} Divisiones`)
                   ),
                   h(
                     "div",
@@ -633,7 +633,7 @@ export default function DirectorDashboardView() {
                     { className: "director-kpi-value" },
                     modoAlumnos === "porcentaje"
                       ? "100%"
-                      : `${resumen?.alumnos?.totalActivos ?? 840}`
+                      : `${resumen?.alumnos?.totalActivos ?? "—"}`
                   ),
                   h(
                     "div",
@@ -642,65 +642,37 @@ export default function DirectorDashboardView() {
                       "span",
                       null,
                       modoAlumnos === "porcentaje"
-                        ? `${resumen?.alumnos?.totalActivos ?? 840} alumnos matriculados`
-                        : "32 divisiones activas"
+                        ? `${resumen?.alumnos?.totalActivos ?? "—"} alumnos matriculados`
+                        : `${resumen?.alumnos?.divisionesConAlumnos ?? "—"} divisiones activas`
                     )
                   )
                 ),
 
-                // Lado derecho: Gráfico Horizontal de cantidad/porcentaje por cada turno
+                // Lado derecho: Gráfico Horizontal de cantidad/porcentaje por turno de cursada.
+                // El taller se cursa a contraturno: Mañana + Tarde ya suman toda la matrícula.
                 (() => {
-                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 840;
-                  const turnoManana = resumen?.alumnos?.turnoManana ?? 450;
-                  const turnoTarde = resumen?.alumnos?.turnoTarde ?? 390;
-                  const turnoTaller = resumen?.alumnos?.turnoTaller ?? 525;
-
-                  const pctManana = Math.round(((turnoManana / totalAlumnos) * 100) * 10) / 10;
-                  const pctTarde = Math.round(((turnoTarde / totalAlumnos) * 100) * 10) / 10;
-                  const pctTaller = Math.round(((turnoTaller / totalAlumnos) * 100) * 10) / 10;
+                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 0;
+                  const porcentajeDe = (cantidad) => (totalAlumnos ? Math.round((cantidad / totalAlumnos) * 1000) / 10 : 0);
 
                   const datosTurnosAlumnos = [
-                    {
-                      label: "Mañana",
-                      porcentaje: pctManana,
-                      cantidad: turnoManana,
-                      color: "#10b981",
-                      anchoPct: modoAlumnos === "porcentaje"
-                        ? pctManana
-                        : Math.min(100, (turnoManana / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Tarde",
-                      porcentaje: pctTarde,
-                      cantidad: turnoTarde,
-                      color: "#3b82f6",
-                      anchoPct: modoAlumnos === "porcentaje"
-                        ? pctTarde
-                        : Math.min(100, (turnoTarde / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Taller",
-                      porcentaje: pctTaller,
-                      cantidad: turnoTaller,
-                      color: "#f59e0b",
-                      anchoPct: modoAlumnos === "porcentaje"
-                        ? pctTaller
-                        : Math.min(100, (turnoTaller / totalAlumnos) * 100)
-                    }
-                  ];
+                    { label: "Mañana", cantidad: resumen?.alumnos?.turnoManana ?? 0, color: "#10b981" },
+                    { label: "Tarde", cantidad: resumen?.alumnos?.turnoTarde ?? 0, color: "#3b82f6" }
+                  ].map((turno) => ({
+                    ...turno,
+                    porcentaje: porcentajeDe(turno.cantidad),
+                    anchoPct: porcentajeDe(turno.cantidad)
+                  }));
 
-                  const posicionMediaAlumnosPct = modoAlumnos === "porcentaje"
-                    ? 50
-                    : Math.min(100, Math.max(0, (500 / totalAlumnos) * 100));
+                  const posicionMediaAlumnosPct = 50;
 
                   const marcasEje = modoAlumnos === "porcentaje"
                     ? ["0%", "50%", "100%"]
-                    : ["0", "500", String(totalAlumnos)];
+                    : ["0", String(Math.round(totalAlumnos / 2)), String(totalAlumnos)];
 
                   return h(
                     "div",
                     { className: "director-hchart-container" },
-                    // Eje X superior con marcas de escala (0, 500, 840 o 0%, 50%, 100%)
+                    // Eje X superior con marcas de escala (0, mitad y total de la matrícula, o 0%, 50%, 100%)
                     h(
                       "div",
                       { className: "director-hchart-axis-x" },
@@ -808,8 +780,8 @@ export default function DirectorDashboardView() {
                     "div",
                     { className: "director-kpi-value" },
                     modoAsistencia === "porcentaje"
-                      ? `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`
-                      : `${resumen?.asistencia?.presentesHoy ?? 791}`
+                      ? `${resumen?.asistencia?.tasaGeneral ?? "—"}%`
+                      : `${resumen?.asistencia?.presentesHoy ?? "—"}`
                   ),
                   h(
                     "div",
@@ -818,55 +790,40 @@ export default function DirectorDashboardView() {
                       "span",
                       null,
                       modoAsistencia === "porcentaje"
-                        ? `${resumen?.asistencia?.presentesHoy ?? 791} presentes`
-                        : `de ${resumen?.alumnos?.totalActivos ?? 840} alumnos`
+                        ? `${resumen?.asistencia?.presentesHoy ?? "—"} presentes`
+                        : `de ${resumen?.alumnos?.totalActivos ?? "—"} alumnos`
                     ),
                     h("span", null, `·`),
-                    h("span", { className: "text-rose-600 font-semibold" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} alertas faltas`)
+                    h("span", { className: "text-rose-600 font-semibold" }, `${resumen?.asistencia?.alertasConsecutivas ?? 0} alertas faltas`)
                   )
                 ),
 
                 // Lado derecho: Gráfico Horizontal con escala numérica/porcentaje ARRIBA
                 (() => {
-                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 840;
-                  // Datos de cada turno (porcentaje y cantidad de alumnos)
-                  const datosTurnos = [
-                    {
-                      label: "Mañana",
-                      porcentaje: 94.2,
-                      cantidad: 424,
-                      color: "#10b981",
-                      anchoPct: modoAsistencia === "porcentaje" ? 94.2 : Math.min(100, (424 / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Tarde",
-                      porcentaje: 92.8,
-                      cantidad: 362,
-                      color: "#3b82f6",
-                      anchoPct: modoAsistencia === "porcentaje" ? 92.8 : Math.min(100, (362 / totalAlumnos) * 100)
-                    },
-                    {
-                      label: "Taller",
-                      porcentaje: 96.4,
-                      cantidad: 505,
-                      color: "#f59e0b",
-                      anchoPct: modoAsistencia === "porcentaje" ? 96.4 : Math.min(100, (505 / totalAlumnos) * 100)
-                    }
-                  ];
+                  const totalAlumnos = resumen?.alumnos?.totalActivos ?? 0;
+                  // Presentes de hoy por turno de cursada (matrícula menos inasistencias cargadas hoy)
+                  const colores = { Mañana: "#10b981", Tarde: "#3b82f6" };
+                  const datosTurnos = (resumen?.asistencia?.porTurno ?? []).map((t) => ({
+                    label: t.turno,
+                    porcentaje: t.porcentaje,
+                    cantidad: t.presentes,
+                    color: colores[t.turno] ?? "#64748b",
+                    anchoPct: modoAsistencia === "porcentaje"
+                      ? t.porcentaje
+                      : (totalAlumnos ? Math.min(100, (t.presentes / totalAlumnos) * 100) : 0)
+                  }));
 
-                  const posicionMediaAsistenciaPct = modoAsistencia === "porcentaje"
-                    ? 50
-                    : Math.min(100, Math.max(0, (500 / totalAlumnos) * 100));
+                  const posicionMediaAsistenciaPct = 50;
 
-                  // Marcas del eje superior (0%, 50%, 100% o 0, 500, 840)
+                  // Marcas del eje superior (0%, 50%, 100% o 0, mitad y total de la matrícula)
                   const marcasEje = modoAsistencia === "porcentaje"
                     ? ["0%", "50%", "100%"]
-                    : ["0", "500", String(totalAlumnos)];
+                    : ["0", String(Math.round(totalAlumnos / 2)), String(totalAlumnos)];
 
                   return h(
                     "div",
                     { className: "director-hchart-container" },
-                    // 1. Eje X superior con etiquetas de escala (0%, 50%, 100% o 0, 500, 840)
+                    // 1. Eje X superior con etiquetas de escala (0%, 50%, 100% o 0, mitad y total)
                     h(
                       "div",
                       { className: "director-hchart-axis-x" },
@@ -1337,19 +1294,19 @@ export default function DirectorDashboardView() {
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Matrícula Activa"),
-                    h("strong", { className: "director-metric-mini__val" }, resumen?.alumnos?.totalActivos ?? 840)
+                    h("strong", { className: "director-metric-mini__val" }, resumen?.alumnos?.totalActivos ?? "—")
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Cursos Totales"),
-                    h("strong", { className: "director-metric-mini__val" }, "32 Divisiones")
+                    h("strong", { className: "director-metric-mini__val" }, `${resumen?.alumnos?.divisiones ?? "—"} Divisiones`)
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Alumnos en Riesgo"),
-                    h("strong", { className: "director-metric-mini__val text-rose-600" }, `${resumen?.alumnos?.alumnosEnRiesgo ?? 12} casos`)
+                    h("strong", { className: "director-metric-mini__val text-rose-600" }, `${resumen?.alumnos?.alumnosEnRiesgo ?? 0} casos`)
                   )
                 ),
                 h(
@@ -1380,19 +1337,19 @@ export default function DirectorDashboardView() {
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Asistencia General"),
-                    h("strong", { className: "director-metric-mini__val" }, `${resumen?.asistencia?.tasaGeneral ?? 94.2}%`)
+                    h("strong", { className: "director-metric-mini__val" }, `${resumen?.asistencia?.tasaGeneral ?? "—"}%`)
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Preceptores"),
-                    h("strong", { className: "director-metric-mini__val" }, "8 Asignados")
+                    h("strong", { className: "director-metric-mini__val" }, `${resumen?.personal?.porRol?.preceptor ?? 0} Asignados`)
                   ),
                   h(
                     "div",
                     { className: "director-metric-mini" },
                     h("span", { className: "director-metric-mini__label" }, "Inasistencias Críticas"),
-                    h("strong", { className: "director-metric-mini__val text-amber-600" }, `${resumen?.asistencia?.alertasConsecutivas ?? 3} en seguimiento`)
+                    h("strong", { className: "director-metric-mini__val text-amber-600" }, `${resumen?.asistencia?.alertasConsecutivas ?? 0} en seguimiento`)
                   )
                 ),
                 h(

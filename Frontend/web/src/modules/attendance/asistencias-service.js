@@ -122,7 +122,7 @@ export const AsistenciasService = {
     // 1. Obtener los alumnos reales matriculados en ese curso y división desde la base de datos
     let alumnos = [];
     try {
-      const res = await StudentsService.getAlumnos({ curso: `${cursoNum}°`, division: divNum, limit: 100 });
+      const res = await StudentsService.getAlumnos({ curso: `${cursoNum}°`, division: divNum, estado: "activo", limit: 100 });
       if (res.data && res.data.length > 0) {
         // Ordenar alfabéticamente por apellido y nombre
         const ordenados = [...res.data].sort((a, b) => {
