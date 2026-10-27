@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import { ROLES_DISPONIBLES, DirectorService } from "../director-service.js";
 
@@ -49,18 +50,34 @@ export function EditarRolesModal({ usuario, abierto, alCerrar, alRolesActualizad
 
   useEffect(() => {
     if (usuario) {
-      const ids = (usuario.roles || []).map((r) => typeof r === "string" ? r : r.id);
+      const ids = (usuario.roles || []).map((r) => (typeof r === "string" ? r : r.id));
       setRolesSeleccionados(ids);
       setError(null);
     }
   }, [usuario]);
 
+  useEffect(() => {
+    if (!abierto || !usuario) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") alCerrar();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    if (scrollBarWidth > 0) document.body.style.paddingRight = `${scrollBarWidth}px`;
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
+  }, [abierto, usuario, alCerrar]);
+
   if (!abierto || !usuario) return null;
 
   const toggleRol = (rolId) => {
-    setRolesSeleccionados((prev) =>
-      prev.includes(rolId) ? prev.filter((r) => r !== rolId) : [...prev, rolId]
-    );
+    setRolesSeleccionados([rolId]);
+    if (error) setError(null);
   };
 
   const handleGuardar = async (e) => {
@@ -86,113 +103,122 @@ export function EditarRolesModal({ usuario, abierto, alCerrar, alRolesActualizad
     }
   };
 
-  return h(
-    "div",
-    { className: "director-modal-backdrop", onClick: (e) => e.target === e.currentTarget && alCerrar() },
+  const nombreDisplay = usuario.nombreCompleto || usuario.nombre || usuario.displayName || usuario.email || "Usuario";
+
+  return createPortal(
     h(
       "div",
-      { className: "director-modal-container", role: "dialog", "aria-modal": "true", "aria-labelledby": "modal-edit-roles-titulo" },
-
-      // Header
+      { className: "director-modal-backdrop", onClick: (e) => e.target === e.currentTarget && alCerrar() },
       h(
         "div",
-        { className: "director-modal-header" },
+        { className: "director-modal-container", role: "dialog", "aria-modal": "true", "aria-labelledby": "modal-edit-roles-titulo" },
+
+        // Header
         h(
           "div",
-          null,
-          h("h2", { id: "modal-edit-roles-titulo", className: "director-modal-title" }, "Modificar Roles y Permisos"),
+          { className: "director-modal-header" },
           h(
-            "p",
-            { className: "director-modal-subtitle" },
-            `Usuario: `,
-            h("strong", null, usuario.nombreCompleto),
-            ` (${usuario.email})`
-          )
-        ),
-        h(
-          "button",
-          {
-            type: "button",
-            className: "director-modal-close-btn",
-            onClick: alCerrar,
-            "aria-label": "Cerrar"
-          },
-          h(IconClose, null)
-        )
-      ),
-
-      // Formulario
-      h(
-        "form",
-        { className: "director-modal-form", onSubmit: handleGuardar },
-
-        error
-          ? h(
-              "div",
-              { className: "director-form-alert director-form-alert--error" },
-              error
+            "div",
+            null,
+            h("h2", { id: "modal-edit-roles-titulo", className: "director-modal-title" }, "Modificar Roles y Permisos"),
+            h(
+              "p",
+              { className: "director-modal-subtitle" },
+              `Usuario: `,
+              h("strong", null, nombreDisplay),
+              usuario.email ? ` (${usuario.email})` : ""
             )
-          : null,
-
-        h(
-          "div",
-          { className: "director-roles-grid" },
-          ROLES_DISPONIBLES.map((rol) => {
-            const seleccionado = rolesSeleccionados.includes(rol.id);
-
-            return h(
-              "div",
-              {
-                key: rol.id,
-                className: `director-role-card ${seleccionado ? "director-role-card--active" : ""}`,
-                onClick: () => toggleRol(rol.id)
-              },
-              h(
-                "div",
-                { className: "director-role-card__header" },
-                h(
-                  "div",
-                  {
-                    className: "director-role-card__checkbox",
-                    style: {
-                      borderColor: seleccionado ? rol.color : "#cbd5e1",
-                      background: seleccionado ? rol.color : "transparent"
-                    }
-                  },
-                  seleccionado ? h(IconCheck, { className: "w-3 h-3 text-white" }) : null
-                ),
-                h("strong", { className: "director-role-card__title" }, rol.nombre)
-              ),
-              h("p", { className: "director-role-card__desc" }, rol.descripcion)
-            );
-          })
-        ),
-
-        // Footer
-        h(
-          "div",
-          { className: "director-modal-footer" },
-          h(
-            "button",
-            {
-              type: "button",
-              className: "btn-director-secondary",
-              onClick: alCerrar,
-              disabled: guardando
-            },
-            "Cancelar"
           ),
           h(
             "button",
             {
-              type: "submit",
-              className: "btn-director-primary",
-              disabled: guardando
+              type: "button",
+              className: "director-modal-close-btn",
+              onClick: alCerrar,
+              "aria-label": "Cerrar"
             },
-            guardando ? "Guardando..." : "Guardar Roles Asignados"
+            h(IconClose, null)
+          )
+        ),
+
+        // Formulario
+        h(
+          "form",
+          { className: "director-modal-form", onSubmit: handleGuardar },
+
+          error
+            ? h(
+                "div",
+                { className: "director-form-alert director-form-alert--error" },
+                error
+              )
+            : null,
+
+          h(
+            "div",
+            { className: "director-roles-grid", role: "radiogroup" },
+            ROLES_DISPONIBLES.map((rol) => {
+              const seleccionado = rolesSeleccionados.length === 1 && rolesSeleccionados[0] === rol.id;
+
+              return h(
+                "div",
+                {
+                  key: rol.id,
+                  role: "radio",
+                  "aria-checked": seleccionado,
+                  className: `director-role-card ${seleccionado ? "director-role-card--active" : ""}`,
+                  onClick: () => toggleRol(rol.id)
+                },
+                h(
+                  "div",
+                  { className: "director-role-card__header" },
+                  h(
+                    "div",
+                    {
+                      className: "director-role-card__radio",
+                      style: {
+                        borderColor: seleccionado ? rol.color : "#cbd5e1",
+                        background: seleccionado ? rol.color : "#ffffff"
+                      }
+                    },
+                    seleccionado
+                      ? h("span", { className: "director-role-card__radio-dot" })
+                      : null
+                  ),
+                  h("strong", { className: "director-role-card__title" }, rol.nombre)
+                ),
+                h("p", { className: "director-role-card__desc" }, rol.descripcion)
+              );
+            })
+          ),
+
+          // Footer
+          h(
+            "div",
+            { className: "director-modal-footer" },
+            h(
+              "button",
+              {
+                type: "button",
+                className: "btn-director-secondary",
+                onClick: alCerrar,
+                disabled: guardando
+              },
+              "Cancelar"
+            ),
+            h(
+              "button",
+              {
+                type: "submit",
+                className: "btn-director-primary",
+                disabled: guardando
+              },
+              guardando ? "Guardando..." : "Guardar Roles Asignados"
+            )
           )
         )
       )
-    )
+    ),
+    document.body
   );
 }

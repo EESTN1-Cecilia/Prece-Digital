@@ -6,29 +6,27 @@
 import { pedir } from "../../services/http.js";
 import { roles as ROLES_CATALOGO } from "../../../../../Shared/src/domain.mjs";
 
-export const ROLES_DISPONIBLES = ROLES_CATALOGO.map((rol) => ({
-  id: rol.id,
-  nombre: rol.name,
-  descripcion: rol.description,
-  icono: {
-    admin: "shield",
-    director: "award",
-    secretario: "students",
-    preceptor: "attendance",
-    docente: "academic",
-    jefe_area: "briefcase",
-    server: "server"
-  }[rol.id] || "user",
-  color: {
-    admin: "#dc2626",
-    director: "#b45309",
-    secretario: "#0284c7",
-    preceptor: "#7c3aed",
-    docente: "#16a34a",
-    jefe_area: "#d97706",
-    server: "#059669"
-  }[rol.id] || "#64748b"
-}));
+export const ROLES_DISPONIBLES = ROLES_CATALOGO
+  .filter((rol) => rol.id !== "jefe_area" && rol.id !== "server")
+  .map((rol) => ({
+    id: rol.id,
+    nombre: rol.name,
+    descripcion: rol.description,
+    icono: {
+      admin: "shield",
+      director: "award",
+      secretario: "students",
+      preceptor: "attendance",
+      docente: "academic"
+    }[rol.id] || "user",
+    color: {
+      admin: "#dc2626",
+      director: "#b45309",
+      secretario: "#0284c7",
+      preceptor: "#7c3aed",
+      docente: "#16a34a"
+    }[rol.id] || "#64748b"
+  }));
 
 export const DirectorService = {
   /**
@@ -188,10 +186,10 @@ export const DirectorService = {
       const rawRoles = u.roles || u.assignments?.map((a) => a.role || a) || [];
       const roles = rawRoles.map((r) => {
         const id = typeof r === "string" ? r : (r?.id || r?.role || r?.codigo);
-        const catalogo = ROLES_DISPONIBLES.find((c) => c.id === id);
+        const catalogo = ROLES_DISPONIBLES.find((c) => c.id === id) || ROLES_CATALOGO.find((c) => c.id === id);
         return {
           id,
-          nombre: catalogo?.nombre || id,
+          nombre: catalogo?.nombre || catalogo?.name || id,
           color: catalogo?.color || "#64748b"
         };
       });

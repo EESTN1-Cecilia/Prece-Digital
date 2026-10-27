@@ -202,7 +202,7 @@ export function CustomSelect({
           )
         : null
     );
-  } else if (isFilter) {
+  } else if (isFilter && label) {
     const isDefault = stringValue === "todos" || stringValue === "todas" || !stringValue;
     triggerContent = h(
       "span",
@@ -210,7 +210,7 @@ export function CustomSelect({
       h("span", { className: "custom-select__label-prefix" }, label),
       !isDefault && selectedOption
         ? h("span", { className: "custom-select__active-val" }, selectedOption.label)
-        : null
+        : (selectedOption ? h("span", { className: "custom-select__label-suffix" }, selectedOption.label) : null)
     );
   } else {
     // Form / Modal mode
@@ -218,7 +218,7 @@ export function CustomSelect({
       ? selectedOption.label
       : placeholder || label || "Seleccionar...";
     
-    const isPlaceholder = !hasSelection && Boolean(placeholder || label);
+    const isPlaceholder = !selectedOption || selectedOption.value === "";
 
     triggerContent = h(
       "span",

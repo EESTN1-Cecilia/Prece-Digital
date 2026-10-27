@@ -135,6 +135,28 @@ function IconSearch({ className = "w-4 h-4", width = "16", height = "16" }) {
   );
 }
 
+function IconAlertTriangle({ className = "w-4 h-4", width = "18", height = "18" }) {
+  return h(
+    "svg",
+    {
+      className,
+      width,
+      height,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      "aria-hidden": "true",
+      style: { flexShrink: 0 }
+    },
+    h("path", { d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" }),
+    h("line", { x1: "12", y1: "9", x2: "12", y2: "13" }),
+    h("line", { x1: "12", y1: "17", x2: "12.01", y2: "17" })
+  );
+}
+
 function IconUserPlus({ className = "w-4 h-4", width = "15", height = "15" }) {
   return h(
     "svg",
@@ -401,7 +423,23 @@ function esCursoAsignadoADocente(curso, docente) {
  * Renderiza el badge estilizado de situación de revista (titular, provisorio, suplente).
  */
 function renderBadgeSituacion(sit) {
-  const s = String(sit || "titular").toLowerCase().trim();
+  if (!sit || String(sit).trim() === "") {
+    return h(
+      "span",
+      {
+        className: "asignaciones-badge-situacion asignaciones-badge-situacion--sin-asignar",
+        style: {
+          marginLeft: "4px",
+          flexShrink: 0,
+          background: "#fef3c7",
+          color: "#92400e",
+          border: "1px solid #fde68a"
+        }
+      },
+      "Sin situación"
+    );
+  }
+  const s = String(sit || "").toLowerCase().trim();
   const label = s === "provisorio" ? "Provisorio" : s === "suplente" ? "Suplente" : "Titular";
   return h(
     "span",
@@ -556,6 +594,7 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
   const [emailPersonalizado, setEmailPersonalizado] = useState("");
   const [cursosSeleccionados, setCursosSeleccionados] = useState([]);
   const [mostrarTodasLasDivisiones, setMostrarTodasLasDivisiones] = useState(false);
+  const [filtroCursoModal, setFiltroCursoModal] = useState("todos");
   const [guardando, setGuardando] = useState(false);
   const [verMasModal, setVerMasModal] = useState(false);
 
@@ -621,11 +660,12 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
       const cursosDelPreceptor = getDivisionesPreceptor(prec, todasLasDivisiones).map((d) => d.id);
       if (division.id && division.id !== "div-nuevo") {
         setCursosSeleccionados(Array.from(new Set([division.id, ...cursosDelPreceptor])));
-        setMostrarTodasLasDivisiones(true);
+        setMostrarTodasLasDivisiones(false);
       } else {
         setCursosSeleccionados(cursosDelPreceptor);
-        setMostrarTodasLasDivisiones(true);
+        setMostrarTodasLasDivisiones(false);
       }
+      setFiltroCursoModal("todos");
       setVerMasModal(false);
     }
   }, [division, preceptoresDisponibles, todasLasDivisiones]);
@@ -657,33 +697,67 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
   }, [preceptoresDisponibles]);
 
   const divisionesAsignadasActuales = useMemo(() => {
-    if (!division?.preceptor) return [];
-    return getDivisionesPreceptor(division.preceptor, todasLasDivisiones);
-  }, [division, todasLasDivisiones]);
+    let prec = null;
+    if (preceptorSeleccionado && preceptorSeleccionado !== "otro") {
+      prec = preceptoresDisponibles.find((p) => p.id === preceptorSeleccionado);
+    }
+    if (!prec) {
+      prec = division?.preceptor;
+    }
+    if (!prec) return [];
+    return getDivisionesPreceptor(prec, todasLasDivisiones);
+  }, [preceptorSeleccionado, preceptoresDisponibles, division, todasLasDivisiones]);
+
+  // Opciones de cursos (1° a 7° Año) para el filtro del modal
+  const opcionesCursosModal = [
+    { value: "todos", label: "Todos los cursos" },
+    { value: "1", label: "1° Año" },
+    { value: "2", label: "2° Año" },
+    { value: "3", label: "3° Año" },
+    { value: "4", label: "4° Año" },
+    { value: "5", label: "5° Año" },
+    { value: "6", label: "6° Año" },
+    { value: "7", label: "7° Año" }
+  ];
 
   const cursosDisponibles = useMemo(() => {
     if (!todasLasDivisiones || todasLasDivisiones.length === 0) {
       return division ? [division] : [];
     }
-    if (mostrarTodasLasDivisiones) {
+    let listaBase;
+    if (mostrarTodasLasDivisiones || filtroCursoModal !== "todos") {
       const asignadosIds = new Set(divisionesAsignadasActuales.map((d) => d.id));
       if (division?.id && division.id !== "div-nuevo") asignadosIds.add(division.id);
-      return [...todasLasDivisiones].sort((a, b) => {
+      listaBase = [...todasLasDivisiones].sort((a, b) => {
         const aAsignado = asignadosIds.has(a.id) ? 1 : 0;
         const bAsignado = asignadosIds.has(b.id) ? 1 : 0;
         if (aAsignado !== bAsignado) return bAsignado - aAsignado;
         if (a.anio !== b.anio) return a.anio - b.anio;
         return String(a.numDivision || "").localeCompare(String(b.numDivision || ""));
       });
+    } else {
+      const delPreceptor = divisionesAsignadasActuales;
+      if (delPreceptor.length === 0) {
+        listaBase = todasLasDivisiones;
+      } else {
+        const combinadas = [...delPreceptor];
+        if (division.id && division.id !== "div-nuevo" && !combinadas.some((d) => d.id === division.id)) {
+          combinadas.push(division);
+        }
+        listaBase = combinadas;
+      }
     }
-    const delPreceptor = divisionesAsignadasActuales;
-    if (delPreceptor.length === 0) return todasLasDivisiones;
-    const combinadas = [...delPreceptor];
-    if (division.id && division.id !== "div-nuevo" && !combinadas.some((d) => d.id === division.id)) {
-      combinadas.push(division);
+
+    if (filtroCursoModal !== "todos") {
+      return listaBase.filter((d) => {
+        const cd = formatoCursoDivision(d);
+        const anioDesdeCd = cd.split("°")[0].trim();
+        const anio = String(d.anio || d.curso || anioDesdeCd || "").replace(/[^\d]/g, "");
+        return anio === filtroCursoModal;
+      });
     }
-    return combinadas;
-  }, [mostrarTodasLasDivisiones, divisionesAsignadasActuales, todasLasDivisiones, division]);
+    return listaBase;
+  }, [mostrarTodasLasDivisiones, divisionesAsignadasActuales, todasLasDivisiones, division, filtroCursoModal]);
 
   if (!abierto || !division) return null;
 
@@ -696,21 +770,8 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
     });
   };
 
-  const seleccionarTodosCursos = () => {
-    const todosIds = cursosDisponibles.map((c) => c.id);
-    setCursosSeleccionados(todosIds);
-  };
-
   const desmarcarTodosCursos = () => {
     setCursosSeleccionados([]);
-  };
-
-  const seleccionarSoloEsteCurso = () => {
-    if (division.id && division.id !== "div-nuevo") {
-      setCursosSeleccionados([division.id]);
-    } else {
-      setCursosSeleccionados([]);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -895,40 +956,32 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
               h(
                 "div",
                 { className: "asignaciones-multicursos-header" },
-                h("span", null, `Cursos a asignar (${cursosSeleccionados.length} seleccionado${cursosSeleccionados.length > 1 ? "s" : ""}):`),
+                h("span", { className: "asignaciones-multicursos-title" }, "Cursos a asignar:"),
                 h(
                   "div",
-                  { style: { display: "flex", alignItems: "center", gap: "6px" } },
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "asignaciones-footer-tool-btn",
-                      onClick: seleccionarTodosCursos,
-                      title: "Marcar todas las divisiones disponibles"
-                    },
-                    "Marcar todas"
-                  ),
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "asignaciones-footer-tool-btn",
-                      onClick: desmarcarTodosCursos,
-                      title: "Desmarcar todas las divisiones"
-                    },
-                    "Desmarcar todas"
-                  ),
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "asignaciones-footer-tool-btn",
-                      onClick: seleccionarSoloEsteCurso,
-                      title: "Seleccionar solo la división actual"
-                    },
-                    "Solo este curso"
-                  )
+                  { className: "asignaciones-multicursos-actions" },
+                  // Filtro por Curso (1° a 7° Año)
+                  h(CustomSelect, {
+                    id: "modal-filtro-curso-preceptor",
+                    value: filtroCursoModal,
+                    options: opcionesCursosModal,
+                    onChange: setFiltroCursoModal,
+                    ariaLabel: "Filtrar por curso",
+                    className: "asignaciones-modal-filter-select asignaciones-modal-filter-select--curso"
+                  }),
+                  // Botón Desmarcar todas
+                  cursosSeleccionados.length > 0
+                    ? h(
+                        "button",
+                        {
+                          type: "button",
+                          className: "asignaciones-btn-desmarcar",
+                          onClick: desmarcarTodosCursos,
+                          title: "Desmarcar todas las divisiones"
+                        },
+                        "Desmarcar todas"
+                      )
+                    : null
                 )
               ),
               h(
@@ -1014,7 +1067,6 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
                       onClick: () => setMostrarTodasLasDivisiones(!mostrarTodasLasDivisiones),
                       title: mostrarTodasLasDivisiones ? "Ver solo cursos asignados a este preceptor" : "Ver todos los cursos disponibles"
                     },
-                    h(IconSchool, { width: "13", height: "13" }),
                     h("span", null, mostrarTodasLasDivisiones ? `Solo cursos asignados (${cursosSeleccionados.length})` : `Ver todas las divisiones (${todasLasDivisiones.length})`)
                   )
                 )
@@ -1030,32 +1082,36 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
 /**
  * Modal para asignar o reasignar un Profesor a una o varias Cátedras/Cursos
  */
-function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar, todasLasCatedras = [] }) {
+function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar, todasLasCatedras = [], onMostrarToast }) {
   const [profesorSeleccionado, setProfesorSeleccionado] = useState("");
   const [nombrePersonalizado, setNombrePersonalizado] = useState("");
   const [emailPersonalizado, setEmailPersonalizado] = useState("");
   const [configMaterias, setConfigMaterias] = useState({});
   const [cursosSeleccionados, setCursosSeleccionados] = useState([]);
   const [mostrarTodasLasMaterias, setMostrarTodasLasMaterias] = useState(false);
+  const [filtroMateriaModal, setFiltroMateriaModal] = useState("todas");
+  const [filtroCursoModal, setFiltroCursoModal] = useState("todos");
   const [guardando, setGuardando] = useState(false);
   const [verMasModal, setVerMasModal] = useState(false);
   const [desplegadosMaterias, setDesplegadosMaterias] = useState({});
+  const [errorValidacion, setErrorValidacion] = useState(null);
 
   // Helper para obtener la configuración inicial de una cátedra
-  const obtenerConfigInicialCatedra = (c) => {
-    if (!c) return { situacion: "titular", modulos: 4 };
-    let mod = 4;
+  const obtenerConfigInicialCatedra = (c, esAsignado = false) => {
+    if (!c || !esAsignado) {
+      return { situacion: "", modulos: 0 };
+    }
+    let mod = 0;
     if (c.modulos !== undefined && c.modulos !== null) {
-      mod = parseInt(c.modulos, 10) || 4;
+      mod = parseInt(c.modulos, 10) || 0;
     } else if (c.horasSemanales !== undefined && c.horasSemanales !== null) {
-      mod = parseInt(c.horasSemanales, 10) || 4;
+      mod = parseInt(c.horasSemanales, 10) || 0;
     } else if (c.cargaHoraria) {
       const parsed = parseInt(String(c.cargaHoraria).replace(/[^\d]/g, ""), 10);
       if (!isNaN(parsed) && parsed > 0) mod = parsed;
     }
-    mod = Math.min(10, Math.max(1, mod));
     return {
-      situacion: c.situacion || "titular",
+      situacion: c.situacion || "",
       modulos: mod
     };
   };
@@ -1117,22 +1173,41 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
         setEmailPersonalizado("");
       }
 
-      // Inicializar configuraciones individuales de todas las cátedras disponibles
-      const mapConfig = {};
-      (todasLasCatedras || []).forEach((c) => {
-        mapConfig[c.id] = obtenerConfigInicialCatedra(c);
-      });
-      if (catedra.id && catedra.id !== "cat-nuevo") {
-        mapConfig[catedra.id] = obtenerConfigInicialCatedra(catedra);
-      }
-      setConfigMaterias(mapConfig);
-
-      // Cursos seleccionados: por defecto TODOS los cursos a los que está asignado el profesor
+      // Cursos que el profesor YA tenía asignados previamente
       const prof = catedra.profesor || profesoresDisponibles.find((p) => p.id === docId);
       const cursosDelProfesor = getCatedrasProfesor(
         prof,
         todasLasCatedras
       ).map((c) => c.id);
+
+      const esCatedraAsignada = Boolean(catedra.profesor && sonMismoDocente(catedra.profesor, prof));
+
+      // Inicializar configuraciones individuales de todas las cátedras:
+      // Si la cátedra ya pertenecía al profesor y tiene situación, la conserva; si es nueva, inicia en 0 y sin situación
+      const mapConfig = {};
+      (todasLasCatedras || []).forEach((c) => {
+        const esAsignado = cursosDelProfesor.includes(c.id);
+        if (esAsignado && c.situacion) {
+          mapConfig[c.id] = {
+            situacion: c.situacion,
+            modulos: parseInt(c.modulos ?? c.horasSemanales ?? 0, 10) || 0
+          };
+        } else {
+          mapConfig[c.id] = { situacion: "", modulos: 0 };
+        }
+      });
+      if (catedra.id && catedra.id !== "cat-nuevo") {
+        if (esCatedraAsignada && catedra.situacion) {
+          mapConfig[catedra.id] = {
+            situacion: catedra.situacion,
+            modulos: parseInt(catedra.modulos ?? catedra.horasSemanales ?? 0, 10) || 0
+          };
+        } else {
+          mapConfig[catedra.id] = { situacion: "", modulos: 0 };
+        }
+      }
+      setConfigMaterias(mapConfig);
+
       if (catedra.id && catedra.id !== "cat-nuevo") {
         setCursosSeleccionados(Array.from(new Set([catedra.id, ...cursosDelProfesor])));
         setMostrarTodasLasMaterias(false);
@@ -1141,15 +1216,11 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
         setMostrarTodasLasMaterias(true);
       }
 
-      // Desplegados: La cátedra que abrió el modal se despliega para edición rápida.
-      // Los cursos que ya están asignados inician contraídos con su flecha para desplegarlos a demanda.
-      const inicialDesplegados = {};
-      if (catedra.id && catedra.id !== "cat-nuevo") {
-        inicialDesplegados[catedra.id] = true;
-      } else if (cursosDelProfesor.length === 1) {
-        inicialDesplegados[cursosDelProfesor[0]] = true;
-      }
-      setDesplegadosMaterias(inicialDesplegados);
+      // Todos los cursos cerrados sin desplegar al entrar
+      setDesplegadosMaterias({});
+      setErrorValidacion(null);
+      setFiltroMateriaModal("todas");
+      setFiltroCursoModal("todos");
       setVerMasModal(false);
     }
   }, [catedra, profesoresDisponibles, todasLasCatedras]);
@@ -1184,26 +1255,70 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
     return list;
   }, [profesoresDisponibles]);
 
-  // Lista de cursos disponibles para asignación múltiple
+  // Opciones para el filtro de materia dentro del modal
+  const opcionesMateriasModal = useMemo(() => {
+    const set = new Set();
+    (todasLasCatedras || []).forEach((c) => {
+      if (c.materia) set.add(c.materia.trim());
+    });
+    if (catedra?.materia) set.add(catedra.materia.trim());
+    const sorted = Array.from(set).sort((a, b) => a.localeCompare(b));
+    return [
+      { value: "todas", label: "Todas las materias" },
+      ...sorted.map((m) => ({ value: m, label: m }))
+    ];
+  }, [todasLasCatedras, catedra]);
+
+  // Opciones para el filtro de curso (1° a 7° Año)
+  const opcionesCursosModal = [
+    { value: "todos", label: "Todos los cursos" },
+    { value: "1", label: "1° Año" },
+    { value: "2", label: "2° Año" },
+    { value: "3", label: "3° Año" },
+    { value: "4", label: "4° Año" },
+    { value: "5", label: "5° Año" },
+    { value: "6", label: "6° Año" },
+    { value: "7", label: "7° Año" }
+  ];
+
+  // Lista de cursos disponibles para asignación múltiple (filtrada por materia y curso)
   const cursosDisponibles = useMemo(() => {
     if (!todasLasCatedras || todasLasCatedras.length === 0) {
       return catedra ? [catedra] : [];
     }
-    if (mostrarTodasLasMaterias) {
-      return todasLasCatedras;
+    const hayFiltroActivo = filtroMateriaModal !== "todas" || filtroCursoModal !== "todos";
+    let listaBase;
+    if (mostrarTodasLasMaterias || hayFiltroActivo) {
+      listaBase = todasLasCatedras;
+    } else {
+      const marcados = todasLasCatedras.filter((c) => cursosSeleccionados.includes(c.id));
+      listaBase = marcados.length > 0 ? marcados : (catedra ? [catedra] : todasLasCatedras);
     }
-    const marcados = todasLasCatedras.filter((c) => cursosSeleccionados.includes(c.id));
-    return marcados.length > 0 ? marcados : (catedra ? [catedra] : []);
-  }, [todasLasCatedras, catedra, mostrarTodasLasMaterias, cursosSeleccionados]);
+
+    return listaBase.filter((c) => {
+      if (filtroMateriaModal !== "todas" && (c.materia || "").trim() !== filtroMateriaModal) {
+        return false;
+      }
+      if (filtroCursoModal !== "todos") {
+        const cd = formatoCursoDivision(c);
+        const anioDesdeCd = cd.split("°")[0].trim();
+        const anio = String(c.anio || c.curso || anioDesdeCd || "").replace(/[^\d]/g, "");
+        if (anio !== filtroCursoModal) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [todasLasCatedras, catedra, mostrarTodasLasMaterias, cursosSeleccionados, filtroMateriaModal, filtroCursoModal]);
 
   // Funciones de gestión individual de cada materia
   const obtenerConfig = (cursoId) => {
     if (configMaterias[cursoId]) return configMaterias[cursoId];
-    const cat = (todasLasCatedras || []).find((c) => c.id === cursoId) || catedra;
-    return obtenerConfigInicialCatedra(cat);
+    return { situacion: "", modulos: 0 };
   };
 
   const actualizarConfigMateria = (cursoId, campo, valor) => {
+    setErrorValidacion(null);
     setConfigMaterias((prev) => {
       const actual = prev[cursoId] || obtenerConfig(cursoId);
       return {
@@ -1217,10 +1332,11 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
   };
 
   const modificarModulosMateria = (cursoId, delta) => {
+    setErrorValidacion(null);
     setConfigMaterias((prev) => {
       const actual = prev[cursoId] || obtenerConfig(cursoId);
-      const actualMod = parseInt(actual.modulos, 10) || 4;
-      const nuevo = Math.min(10, Math.max(1, actualMod + delta));
+      const actualMod = parseInt(actual.modulos, 10) || 0;
+      const nuevo = Math.min(10, Math.max(0, actualMod + delta));
       return {
         ...prev,
         [cursoId]: {
@@ -1232,22 +1348,23 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
   };
 
   const handleInputModulos = (cursoId, valorStr) => {
+    setErrorValidacion(null);
     if (valorStr === "") {
       actualizarConfigMateria(cursoId, "modulos", "");
       return;
     }
     const num = parseInt(valorStr, 10);
     if (!isNaN(num)) {
-      const clamped = Math.min(10, Math.max(1, num));
+      const clamped = Math.min(10, Math.max(0, num));
       actualizarConfigMateria(cursoId, "modulos", clamped);
     }
   };
 
   const handleBlurModulos = (cursoId) => {
     setConfigMaterias((prev) => {
-      const actual = prev[cursoId] || { situacion: "titular", modulos: 4 };
+      const actual = prev[cursoId] || { situacion: "", modulos: 0 };
       let num = parseInt(actual.modulos, 10);
-      if (isNaN(num) || num < 1) num = 1;
+      if (isNaN(num) || num < 0) num = 0;
       if (num > 10) num = 10;
       return {
         ...prev,
@@ -1262,12 +1379,13 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
   const totalModulosSeleccionados = useMemo(() => {
     return cursosSeleccionados.reduce((total, id) => {
       const cfg = configMaterias[id] || obtenerConfig(id);
-      const mod = parseInt(cfg.modulos, 10) || 4;
+      const mod = parseInt(cfg.modulos, 10) || 0;
       return total + mod;
     }, 0);
   }, [cursosSeleccionados, configMaterias, todasLasCatedras, catedra]);
 
   const aplicarSituacionATodas = (sit) => {
+    setErrorValidacion(null);
     setConfigMaterias((prev) => {
       const nuevo = { ...prev };
       cursosSeleccionados.forEach((id) => {
@@ -1279,6 +1397,7 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
   };
 
   const aplicarModulosATodas = (mod) => {
+    setErrorValidacion(null);
     setConfigMaterias((prev) => {
       const nuevo = { ...prev };
       cursosSeleccionados.forEach((id) => {
@@ -1297,32 +1416,30 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
   };
 
   const toggleCurso = (id) => {
+    setErrorValidacion(null);
     setCursosSeleccionados((prev) => {
       if (prev.includes(id)) {
         return prev.filter((cId) => cId !== id);
       }
-      // Al marcar una materia la desplegamos para que pueda configurar situación y módulos
+      // Al marcar una materia nueva, asegurar que inicie en 0 módulos y sin situación
+      setConfigMaterias((cfgPrev) => {
+        const cfgActual = cfgPrev[id];
+        if (!cfgActual || (!cfgActual.situacion && cfgActual.modulos === 0)) {
+          return {
+            ...cfgPrev,
+            [id]: { situacion: "", modulos: 0 }
+          };
+        }
+        return cfgPrev;
+      });
+      // La desplegamos para que pueda configurar situación y módulos
       setDesplegadosMaterias((dPrev) => ({ ...dPrev, [id]: true }));
       return [...prev, id];
     });
   };
 
-  const seleccionarTodosCursos = () => {
-    const todosIds = cursosDisponibles.map((c) => c.id);
-    setCursosSeleccionados(todosIds);
-  };
-
   const desmarcarTodosCursos = () => {
     setCursosSeleccionados([]);
-  };
-
-  const seleccionarSoloEsteCurso = () => {
-    if (catedra.id && catedra.id !== "cat-nuevo") {
-      setCursosSeleccionados([catedra.id]);
-      setDesplegadosMaterias({ [catedra.id]: true });
-    } else {
-      setCursosSeleccionados([]);
-    }
   };
 
   const divisionesAsignadasActuales = useMemo(() => {
@@ -1330,8 +1447,105 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
     return getCatedrasProfesor(catedra.profesor, todasLasCatedras);
   }, [catedra, todasLasCatedras]);
 
+  // Helper para enfocar y desplazar hacia el curso con error si estaba oculto por filtros o fuera de vista
+  const enfocarCursoConError = (cursoId) => {
+    if (!cursoId) return;
+
+    // 1. Quitar filtros de materia y curso, y mostrar todas las materias para garantizar presencia en el DOM
+    setFiltroMateriaModal("todas");
+    setFiltroCursoModal("todos");
+    setMostrarTodasLasMaterias(true);
+
+    // 2. Desplegar la materia objetivo para que el usuario pueda configurar situación y módulos de inmediato
+    setDesplegadosMaterias((prev) => ({
+      ...prev,
+      [cursoId]: true
+    }));
+
+    // 3. Desplazar el scroll del contenedor y el elemento de manera robusta
+    const realizarScroll = (intentos = 0) => {
+      const el = document.getElementById(`asignaciones-materia-card-${cursoId}`);
+      const box = el ? el.closest(".asignaciones-multicursos-box") : document.querySelector(".asignaciones-multicursos-box");
+
+      if (el && box) {
+        // Cálculo preciso de scrollTop relativo al contenedor con scroll
+        const elRect = el.getBoundingClientRect();
+        const boxRect = box.getBoundingClientRect();
+        const desplazamiento = elRect.top - boxRect.top + box.scrollTop - (box.clientHeight / 2) + (elRect.height / 2);
+
+        box.scrollTo({
+          top: Math.max(0, desplazamiento),
+          behavior: "smooth"
+        });
+
+        try {
+          el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        } catch (err) {}
+
+        // Efecto visual de pulso y resalte para llamar la atención
+        el.classList.remove("asignaciones-materia-card--pulse");
+        void el.offsetWidth; // Forzar reflow
+        el.classList.add("asignaciones-materia-card--pulse");
+        setTimeout(() => {
+          el.classList.remove("asignaciones-materia-card--pulse");
+        }, 2200);
+
+        // Si falta situación, enfocar el primer botón de situación de revista
+        const cfg = configMaterias[cursoId];
+        if (!cfg?.situacion) {
+          const btnTitular = el.querySelector(".asignaciones-situacion-btn");
+          if (btnTitular) {
+            try { btnTitular.focus({ preventScroll: true }); } catch (e) {}
+          }
+        } else if (parseInt(cfg?.modulos, 10) <= 0) {
+          const inputMod = el.querySelector(".asignaciones-modulo-input");
+          if (inputMod) {
+            try { inputMod.focus({ preventScroll: true }); } catch (e) {}
+          }
+        }
+      } else if (intentos < 12) {
+        setTimeout(() => realizarScroll(intentos + 1), 50);
+      }
+    };
+
+    // Dar tiempo al ciclo de render de React para actualizar la lista y desfiltrar
+    setTimeout(() => realizarScroll(0), 80);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorValidacion(null);
+
+    // Cursos que quedan seleccionados
+    const idsSeleccionados = cursosSeleccionados.filter((id) => id !== "cat-nuevo");
+
+    // Validar cada curso seleccionado: situación obligatoria y módulos > 0
+    for (const id of idsSeleccionados) {
+      const cat = (todasLasCatedras || []).find((c) => c.id === id) || (catedra?.id === id ? catedra : null);
+      const nombreMateria = cat?.materia ? `(${cat.materia})` : "";
+      const nombreCurso = cat ? `${formatoCursoDivision(cat)} ${nombreMateria}`.trim() : `Curso ${id}`;
+      const cfg = configMaterias[id] || obtenerConfig(id);
+
+      // 1. Validar situación de revista
+      if (!cfg.situacion || cfg.situacion.trim() === "") {
+        const msg = `Atención: Debes seleccionar la Situación de Revista (Titular, Provisorio o Suplente) para ${nombreCurso}.`;
+        setErrorValidacion({ mensaje: msg, cursoId: id });
+        enfocarCursoConError(id);
+        if (onMostrarToast) onMostrarToast(msg, "error");
+        return;
+      }
+
+      // 2. Validar módulos semanales
+      const mod = parseInt(cfg.modulos, 10);
+      if (isNaN(mod) || mod <= 0) {
+        const msg = `Atención: Debes asignar los módulos semanales (mayor a 0) para ${nombreCurso}.`;
+        setErrorValidacion({ mensaje: msg, cursoId: id });
+        enfocarCursoConError(id);
+        if (onMostrarToast) onMostrarToast(msg, "error");
+        return;
+      }
+    }
+
     setGuardando(true);
     try {
       // 1. Cursos que el profesor tenía asignados antes de esta edición
@@ -1638,43 +1852,65 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
             h(
               "div",
               { className: "asignaciones-modal-col-right" },
+              // Alerta de validación en caso de faltar situación o módulos (con ícono SVG, sin emojis)
+              errorValidacion
+                ? h(
+                    "div",
+                    {
+                      className: "asignaciones-modal-alert-banner",
+                      onClick: () => {
+                        const cId = typeof errorValidacion === "object" ? errorValidacion?.cursoId : null;
+                        if (cId) enfocarCursoConError(cId);
+                      },
+                      title: "Haz clic para ir directamente al curso a configurar",
+                      role: "alert"
+                    },
+                    h("span", { className: "asignaciones-modal-alert-icon" }, h(IconAlertTriangle, { width: "18", height: "18" })),
+                    h(
+                      "span",
+                      { className: "asignaciones-modal-alert-text" },
+                      typeof errorValidacion === "object" ? errorValidacion.mensaje : errorValidacion
+                    )
+                  )
+                : null,
               h(
                 "div",
                 { className: "asignaciones-multicursos-header" },
-                h("span", null, `Cursos a asignar (${cursosSeleccionados.length} seleccionado${cursosSeleccionados.length > 1 ? "s" : ""}):`),
+                h("span", { className: "asignaciones-multicursos-title" }, "Cursos a asignar:"),
                 h(
                   "div",
-                  { style: { display: "flex", alignItems: "center", gap: "6px" } },
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "asignaciones-footer-tool-btn",
-                      onClick: seleccionarTodosCursos,
-                      title: "Marcar todas las divisiones disponibles"
-                    },
-                    "Marcar todas"
-                  ),
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "asignaciones-footer-tool-btn",
-                      onClick: desmarcarTodosCursos,
-                      title: "Desmarcar todos los cursos"
-                    },
-                    "Desmarcar todas"
-                  ),
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "asignaciones-footer-tool-btn",
-                      onClick: seleccionarSoloEsteCurso,
-                      title: "Seleccionar solo la división actual"
-                    },
-                    "Solo este curso"
-                  )
+                  { className: "asignaciones-multicursos-actions" },
+                  // Filtro por Materia (solo seleccionar, sin escribir)
+                  h(CustomSelect, {
+                    id: "modal-filtro-materia",
+                    value: filtroMateriaModal,
+                    options: opcionesMateriasModal,
+                    onChange: setFiltroMateriaModal,
+                    ariaLabel: "Filtrar por materia",
+                    className: "asignaciones-modal-filter-select asignaciones-modal-filter-select--materia"
+                  }),
+                  // Filtro por Curso (1° a 7° Año, solo seleccionar)
+                  h(CustomSelect, {
+                    id: "modal-filtro-curso",
+                    value: filtroCursoModal,
+                    options: opcionesCursosModal,
+                    onChange: setFiltroCursoModal,
+                    ariaLabel: "Filtrar por curso",
+                    className: "asignaciones-modal-filter-select asignaciones-modal-filter-select--curso"
+                  }),
+                  // Botón Desmarcar todas
+                  cursosSeleccionados.length > 0
+                    ? h(
+                        "button",
+                        {
+                          type: "button",
+                          className: "asignaciones-btn-desmarcar",
+                          onClick: desmarcarTodosCursos,
+                          title: "Desmarcar todos los cursos seleccionados"
+                        },
+                        "Desmarcar todas"
+                      )
+                    : null
                 )
               ),
               h(
@@ -1687,13 +1923,18 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                     const estaSeleccionado = cursosSeleccionados.includes(c.id);
                     const estaDesplegado = Boolean(desplegadosMaterias[c.id]);
                     const cfg = configMaterias[c.id] || obtenerConfig(c.id);
-                    const modulosActual = parseInt(cfg.modulos, 10) || 1;
+                    const modulosActual = cfg.modulos !== undefined && cfg.modulos !== "" && !isNaN(parseInt(cfg.modulos, 10))
+                      ? parseInt(cfg.modulos, 10)
+                      : 0;
+                    const idConError = typeof errorValidacion === "object" ? errorValidacion?.cursoId : null;
+                    const esInvalido = estaSeleccionado && Boolean(errorValidacion) && (idConError ? idConError === c.id : (!cfg.situacion || modulosActual <= 0));
 
                     return h(
                       "div",
                       {
                         key: c.id,
-                        className: `asignaciones-materia-card ${estaSeleccionado ? "asignaciones-materia-card--selected" : ""}`
+                        id: `asignaciones-materia-card-${c.id}`,
+                        className: `asignaciones-materia-card ${estaSeleccionado ? "asignaciones-materia-card--selected" : ""} ${esInvalido ? "asignaciones-materia-card--invalid" : ""}`
                       },
                       // Cabecera clickeable de la materia (activa/desactiva selección o despliega)
                       h(
@@ -1734,7 +1975,7 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                           estaSeleccionado
                             ? h(
                                 "span",
-                                { className: "asignaciones-badge-modulos-mini" },
+                                { className: `asignaciones-badge-modulos-mini ${modulosActual === 0 ? "asignaciones-badge-modulos-mini--zero" : ""}` },
                                 `${modulosActual} mód.`
                               )
                             : null,
@@ -1797,7 +2038,10 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                                     {
                                       key: sit.id,
                                       className: `asignaciones-situacion-card asignaciones-situacion-card--compact ${cfg.situacion === sit.id ? `asignaciones-situacion-card--active-${sit.id}` : ""}`,
-                                      onClick: () => actualizarConfigMateria(c.id, "situacion", sit.id)
+                                      onClick: () => {
+                                        setErrorValidacion(null);
+                                        actualizarConfigMateria(c.id, "situacion", sit.id);
+                                      }
                                     },
                                     h("span", { className: "asignaciones-situacion-title" }, sit.label),
                                     h("span", { className: "asignaciones-situacion-desc" }, sit.desc)
@@ -1817,7 +2061,9 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                                 h(
                                   "span",
                                   { className: "asignaciones-materia-modulos-detail" },
-                                  `${modulosActual} ${modulosActual === 1 ? "módulo semanal" : "módulos semanales"}`
+                                  modulosActual === 0
+                                    ? "0 módulos semanales"
+                                    : `${modulosActual} ${modulosActual === 1 ? "módulo semanal" : "módulos semanales"}`
                                 )
                               ),
                               h(
@@ -1829,19 +2075,19 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                                     type: "button",
                                     className: "asignaciones-stepper-btn asignaciones-stepper-btn--compact",
                                     onClick: () => modificarModulosMateria(c.id, -1),
-                                    disabled: modulosActual <= 1,
+                                    disabled: modulosActual <= 0,
                                     title: "Restar 1 módulo"
                                   },
                                   "−"
                                 ),
                                 h("input", {
                                   type: "number",
-                                  min: "1",
+                                  min: "0",
                                   max: "10",
                                   step: "1",
                                   className: "asignaciones-stepper-input asignaciones-stepper-input--compact",
-                                  value: cfg.modulos,
-                                  placeholder: "1",
+                                  value: cfg.modulos === "" ? "" : cfg.modulos,
+                                  placeholder: "0",
                                   onChange: (e) => handleInputModulos(c.id, e.target.value),
                                   onBlur: () => handleBlurModulos(c.id)
                                 }),
@@ -1867,7 +2113,10 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                                         key: num,
                                         type: "button",
                                         className: `asignaciones-chip-btn asignaciones-chip-btn--compact ${modulosActual === num ? "asignaciones-chip-btn--active" : ""}`,
-                                        onClick: () => actualizarConfigMateria(c.id, "modulos", num),
+                                        onClick: () => {
+                                          setErrorValidacion(null);
+                                          actualizarConfigMateria(c.id, "modulos", num);
+                                        },
                                         title: `${num} módulo${num > 1 ? "s" : ""} semanales`
                                       },
                                       `${num} mód`
@@ -1904,8 +2153,8 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                 guardando ? "Guardando..." : "Confirmar"
               )
             ),
-            // Ver otras materias del lado derecho en la misma línea
-            todasLasCatedras.length > cursosDisponibles.length || mostrarTodasLasMaterias
+            // Toggle para ver solo cursos asignados o todos los cursos de la institución
+            todasLasCatedras.length > 0
               ? h(
                   "div",
                   { style: { marginLeft: "auto" } },
@@ -1915,11 +2164,15 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                       type: "button",
                       className: `asignaciones-footer-tool-btn ${mostrarTodasLasMaterias ? "asignaciones-footer-tool-btn--accent" : ""}`,
                       onClick: () => setMostrarTodasLasMaterias(!mostrarTodasLasMaterias),
-                      title: mostrarTodasLasMaterias ? "Ver solo cursos asignados" : "Ver otros cursos disponibles"
+                      title: mostrarTodasLasMaterias ? "Ver solo cursos asignados" : "Ver todos los cursos disponibles"
                     },
-                    mostrarTodasLasMaterias
-                      ? "Solo cursos asignados"
-                      : "Ver otros cursos..."
+                    h(
+                      "span",
+                      null,
+                      mostrarTodasLasMaterias
+                        ? `Solo cursos asignados (${cursosSeleccionados.length})`
+                        : `Ver todos los cursos (${todasLasCatedras.length})`
+                    )
                   )
                 )
               : null
@@ -2602,47 +2855,48 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
             ),
 
             // Filtro Años
-            h(
-              "select",
-              {
-                className: "asignaciones-filter-select",
-                value: filtroAnioPreceptores,
-                onChange: (e) => setFiltroAnioPreceptores(e.target.value),
-                "aria-label": "Filtrar por año"
-              },
-              h("option", { value: "todos" }, "Todos los Años"),
-              [1, 2, 3, 4, 5, 6, 7].map((num) =>
-                h("option", { key: num, value: String(num) }, `${num}° Año`)
-              )
-            ),
+            h(CustomSelect, {
+              id: "filtro-anio-preceptores",
+              value: filtroAnioPreceptores,
+              onChange: setFiltroAnioPreceptores,
+              options: [
+                { value: "todos", label: "Todos los Años" },
+                ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({
+                  value: String(num),
+                  label: `${num}° Año`
+                }))
+              ],
+              ariaLabel: "Filtrar por año",
+              className: "asignaciones-filter-custom-select"
+            }),
 
             // Filtro Turnos
-            h(
-              "select",
-              {
-                className: "asignaciones-filter-select",
-                value: filtroTurnoPreceptores,
-                onChange: (e) => setFiltroTurnoPreceptores(e.target.value),
-                "aria-label": "Filtrar por turno"
-              },
-              h("option", { value: "todos" }, "Todos los Turnos"),
-              h("option", { value: "mañana" }, "Mañana"),
-              h("option", { value: "tarde" }, "Tarde")
-            ),
+            h(CustomSelect, {
+              id: "filtro-turno-preceptores",
+              value: filtroTurnoPreceptores,
+              onChange: setFiltroTurnoPreceptores,
+              options: [
+                { value: "todos", label: "Todos los Turnos" },
+                { value: "mañana", label: "Turno Mañana" },
+                { value: "tarde", label: "Turno Tarde" }
+              ],
+              ariaLabel: "Filtrar por turno",
+              className: "asignaciones-filter-custom-select"
+            }),
 
             // Filtro Estados
-            h(
-              "select",
-              {
-                className: "asignaciones-filter-select",
-                value: filtroEstadoPreceptores,
-                onChange: (e) => setFiltroEstadoPreceptores(e.target.value),
-                "aria-label": "Filtrar por estado"
-              },
-              h("option", { value: "todos" }, "Todos los Estados"),
-              h("option", { value: "asignado" }, "Asignados"),
-              h("option", { value: "sin_asignar" }, "Sin Asignar")
-            )
+            h(CustomSelect, {
+              id: "filtro-estado-preceptores",
+              value: filtroEstadoPreceptores,
+              onChange: setFiltroEstadoPreceptores,
+              options: [
+                { value: "todos", label: "Todos los Estados" },
+                { value: "asignado", label: "Asignados" },
+                { value: "sin_asignar", label: "Sin Asignar" }
+              ],
+              ariaLabel: "Filtrar por estado",
+              className: "asignaciones-filter-custom-select"
+            })
           ),
 
           // Renderizado según modo de vista (Tabla / Lista o Tarjetas)
@@ -3109,62 +3363,65 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
             ),
 
             // Filtro Años
-            h(
-              "select",
-              {
-                className: "asignaciones-filter-select",
-                value: filtroAnioProfesores,
-                onChange: (e) => setFiltroAnioProfesores(e.target.value),
-                "aria-label": "Filtrar por año"
-              },
-              h("option", { value: "todos" }, "Todos los Años"),
-              [1, 2, 3, 4, 5, 6, 7].map((num) =>
-                h("option", { key: num, value: String(num) }, `${num}° Año`)
-              )
-            ),
+            h(CustomSelect, {
+              id: "filtro-anio-profesores",
+              value: filtroAnioProfesores,
+              onChange: setFiltroAnioProfesores,
+              options: [
+                { value: "todos", label: "Todos los Años" },
+                ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({
+                  value: String(num),
+                  label: `${num}° Año`
+                }))
+              ],
+              ariaLabel: "Filtrar por año",
+              className: "asignaciones-filter-custom-select"
+            }),
 
             // Filtro Turnos
-            h(
-              "select",
-              {
-                className: "asignaciones-filter-select",
-                value: filtroTurnoProfesores,
-                onChange: (e) => setFiltroTurnoProfesores(e.target.value),
-                "aria-label": "Filtrar por turno"
-              },
-              h("option", { value: "todos" }, "Todos los Turnos"),
-              h("option", { value: "mañana" }, "Mañana"),
-              h("option", { value: "tarde" }, "Tarde")
-            ),
+            h(CustomSelect, {
+              id: "filtro-turno-profesores",
+              value: filtroTurnoProfesores,
+              onChange: setFiltroTurnoProfesores,
+              options: [
+                { value: "todos", label: "Todos los Turnos" },
+                { value: "mañana", label: "Turno Mañana" },
+                { value: "tarde", label: "Turno Tarde" }
+              ],
+              ariaLabel: "Filtrar por turno",
+              className: "asignaciones-filter-custom-select"
+            }),
 
             // Filtro Materias
-            h(
-              "select",
-              {
-                className: "asignaciones-filter-select",
-                value: filtroMateriaProfesores,
-                onChange: (e) => setFiltroMateriaProfesores(e.target.value),
-                "aria-label": "Filtrar por materia"
-              },
-              h("option", { value: "todas" }, "Todas las Materias"),
-              listaMateriasUnicas.map((mat) =>
-                h("option", { key: mat, value: mat }, mat)
-              )
-            ),
+            h(CustomSelect, {
+              id: "filtro-materia-profesores",
+              value: filtroMateriaProfesores,
+              onChange: setFiltroMateriaProfesores,
+              placeholder: "Todas las Materias",
+              options: [
+                { value: "todas", label: "Todas las Materias" },
+                ...listaMateriasUnicas.map((mat) => ({
+                  value: mat,
+                  label: mat
+                }))
+              ],
+              ariaLabel: "Filtrar por materia",
+              className: "asignaciones-filter-custom-select asignaciones-filter-custom-select--materia"
+            }),
 
             // Filtro Estados
-            h(
-              "select",
-              {
-                className: "asignaciones-filter-select",
-                value: filtroEstadoProfesores,
-                onChange: (e) => setFiltroEstadoProfesores(e.target.value),
-                "aria-label": "Filtrar por estado"
-              },
-              h("option", { value: "todos" }, "Todos los Estados"),
-              h("option", { value: "asignado" }, "Asignados"),
-              h("option", { value: "sin_asignar" }, "Sin Asignar")
-            )
+            h(CustomSelect, {
+              id: "filtro-estado-profesores",
+              value: filtroEstadoProfesores,
+              onChange: setFiltroEstadoProfesores,
+              options: [
+                { value: "todos", label: "Todos los Estados" },
+                { value: "asignado", label: "Asignados" },
+                { value: "sin_asignar", label: "Sin Asignar" }
+              ],
+              ariaLabel: "Filtrar por estado",
+              className: "asignaciones-filter-custom-select"
+            })
           ),
 
           // Renderizado según modo de vista (Tabla / Lista o Tarjetas)
@@ -3581,7 +3838,8 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
           personal,
           todasLasCatedras: catedrasProfesores,
           alCerrar: () => setCatedraParaAsignar(null),
-          alGuardar: handleGuardarProfesor
+          alGuardar: handleGuardarProfesor,
+          onMostrarToast
         })
       : null
   );
