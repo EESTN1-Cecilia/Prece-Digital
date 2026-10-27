@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+
 import studentRepository from "../../modules/students/students.repository.mjs";
 import { getStore } from "../memory-store.mjs";
 
@@ -81,4 +83,45 @@ export function seedStudents() {
       studentRepository.deactivate(registro.id, "2025-12-20");
     }
   });
+}
+
+/* Nomina real de la escuela para desarrollo local: data/alumnos.local.json
+   ([{ apellido, nombre, curso, division, genero }]). No se versiona (*.local.json
+   en .gitignore) y solo la carga el servidor, no los tests. Las planillas no
+   traen DNI: cada alumno recibe uno provisorio 99xxxxxx. */
+const NOMINA_LOCAL = new URL("./data/alumnos.local.json", import.meta.url);
+
+export function seedAlumnosLocales() {
+  if (!existsSync(NOMINA_LOCAL)) {
+    return 0;
+  }
+
+  const alumnos = JSON.parse(readFileSync(NOMINA_LOCAL, "utf8"));
+  let cargados = 0;
+
+  alumnos.forEach(({ apellido, nombre, curso, division, genero }, indice) => {
+    const id = `alu-local-${indice + 1}`;
+    const dni = `99${String(indice + 1).padStart(6, "0")}`;
+    if (studentRepository.findById(id) || studentRepository.findByDni(dni)) {
+      return;
+    }
+
+    const { turno, orientacion } = buscarDivision(Number(curso), division) ?? {};
+    studentRepository.create({
+      id,
+      escuelaId: "esc-1",
+      apellido,
+      nombre,
+      dni,
+      genero: genero ?? null,
+      curso: Number(curso),
+      division: String(division),
+      turno,
+      orientacion,
+      condicion: "regular"
+    });
+    cargados++;
+  });
+
+  return cargados;
 }
