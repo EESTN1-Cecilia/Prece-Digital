@@ -426,10 +426,11 @@ function TableCustomDropdown({ value, opciones = [], onChange }) {
 export function AlumnoMatrizModal({
   abierto = true,
   onCerrar,
-  alumnoInicial = null
+  alumnoInicial = null,
+  permitirSeleccionarAlumno = true
 }) {
-  const [alumnosList, setAlumnosList] = useState(SAMPLE_ALUMNOS);
-  const [alumnoSeleccionadoId, setAlumnoSeleccionadoId] = useState("");
+  const [alumnosList, setAlumnosList] = useState(alumnoInicial ? [alumnoInicial, ...SAMPLE_ALUMNOS] : SAMPLE_ALUMNOS);
+  const [alumnoSeleccionadoId, setAlumnoSeleccionadoId] = useState(alumnoInicial?.id || "");
   const [busquedaAlumno, setBusquedaAlumno] = useState("");
   const [orientacion, setOrientacion] = useState("programacion"); // 'programacion' | 'informatica'
   const [modoEdicion, setModoEdicion] = useState(false);
@@ -500,6 +501,12 @@ export function AlumnoMatrizModal({
 
   // Cargar lista de alumnos disponibles
   useEffect(() => {
+    if (!permitirSeleccionarAlumno && alumnoInicial) {
+      setAlumnosList([alumnoInicial]);
+      setAlumnoSeleccionadoId(alumnoInicial.id);
+      return;
+    }
+
     StudentsService.getAlumnos({ limit: 100 })
       .then((res) => {
         let list = res?.data && res.data.length > 0 ? res.data : SAMPLE_ALUMNOS;
@@ -512,11 +519,18 @@ export function AlumnoMatrizModal({
           }
         }
         setAlumnosList(list);
+        if (!alumnoInicial && list.length > 0 && !alumnoSeleccionadoId) {
+          handleSeleccionarAlumno(list[0].id, list[0]);
+        }
       })
       .catch(() => {
-        setAlumnosList(alumnoInicial ? [alumnoInicial, ...SAMPLE_ALUMNOS] : SAMPLE_ALUMNOS);
+        const fallback = alumnoInicial ? [alumnoInicial, ...SAMPLE_ALUMNOS] : SAMPLE_ALUMNOS;
+        setAlumnosList(fallback);
+        if (!alumnoInicial && fallback.length > 0 && !alumnoSeleccionadoId) {
+          handleSeleccionarAlumno(fallback[0].id, fallback[0]);
+        }
       });
-  }, [alumnoInicial]);
+  }, [alumnoInicial, permitirSeleccionarAlumno]);
 
   // Si se provee alumnoInicial al montar o cambiar
   useEffect(() => {
@@ -612,6 +626,9 @@ export function AlumnoMatrizModal({
 
   // Selección automática de alumno y orientación
   const handleSeleccionarAlumno = (alumnoId, alumnoObj = null) => {
+    if (!permitirSeleccionarAlumno && alumnoSeleccionadoId && String(alumnoId) !== String(alumnoSeleccionadoId)) {
+      return;
+    }
     setAlumnoSeleccionadoId(alumnoId);
     const alumno = alumnoObj || alumnosList.find((a) => String(a.id) === String(alumnoId)) || SAMPLE_ALUMNOS.find((a) => String(a.id) === String(alumnoId));
     if (alumno) {
@@ -718,6 +735,26 @@ export function AlumnoMatrizModal({
     }));
   }, [alumnosFiltrados]);
 
+  const textoAlumnoFijo = useMemo(() => {
+    if (alumnoInicial) {
+      const ap = (alumnoInicial.apellido || alumnoInicial.nombreCompleto?.split(",")?.[0] || "").trim();
+      const nom = (alumnoInicial.nombre || alumnoInicial.nombreCompleto?.split(",")?.[1] || "").trim();
+      const curso = alumnoInicial.curso || "";
+      const div = alumnoInicial.division ? ` ${alumnoInicial.division}°` : "";
+      const or = alumnoInicial.orientacion ? ` - [${alumnoInicial.orientacion}]` : "";
+      const dni = typeof alumnoInicial.dni === "object" ? (alumnoInicial.dni?.numero || alumnoInicial.dni?.dni || "") : (alumnoInicial.dni || "");
+      const dniText = dni ? ` - DNI: ${dni}` : "";
+      const cursoText = curso || div ? ` (${curso}${div})` : "";
+      return `${ap}${ap && nom ? ", " : ""}${nom}${cursoText}${or}${dniText}`.trim();
+    }
+    const opcionActiva = opcionesAlumnos.find((o) => String(o.value) === String(alumnoSeleccionadoId));
+    if (opcionActiva) return opcionActiva.label;
+    if (datosEstudiante.apellido && datosEstudiante.nombre) {
+      return `${datosEstudiante.apellido}, ${datosEstudiante.nombre} - DNI: ${datosEstudiante.dni}`;
+    }
+    return "Alumno Seleccionado";
+  }, [alumnoInicial, opcionesAlumnos, alumnoSeleccionadoId, datosEstudiante]);
+
   const opcionesAnios = [
     { value: "todos", label: "Todos (1° a 7°)" },
     { value: "1", label: "1° Año" },
@@ -780,17 +817,33 @@ export function AlumnoMatrizModal({
           "div",
           { className: "matriz-toolbar__controls" },
 
-          // Desplegable de Alumno con buscador en tiempo real (Pill style de Imagen 2 en oscuro)
-          h(DarkCustomDropdown, {
-            label: "Alumno",
-            value: alumnoSeleccionadoId,
-            opciones: opcionesAlumnos,
-            onSelect: handleSeleccionarAlumno,
-            placeholder: "-- Seleccionar Alumno --",
-            isSearchable: true,
-            searchValue: busquedaAlumno,
-            onSearchChange: setBusquedaAlumno
-          }),
+          // Selector de Alumno (Píldora fija cuando se accede desde el perfil del alumno, o buscador interactivo)
+          !permitirSeleccionarAlumno
+            ? h(
+                "div",
+                {
+                  className: "custom-dark-dropdown custom-dark-dropdown--static"
+                },
+                h(
+                  "div",
+                  {
+                    className: "custom-dark-dropdown__btn custom-dark-dropdown__btn--static",
+                    title: `Libro Matriz de ${textoAlumnoFijo} (Perfil del Alumno)`
+                  },
+                  h("span", { className: "custom-dark-dropdown__label-title" }, "Alumno:"),
+                  h("span", { className: "custom-dark-dropdown__btn-text", style: { maxWidth: "340px" } }, textoAlumnoFijo)
+                )
+              )
+            : h(DarkCustomDropdown, {
+                label: "Alumno",
+                value: alumnoSeleccionadoId,
+                opciones: opcionesAlumnos,
+                onSelect: handleSeleccionarAlumno,
+                placeholder: "-- Seleccionar Alumno --",
+                isSearchable: true,
+                searchValue: busquedaAlumno,
+                onSearchChange: setBusquedaAlumno
+              }),
 
           // Desplegable de Vista de Año (Pill style de Imagen 2 en oscuro)
           h(DarkCustomDropdown, {

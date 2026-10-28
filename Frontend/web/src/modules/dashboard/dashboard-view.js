@@ -1098,6 +1098,7 @@ export default function DashboardView() {
         )
       : null,
 
+
     // =========================================================================
     // PESTAÑA 3: NÓMINA DE ALUMNOS (ESTILO FOTO 2)
     // =========================================================================
@@ -1392,7 +1393,8 @@ export default function DashboardView() {
     matrizModalAbierto
       ? h(AlumnoMatrizModal, {
           abierto: matrizModalAbierto,
-          onCerrar: () => setMatrizModalAbierto(false)
+          onCerrar: () => setMatrizModalAbierto(false),
+          permitirSeleccionarAlumno: true
         })
       : null
   );

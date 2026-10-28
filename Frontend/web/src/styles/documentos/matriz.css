@@ -170,6 +170,21 @@
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
 }
 
+.custom-dark-dropdown--static {
+  cursor: default;
+}
+
+.custom-dark-dropdown__btn--static {
+  cursor: default !important;
+  user-select: text;
+}
+
+.custom-dark-dropdown__btn--static:hover {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
 .custom-dark-dropdown__label-title {
   color: #94a3b8;
   font-weight: 600;

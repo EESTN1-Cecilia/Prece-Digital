@@ -198,7 +198,7 @@ export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) 
             h(
               "div",
               { className: "doc-pase-sello-wrap" },
-              h(SelloInstitucionalCircular),
+              h("div", { className: "doc-pase-dotted-line", style: { width: "160px" } }),
               h("span", { className: "doc-pase-sello-caption" }, "SELLO")
             ),
             h(
