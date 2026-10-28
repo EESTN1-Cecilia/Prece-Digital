@@ -138,12 +138,29 @@ const studentRepository = {
   },
 
   /* Desactivacion = baja logica: el registro y su historial se conservan. */
-  deactivate(id, fechaBaja) {
+  deactivate(id, fechaBaja, motivoBaja) {
     this.init();
     const registro = getStore().students.get(id);
     if (!registro) return null;
     registro.isActive = false;
     registro.fechaBaja = fechaBaja ?? new Date().toISOString().slice(0, 10);
+    if (motivoBaja !== undefined) {
+      registro.motivoBaja = motivoBaja;
+    }
+    registro.actualizadoEn = new Date().toISOString();
+    return clonar(registro);
+  },
+
+  /* Reactivacion: vuelve a estar activo y limpia datos de baja */
+  activate(id, fechaAlta, motivoAlta) {
+    this.init();
+    const registro = getStore().students.get(id);
+    if (!registro) return null;
+    registro.isActive = true;
+    registro.fechaBaja = null;
+    registro.motivoBaja = null;
+    if (fechaAlta) registro.fechaAlta = fechaAlta;
+    if (motivoAlta) registro.motivoAlta = motivoAlta;
     registro.actualizadoEn = new Date().toISOString();
     return clonar(registro);
   },

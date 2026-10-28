@@ -113,8 +113,11 @@ function vista(registro) {
     tallerId: registro.tallerId ?? null,
     grupoTaller: registro.grupoTaller ?? null,
     estado: registro.isActive ? "activo" : "inactivo",
+    isActive: Boolean(registro.isActive),
     fechaAlta: registro.fechaAlta,
     fechaBaja: registro.fechaBaja,
+    motivoBaja: registro.motivoBaja ?? null,
+    motivoAlta: registro.motivoAlta ?? null,
     creadoEn: registro.creadoEn,
     actualizadoEn: registro.actualizadoEn
   };
@@ -587,6 +590,8 @@ const studentService = {
       cambios.orientacion = cursoDivision.orientacion;
     }
 
+
+
     const registro = studentRepository.update(id, cambios);
 
     studentRepository.registrarAuditoria({
@@ -601,20 +606,53 @@ const studentService = {
   },
 
   /* Desactivacion: baja logica. El alumno sigue existiendo con su historial. */
-  deactivate(id, user) {
+  deactivate(id, user, datos = {}) {
     const registro = studentRepository.findById(id);
     if (!registro) {
       throw noEncontrado("El alumno solicitado");
     }
 
+    const fechaBaja = datos.fechaBaja ?? datos.fecha ?? new Date().toISOString().slice(0, 10);
+    const motivoBaja = datos.motivoBaja ?? datos.motivo ?? null;
+
     if (!registro.isActive) {
-      return { statusCode: 200, body: { data: vista(registro) } };
+      if (fechaBaja || motivoBaja) {
+        studentRepository.update(id, { fechaBaja, motivoBaja });
+      }
+      return { statusCode: 200, body: { data: vista(studentRepository.findById(id)) } };
     }
 
-    const actualizado = studentRepository.deactivate(id);
+    const actualizado = studentRepository.deactivate(id, fechaBaja, motivoBaja);
 
     studentRepository.registrarAuditoria({
       accion: "deactivate",
+      usuarioId: user.id,
+      registroId: id,
+      valorAnterior: vista(registro),
+      valorNuevo: vista(actualizado)
+    });
+
+    return { statusCode: 200, body: { data: vista(actualizado) } };
+  },
+
+  /* Reactivacion: vuelve a estar activo y limpia datos de baja */
+  activate(id, user, datos = {}) {
+    const registro = studentRepository.findById(id);
+    if (!registro) {
+      throw noEncontrado("El alumno solicitado");
+    }
+
+    const fechaAlta = datos.fechaAlta ?? datos.fecha ?? new Date().toISOString().slice(0, 10);
+    const motivoAlta = datos.motivoAlta ?? datos.motivo ?? null;
+
+    if (registro.isActive) {
+      return { statusCode: 200, body: { data: vista(registro) } };
+    }
+
+    const actualizado = studentRepository.activate(id, fechaAlta, motivoAlta);
+
+    studentRepository.registrarAuditoria({
+      accion: "activate",
       usuarioId: user.id,
       registroId: id,
       valorAnterior: vista(registro),
