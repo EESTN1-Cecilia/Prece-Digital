@@ -281,6 +281,11 @@ const legajoService = {
           turnoTaller: turnoTaller(alumno.turno),
           condicion: capitalizar(alumno.condicion),
           estado: alumno.isActive ? "Activo" : "Inactivo",
+          isActive: Boolean(alumno.isActive),
+          fechaBaja: alumno.fechaBaja ?? null,
+          motivoBaja: alumno.motivoBaja ?? null,
+          fechaAlta: alumno.fechaAlta ?? null,
+          motivoAlta: alumno.motivoAlta ?? null,
           anioLectivo: anioLectivo(),
           orientacion: alumno.orientacion ?? "Ciclo Básico"
         },

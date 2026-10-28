@@ -331,7 +331,71 @@ export const StudentsService = {
 
   async getAlumnoSummary(studentId) {
     const data = await pedir(`/api/v1/students/${encodeURIComponent(studentId)}/summary`, { recurso: "el alumno solicitado" });
+    if (typeof localStorage !== "undefined" && data?.informacionEscolar) {
+      try {
+        const stored = localStorage.getItem(`prece_student_${studentId}_estado_override`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.estado) {
+            data.informacionEscolar.estado = parsed.estado;
+            data.informacionEscolar.isActive = parsed.isActive;
+            if (parsed.fecha) data.informacionEscolar.fechaBaja = parsed.fecha;
+            if (parsed.motivo) data.informacionEscolar.motivoBaja = parsed.motivo;
+          }
+        }
+      } catch {
+        // Ignorar fallo de lectura local
+      }
+    }
     return { success: true, data };
+  },
+
+  /* Cambio de estado del alumno (Activo <-> Inactivo con fecha y motivo de egreso o reactivación) */
+  async cambiarEstadoAlumno(studentId, { estado, fecha, motivo }) {
+    const ruta = `/api/v1/students/${encodeURIComponent(studentId)}`;
+    const esInactivo = String(estado).toLowerCase() === "inactivo" || estado === false;
+    const nuevoEstado = esInactivo ? "Inactivo" : "Activo";
+
+    let res;
+    if (esInactivo) {
+      res = await pedir(ruta, {
+        method: "DELETE",
+        body: JSON.stringify({ fecha, motivo, fechaBaja: fecha, motivoBaja: motivo })
+      });
+    } else {
+      res = await pedir(`${ruta}/activate`, {
+        method: "POST",
+        body: JSON.stringify({ fecha, motivo, fechaAlta: fecha, motivoAlta: motivo })
+      });
+    }
+
+    if (typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem(`prece_student_${studentId}_estado_override`, JSON.stringify({
+          estado: nuevoEstado,
+          isActive: !esInactivo,
+          fecha,
+          motivo,
+          actualizadoEn: new Date().toISOString()
+        }));
+      } catch {
+        // Ignorar
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("prece:student-status-changed", {
+        detail: { studentId, estado: nuevoEstado, fecha, motivo }
+      }));
+    }
+
+    return {
+      success: true,
+      data: res,
+      message: esInactivo
+        ? "El alumno fue pasado a Inactivo correctamente con registro de motivo y fecha de egreso."
+        : "El alumno fue reactivado exitosamente."
+    };
   },
 
   async getAlumnoProfile(studentId) {
