@@ -125,6 +125,15 @@ test("tablero de secretaria con datos reales y alertas descartables", async () =
   assert.equal(totalAlumnosEnCursos, 31);
   assert.ok(cuerpo.data.alertas.length > 0);
 
+  /* la matricula (activos) es la misma cifra en el resumen, los cursos, los turnos y la asistencia */
+  const resumen = cuerpo.data.resumenAlumnos;
+  assert.equal(resumen.matricula, totalAlumnosEnCursos);
+  assert.equal(resumen.porTurno.reduce((sum, t) => sum + t.cantidad, 0), resumen.matricula);
+  assert.equal(resumen.divisiones, 31);
+  assert.equal(resumen.altasDelMes, 0); // el seed es matricula de inicio de ciclo, no altas del mes
+  assert.equal(cuerpo.data.asistenciaHoy.matricula, resumen.matricula);
+  assert.equal(cuerpo.data.asistenciaHoy.presentes + cuerpo.data.asistenciaHoy.ausentes, resumen.matricula);
+
   const alerta = cuerpo.data.alertas[0];
   const descarte = await pedir("POST", `/api/v1/alerts/${alerta.id}/dismiss`, "secretario");
   assert.equal(descarte.status, 200);

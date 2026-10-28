@@ -165,10 +165,11 @@ export default function SecretariaDashboardView() {
     return coincideTurno && coincideOrientacion;
   });
 
+  // Matrícula = alumnos activos: la misma cifra que muestran Dirección y los cursos
   const totalAlumnos = data?.resumenAlumnos?.total ?? 0;
-  const activosAlumnos = data?.resumenAlumnos?.activos ?? 0;
+  const matricula = data?.resumenAlumnos?.matricula ?? data?.resumenAlumnos?.activos ?? 0;
   const inactivosAlumnos = data?.resumenAlumnos?.inactivos ?? 0;
-  const nuevasInscripciones = data?.resumenAlumnos?.nuevasInscripciones ?? totalAlumnos;
+  const altasDelMes = data?.resumenAlumnos?.altasDelMes ?? 0;
 
   return h(
     "section",
@@ -282,13 +283,13 @@ export default function SecretariaDashboardView() {
                 h(
                   "div",
                   { className: "kpi-metric-card__content" },
-                  h("span", { className: "kpi-metric-card__label" }, "Total de Alumnos"),
-                  h("div", { className: "kpi-metric-card__value" }, totalAlumnos),
+                  h("span", { className: "kpi-metric-card__label" }, "Matrícula"),
+                  h("div", { className: "kpi-metric-card__value" }, matricula),
                   h(
                     "div",
                     { className: "kpi-metric-card__subrow" },
                     h("span", { className: "kpi-metric-card__period" }, `Ciclo ${data?.institucion?.cicloLectivo || 2026}`),
-                    h("span", { className: "kpi-metric-card__trend" }, `↗ +${totalAlumnos} este mes`)
+                    h("span", { className: "kpi-metric-card__trend" }, `↗ +${altasDelMes} este mes`)
                   )
                 )
               ),
@@ -305,12 +306,12 @@ export default function SecretariaDashboardView() {
                 h(
                   "div",
                   { className: "kpi-metric-card__content" },
-                  h("span", { className: "kpi-metric-card__label" }, "Alumnos Activos"),
-                  h("div", { className: "kpi-metric-card__value" }, activosAlumnos),
+                  h("span", { className: "kpi-metric-card__label" }, "Padrón Total"),
+                  h("div", { className: "kpi-metric-card__value" }, totalAlumnos),
                   h(
                     "span",
                     { className: "kpi-metric-card__subtext" },
-                    `${totalAlumnos ? ((activosAlumnos / totalAlumnos) * 100).toFixed(1).replace(".", ",") : "0"}% del padrón`
+                    `${totalAlumnos ? ((matricula / totalAlumnos) * 100).toFixed(1).replace(".", ",") : "0"}% con matrícula activa`
                   )
                 )
               ),
@@ -328,8 +329,8 @@ export default function SecretariaDashboardView() {
                   "div",
                   { className: "kpi-metric-card__content" },
                   h("span", { className: "kpi-metric-card__label" }, "Nuevas Inscripciones"),
-                  h("div", { className: "kpi-metric-card__value" }, nuevasInscripciones),
-                  h("span", { className: "kpi-metric-card__subtext" }, "En proceso")
+                  h("div", { className: "kpi-metric-card__value" }, altasDelMes),
+                  h("span", { className: "kpi-metric-card__subtext" }, "Altas de este mes")
                 )
               ),
 
@@ -363,7 +364,7 @@ export default function SecretariaDashboardView() {
                 `${data.resumenAlumnos?.porTurno?.length ?? 2} turnos`
               ),
               (data.resumenAlumnos?.porTurno ?? []).map((t) => {
-                const pct = t.porcentaje || (totalAlumnos > 0 ? (t.cantidad / totalAlumnos) * 100 : 50);
+                const pct = t.porcentaje || (matricula > 0 ? (t.cantidad / matricula) * 100 : 50);
                 return h(
                   "div",
                   { key: t.turno, className: "turno-progress-item" },

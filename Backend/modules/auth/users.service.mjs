@@ -12,6 +12,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const DNI_RE = /^\d{7,9}$/;
 const TELEFONO_RE = /^[\d\s+()-]{6,30}$/;
 const ESTADOS = ["activo", "inactivo"];
+const SITUACIONES_REVISTA = ["titular", "provisional", "suplente"];
+const MODULOS_VALIDOS = [2, 3, 4, 6];
+const HORA_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function texto(valor, maximo = 80) {
   const limpio = String(valor ?? "").trim();
@@ -91,6 +94,49 @@ function datosPersonales(cuerpo, errores, { alta }) {
   return salida;
 }
 
+/* Datos del cargo de un docente: materia, situacion de revista, modulos y
+   horario. Es opcional en el alta, pero si llega se valida completo y solo
+   se guarda cuando la cuenta tiene el rol docente. */
+function datosCargoDocente(cargo, roles, errores) {
+  if (cargo === undefined || cargo === null || !roles?.includes("docente")) {
+    return null;
+  }
+
+  const salida = {
+    materia: texto(cargo.materia),
+    situacionRevista: cargo.situacionRevista,
+    docenteSuplido: null,
+    modulos: Number(cargo.modulos),
+    horaDesde: String(cargo.horaDesde ?? ""),
+    horaHasta: String(cargo.horaHasta ?? "")
+  };
+
+  if (!salida.materia) {
+    errores.push({ field: "cargoDocente.materia", message: "La materia es obligatoria." });
+  }
+
+  if (!SITUACIONES_REVISTA.includes(salida.situacionRevista)) {
+    errores.push({ field: "cargoDocente.situacionRevista", message: "La situacion de revista debe ser titular, provisional o suplente." });
+  } else if (salida.situacionRevista === "suplente") {
+    salida.docenteSuplido = texto(cargo.docenteSuplido, 120);
+    if (!salida.docenteSuplido) {
+      errores.push({ field: "cargoDocente.docenteSuplido", message: "Indica el apellido y nombre del docente al que suple." });
+    }
+  }
+
+  if (!MODULOS_VALIDOS.includes(salida.modulos)) {
+    errores.push({ field: "cargoDocente.modulos", message: "La cantidad de modulos debe ser 2, 3, 4 o 6." });
+  }
+
+  if (!HORA_RE.test(salida.horaDesde) || !HORA_RE.test(salida.horaHasta)) {
+    errores.push({ field: "cargoDocente.horario", message: "El horario debe tener formato HH:MM." });
+  } else if (salida.horaHasta <= salida.horaDesde) {
+    errores.push({ field: "cargoDocente.horario", message: "La hora de fin debe ser posterior a la de inicio." });
+  }
+
+  return salida;
+}
+
 function nombreVisible(usuario) {
   return [usuario.nombre, usuario.apellido].filter(Boolean).join(" ") || usuario.email;
 }
@@ -123,6 +169,7 @@ export const usersService = {
     const errores = [];
     const datos = datosPersonales(cuerpo, errores, { alta: true });
     const roles = validarRoles(cuerpo.roles, errores, { requerido: true });
+    const cargoDocente = datosCargoDocente(cuerpo.cargoDocente, roles, errores);
 
     if (errores.length) {
       throw errorDeValidacion(errores);
@@ -139,6 +186,7 @@ export const usersService = {
 
     const usuario = userRepository.create({
       ...datos,
+      cargoDocente,
       displayName: nombreVisible(datos),
       passwordHash: await bcrypt.hash(passwordTemporal, 10),
       assignments: roles.map((role) => (schoolId ? { role, schoolId } : { role }))

@@ -118,6 +118,7 @@ export function aVistaAlumno(item) {
     apellido: item.apellido,
     nombre: item.nombre,
     nombreCompleto: item.nombreCompleto,
+    genero: item.genero ?? null,
     dni: formatDni(item.dni),
     curso: item.curso ? `${item.curso}°` : "-",
     division: item.division ?? "-",

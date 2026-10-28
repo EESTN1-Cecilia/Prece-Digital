@@ -721,7 +721,7 @@ export default function CursosListView() {
                       "div",
                       { className: "course-directory-card__matricula" },
                       h(IconMatricula, { className: "card-matricula-icon" }),
-                      h("strong", null, cursoItem.cantidad ?? 0),
+                      h("strong", null, cursoItem.activos ?? cursoItem.cantidad ?? 0),
                       h("span", null, "alumnos")
                     ),
                     h(

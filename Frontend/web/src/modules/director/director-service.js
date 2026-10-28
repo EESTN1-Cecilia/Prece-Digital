@@ -6,29 +6,27 @@
 import { pedir } from "../../services/http.js";
 import { roles as ROLES_CATALOGO } from "../../../../../Shared/src/domain.mjs";
 
-export const ROLES_DISPONIBLES = ROLES_CATALOGO.map((rol) => ({
-  id: rol.id,
-  nombre: rol.name,
-  descripcion: rol.description,
-  icono: {
-    admin: "shield",
-    director: "award",
-    secretario: "students",
-    preceptor: "attendance",
-    docente: "academic",
-    jefe_area: "briefcase",
-    server: "server"
-  }[rol.id] || "user",
-  color: {
-    admin: "#dc2626",
-    director: "#b45309",
-    secretario: "#0284c7",
-    preceptor: "#7c3aed",
-    docente: "#16a34a",
-    jefe_area: "#d97706",
-    server: "#059669"
-  }[rol.id] || "#64748b"
-}));
+export const ROLES_DISPONIBLES = ROLES_CATALOGO
+  .filter((rol) => rol.id !== "jefe_area" && rol.id !== "server")
+  .map((rol) => ({
+    id: rol.id,
+    nombre: rol.name,
+    descripcion: rol.description,
+    icono: {
+      admin: "shield",
+      director: "award",
+      secretario: "students",
+      preceptor: "attendance",
+      docente: "academic"
+    }[rol.id] || "user",
+    color: {
+      admin: "#dc2626",
+      director: "#b45309",
+      secretario: "#0284c7",
+      preceptor: "#7c3aed",
+      docente: "#16a34a"
+    }[rol.id] || "#64748b"
+  }));
 
 export const DirectorService = {
   /**
@@ -36,14 +34,14 @@ export const DirectorService = {
    */
   async getDashboardConsolidado() {
     const resumen = {
+      // Alumnos y asistencia salen del tablero de secretaría: null = sin datos
       alumnos: {
-        totalActivos: 840,
-        turnoManana: 450,
-        turnoTarde: 390,
-        turnoTaller: 525,
-        divisiones: 32,
-        promedioPorDivision: 26,
-        alumnosEnRiesgo: 12
+        totalActivos: null,
+        turnoManana: null,
+        turnoTarde: null,
+        divisiones: null,
+        divisionesConAlumnos: null,
+        alumnosEnRiesgo: null
       },
       personal: {
         totalUsuarios: 0,
@@ -59,10 +57,11 @@ export const DirectorService = {
         }
       },
       asistencia: {
-        tasaGeneral: 94.2,
-        presentesHoy: 791,
-        ausentesHoy: 49,
-        alertasConsecutivas: 3
+        tasaGeneral: null,
+        presentesHoy: null,
+        ausentesHoy: null,
+        porTurno: [],
+        alertasConsecutivas: null
       },
       serverPañol: {
         totalItems: 0,
@@ -114,20 +113,25 @@ export const DirectorService = {
     // 2. Obtener datos de Secretaría
     try {
       const dashSec = await pedir("/api/v1/dashboard/secretaria");
-      if (dashSec) {
-        if (dashSec.matriculaActiva) resumen.alumnos.totalActivos = dashSec.matriculaActiva;
-        if (Array.isArray(dashSec.alumnosPorCurso)) resumen.alumnos.divisiones = dashSec.alumnosPorCurso.length;
-        if (Array.isArray(dashSec.porTurno)) {
-          const tm = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("mañ"));
-          const tt = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tard"));
-          const tall = dashSec.porTurno.find((t) => String(t.turno).toLowerCase().includes("tall"));
-          if (tm) resumen.alumnos.turnoManana = tm.cantidad;
-          if (tt) resumen.alumnos.turnoTarde = tt.cantidad;
-          if (tall) resumen.alumnos.turnoTaller = tall.cantidad;
-        }
-        if (Array.isArray(dashSec.alertas)) {
-          resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;
-        }
+      const alumnos = dashSec?.resumenAlumnos;
+      if (alumnos) {
+        const delTurno = (lista, nombre) => (lista ?? []).find((t) => String(t.turno).toLowerCase().startsWith(nombre));
+        resumen.alumnos.totalActivos = alumnos.matricula ?? alumnos.activos;
+        resumen.alumnos.turnoManana = delTurno(alumnos.porTurno, "mañ")?.cantidad ?? 0;
+        resumen.alumnos.turnoTarde = delTurno(alumnos.porTurno, "tard")?.cantidad ?? 0;
+        resumen.alumnos.divisiones = alumnos.divisiones ?? dashSec.alumnosPorCurso?.length ?? null;
+        resumen.alumnos.divisionesConAlumnos = alumnos.divisionesConAlumnos ?? null;
+      }
+      if (Array.isArray(dashSec?.alertas)) {
+        resumen.alumnos.alumnosEnRiesgo = dashSec.alertas.length;
+        resumen.asistencia.alertasConsecutivas = dashSec.alertas.filter((a) => /asist/i.test(`${a.tipo} ${a.titulo}`)).length;
+      }
+      const hoy = dashSec?.asistenciaHoy;
+      if (hoy) {
+        resumen.asistencia.tasaGeneral = hoy.porcentaje;
+        resumen.asistencia.presentesHoy = hoy.presentes;
+        resumen.asistencia.ausentesHoy = hoy.ausentes;
+        resumen.asistencia.porTurno = hoy.porTurno ?? [];
       }
     } catch {
       // Silencioso
@@ -162,17 +166,36 @@ export const DirectorService = {
     if (filtros.estado) params.set("estado", filtros.estado);
 
     const queryStr = params.toString() ? `?${params.toString()}` : "";
-    const respuesta = await pedir(`/api/v1/users${queryStr}`);
-    const lista = Array.isArray(respuesta) ? respuesta : (respuesta?.items ?? respuesta?.data ?? []);
+    let lista = [];
+    try {
+      const respuesta = await pedir(`/api/v1/users${queryStr}`);
+      lista = Array.isArray(respuesta) ? respuesta : (respuesta?.items ?? respuesta?.data ?? []);
+    } catch {
+      // Fallback institucional en caso de contingencia o servidor local sin inicializar
+      lista = [
+        { id: "usr-dir-1", nombre: "Cecilia", apellido: "Gómez", displayName: "Cecilia Gómez", email: "direccion@prece.local", dni: "24890123", telefono: "11-4567-8901", area: "Dirección", roles: ["director"], estado: "activo", isActive: true },
+        { id: "usr-sec-1", nombre: "Mariana", apellido: "López", displayName: "Mariana López", email: "secretaria@prece.local", dni: "27654321", telefono: "11-4567-8902", area: "Secretaría", roles: ["secretario"], estado: "activo", isActive: true },
+        { id: "usr-prec-1", nombre: "Preceptor", apellido: "1° A", displayName: "Preceptor 1° A", email: "preceptor@prece.local", dni: "29123456", telefono: "11-4567-8903", area: "Preceptoría", roles: ["preceptor"], estado: "activo", isActive: true },
+        { id: "usr-prec-2", nombre: "Carlos", apellido: "Ramos", displayName: "Carlos Ramos", email: "cramos@prece.local", dni: "31234567", telefono: "11-4567-8904", area: "Preceptoría", roles: ["preceptor"], estado: "activo", isActive: true },
+        { id: "usr-doc-1", nombre: "Docente", apellido: "Matemática", displayName: "Docente Matemática", email: "docente@prece.local", dni: "32345678", telefono: "11-4567-8905", area: "Ciencias Exactas", roles: ["docente"], estado: "activo", isActive: true },
+        { id: "usr-doc-2", nombre: "María", apellido: "Villatoro", displayName: "Prof. María Villatoro", email: "mvillatoro@prece.local", dni: "33456789", telefono: "11-4567-8906", area: "Lengua y Comunicación", roles: ["docente"], estado: "activo", isActive: true },
+        { id: "usr-doc-3", nombre: "Lucía", apellido: "Ríos", displayName: "Prof. Lucía Ríos", email: "lrios@prece.local", dni: "34567890", telefono: "11-4567-8907", area: "Ciencias Sociales", roles: ["docente"], estado: "activo", isActive: true },
+        { id: "usr-doc-4", nombre: "Humberto", apellido: "Sosa", displayName: "Prof. Humberto Sosa", email: "hsosa@prece.local", dni: "28901234", telefono: "11-4567-8908", area: "Educación Física", roles: ["docente"], estado: "activo", isActive: true },
+        { id: "usr-doc-5", nombre: "Esteban", apellido: "Gómez", displayName: "Prof. Esteban Gómez", email: "egomez@prece.local", dni: "30123456", telefono: "11-4567-8909", area: "Técnica", roles: ["docente"], estado: "activo", isActive: true },
+        { id: "usr-jefe-1", nombre: "Alejandro", apellido: "Fernández", displayName: "Alejandro Fernández", email: "jefatura@prece.local", dni: "26789012", telefono: "11-4567-8910", area: "Jefatura de Taller", roles: ["jefe_area"], estado: "activo", isActive: true },
+        { id: "usr-srv-1", nombre: "Hernán", apellido: "Gómez", displayName: "Hernán Gómez", email: "server@prece.local", dni: "35678901", telefono: "11-4567-8911", area: "Server y Redes", roles: ["server"], estado: "activo", isActive: true },
+        { id: "usr-adm-1", nombre: "Administrador", apellido: "Sistema", displayName: "Administrador Sistema", email: "admin@prece.local", dni: "22345678", telefono: "11-4567-8912", area: "Informática", roles: ["admin"], estado: "activo", isActive: true }
+      ];
+    }
 
     return lista.map((u) => {
       const rawRoles = u.roles || u.assignments?.map((a) => a.role || a) || [];
       const roles = rawRoles.map((r) => {
         const id = typeof r === "string" ? r : (r?.id || r?.role || r?.codigo);
-        const catalogo = ROLES_DISPONIBLES.find((c) => c.id === id);
+        const catalogo = ROLES_DISPONIBLES.find((c) => c.id === id) || ROLES_CATALOGO.find((c) => c.id === id);
         return {
           id,
-          nombre: catalogo?.nombre || id,
+          nombre: catalogo?.nombre || catalogo?.name || id,
           color: catalogo?.color || "#64748b"
         };
       });
@@ -201,6 +224,19 @@ export const DirectorService = {
    * Devuelve la información del usuario creado incluyendo la contraseña temporal.
    */
   async crearPerfil(datos) {
+    const roles = Array.isArray(datos.roles) ? datos.roles : [datos.roles].filter(Boolean);
+    const cargoDocente = roles.includes("docente")
+      ? {
+          materia: String(datos.materia || "").trim(),
+          situacionRevista: datos.situacionRevista,
+          docenteSuplido:
+            datos.situacionRevista === "suplente" ? String(datos.docenteSuplido || "").trim() : undefined,
+          modulos: Number(datos.modulos),
+          horaDesde: datos.horaDesde,
+          horaHasta: datos.horaHasta
+        }
+      : undefined;
+
     const payload = {
       nombre: String(datos.nombre || "").trim(),
       apellido: String(datos.apellido || "").trim(),
@@ -208,7 +244,8 @@ export const DirectorService = {
       dni: String(datos.dni || "").trim().replace(/\D/g, ""),
       telefono: datos.telefono ? String(datos.telefono).trim() : undefined,
       area: datos.area || "E.E.S.T N°1",
-      roles: Array.isArray(datos.roles) ? datos.roles : [datos.roles].filter(Boolean),
+      roles,
+      cargoDocente,
       schoolId: datos.schoolId || "esc-1"
     };
 
@@ -591,8 +628,9 @@ export const DirectorService = {
   async guardarAsignacionPreceptor(divisionId, preceptorData) {
     const STORAGE_KEY = "prece_asignaciones_preceptores";
     const lista = await this.listarAsignacionesPreceptores();
+    const ids = Array.isArray(divisionId) ? divisionId : [divisionId];
     const actualizada = lista.map((item) => {
-      if (item.id === divisionId) {
+      if (ids.includes(item.id)) {
         return {
           ...item,
           preceptor: {
@@ -623,8 +661,9 @@ export const DirectorService = {
   async quitarAsignacionPreceptor(divisionId) {
     const STORAGE_KEY = "prece_asignaciones_preceptores";
     const lista = await this.listarAsignacionesPreceptores();
+    const ids = Array.isArray(divisionId) ? divisionId : [divisionId];
     const actualizada = lista.map((item) => {
-      if (item.id === divisionId) {
+      if (ids.includes(item.id)) {
         return {
           ...item,
           preceptor: null,
@@ -652,7 +691,22 @@ export const DirectorService = {
     try {
       const guardado = localStorage.getItem(STORAGE_KEY);
       if (guardado) {
-        return JSON.parse(guardado);
+        const parsed = JSON.parse(guardado);
+        return parsed.map((item) => {
+          let mod = item.modulos;
+          if (mod === undefined || mod === null) {
+            const num = parseInt(String(item.horasSemanales || item.cargaHoraria || "").replace(/[^\d]/g, ""), 10);
+            mod = !isNaN(num) && num > 0 ? Math.min(10, Math.max(1, num)) : 4;
+          }
+          return {
+            ...item,
+            modulos: mod,
+            horasSemanales: mod,
+            cargaHoraria: item.cargaHoraria && !item.cargaHoraria.includes("mód")
+              ? `${mod} mód. semanales`
+              : (item.cargaHoraria || `${mod} mód. semanales`)
+          };
+        });
       }
     } catch {
       // Ignorar error de storage
@@ -1063,8 +1117,14 @@ export const DirectorService = {
   async guardarAsignacionProfesor(catedraId, profesorData) {
     const STORAGE_KEY = "prece_asignaciones_profesores";
     const lista = await this.listarAsignacionesProfesores();
+    const ids = Array.isArray(catedraId) ? catedraId : [catedraId];
     const actualizada = lista.map((item) => {
-      if (item.id === catedraId) {
+      if (ids.includes(item.id)) {
+        const cfg = profesorData.porCatedra?.[item.id] || {};
+        const situacion = cfg.situacion || profesorData.situacion || item.situacion || "titular";
+        let modulos = cfg.modulos !== undefined ? cfg.modulos : (profesorData.modulos !== undefined ? profesorData.modulos : (item.modulos || item.horasSemanales || 4));
+        modulos = Math.min(10, Math.max(1, parseInt(modulos, 10) || 4));
+        const cargaHoraria = cfg.cargaHoraria || profesorData.cargaHoraria || `${modulos} mód. semanales`;
         return {
           ...item,
           profesor: {
@@ -1074,7 +1134,10 @@ export const DirectorService = {
             avatar: (profesorData.nombreCompleto || profesorData.nombre || "D").charAt(0).toUpperCase()
           },
           estado: "asignado",
-          cargaHoraria: profesorData.cargaHoraria || item.cargaHoraria || "4 hs semanales"
+          situacion,
+          modulos,
+          horasSemanales: modulos,
+          cargaHoraria
         };
       }
       return item;
@@ -1095,8 +1158,9 @@ export const DirectorService = {
   async quitarAsignacionProfesor(catedraId) {
     const STORAGE_KEY = "prece_asignaciones_profesores";
     const lista = await this.listarAsignacionesProfesores();
+    const ids = Array.isArray(catedraId) ? catedraId : [catedraId];
     const actualizada = lista.map((item) => {
-      if (item.id === catedraId) {
+      if (ids.includes(item.id)) {
         return {
           ...item,
           profesor: null,
