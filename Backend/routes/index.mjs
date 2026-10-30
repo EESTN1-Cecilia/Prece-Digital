@@ -49,6 +49,10 @@ import * as academicRecordsController from "../modules/academic-records/academic
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
+import * as studentPortalController from "../modules/student-portal/student-portal.controller.mjs";
+import { alumnoAutenticado, cuentaConfigurada } from "../modules/student-portal/student-portal.middleware.mjs";
+import * as preceptorAssignmentsController from "../modules/preceptor-assignments/preceptor-assignments.controller.mjs";
+import { alcancePreceptor, alcancePreceptorRegistro } from "../middlewares/alcance-preceptor.middleware.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
 
 /* Exige un permiso existente: un typo en P.ALGO rompe el arranque en lugar de
@@ -61,7 +65,7 @@ function required(permission) {
   return authorize({ permission });
 }
 
-export const apiRoutes = [
+const rutasDeclaradas = [
   { method: "GET", path: "/health", handler: healthCheck },
   { method: "GET", path: "/api/v1/modules", handler: listModules },
   { method: "GET", path: "/api/v1/roles", handler: listRoles },
@@ -77,6 +81,31 @@ export const apiRoutes = [
   { method: "POST", path: "/api/v1/auth/logout", handler: authController.logout },
   { method: "GET", path: "/api/v1/auth/me", middlewares: [verifyToken], handler: authController.me },
   { method: "GET", path: "/api/v1/auth/permissions", middlewares: [verifyToken], handler: authController.permissions },
+
+  /* Portal del alumno. Ninguna ruta recibe un id de alumno: el legajo sale
+     siempre de la cuenta del token (alumnoAutenticado). La informacion
+     academica exige ademas haber cambiado la clave inicial (cuentaConfigurada).
+     El alumno inicia sesion con el login general (/api/v1/auth/login).
+     Ver modules/student-portal/README.md. */
+  { method: "GET", path: "/api/v1/alumno/cuenta", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado], handler: studentPortalController.obtenerCuenta },
+  { method: "POST", path: "/api/v1/alumno/cuenta/configuracion", middlewares: [verifyToken, required(P.STUDENT_PORTAL_UPDATE), alumnoAutenticado], handler: studentPortalController.configurarCuenta },
+  { method: "PATCH", path: "/api/v1/alumno/cuenta/password", middlewares: [verifyToken, required(P.STUDENT_PORTAL_UPDATE), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.cambiarPassword },
+  { method: "PATCH", path: "/api/v1/alumno/cuenta/usuario", middlewares: [verifyToken, required(P.STUDENT_PORTAL_UPDATE), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.cambiarUsuario },
+  { method: "GET", path: "/api/v1/alumno/perfil", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.perfil },
+  { method: "GET", path: "/api/v1/alumno/boletin", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.boletin },
+  { method: "GET", path: "/api/v1/alumno/asistencias", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.asistencias },
+  { method: "GET", path: "/api/v1/alumno/situacion-academica", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.situacionAcademica },
+  { method: "GET", path: "/api/v1/alumno/previas", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.previas },
+  /* Boletin de un alumno para el personal: es el MISMO calculo que ve el alumno
+     en /api/v1/alumno/boletin. Un preceptor solo puede pedir alumnos de sus cursos. */
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/boletin", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentPortalController.boletinDeAlumno },
+
+  /* Cursos asignados a preceptores por la Direccion. */
+  { method: "GET", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.USERS_READ)], handler: preceptorAssignmentsController.listar },
+  { method: "PUT", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: preceptorAssignmentsController.asignar },
+  { method: "POST", path: "/api/v1/preceptores/asignaciones/quitar", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: preceptorAssignmentsController.quitar },
+  { method: "GET", path: "/api/v1/preceptores/mis-cursos", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: preceptorAssignmentsController.misCursos },
+  { method: "GET", path: "/api/v1/portal-alumnos/verificacion", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentPortalController.verificacion },
   { method: "GET", path: "/api/v1/users", middlewares: [verifyToken, required(P.USERS_READ)], handler: authController.listUsers },
   { method: "POST", path: "/api/v1/users", middlewares: [verifyToken, required(P.IDENTITY_CREATE)], handler: usersController.createUser },
   { method: "GET", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.USERS_READ)], handler: usersController.getUser },
@@ -578,6 +607,15 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/audit/report", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.report },
   { method: "GET", path: "/api/v1/audit/export", middlewares: [verifyToken, required(P.AUDIT_EXPORT)], handler: auditarAccion({ tabla: "auditoria", accion: "export" })(auditController.exportCsv) }
 ];
+
+/* Alcance del preceptor en TODAS las rutas protegidas: justo despues de
+   verifyToken, antes de cualquier handler (ver middlewares/alcance-preceptor). */
+export const apiRoutes = rutasDeclaradas.map((ruta) => {
+  const middlewares = ruta.middlewares ?? [];
+  const indice = middlewares.indexOf(verifyToken);
+  if (indice === -1) return ruta;
+  return { ...ruta, middlewares: [...middlewares.slice(0, indice + 1), alcancePreceptor, alcancePreceptorRegistro, ...middlewares.slice(indice + 1)] };
+});
 
 function tokenize(path) {
   return path.split("/").filter(Boolean);

@@ -1,3 +1,4 @@
+import { filtrarPorCurso, alcanceDe, claveCurso } from "../preceptor-assignments/alcance.mjs";
 import studentRepository from "./students.repository.mjs";
 import workshopsRepository from "../workshops/workshops.repository.mjs";
 import { conflicto, errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
@@ -53,6 +54,11 @@ function texto(valor, maximo = 120) {
   if (valor == null) return null;
   const limpio = String(valor).trim();
   return limpio === "" ? null : limpio.slice(0, maximo);
+}
+
+/* Deja solo los digitos de un DNI escrito con puntos o espacios ("40.123.456"). */
+function soloDigitos(valor) {
+  return String(valor ?? "").replace(/\D/g, "");
 }
 
 function esRequerido(valor) {
@@ -382,7 +388,11 @@ const studentService = {
 
       // DNI
       let dni = item.dni ? soloDigitos(item.dni) : "";
-      if (!dni || dni.length < 7 || dni.length > 9) {
+      /* La planilla no trajo un DNI valido: se genera uno provisorio para no
+         perder la fila. Queda marcado para que no sirva como credencial del
+         portal del alumno ni pase como documento real en la verificacion. */
+      const dniProvisorio = !dni || dni.length < 7 || dni.length > 9;
+      if (dniProvisorio) {
         let hash = 0;
         const str = `${apellido}_${nombre}_${curso}_${division}_${i}`;
         for (let c = 0; c < str.length; c++) {
@@ -417,6 +427,7 @@ const studentService = {
           nombre,
           apellido,
           dni,
+          dniProvisorio,
           genero: item.genero || null,
           curso,
           division,
@@ -529,11 +540,12 @@ const studentService = {
 
     const escuelaId = String(user.assignments?.[0]?.schoolId ?? ESCUELA_DEFECTO);
 
-    let registros = studentRepository.search({
+    /* Un preceptor solo ve los alumnos de los cursos que le asigno el Director. */
+    let registros = filtrarPorCurso(user, studentRepository.search({
       escuelaId,
       criterios: { estado, dni, apellido, nombre, curso, division, condicion, turno, q },
       orden
-    });
+    }));
 
     if (edad !== null) {
       registros = registros.filter((registro) => edadDe(registro.fechaNacimiento) === edad);
@@ -579,6 +591,10 @@ const studentService = {
       if (entrada[campo] !== undefined) {
         cambios[campo] = entrada[campo];
       }
+    }
+    /* Secretaria cargo el documento real: deja de ser provisorio. */
+    if (cambios.dni !== undefined && cambios.dni !== antes.dni) {
+      cambios.dniProvisorio = false;
     }
     if (cursoDivision) {
       cambios.curso = cursoDivision.curso;
@@ -663,11 +679,11 @@ function requerido(url, campo, errores) {
 }
 
 function armarListado({ user, contexto, criterios, opciones }) {
-  const registros = studentRepository.search({
+  const registros = filtrarPorCurso(user, studentRepository.search({
     escuelaId: escuelaDel(user),
     criterios: { estado: opciones.soloActivos ? "activo" : "todos", ...criterios },
     orden: opciones.orden
-  });
+  }));
   const filtrados = criterios.filtro ? registros.filter(criterios.filtro) : registros;
   const offset = (opciones.pagina - 1) * opciones.porPagina;
 
@@ -781,8 +797,10 @@ export function listarPorGrupo({ url, user }) {
 export function resumenDivisiones(user) {
   const registros = studentRepository.search({ escuelaId: escuelaDel(user), criterios: { estado: "todos" }, orden: "curso" });
 
+  const alcance = alcanceDe(user);
+
   return {
-    data: DIVISIONES_CATALOGO.map(({ anio, division, turno, orientacion }) => {
+    data: DIVISIONES_CATALOGO.filter(({ anio, division }) => !alcance || alcance.has(claveCurso(anio, division))).map(({ anio, division, turno, orientacion }) => {
       const propios = registros.filter((registro) => registro.curso === anio && registro.division === division);
       const activos = propios.filter((registro) => registro.isActive).length;
 

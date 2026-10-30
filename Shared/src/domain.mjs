@@ -38,7 +38,8 @@ export const modules = [
   { id: "planning", name: "Planificaciones", description: "Planificaciones docentes y su revision." },
   { id: "academics", name: "Estructura academica", description: "Ciclos, orientaciones, cursos y divisiones." },
   { id: "academic-records", name: "Situacion academica", description: "Materias pendientes, recursadas e intensificadas." },
-  { id: "audit", name: "Auditoria", description: "Historial de cambios, accesos, exportaciones y errores." }
+  { id: "audit", name: "Auditoria", description: "Historial de cambios, accesos, exportaciones y errores." },
+  { id: "student-portal", name: "Portal del alumno", description: "Perfil, boletin, asistencias, situacion academica y previas del alumno autenticado." }
 ];
 
 export const roles = [
@@ -48,7 +49,8 @@ export const roles = [
   { id: "preceptor", name: "Preceptoria", description: "Seguimiento de estudiantes y asistencia." },
   { id: "docente", name: "Docente", description: "Clases, notas y asistencia de sus cursos." },
   { id: "jefe_area", name: "Jefatura de Area", description: "Planificacion curricular y equipos docentes." },
-  { id: "server", name: "Responsable de Server", description: "Infraestructura, espacios y operacion tecnica." }
+  { id: "server", name: "Responsable de Server", description: "Infraestructura, espacios y operacion tecnica." },
+  { id: "alumno", name: "Alumno", description: "Consulta su propia informacion academica. La cuenta se crea con el DNI del legajo." }
 ];
 
 /* Acciones canonicas de un permiso "<modulo>.<accion>". */

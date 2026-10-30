@@ -518,169 +518,30 @@ export const DirectorService = {
    * Obtiene el listado de las 27 divisiones institucionales con sus preceptores asignados.
    */
   async listarAsignacionesPreceptores() {
-    const STORAGE_KEY = "prece_asignaciones_preceptores";
-    try {
-      const guardado = localStorage.getItem(STORAGE_KEY);
-      if (guardado) {
-        return JSON.parse(guardado);
-      }
-    } catch {
-      // Ignorar error de storage
-    }
-
-    const DIVISIONES_DEF = [
-      { anio: 1, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 1, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 2, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "1", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "2", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "3", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "4", turno: "Tarde", orientacion: "Ciclo Básico" },
-      { anio: 3, division: "6", turno: "Mañana", orientacion: "Ciclo Básico" },
-      { anio: 4, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 4, division: "2", turno: "Tarde", orientacion: "Técnico en Informática" },
-      { anio: 4, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-      { anio: 4, division: "4", turno: "Tarde", orientacion: "Técnico en Programación" },
-      { anio: 5, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 5, division: "2", turno: "Tarde", orientacion: "Técnico en Informática" },
-      { anio: 5, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-      { anio: 5, division: "4", turno: "Tarde", orientacion: "Técnico en Programación" },
-      { anio: 6, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 6, division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-      { anio: 7, division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-      { anio: 7, division: "2", turno: "Tarde", orientacion: "Técnico en Programación" }
-    ];
-
-    const iniciales = DIVISIONES_DEF.map((d) => {
-      const id = `${d.anio}-${d.division}`;
-      // Asignar por defecto 1° 1° y 2° 1° para reflejar 2 de 27 asignadas como en la maqueta
-      if (d.anio === 1 && d.division === "1") {
-        return {
-          id,
-          anio: d.anio,
-          curso: `${d.anio}°`,
-          division: `División ${d.division}`,
-          numDivision: d.division,
-          turno: d.turno,
-          orientacion: d.orientacion,
-          preceptor: {
-            id: "usr-preceptor-1",
-            nombre: "Preceptor 1° A",
-            email: "preceptor@prece.local",
-            avatar: "P"
-          },
-          estado: "asignado",
-          actualizadoEn: "2026-03-02"
-        };
-      }
-      if (d.anio === 2 && d.division === "1") {
-        return {
-          id,
-          anio: d.anio,
-          curso: `${d.anio}°`,
-          division: `División ${d.division}`,
-          numDivision: d.division,
-          turno: d.turno,
-          orientacion: d.orientacion,
-          preceptor: {
-            id: "usr-preceptor-2",
-            nombre: "Carlos Ramos",
-            email: "cramos@prece.local",
-            avatar: "C"
-          },
-          estado: "asignado",
-          actualizadoEn: "2026-03-02"
-        };
-      }
-      return {
-        id,
-        anio: d.anio,
-        curso: `${d.anio}°`,
-        division: `División ${d.division}`,
-        numDivision: d.division,
-        turno: d.turno,
-        orientacion: d.orientacion,
-        preceptor: null,
-        estado: "sin_asignar",
-        actualizadoEn: null
-      };
-    });
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
-    } catch {
-      // Silencioso
-    }
-
-    return iniciales;
+    /* Fuente unica: el backend. El alcance de cada preceptor sale de aca. */
+    return pedir("/api/v1/preceptores/asignaciones");
   },
 
   /**
-   * Guarda o reasigna un preceptor para una división específica.
+   * Guarda o reasigna un preceptor para una o varias divisiones.
    */
   async guardarAsignacionPreceptor(divisionId, preceptorData) {
-    const STORAGE_KEY = "prece_asignaciones_preceptores";
-    const lista = await this.listarAsignacionesPreceptores();
-    const ids = Array.isArray(divisionId) ? divisionId : [divisionId];
-    const actualizada = lista.map((item) => {
-      if (ids.includes(item.id)) {
-        return {
-          ...item,
-          preceptor: {
-            id: preceptorData.id || `prec-${Date.now()}`,
-            nombre: preceptorData.nombreCompleto || preceptorData.nombre || "Preceptor Asignado",
-            email: preceptorData.email || "preceptor@prece.local",
-            avatar: (preceptorData.nombreCompleto || preceptorData.nombre || "P").charAt(0).toUpperCase()
-          },
-          estado: "asignado",
-          actualizadoEn: new Date().toISOString().split("T")[0]
-        };
-      }
-      return item;
+    const divisiones = Array.isArray(divisionId) ? divisionId : [divisionId];
+    return pedir("/api/v1/preceptores/asignaciones", {
+      method: "PUT",
+      body: JSON.stringify({ divisiones, preceptorId: preceptorData?.id })
     });
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
-    } catch {
-      // Silencioso
-    }
-
-    return actualizada;
   },
 
   /**
-   * Quita la asignación de preceptor de una división.
+   * Quita la asignación de preceptor de una o varias divisiones.
    */
   async quitarAsignacionPreceptor(divisionId) {
-    const STORAGE_KEY = "prece_asignaciones_preceptores";
-    const lista = await this.listarAsignacionesPreceptores();
-    const ids = Array.isArray(divisionId) ? divisionId : [divisionId];
-    const actualizada = lista.map((item) => {
-      if (ids.includes(item.id)) {
-        return {
-          ...item,
-          preceptor: null,
-          estado: "sin_asignar",
-          actualizadoEn: new Date().toISOString().split("T")[0]
-        };
-      }
-      return item;
+    const divisiones = Array.isArray(divisionId) ? divisionId : [divisionId];
+    return pedir("/api/v1/preceptores/asignaciones/quitar", {
+      method: "POST",
+      body: JSON.stringify({ divisiones })
     });
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
-    } catch {
-      // Silencioso
-    }
-
-    return actualizada;
   },
 
   /**

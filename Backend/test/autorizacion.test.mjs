@@ -76,7 +76,7 @@ test("con identity.read devuelve el catalogo de roles de Shared/src/domain.mjs",
   assert.equal(status, 200);
   assert.deepEqual(
     cuerpo.data.map((rol) => rol.id),
-    ["admin", "director", "secretario", "preceptor", "docente", "jefe_area", "server"]
+    ["admin", "director", "secretario", "preceptor", "docente", "jefe_area", "server", "alumno"]
   );
 });
 

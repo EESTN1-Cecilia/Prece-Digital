@@ -114,6 +114,7 @@ export function seedAlumnosLocales() {
       apellido,
       nombre,
       dni,
+      dniProvisorio: true,
       genero: genero ?? null,
       curso: Number(curso),
       division: String(division),

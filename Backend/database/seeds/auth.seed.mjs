@@ -1,6 +1,13 @@
 import bcrypt from "bcryptjs";
 import { ROLES } from "../../config/permissions.config.mjs";
 import { userRepository } from "../repositories/user.repository.mjs";
+import { DIVISIONES_CATALOGO } from "../../modules/students/catalogo.mjs";
+
+/* Cursos que la Direccion asigno a cada preceptor de desarrollo. Un curso tiene
+   un solo preceptor: Carlos Ramos tiene 2° 2° y 5° 3°; el resto, el preceptor general. */
+const CURSOS_PRECEPTOR_2 = ["2-2", "5-3"];
+const cursosDe = (filtro) =>
+  DIVISIONES_CATALOGO.filter(({ anio, division }) => filtro(`${anio}-${division}`)).map(({ anio, division }) => ({ curso: anio, division, actualizadoEn: "2026-03-02" }));
 
 const passwordHashCache = new Map();
 
@@ -101,7 +108,9 @@ export async function seedAuthData() {
         courseId: "cur-1",
         divisionId: "div-a",
         shiftId: "manana",
-        periodId: "2026"
+        periodId: "2026",
+        /* Cursos que le asigno la Direccion (alcance real del preceptor). */
+        cursos: cursosDe((clave) => !CURSOS_PRECEPTOR_2.includes(clave))
       }
     ]
   });
@@ -141,5 +150,14 @@ export async function seedAuthData() {
     passwordHash: secretarioHash,
     displayName: "Secretaría General",
     assignments: [{ role: ROLES.SECRETARIO, schoolId: "esc-1" }]
+  });
+
+  userRepository.create({
+    email: "cramos@prece.local",
+    passwordHash: preceptorHash,
+    displayName: "Carlos Ramos",
+    nombre: "Carlos",
+    apellido: "Ramos",
+    assignments: [{ role: ROLES.PRECEPTOR, schoolId: "esc-1", cursos: cursosDe((clave) => CURSOS_PRECEPTOR_2.includes(clave)) }]
   });
 }

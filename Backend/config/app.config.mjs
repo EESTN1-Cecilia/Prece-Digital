@@ -31,7 +31,7 @@ function parseIntEnv(valor, defecto) {
 
 export const appConfig = {
   env: environment,
-  apiPort: Number.parseInt(process.env.API_PORT ?? "3000", 10),
+  apiPort: Number.parseInt(process.env.API_PORT ?? "3000netstat -ano | findstr :3000AHORA ", 10),
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET ?? process.env.SESSION_SECRET ?? "change-me-access",
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET ?? "change-me-refresh",
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? "15m",
@@ -39,5 +39,19 @@ export const appConfig = {
   loginMaxEmailAttempts: parseIntEnv("LOGIN_MAX_EMAIL_ATTEMPTS", 5),
   loginMaxIpAttempts: parseIntEnv("LOGIN_MAX_IP_ATTEMPTS", 20),
   loginWindowMs: parseIntEnv("LOGIN_WINDOW_MS", 15 * 60 * 1000),
-  loginLockMs: parseIntEnv("LOGIN_LOCK_MS", 15 * 60 * 1000)
+  loginLockMs: parseIntEnv("LOGIN_LOCK_MS", 15 * 60 * 1000),
+  /* Base de datos. Mientras DB_CLIENT no sea "sqlserver" la API sigue en el
+     store en memoria. Ver database/sqlserver/README.md. */
+  database: {
+    client: (process.env.DB_CLIENT ?? "memoria").toLowerCase(),
+    server: process.env.DB_SERVER ?? "localhost",
+    port: parseIntEnv("DB_PORT", 1433),
+    database: process.env.DB_NAME ?? "prece_digital",
+    user: process.env.DB_USER ?? null,
+    password: process.env.DB_PASSWORD ?? null,
+    instanceName: process.env.DB_INSTANCE || null,
+    encrypt: (process.env.DB_ENCRYPT ?? "false") === "true",
+    trustServerCertificate: (process.env.DB_TRUST_SERVER_CERTIFICATE ?? "true") === "true",
+    poolMax: parseIntEnv("DB_POOL_MAX", 10)
+  }
 };

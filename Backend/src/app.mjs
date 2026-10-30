@@ -5,6 +5,7 @@ import { notFound } from "../middlewares/not-found.middleware.mjs";
 import { matchRoute } from "../routes/index.mjs";
 import { sendJson } from "../utils/http-response.mjs";
 import { readJsonBody } from "../utils/read-body.mjs";
+import { recortarRespuesta } from "../modules/preceptor-assignments/alcance.mjs";
 import auditService from "../modules/audit/audit.service.mjs";
 
 /* Servidor HTTP de la API.
@@ -52,7 +53,7 @@ export function createApp(rutas) {
         }
       }
 
-      const payload = await route.handler(ctx);
+      const payload = recortarRespuesta(ctx.user, await route.handler(ctx));
 
       if (response.writableEnded) {
         return;

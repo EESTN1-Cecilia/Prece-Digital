@@ -5,7 +5,7 @@ import { CargandoPantalla, ErrorGlobal } from "../components/ui/index.js";
 import { PaginaNoEncontrada } from "./pagina-no-encontrada.js";
 import { AccesoDenegado } from "./acceso-denegado.js";
 import { ACCESO, decidirAcceso, resolverRuta } from "./navegacion.js";
-import { RUTAS, RUTA_LOGIN } from "./rutas.js";
+import { RUTAS, RUTA_INICIO_ALUMNO, RUTA_LOGIN, esRutaPortalAlumno } from "./rutas.js";
 import { ProveedorEstado, useCarga, useErrorGlobal, useSesion } from "../estado/index.js";
 
 /* Ruta actual sin la query (#/alumnos?curso=1 -> #/alumnos). */
@@ -23,14 +23,24 @@ function Guardia({ ruta }) {
   const sesion = useSesion();
   const resultado = resolverRuta(ruta, RUTAS);
   const decision = decidirAcceso(resultado, sesion);
+  const esAlumno = sesion.autenticado && (sesion.roles ?? []).some((rol) => (rol?.id ?? rol) === "alumno");
+  /* Una cuenta de alumno solo usa su portal: cualquier otra pantalla interna
+     (inicio, notificaciones, perfil del personal) la devuelve al portal. */
+  const fueraDelPortal = esAlumno && !esRutaPortalAlumno(ruta) && !resultado?.ruta?.publica;
 
   /* La redireccion se hace en un efecto y no durante el render: cambiar el hash
      mientras React dibuja deja la pantalla y la direccion desincronizadas. */
   useEffect(() => {
-    if (decision.tipo === ACCESO.login && window.location.hash !== RUTA_LOGIN) {
-      window.location.hash = RUTA_LOGIN;
+    if (decision.tipo === ACCESO.login) {
+      if (window.location.hash !== RUTA_LOGIN) window.location.hash = RUTA_LOGIN;
+    } else if (fueraDelPortal) {
+      window.location.hash = RUTA_INICIO_ALUMNO;
     }
-  }, [decision.tipo, ruta]);
+  }, [decision.tipo, ruta, fueraDelPortal]);
+
+  if (fueraDelPortal) {
+    return h(CargandoPantalla, { texto: "Abriendo tu portal..." });
+  }
 
   switch (decision.tipo) {
     case ACCESO.esperar:

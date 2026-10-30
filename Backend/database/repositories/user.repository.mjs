@@ -21,8 +21,14 @@ export const userRepository = {
   create(user) {
     const record = {
       id: user.id ?? this.nextId(),
-      email: user.email.toLowerCase(),
+      /* Las cuentas de alumno no tienen correo: se identifican por `username`. */
+      email: user.email ? user.email.toLowerCase() : null,
+      username: user.username ? user.username.toLowerCase() : null,
+      studentId: user.studentId ?? null,
       passwordHash: user.passwordHash,
+      mustChangePassword: user.mustChangePassword ?? false,
+      passwordChangedAt: user.passwordChangedAt ?? null,
+      lastLoginAt: user.lastLoginAt ?? null,
       displayName: user.displayName,
       nombre: user.nombre ?? null,
       apellido: user.apellido ?? null,
@@ -55,7 +61,11 @@ export const userRepository = {
   },
 
   findByEmail(email, { includeInactive = false } = {}) {
-    const normalized = email.toLowerCase();
+    if (!email) {
+      return null;
+    }
+
+    const normalized = String(email).toLowerCase();
 
     for (const user of getStore().users.values()) {
       if (user.email === normalized) {
@@ -64,6 +74,38 @@ export const userRepository = {
         }
 
         return cloneUser(user);
+      }
+    }
+
+    return null;
+  },
+
+  /* Cuenta de alumno por nombre de usuario (sin distinguir mayusculas). */
+  findByUsername(username, { includeInactive = false } = {}) {
+    const normalized = String(username ?? "").trim().toLowerCase();
+
+    if (!normalized) {
+      return null;
+    }
+
+    for (const user of getStore().users.values()) {
+      if (user.username === normalized) {
+        return !includeInactive && !user.isActive ? null : cloneUser(user);
+      }
+    }
+
+    return null;
+  },
+
+  /* Cuenta vinculada a un legajo de alumno: a lo sumo una por alumno. */
+  findByStudentId(studentId, { includeInactive = false } = {}) {
+    if (!studentId) {
+      return null;
+    }
+
+    for (const user of getStore().users.values()) {
+      if (user.studentId === studentId) {
+        return !includeInactive && !user.isActive ? null : cloneUser(user);
       }
     }
 
@@ -89,6 +131,10 @@ export const userRepository = {
       user.email = cambios.email.toLowerCase();
     }
 
+    if (cambios.username) {
+      user.username = cambios.username.toLowerCase();
+    }
+
     return cloneUser(user);
   },
 
@@ -112,7 +158,11 @@ export const userRepository = {
   publicView(user) {
     return {
       id: user.id,
-      email: user.email,
+      email: user.email ?? null,
+      username: user.username ?? null,
+      studentId: user.studentId ?? null,
+      /* Nunca se expone el hash: solo si la cuenta todavia debe cambiar la clave inicial. */
+      debeCambiarPassword: Boolean(user.mustChangePassword),
       displayName: user.displayName,
       nombre: user.nombre ?? null,
       apellido: user.apellido ?? null,

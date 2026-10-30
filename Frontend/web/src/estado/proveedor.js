@@ -294,10 +294,12 @@ export function ProveedorEstado({ children }) {
   /* Las notificaciones se piden una vez resuelta la sesion, no antes: sin usuario
      no hay a quien notificar. */
   useEffect(() => {
-    if (estado.sesion.estado === SESION.autenticada) {
+    /* Las cuentas de alumno no tienen bandeja de notificaciones del personal. */
+    const esAlumno = estado.sesion.roles.some((rol) => (rol?.id ?? rol) === "alumno");
+    if (estado.sesion.estado === SESION.autenticada && !esAlumno) {
       cargarNotificaciones();
     }
-  }, [estado.sesion.estado, estado.sesion.usuario?.id, cargarNotificaciones]);
+  }, [estado.sesion.estado, estado.sesion.usuario?.id, estado.sesion.roles, cargarNotificaciones]);
 
   /* Al volver a la pestana se relee la sesion. Si mientras tanto le cambiaron los
      permisos, la interfaz deja de mostrar los viejos. */
