@@ -535,7 +535,7 @@ test("con un padron de ~900 alumnos la verificacion y las consultas siguen funci
   const perfil = await pedir("/api/v1/alumno/perfil", { token });
   assert.equal(perfil.status, 200);
   assert.equal(perfil.cuerpo.data.datosPersonales.dni, "50000450");
-  assert.deepEqual(perfil.cuerpo.data.resumen, { ausentes: 0, materiasConTep: 0, materiasDebajoDe6: 0, previasPendientes: 0 });
+  assert.deepEqual(perfil.cuerpo.data.resumen, { ausentes: 0,materiasAprobadas: 0, materiasConTep: 0, materiasDebajoDe6: 0, previasPendientes: 0 });
 });
 
 /* ---------------- Boletin unico y alcance del preceptor -------------------- */
