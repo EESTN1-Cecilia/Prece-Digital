@@ -12,6 +12,7 @@ import { userRepository } from "../database/repositories/user.repository.mjs";
 import { detectarAlertas, rachaActual } from "../modules/attendance-alerts/deteccion.service.mjs";
 import { completarConfiguracion } from "../modules/attendance-alerts/catalogo.mjs";
 import { getStore } from "../database/memory-store.mjs";
+import { asignarCursosAlPreceptorGeneral } from "./helpers.mjs";
 
 const PUERTO = 4007;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -64,6 +65,7 @@ before(async () => {
   await new Promise((listo) => servidor.listen(PUERTO, listo));
   director = await login("director@prece.local", "Director123!");
   preceptor = await login("preceptor@prece.local", "Preceptor123!");
+  await asignarCursosAlPreceptorGeneral();
   secretario = await login("secretaria@prece.local", "Secretaria123!");
   docente = await login("docente@prece.local", "Docente123!");
   const yo = await pedir("GET", "/api/v1/auth/me", preceptor);
