@@ -6,7 +6,6 @@ import { CustomSelect } from "../../components/common/custom-select.js";
 import { LoadingState, EmptyState } from "../../components/common/state-handlers.js";
 import {
   AsistenciasService,
-  CURSOS_DISPONIBLES,
   MESES_DEL_ANIO
 } from "./asistencias-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
@@ -166,7 +165,10 @@ export default function AsistenciasView({ modoDocente = false }) {
   };
 
   // Lista de cursos disponibles dinámicos
-  const [cursos, setCursos] = useState(() => (esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : CURSOS_DISPONIBLES));
+  /* Fuera del docente, la lista sale solo del backend (un preceptor recibe los
+     cursos que le asigno la Direccion): nunca se arranca con el catalogo completo. */
+  const [cursos, setCursos] = useState(() => (esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : []));
+  const [cursosListos, setCursosListos] = useState(esDocente);
 
   // Estados de navegación y selección de curso/mes
   const [selectedCursoId, setSelectedCursoId] = useState(() => {
@@ -220,9 +222,12 @@ export default function AsistenciasView({ modoDocente = false }) {
     }
 
     AsistenciasService.getCursosDisponibles().then((lista) => {
-      if (montado && lista && lista.length > 0) {
-        setCursos(lista);
-      }
+      if (!montado) return;
+      const propios = Array.isArray(lista) ? lista : [];
+      setCursos(propios);
+      setCursosListos(true);
+      /* Si el curso pedido (URL o "1-1" por defecto) no es de la sesion, se pasa al primero propio. */
+      setSelectedCursoId((actual) => (propios.some((c) => c.id === actual) ? actual : propios[0]?.id ?? null));
     });
     return () => {
       montado = false;
@@ -267,9 +272,18 @@ export default function AsistenciasView({ modoDocente = false }) {
   }, [cursos, selectedCursoId, esDocente, user]);
 
   // Cargar planilla al cambiar de curso o mes (con materia si es docente)
+  const cursoPermitido = esDocente || cursos.some((c) => c.id === selectedCursoId);
+
   const cargarPlanilla = useCallback(async () => {
     setLoading(true);
     setSaveSuccess(false);
+    /* Nunca se abre la planilla de un curso que la sesion no tiene asignado. */
+    if (!cursoPermitido) {
+      setPlanilla(null);
+      setPlanillaOriginal(null);
+      setLoading(!cursosListos);
+      return;
+    }
     try {
       const materiaDocente = esDocente ? (cursoActual.materia || "Matemática") : null;
       const data = await AsistenciasService.getPlanilla(
@@ -285,7 +299,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia]);
+  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia, cursoPermitido, cursosListos]);
 
   useEffect(() => {
     cargarPlanilla();
@@ -569,6 +583,14 @@ export default function AsistenciasView({ modoDocente = false }) {
 
   const mesInfo = MESES_DEL_ANIO.find((m) => m.id === selectedMes) || MESES_DEL_ANIO[6];
 
+  if (!esDocente && cursosListos && cursos.length === 0) {
+    return h(
+      "section",
+      { className: "asistencias-page secretaria-dashboard" },
+      h(EmptyState, { mensaje: "Todavía no tenés cursos asignados. La Dirección debe asignártelos para ver sus asistencias." })
+    );
+  }
+
   return h(
     "section",
     { className: "asistencias-page secretaria-dashboard", ref: paginaRef },
@@ -800,6 +822,8 @@ export default function AsistenciasView({ modoDocente = false }) {
 
       loading
         ? h(LoadingState, { mensaje: "Cargando nómina y registro de asistencias del curso..." })
+        : !planilla
+        ? h(EmptyState, { mensaje: "Ese curso no está asignado a tu perfil." })
         : h(
             "div",
             { className: "planilla-table-scroll-container" },

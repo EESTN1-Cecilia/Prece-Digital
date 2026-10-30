@@ -15,6 +15,7 @@ import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { seedStudents } from "../database/seeds/students.seed.mjs";
 import { seedInasistencias } from "../database/seeds/inasistencias.seed.mjs";
 import inasistenciasRepository from "../modules/inasistencias/inasistencias.repository.mjs";
+import { asignarCursosAlPreceptorGeneral } from "./helpers.mjs";
 
 const PUERTO = 4010;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -75,6 +76,7 @@ beforeEach(async () => {
   inasistenciasRepository.resetData();
   seedInasistencias();
   preceptor = await login("preceptor@prece.local", "Preceptor123!");
+  await asignarCursosAlPreceptorGeneral();
   secretario = await login("secretario@prece.local", "Secretaria123!");
 });
 

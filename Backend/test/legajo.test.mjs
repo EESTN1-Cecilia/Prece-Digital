@@ -7,6 +7,7 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { resetStore } from "../database/memory-store.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
+import { asignarCursosAlPreceptorGeneral } from "./helpers.mjs";
 
 const PUERTO = 4012;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -36,6 +37,7 @@ beforeEach(async () => {
   await seedDesarrollo();
   tokens.secretario = await login("secretario@prece.local", "Secretaria123!");
   tokens.preceptor = await login("preceptor@prece.local", "Preceptor123!");
+  await asignarCursosAlPreceptorGeneral();
   tokens.docente = await login("docente@prece.local", "Docente123!");
 });
 

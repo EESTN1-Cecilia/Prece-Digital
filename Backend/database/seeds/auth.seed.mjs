@@ -4,7 +4,9 @@ import { userRepository } from "../repositories/user.repository.mjs";
 import { DIVISIONES_CATALOGO } from "../../modules/students/catalogo.mjs";
 
 /* Cursos que la Direccion asigno a cada preceptor de desarrollo. Un curso tiene
-   un solo preceptor: Carlos Ramos tiene 2° 2° y 5° 3°; el resto, el preceptor general. */
+   un solo preceptor y el resto queda "sin asignar" hasta que la Direccion lo
+   asigne desde su panel: el preceptor solo ve lo asignado. */
+const CURSOS_PRECEPTOR_1 = ["1-1"];
 const CURSOS_PRECEPTOR_2 = ["2-2", "5-3"];
 const cursosDe = (filtro) =>
   DIVISIONES_CATALOGO.filter(({ anio, division }) => filtro(`${anio}-${division}`)).map(({ anio, division }) => ({ curso: anio, division, actualizadoEn: "2026-03-02" }));
@@ -110,7 +112,7 @@ export async function seedAuthData() {
         shiftId: "manana",
         periodId: "2026",
         /* Cursos que le asigno la Direccion (alcance real del preceptor). */
-        cursos: cursosDe((clave) => !CURSOS_PRECEPTOR_2.includes(clave))
+        cursos: cursosDe((clave) => CURSOS_PRECEPTOR_1.includes(clave))
       }
     ]
   });
