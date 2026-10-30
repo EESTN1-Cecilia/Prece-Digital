@@ -4,6 +4,8 @@ import { errorHttp } from "../../utils/api-error.mjs";
 import { permissionsForRole } from "../../config/permissions.config.mjs";
 import { evaluateAccess, extractContext, resumenPermisos } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
+import { studentAccountsService } from "../student-portal/student-accounts.service.mjs";
+import { DOMINIO_ALUMNOS } from "../student-portal/catalogo.mjs";
 import { obtenerIpCliente, registrarFalloLogin, registrarLoginExitoso, revisarLogin } from "./login-throttle.service.mjs";
 
 const dummyHashPromise = bcrypt.hash("__dummy_password__", 10);
@@ -53,6 +55,13 @@ export const authService = {
     revisarLogin(email, ip);
 
     const user = userRepository.findByEmail(email, { includeInactive: true });
+
+    /* Alumnos: entran por este mismo login con su usuario
+       (nombre.apellido@alumno.prece.local, uno propio o el DNI). */
+    const identificador = String(email).trim().toLowerCase();
+    if (!user && (!identificador.includes("@") || identificador.endsWith(`@${DOMINIO_ALUMNOS}`))) {
+      return studentAccountsService.login({ usuario: identificador, password, request });
+    }
     const hash = user?.passwordHash ?? (await dummyHashPromise);
     const matches = await bcrypt.compare(password, hash);
 

@@ -4,7 +4,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
-import { ROL_CATALOGO } from "../../config/permissions.config.mjs";
+import { ROL_CATALOGO, ROLES } from "../../config/permissions.config.mjs";
 import { conflicto, errorDeValidacion, errorHttp, noEncontrado } from "../../utils/api-error.mjs";
 import { revokeUserSessions } from "./token.service.mjs";
 
@@ -49,6 +49,13 @@ function validarRoles(roles, errores, { requerido }) {
 
   if (desconocidos.length) {
     errores.push({ field: "roles", message: `Roles inexistentes: ${desconocidos.join(", ")}.` });
+    return undefined;
+  }
+
+  /* La cuenta de alumno solo nace del legajo (primer ingreso con DNI): no se
+     asigna a mano a una cuenta del personal. */
+  if (roles.includes(ROLES.ALUMNO)) {
+    errores.push({ field: "roles", message: "El rol alumno se asigna automaticamente desde el legajo del alumno." });
     return undefined;
   }
 
@@ -150,6 +157,9 @@ export const usersService = {
     return userRepository
       .list({ includeInactive: true })
       .map((usuario) => userRepository.publicView(usuario))
+      /* Las cuentas de alumno (una por legajo) no se mezclan con las del personal:
+         solo aparecen si se las pide explicitamente con ?rol=alumno. */
+      .filter((usuario) => rol === ROLES.ALUMNO || !usuario.roles.includes(ROLES.ALUMNO))
       .filter((usuario) => !rol || usuario.roles.includes(rol))
       .filter((usuario) => !estado || usuario.estado === estado)
       .filter(

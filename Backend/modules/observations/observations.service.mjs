@@ -1,3 +1,4 @@
+import { filtrarPorAlumno } from "../preceptor-assignments/alcance.mjs";
 import { errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
 import observationsRepository from "./observations.repository.mjs";
 import {
@@ -489,8 +490,8 @@ const observationsService = {
     }
 
     const lista = ordenar(
-      observationsRepository
-        .listObservations({ escuelaId: escuelaDel(user), alumnoId, tipo, estado, sector, desde, hasta, q })
+      filtrarPorAlumno(user, observationsRepository
+        .listObservations({ escuelaId: escuelaDel(user), alumnoId, tipo, estado, sector, desde, hasta, q }))
         .map(vistaObservacion),
       ORDENES_OBSERVACIONES[orden]
     );

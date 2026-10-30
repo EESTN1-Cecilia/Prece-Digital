@@ -18,7 +18,8 @@ export const ROLES = {
   PRECEPTOR: "preceptor",
   DOCENTE: "docente",
   JEFE_AREA: "jefe_area",
-  SERVER: "server"
+  SERVER: "server",
+  ALUMNO: "alumno"
 };
 
 export const SCOPE_KEYS = ["schoolId", "courseId", "divisionId", "subjectId", "shiftId", "periodId"];
@@ -100,10 +101,17 @@ export const PERMISSIONS = {
   PLANNING_MANAGE: "planning.manage",
   NOTIFICATIONS_MANAGE: "notifications.manage",
   AUDIT_READ: "audit.read",
-  AUDIT_EXPORT: "audit.export"
+  AUDIT_EXPORT: "audit.export",
+  /* Portal del alumno: solo lo usa el rol alumno, y siempre sobre su propio legajo
+     (el backend toma el alumno del token, nunca de la URL). */
+  STUDENT_PORTAL_READ: "student-portal.read",
+  STUDENT_PORTAL_UPDATE: "student-portal.update"
 };
 
-const ALL_PERMISSIONS = Object.values(PERMISSIONS);
+/* Los permisos del portal no se suman a admin y director: no tienen legajo de
+   alumno y el portal no expone datos de terceros. */
+const PERMISOS_PORTAL_ALUMNO = [PERMISSIONS.STUDENT_PORTAL_READ, PERMISSIONS.STUDENT_PORTAL_UPDATE];
+const ALL_PERMISSIONS = Object.values(PERMISSIONS).filter((permiso) => !PERMISOS_PORTAL_ALUMNO.includes(permiso));
 
 export const ROLE_PERMISSIONS = {
   [ROLES.ADMIN]: ALL_PERMISSIONS,
@@ -297,7 +305,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.PLANNING_WRITE,
     PERMISSIONS.PLANNING_REVIEW,
     PERMISSIONS.PLANNING_MANAGE
-  ]
+  ],
+  [ROLES.ALUMNO]: PERMISOS_PORTAL_ALUMNO
 };
 
 /* Permisos vigentes de un rol: los reemplazados en tiempo de ejecucion (si los hay)

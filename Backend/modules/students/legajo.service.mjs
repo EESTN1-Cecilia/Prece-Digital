@@ -24,6 +24,7 @@ import observationsRepository from "../observations/observations.repository.mjs"
 import { vistaObservacion } from "../observations/observations.service.mjs";
 import { permisosDelUsuario } from "../auth/permission.service.mjs";
 import { PERMISSIONS } from "../../config/permissions.config.mjs";
+import { alcanceDe, alumnoEnAlcance, claveCurso } from "../preceptor-assignments/alcance.mjs";
 import { errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
 
 const INSTITUCION = "E.E.S.T N° 1 Monte Grande";
@@ -445,7 +446,8 @@ const legajoService = {
 
   tableroSecretaria(user) {
     const escuelaId = String(user.assignments?.[0]?.schoolId ?? "esc-1");
-    const alumnos = studentRepository.all().filter((alumno) => alumno.escuelaId === escuelaId);
+    const alcance = alcanceDe(user);
+    const alumnos = studentRepository.all().filter((alumno) => alumno.escuelaId === escuelaId && alumnoEnAlcance(alcance, alumno));
     const activos = alumnos.filter((alumno) => alumno.isActive);
     const porTurno = ["mañana", "tarde"].map((turno) => {
       const cantidad = activos.filter((alumno) => alumno.turno === turno).length;
@@ -456,7 +458,7 @@ const legajoService = {
       };
     });
 
-    const alumnosPorCurso = DIVISIONES_CATALOGO.map(({ anio, division, turno, orientacion }) => {
+    const alumnosPorCurso = DIVISIONES_CATALOGO.filter(({ anio, division }) => !alcance || alcance.has(claveCurso(anio, division))).map(({ anio, division, turno, orientacion }) => {
       const cantidad = activos.filter(
         (alumno) => alumno.curso === anio && String(alumno.division).trim() === division
       ).length;
@@ -533,9 +535,10 @@ const legajoService = {
         ...resumenAsistencia(activos.filter((alumno) => alumno.turno === turno))
       }))
     };
-    const pases = studentRepository.listarPases();
+    const pases = studentRepository.listarPases().filter((pase) => alumnoEnAlcance(alcance, studentRepository.findById(pase.alumnoId ?? pase.studentId)));
     const actividadReciente = studentRepository
       .listarTrazaGeneral()
+      .filter((entrada) => alumnoEnAlcance(alcance, studentRepository.findById(entrada.registroId)))
       .slice(0, 8)
       .map((entrada) => {
         const alumno = studentRepository.findById(entrada.registroId);

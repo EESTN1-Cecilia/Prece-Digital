@@ -17,3 +17,7 @@ Para migrar un módulo:
 3. Correr `npm test`: controladores, servicios y rutas no cambian.
 
 Las cuentas y los alumnos se dan de baja de forma lógica: no hay borrado físico.
+
+## SQL Server
+
+`sqlserver/` tiene la migracion T-SQL, la verificacion del padron, la conexion (`mssql`) y la guia para conectar el portal del alumno a SQL Server (`DB_CLIENT=sqlserver`). Ver `sqlserver/README.md`.

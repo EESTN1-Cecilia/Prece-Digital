@@ -59,6 +59,10 @@ const studentRepository = {
       nombre: datos.nombre,
       apellido: datos.apellido,
       dni: datos.dni,
+      /* true cuando el DNI no es real (nomina importada sin documento): ese
+         alumno no puede usar el DNI como credencial hasta que secretaria cargue
+         el documento verdadero. */
+      dniProvisorio: datos.dniProvisorio === true,
       fechaNacimiento: datos.fechaNacimiento ?? null,
       genero: datos.genero ?? null,
       nacionalidad: datos.nacionalidad ?? null,

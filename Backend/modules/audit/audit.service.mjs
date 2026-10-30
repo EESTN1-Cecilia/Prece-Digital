@@ -15,6 +15,9 @@ import { noEncontrado, solicitudInvalida } from "../../utils/api-error.mjs";
 
 const CAMPOS_SENSIBLES = [
   "password",
+  "passwordActual",
+  "passwordNueva",
+  "confirmacion",
   "passwordHash",
   "password_hash",
   "clave",

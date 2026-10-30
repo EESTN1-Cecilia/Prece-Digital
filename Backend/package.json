@@ -8,7 +8,8 @@
     "start": "node src/server.mjs",
     "test": "node --test --test-concurrency=1 \"test/**/*.mjs\"",
     "docs:endpoints": "node scripts/generar-endpoints.mjs",
-    "auth:smoke": "node scripts/auth-smoke.mjs"
+    "auth:smoke": "node scripts/auth-smoke.mjs",
+    "verificar:alumnos": "node scripts/verificar-alumnos.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

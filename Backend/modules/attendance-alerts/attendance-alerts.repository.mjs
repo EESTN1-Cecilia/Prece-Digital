@@ -1,3 +1,4 @@
+import { alcanceDe, alumnoEnAlcance } from "../preceptor-assignments/alcance.mjs";
 import { getStore } from "../../database/memory-store.mjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
 import studentRepository from "../students/students.repository.mjs";
@@ -70,12 +71,14 @@ const attendanceAlertsRepository = {
      situacion, porque son los que gestionan el contacto con la familia. Los roles
      no viven en el usuario sino en sus asignaciones, asi que se lee la vista
      publica que ya los expone. */
-  findPreceptoresDe(escuelaId) {
+  findPreceptoresDe(escuelaId, alumno = null) {
     return userRepository
       .list()
       .map((usuario) => userRepository.publicView(usuario))
       .filter((usuario) => usuario.roles.includes(ROLES.PRECEPTOR))
       .filter((usuario) => usuario.assignments?.some((asignacion) => asignacion.schoolId === escuelaId))
+      /* Solo el preceptor a cargo del curso del alumno (asignado por la Direccion). */
+      .filter((usuario) => !alumno || alumnoEnAlcance(alcanceDe(usuario), alumno))
       .map((usuario) => ({ id: usuario.id, displayName: usuario.displayName, email: usuario.email }));
   },
 

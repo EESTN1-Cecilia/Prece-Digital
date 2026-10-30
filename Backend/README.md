@@ -14,7 +14,7 @@ npm start                # API sin recarga
 npm test                 # tests (node:test, sin base de datos)
 npm run docs:endpoints   # regenera docs/ENDPOINTS.md desde routes/index.mjs
 ```
-
+<!--  -->
 Variables de entorno: copiar `.env.example` a `.env`.
 
 ## Usuarios de desarrollo

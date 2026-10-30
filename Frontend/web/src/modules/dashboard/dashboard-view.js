@@ -205,17 +205,25 @@ export default function DashboardView() {
         StudentsService.getDivisiones().catch(() => [])
       ]);
 
+      const divisionesVisibles = Array.isArray(divs) ? divs : [];
+      /* Un preceptor solo ve las cátedras de sus cursos asignados (las divisiones ya vienen recortadas). */
+      const soloPreceptor = (user?.roles ?? []).length > 0 && (user.roles ?? []).every((rol) => (rol?.id ?? rol) === "preceptor");
+      const clavesVisibles = new Set(divisionesVisibles.map((d) => `${String(d.anio ?? d.curso ?? "").replace(/\D/g, "")}-${String(d.division ?? d.numDivision ?? "").replace(/\D/g, "")}`));
+      const catedrasVisibles = (Array.isArray(catedras) ? catedras : []).filter(
+        (cat) => !soloPreceptor || clavesVisibles.has(`${String(cat.anio ?? "").replace(/\D/g, "")}-${String(cat.numDivision ?? cat.division ?? "").replace(/\D/g, "")}`)
+      );
+
       setDataSecretaria(resSec);
-      setCatedrasDocentes(Array.isArray(catedras) ? catedras : []);
+      setCatedrasDocentes(catedrasVisibles);
       setAlumnos(aluRes?.data || []);
-      setDivisiones(divs || []);
+      setDivisiones(divisionesVisibles);
       setLastUpdated(new Date());
     } catch (err) {
       setError(err.message || "Error al sincronizar la información del módulo de preceptoría.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     cargarDatos();
