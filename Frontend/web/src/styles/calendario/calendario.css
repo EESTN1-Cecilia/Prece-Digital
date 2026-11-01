@@ -1,0 +1,80 @@
+/* Calendario escolar y docente. Usa los azules institucionales del sistema. */
+.cal { display: grid; gap: 16px; }
+.cal__encabezado { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.cal__encabezado h1 { margin: 0; color: var(--navy); font-size: 1.6rem; }
+.cal__encabezado p { margin: 4px 0 0; color: #4a5068; }
+.cal__gestion { display: flex; flex-wrap: wrap; gap: 8px; }
+.cal-estado, .cal-mensaje { margin: 0; padding: 10px 14px; border-radius: 10px; background: var(--sky-light); color: var(--navy); font-size: .92rem; }
+.cal-estado--error { background: #fde8e8; color: #7a1c1c; }
+.cal-mensaje { background: #e6f4ea; color: #1e5b32; }
+.cal__barra { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+.cal__mes { display: flex; align-items: center; gap: 8px; }
+.cal__mes select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); font: inherit; }
+.cal__nav { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: var(--navy); font-size: 1.3rem; cursor: pointer; }
+.cal__nav:hover, .cal__nav:focus-visible { background: var(--navy); color: #fff; }
+.cal__filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+.cal__filtro { padding: 6px 12px; border: 1px solid var(--indigo); border-radius: 999px; background: #fff; color: var(--indigo); font: inherit; cursor: pointer; }
+.cal__filtro--on { background: var(--indigo); color: #fff; }
+.cal__cuerpo { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.cal__grilla { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.cal__dias, .cal__semana { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal__dias { background: var(--navy); color: #fff; text-align: center; font-weight: 600; }
+.cal__dias span { padding: 8px 0; }
+.cal__dia { min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 3px; align-items: stretch; text-align: left; border: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; overflow: hidden; }
+.cal__semana .cal__dia:first-child { border-left: 0; }
+.cal__dia--fuera { background: #f3f4f7; color: #8a8fa3; }
+.cal__dia--hoy .cal__num { background: var(--indigo); color: #fff; }
+.cal__dia--sel { outline: 3px solid var(--sky); outline-offset: -3px; }
+.cal__dia:hover { background: #eef5fa; }
+.cal__num { align-self: flex-start; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; display: grid; place-items: center; font-weight: 600; }
+.cal__marca { padding: 2px 6px; border-radius: 6px; background: var(--indigo); color: #fff; font-size: .72rem; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal__marca--pend { background: #fff; color: var(--indigo); border: 1px dashed var(--indigo); }
+.cal__mas { font-size: .72rem; color: #4a5068; }
+.cal-cat--feriado.cal__marca { background: #8a2f3a; }
+.cal-cat--receso.cal__marca { background: #2f7a8a; }
+.cal-cat--inicio_fin_clases.cal__marca { background: var(--navy); }
+.cal-cat--feriado.cal__marca--pend, .cal-cat--receso.cal__marca--pend, .cal-cat--inicio_fin_clases.cal__marca--pend { background: #fff; }
+.cal__lateral { display: grid; gap: 14px; }
+.cal-seccion { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.cal-seccion h3 { margin: 0 0 8px; color: var(--navy); font-size: 1rem; text-transform: capitalize; display: flex; justify-content: space-between; align-items: center; }
+.cal-seccion__n { background: var(--sky-light); color: var(--navy); border-radius: 999px; padding: 0 8px; font-size: .8rem; }
+.cal-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cal-vacio { margin: 0; color: #6a6f85; font-size: .9rem; }
+.cal-item { border-left: 4px solid var(--indigo); background: #fff; border-radius: 8px; padding: 8px 10px; }
+.cal-item--hoy { border-left-color: #1e8a4c; background: #effaf3; }
+.cal-item--en_curso { border-left-color: var(--sky); background: #f1f9fc; }
+.cal-item--proximo { border-left-color: var(--indigo); }
+.cal-item--finalizado { border-left-color: var(--line); opacity: .72; }
+.cal-item--pendiente { border-left: 4px dashed #b88a1c; background: #fffaf0; }
+.cal-item__cabecera { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.cal-item__titulo { color: var(--navy); }
+.cal-item p { margin: 4px 0 0; font-size: .88rem; }
+.cal-item__fecha span { color: var(--indigo-dark); font-weight: 600; }
+.cal-item__meta { color: #5a5f76; }
+.cal-item__aviso { color: #7a5a0c; }
+.cal-item__acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cal-etiqueta { padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; white-space: nowrap; background: var(--sky-light); color: var(--navy); }
+.cal-etiqueta--hoy { background: #cdeedb; color: #14683a; }
+.cal-etiqueta--finalizado { background: #e4e6ec; color: #5a5f76; }
+.cal-etiqueta--pendiente { background: #fcefc9; color: #7a5a0c; }
+.cal-form { display: grid; gap: 10px; }
+.cal-campo { display: grid; gap: 4px; font-size: .92rem; color: var(--navy); }
+.cal-campo input, .cal-campo select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.cal-campo__error { color: #a02222; }
+.cal-form__acciones, .cal-aviso__acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.cal-aviso { border-left: 6px solid var(--indigo); padding: 4px 0 4px 14px; }
+.cal-aviso--hoy { border-left-color: #1e8a4c; }
+.cal-aviso__categoria { margin: 0; color: #5a5f76; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+.cal-aviso__titulo { margin: 4px 0; color: var(--navy); font-size: 1.3rem; }
+.cal-aviso__cuenta { margin: 0; display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--indigo); color: #fff; font-weight: 600; }
+.cal-aviso__fecha { margin: 8px 0 0; font-weight: 600; }
+.cal-aviso__texto { margin: 6px 0 0; }
+.cal-aviso__fuente { display: inline-block; margin-top: 8px; }
+.cal-aviso__otros { list-style: none; margin: 12px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: grid; gap: 6px; }
+.cal-aviso__otros li { display: grid; font-size: .9rem; }
+.cal-aviso__otros span, .cal-aviso__mas { color: #5a5f76; font-size: .85rem; }
+@media (max-width: 900px) {
+  .cal__cuerpo { grid-template-columns: 1fr; }
+  .cal__dia { min-height: 64px; }
+  .cal__marca { font-size: 0; padding: 0; width: 8px; height: 8px; border-radius: 50%; }
+}

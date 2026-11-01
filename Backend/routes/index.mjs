@@ -25,6 +25,8 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as gradesController from "../modules/grades/grades.controller.mjs";
+import * as calendarioController from "../modules/calendario/calendario.controller.mjs";
+import * as boletinOficialController from "../modules/boletin-oficial/boletin-oficial.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
 import * as absenceEventsController from "../modules/absence-events/absence-events.controller.mjs";
 import * as groupsController from "../modules/groups/groups.controller.mjs";
@@ -249,6 +251,20 @@ const rutasDeclaradas = [
   /* Calificaciones: los literales (catalogos) y las consultas por alumno/docente
      van antes que /calificaciones/:calificacionId porque el router gana con la
      primera coincidencia. */
+  /* Boletin oficial y planilla del docente: mismas calificaciones que ve el alumno en su portal. */
+  { method: "GET", path: "/api/v1/calendario/eventos", middlewares: [verifyToken], handler: calendarioController.listar },
+  { method: "GET", path: "/api/v1/calendario/avisos", middlewares: [verifyToken], handler: calendarioController.avisos },
+  { method: "GET", path: "/api/v1/calendario/estado", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.estado },
+  { method: "GET", path: "/api/v1/calendario/eventos/:id/historial", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.historial },
+  { method: "POST", path: "/api/v1/calendario/actualizar", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.actualizarDesdeFuentes },
+  { method: "POST", path: "/api/v1/calendario/eventos", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.crear },
+  { method: "POST", path: "/api/v1/calendario/eventos/:id/verificar", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.verificar },
+  { method: "PUT", path: "/api/v1/calendario/eventos/:id", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.actualizar },
+  { method: "DELETE", path: "/api/v1/calendario/eventos/:id", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.eliminar },
+  { method: "GET", path: "/api/v1/boletin-oficial/resumen", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.resumenDeCurso },
+  { method: "GET", path: "/api/v1/boletin-oficial/alumnos", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.listar },
+  { method: "GET", path: "/api/v1/boletin-oficial/alumnos/:alumnoId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.obtener },
+  { method: "PUT", path: "/api/v1/boletin-oficial/alumnos/:alumnoId", middlewares: [verifyToken, required(P.BOLETIN_OFICIAL_WRITE)], handler: boletinOficialController.guardar },
   { method: "GET", path: "/api/v1/calificaciones/catalogos", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCatalogos },
   { method: "POST", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.createCalificacion },
   { method: "GET", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.listCalificaciones },

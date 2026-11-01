@@ -39,6 +39,7 @@ import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
 import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
 import AsistenciasView from "../modules/attendance/asistencias-view.js";
 import NotificacionesView from "../modules/notifications/notificaciones-view.js";
+import CalendarioView from "../modules/calendario/calendario-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
@@ -322,6 +323,15 @@ export const RUTAS = [
     padre: "#/inicio",
     roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.observacionesLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/calendario",
+    titulo: "Calendario",
+    vista: CalendarioView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio",
     enMenu: true
   },
   {

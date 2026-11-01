@@ -3,6 +3,7 @@
    calculo del backend (student-portal.service boletin), asi ambos ven
    exactamente lo mismo para el mismo alumno, periodo y ciclo lectivo. */
 
+import { agruparMaterias, COLOR_SECCION_CSS } from "./boletin-grupos.js";
 import { h, EstadoBadge, Materia, Vacio, fechaCorta } from "../alumno-portal/componentes.js";
 
 function Celda({ resultado }) {
@@ -89,7 +90,9 @@ export function BoletinDocumento({ datos }) {
             h(
               "tbody",
               null,
-              materias.map((materia) =>
+              agruparMaterias(datos).flatMap((grupo) => [
+                h("tr", { key: `grupo-${grupo.titulo}`, className: "pa-boletin__seccion" }, h("th", { scope: "colgroup", colSpan: 5, style: { background: COLOR_SECCION_CSS, color: "#fff", textAlign: "left", fontSize: "12px", fontWeight: 800, letterSpacing: ".04em", padding: "6px 12px" } }, grupo.titulo)),
+                ...grupo.materias.map((materia) =>
                 h(
                   "tr",
                   { key: materia.materiaId },
@@ -104,7 +107,8 @@ export function BoletinDocumento({ datos }) {
                     estadoMateria(materia) ? h("span", { className: "pa-boletin__situacion" }, estadoMateria(materia)) : null
                   )
                 )
-              )
+                )
+              ])
             )
           )
         ),

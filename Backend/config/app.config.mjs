@@ -31,7 +31,7 @@ function parseIntEnv(valor, defecto) {
 
 export const appConfig = {
   env: environment,
-  apiPort: Number.parseInt(process.env.API_PORT ?? "3000netstat -ano | findstr :3000AHORA ", 10),
+  apiPort: Number.parseInt(process.env.API_PORT ?? "3000", 10),
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET ?? process.env.SESSION_SECRET ?? "change-me-access",
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET ?? "change-me-refresh",
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? "15m",

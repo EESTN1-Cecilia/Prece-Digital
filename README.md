@@ -38,6 +38,21 @@ npm run docs:endpoints  # regenera Backend/docs/ENDPOINTS.md
 
 Usuarios de desarrollo: ver `Backend/README.md` (por ejemplo `secretario@prece.local` / `Secretaria123!`).
 
+### Ingresar como alumno (desarrollo)
+
+El portal del alumno usa el mismo login que el personal (`#/login`); el sistema detecta que es un alumno y lo lleva a su portal. La cuenta se crea sola en el primer ingreso, a partir del legajo del seed.
+
+| Dato | Valor |
+| --- | --- |
+| Alumna de prueba | Ana Pérez López, 1°1° (`alu-1`) |
+| Usuario | `ana.perez@alumno.prece.local` (también sirve el DNI `40123456`) |
+| Contraseña inicial | `40123456` (el DNI) |
+
+- En el primer ingreso el sistema pide configurar la cuenta: contraseña nueva de 8 o más caracteres, con letras y números y distinta del DNI, y opcionalmente un usuario propio. Después el DNI deja de servir como contraseña.
+- Regla general para cualquier alumno: usuario = `nombre.apellido@alumno.prece.local` (primer nombre y primer apellido, sin tildes; si hay homónimos se agregan los últimos 3 dígitos del DNI) y contraseña inicial = DNI.
+- Los alumnos de la nómina local (`alumnos.local.json`) tienen DNI provisorio (`99xxxxxx`) y **no pueden ingresar** hasta que Secretaría cargue el DNI real.
+- Son datos de desarrollo con la API en memoria: al reiniciarla, la cuenta vuelve a su estado inicial. Más detalle en `Backend/modules/student-portal/README.md`.
+
 ## Forma de trabajo (8 personas, un repo)
 
 1. Rama desde `main` actualizado:
