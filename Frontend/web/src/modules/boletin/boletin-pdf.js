@@ -4,6 +4,8 @@
    impresion muestran lo mismo. No guarda nada: genera y descarga. */
 
 import { estadoMateria, resumenBoletin } from "./boletin-documento.js";
+import { agruparMaterias, COLOR_SECCION } from "./boletin-grupos.js";
+import { ancho, cadena, cargarLogo } from "../../utils/pdf-base.js";
 
 const ANCHO = 595.28;
 const ALTO = 841.89;
@@ -20,19 +22,6 @@ const COLOR_ESTADO = {
   debajo_de_6: { texto: [0.64, 0.15, 0.11], fondo: [0.98, 0.91, 0.9] }
 };
 
-/* Anchos de Helvetica (por mil) para ASCII 32..126; las letras acentuadas usan el de su base. */
-const ANCHOS = [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584];
-const BASE = { á: "a", é: "e", í: "i", ó: "o", ú: "u", ñ: "n", ü: "u", Á: "A", É: "E", Í: "I", Ó: "O", Ú: "U", Ñ: "N", Ü: "U" };
-
-function ancho(texto, tamano, negrita = false) {
-  let total = 0;
-  for (const letra of String(texto)) {
-    const c = (BASE[letra] ?? letra).charCodeAt(0);
-    total += c >= 32 && c <= 126 ? ANCHOS[c - 32] : 556;
-  }
-  return (total * tamano * (negrita ? 1.07 : 1)) / 1000;
-}
-
 function envolver(texto, maximo, tamano) {
   const lineas = [];
   let actual = "";
@@ -45,19 +34,6 @@ function envolver(texto, maximo, tamano) {
   }
   if (actual) lineas.push(actual);
   return lineas;
-}
-
-/* Texto -> bytes WinAnsi escapados para un string PDF. */
-const WINANSI = { "—": 0x97, "–": 0x96, "•": 0x95, "’": 0x92, "‘": 0x91, "“": 0x93, "”": 0x94, "…": 0x85 };
-function cadena(texto) {
-  let salida = "";
-  for (const letra of String(texto)) {
-    let codigo = WINANSI[letra] ?? letra.charCodeAt(0);
-    if (codigo > 255) codigo = 63;
-    const caracter = String.fromCharCode(codigo);
-    salida += caracter === "\\" || caracter === "(" || caracter === ")" ? `\\${caracter}` : caracter;
-  }
-  return salida;
 }
 
 const num = (valor) => Number(valor.toFixed(2));
@@ -93,31 +69,6 @@ class Documento {
   }
 }
 
-async function cargarLogo() {
-  try {
-    const imagen = new Image();
-    imagen.src = "/assets/tecnica-n1-monte-grande.png";
-    await imagen.decode();
-    const lado = 240;
-    const componer = (fondo) => {
-      const lienzo = document.createElement("canvas");
-      lienzo.width = lado;
-      lienzo.height = lado;
-      const ctx = lienzo.getContext("2d");
-      ctx.fillStyle = fondo; // el logo es transparente: se compone sobre el fondo donde va
-      ctx.fillRect(0, 0, lado, lado);
-      const escala = Math.min(lado / imagen.naturalWidth, lado / imagen.naturalHeight);
-      const w = imagen.naturalWidth * escala;
-      const alto = imagen.naturalHeight * escala;
-      ctx.drawImage(imagen, (lado - w) / 2, (lado - alto) / 2, w, alto);
-      return atob(lienzo.toDataURL("image/jpeg", 0.92).split(",")[1]);
-    };
-    return { sobreBordo: componer("#591c23"), sobreBlanco: componer("#ffffff"), ancho: lado, alto: lado };
-  } catch {
-    return null; // sin logo el PDF sale igual
-  }
-}
-
 function celdaNota(doc, resultado, x, y, w) {
   if (!resultado) return doc.texto("—", x, y, 10, { c: GRIS, alinear: "centro", w });
   const marca = COLOR_ESTADO[resultado.estado];
@@ -125,10 +76,8 @@ function celdaNota(doc, resultado, x, y, w) {
   doc.texto(String(resultado.valor), x, y, 10, { negrita: true, c: marca?.texto ?? OSCURO, alinear: "centro", w });
 }
 
-export async function generarBoletinPdf(datos) {
+function dibujarBoletin(doc, datos, logo) {
   const { alumno, materias, inasistencias, materiasPendientes, cicloLectivo, criterio } = datos;
-  const logo = await cargarLogo();
-  const doc = new Documento();
   const CW = ANCHO - M * 2;
   const COL = { materia: M, c1: M + 215, c2: M + 270, final: M + 325, estado: M + 385 };
   const LIMITE = ALTO - 62;
@@ -171,6 +120,23 @@ export async function generarBoletinPdf(datos) {
   y += 70;
 
   // Tabla con cuadricula
+  // Alto de cada fila: se reparte para que boletin entre en UNA hoja (hasta ~16 materias)
+  const mitad = (CW - 14) / 2;
+  const bloqueInasistencias = [
+    `${inasistencias.ausentes} ausente(s) de jornada completa: ${inasistencias.ausentesJustificados} justificada(s), ${inasistencias.ausentesInjustificados} injustificada(s).`,
+    ...(inasistencias.llegadasTarde || inasistencias.ausentesParciales ? [`Llegadas tarde: ${inasistencias.llegadasTarde}. Retiros anticipados: ${inasistencias.ausentesParciales}.`] : [])
+  ].flatMap((parrafo) => envolver(parrafo, mitad - 28, 9.5));
+  const bloquePendientes = materiasPendientes.length
+    ? materiasPendientes.flatMap((previa) => envolver(`• ${previa.materia} — ciclo ${previa.anioCursada}${previa.cursoOrigen?.etiqueta ? ` (${previa.cursoOrigen.etiqueta})` : ""}`, mitad - 28, 9.5))
+    : ["No tiene materias pendientes."];
+  const altoPie = 34 + Math.max(bloqueInasistencias.length, bloquePendientes.length) * 12;
+  const parrafo = envolver(`${criterio} TEP: trayectoria educativa en proceso. TED: trayectoria educativa con dificultad.`, CW, 8.5);
+  const RESERVA = 18 + altoPie + 14 + parrafo.length * 11 + 44 + 14; // pie + criterio + firmas
+  const grupos = agruparMaterias(datos);
+  const ALTO_SECCION = 18;
+  const altoFila = materias.length ? Math.max(21, Math.min(34, (LIMITE - 24 - y - RESERVA - grupos.length * ALTO_SECCION) / materias.length)) : 32;
+  const filas = grupos.flatMap((grupo) => [{ seccion: grupo.titulo }, ...grupo.materias.map((materia) => ({ materia }))]);
+
   const columnas = [COL.c1, COL.c2, COL.final, COL.estado];
   const encabezadoTabla = () => {
     doc.rect(M, y, CW, 24, BORDO);
@@ -193,9 +159,20 @@ export async function generarBoletinPdf(datos) {
     y += 40;
   }
 
-  materias.forEach((materia, indice) => {
+  let indice = 0;
+  const bandas = [];
+  filas.forEach((fila) => {
+    if (fila.seccion) {
+      bandas.push({ y, titulo: fila.seccion });
+      y += ALTO_SECCION;
+      indice = 0;
+      return;
+    }
+    const { materia } = fila;
+    indice += 1;
     const situacion = estadoMateria(materia);
-    const alto = 32 + (situacion ? 10 : 0);
+    const compacta = altoFila < 29;
+    const alto = altoFila;
     if (y + alto > LIMITE) {
       cuadricula(inicioTabla, y - inicioTabla);
       doc.nueva();
@@ -203,36 +180,28 @@ export async function generarBoletinPdf(datos) {
       inicioTabla = y;
       encabezadoTabla();
     }
-    if (indice % 2 === 1) doc.rect(M, y, CW, alto, [0.985, 0.972, 0.973]);
-    const base = y + 17;
+    if (indice % 2 === 0) doc.rect(M, y, CW, alto, [0.985, 0.972, 0.973]);
+    const base = y + (compacta ? altoFila / 2 + 3.5 : 17);
     doc.texto(materia.materia, COL.materia + 10, base, 10.5, { negrita: true });
-    if (materia.docente) doc.texto(materia.docente, COL.materia + 10, base + 11, 8, { c: GRIS });
+    if (materia.docente && !compacta) doc.texto(materia.docente, COL.materia + 10, base + 11, 8, { c: GRIS });
     celdaNota(doc, materia.periodos.c1.resultado, COL.c1, base, 55);
     celdaNota(doc, materia.periodos.c2.resultado, COL.c2, base, 55);
     celdaNota(doc, materia.periodos.final.resultado, COL.final, base, 60);
     const marca = COLOR_ESTADO[materia.estadoActual];
     doc.texto(materia.estadoActualEtiqueta ?? "", COL.estado + 10, base, 9.5, { negrita: true, c: marca?.texto ?? OSCURO });
-    if (situacion) doc.texto(situacion, COL.estado + 10, base + 11, 8, { c: GRIS });
+    if (situacion && !compacta) doc.texto(situacion, COL.estado + 10, base + 11, 8, { c: GRIS });
     doc.linea(M, y + alto, M + CW, y + alto, LINEA);
     y += alto;
   });
   cuadricula(inicioTabla, y - inicioTabla);
+  // Las bandas de seccion van encima de la cuadricula: ocupan todo el ancho
+  bandas.forEach((banda) => {
+    doc.rect(M, banda.y, CW, ALTO_SECCION, COLOR_SECCION);
+    doc.texto(banda.titulo, M + 10, banda.y + 12.5, 9, { negrita: true, c: BLANCO });
+  });
   y += 18;
 
   // Pie: inasistencias y pendientes
-  const mitad = (CW - 14) / 2;
-  const bloqueInasistencias = [
-    `${inasistencias.ausentes} ausente(s) de jornada completa: ${inasistencias.ausentesJustificados} justificada(s), ${inasistencias.ausentesInjustificados} injustificada(s).`,
-    ...(inasistencias.llegadasTarde || inasistencias.ausentesParciales ? [`Llegadas tarde: ${inasistencias.llegadasTarde}. Retiros anticipados: ${inasistencias.ausentesParciales}.`] : [])
-  ].flatMap((parrafo) => envolver(parrafo, mitad - 28, 9.5));
-  const bloquePendientes = materiasPendientes.length
-    ? materiasPendientes.flatMap((previa) => envolver(`• ${previa.materia} — ciclo ${previa.anioCursada}${previa.cursoOrigen?.etiqueta ? ` (${previa.cursoOrigen.etiqueta})` : ""}`, mitad - 28, 9.5))
-    : ["No tiene materias pendientes."];
-  const altoPie = 34 + Math.max(bloqueInasistencias.length, bloquePendientes.length) * 12;
-  if (y + altoPie > LIMITE) {
-    doc.nueva();
-    y = M;
-  }
   [["Inasistencias", bloqueInasistencias, M], ["Materias pendientes de aprobación", bloquePendientes, M + mitad + 14]].forEach(([titulo, lineas, x]) => {
     doc.marco(x, y, mitad, altoPie, LINEA);
     doc.rect(x, y, 4, altoPie, [0.84, 0.6, 0.63]);
@@ -242,13 +211,8 @@ export async function generarBoletinPdf(datos) {
   y += altoPie + 14;
 
   // Criterio
-  const parrafo = envolver(`${criterio} TEP: trayectoria educativa en proceso. TED: trayectoria educativa con dificultad.`, CW, 8.5);
-  if (y + parrafo.length * 11 + 70 > LIMITE) {
-    doc.nueva();
-    y = M;
-  }
   parrafo.forEach((linea, i) => doc.texto(linea, M, y + 8 + i * 11, 8.5, { c: GRIS }));
-  y += parrafo.length * 11 + 56;
+  y += parrafo.length * 11 + 44;
 
   // Firmas (en blanco: se completan a mano al imprimir)
   [["Firma del preceptor/a", M + 30], ["Firma y sello de Dirección", ANCHO - M - 30 - 170]].forEach(([etiqueta, x]) => {
@@ -256,21 +220,43 @@ export async function generarBoletinPdf(datos) {
     doc.texto(etiqueta, x, y + 12, 8.5, { c: GRIS, alinear: "centro", w: 170 });
   });
 
-  // Marco, marca de agua y pie de cada pagina
+}
+
+/* Un PDF con varios boletines: cada alumno empieza en pagina nueva. */
+export async function generarBoletinesPdf(lista) {
+  const logo = await cargarLogo();
+  const doc = new Documento();
+  const CW = ANCHO - M * 2;
+  const bloques = [];
+  lista.forEach((datos, n) => {
+    if (n > 0) doc.nueva();
+    const desde = doc.paginas.length - 1;
+    dibujarBoletin(doc, datos, logo);
+    bloques.push([desde, doc.paginas.length]);
+  });
+
+  // Marco, marca de agua y pie de cada pagina (numeracion por alumno)
   const emitido = new Date().toLocaleDateString("es-AR");
-  doc.paginas.forEach((ops, i) => {
-    doc.ops = [];
-    if (logo) doc.imagen((ANCHO - 330) / 2, (ALTO - 330) / 2 + 20, 330, 330, "Im2", "/GS1 gs");
-    doc.marco(18, 18, ANCHO - 36, ALTO - 36, [0.81, 0.66, 0.68], 0.8);
-    doc.rect(M, ALTO - 42, CW, 0.5, [0.85, 0.82, 0.82]);
-    doc.texto(`Consulta generada el ${emitido} desde Prece Digital.`, M, ALTO - 28, 8, { c: GRIS });
-    doc.texto(`Página ${i + 1} de ${doc.paginas.length}`, M, ALTO - 28, 8, { c: GRIS, alinear: "der", w: CW });
-    const fondo = logo ? 2 : 1; // marca de agua + marco van debajo del contenido
-    ops.unshift(...doc.ops.slice(0, fondo));
-    ops.push(...doc.ops.slice(fondo));
+  bloques.forEach(([desde, hasta]) => {
+    for (let i = desde; i < hasta; i += 1) {
+      const ops = doc.paginas[i];
+      doc.ops = [];
+      if (logo) doc.imagen((ANCHO - 330) / 2, (ALTO - 330) / 2 + 20, 330, 330, "Im2", "/GS1 gs");
+      doc.marco(18, 18, ANCHO - 36, ALTO - 36, [0.81, 0.66, 0.68], 0.8);
+      doc.rect(M, ALTO - 42, CW, 0.5, [0.85, 0.82, 0.82]);
+      doc.texto(`Consulta generada el ${emitido} desde Prece Digital.`, M, ALTO - 28, 8, { c: GRIS });
+      doc.texto(`Página ${i - desde + 1} de ${hasta - desde}`, M, ALTO - 28, 8, { c: GRIS, alinear: "der", w: CW });
+      const fondo = logo ? 2 : 1; // marca de agua + marco van debajo del contenido
+      ops.unshift(...doc.ops.slice(0, fondo));
+      ops.push(...doc.ops.slice(fondo));
+    }
   });
 
   return new Blob([armarArchivo(doc.paginas, logo)], { type: "application/pdf" });
+}
+
+export function generarBoletinPdf(datos) {
+  return generarBoletinesPdf([datos]);
 }
 
 function armarArchivo(paginas, logo) {

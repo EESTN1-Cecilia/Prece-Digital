@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 431 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 444 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -294,6 +294,29 @@ Total: 431 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/situaciones-academicas/intensificadas` | `academic-records.read` |
 | GET | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.read` |
 | PATCH | `/api/v1/situaciones-academicas/:situacionId` | `academic-records.write` |
+
+## calendario
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/calendario/eventos` | sesion valida |
+| GET | `/api/v1/calendario/avisos` | sesion valida |
+| GET | `/api/v1/calendario/estado` | `schedules.calendar` |
+| GET | `/api/v1/calendario/eventos/:id/historial` | `schedules.calendar` |
+| POST | `/api/v1/calendario/actualizar` | `schedules.calendar` |
+| POST | `/api/v1/calendario/eventos` | `schedules.calendar` |
+| POST | `/api/v1/calendario/eventos/:id/verificar` | `schedules.calendar` |
+| PUT | `/api/v1/calendario/eventos/:id` | `schedules.calendar` |
+| DELETE | `/api/v1/calendario/eventos/:id` | `schedules.calendar` |
+
+## boletin-oficial
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/boletin-oficial/resumen` | `students.read` |
+| GET | `/api/v1/boletin-oficial/alumnos` | `students.read` |
+| GET | `/api/v1/boletin-oficial/alumnos/:alumnoId` | `students.read` |
+| PUT | `/api/v1/boletin-oficial/alumnos/:alumnoId` | `grades.boletin` |
 
 ## calificaciones
 

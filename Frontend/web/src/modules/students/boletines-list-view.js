@@ -5,8 +5,10 @@ import { LoadingState, EmptyState, ErrorState } from "../../components/common/st
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
-import { BoletinDigitalModal } from "./components/boletin-digital-modal.js";
+import { BoletinOficialModal } from "./components/boletin-oficial-modal.js";
+import { imprimirBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
 import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
+import { alumnoTieneNotas, useResumenCursos } from "../boletin/use-resumen-cursos.js";
 
 // Cursos de referencia para la cuenta docente institucional
 const ASIGNACIONES_DOCENTE_DEFAULT = [
@@ -65,6 +67,9 @@ export default function BoletinesListView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Quién ya tiene notas: sale del backend (misma fuente que la planilla y el portal del alumno)
+  const resumenesCursos = useResumenCursos(students);
+
   // Modal de boletín / planilla activo
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [planillaModalOpen, setPlanillaModalOpen] = useState(false);
@@ -78,6 +83,34 @@ export default function BoletinesListView() {
     window.addEventListener("prece:calificaciones-updated", onCalifsActualizadas);
     return () => window.removeEventListener("prece:calificaciones-updated", onCalifsActualizadas);
   }, []);
+
+  // Imprimir boletines de todos los alumnos que cumplen los filtros (no solo la página visible), dos por hoja Oficio
+  const [imprimiendo, setImprimiendo] = useState(false);
+  const [errorImpresion, setErrorImpresion] = useState("");
+  const imprimirBoletinesDelCurso = async () => {
+    if (imprimiendo) return;
+    setErrorImpresion("");
+    const ventana = window.open("", "_blank");
+    setImprimiendo(true);
+    try {
+      const res = await StudentsService.getTodosLosAlumnos({
+        q: debouncedStudentSearch,
+        curso: selectedCurso,
+        division: selectedDivision,
+        turno: selectedTurno,
+        estado: "activo",
+        sortBy: "apellido",
+        sortOrder: "asc"
+      });
+      if (!res.data.length) throw new Error("sin alumnos");
+      await imprimirBoletinesDeAlumnos(res.data, ventana);
+    } catch {
+      if (ventana) ventana.close();
+      setErrorImpresion("No se pudieron preparar los boletines. Revisá los filtros e intentá de nuevo.");
+    } finally {
+      setImprimiendo(false);
+    }
+  };
 
   // Parsear hash params (ej: #/boletines?curso=7°&div=3)
   useEffect(() => {
@@ -569,6 +602,26 @@ export default function BoletinesListView() {
         })
       : null,
 
+    // Imprimir boletines del curso filtrado (Dirección, Secretaría, Preceptoría)
+    !esDocente
+      ? h(
+          "div",
+          { style: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "12px", margin: "0 0 12px" } },
+          errorImpresion ? h("span", { role: "alert", style: { color: "#b91c1c", fontSize: "13px" } }, errorImpresion) : null,
+          h(
+            "button",
+            {
+              type: "button",
+              onClick: imprimirBoletinesDelCurso,
+              disabled: imprimiendo,
+              title: "Imprime los boletines de todos los alumnos filtrados: 2 por hoja Oficio apaisada",
+              style: { background: "#1d4ed8", color: "#fff", border: "1px solid #1d4ed8", borderRadius: "10px", padding: "8px 18px", fontSize: "13px", fontWeight: 700, cursor: "pointer", opacity: imprimiendo ? 0.6 : 1 }
+            },
+            imprimiendo ? "Preparando…" : "Imprimir Boletines"
+          )
+        )
+      : null,
+
     // Tabla de Alumnos para Boletín
     !loading && !error && students.length > 0
       ? h(
@@ -596,9 +649,7 @@ export default function BoletinesListView() {
               "tbody",
               null,
               students.map((alumno) => {
-                const tieneCalificaciones = Boolean(
-                  localStorage.getItem(`prece_student_${alumno.id}_boletin_calificaciones`)
-                );
+                const tieneCalificaciones = alumnoTieneNotas(resumenesCursos, alumno);
 
                 return h(
                   "tr",
@@ -829,7 +880,7 @@ export default function BoletinesListView() {
 
     // Modal de Boletín Digital Oficial (para Directores, Preceptores, Secretaría)
     !esDocente && alumnoSeleccionado
-      ? h(BoletinDigitalModal, {
+      ? h(BoletinOficialModal, {
           abierto: Boolean(alumnoSeleccionado),
           onCerrar: () => setAlumnoSeleccionado(null),
           alumno: alumnoSeleccionado

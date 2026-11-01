@@ -5,7 +5,11 @@ import { getFechaActual, BotonCerrarBarra } from "./document-helpers.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { StudentsService } from "../students/students-service.js";
 import { PLANES_BOLETIN } from "../students/components/boletin-digital-modal.js";
-import * as XLSX from "xlsx";
+import { descargarPlanillaPdf } from "./planilla-pdf.js";
+import { calcularMetricas, resumenCurso } from "./planilla-estructura.js";
+import { descargarPlanillaXlsx } from "./planilla-xlsx.js";
+import { BoletinOficialService } from "../boletin/boletin-oficial-service.js";
+import { buscarNota, recalcularNota } from "../boletin/boletin-oficial-datos.js";
 
 // Cursos de referencia por defecto para docentes si no vienen en la sesión
 const ASIGNACIONES_DEFAULT = [
@@ -169,66 +173,51 @@ export function PlanillaCalificacionesModal({
     return String(raw).toUpperCase();
   }, [asignacionActual, anioNum]);
 
-  // Clave de almacenamiento en caché para la planilla completa
-  const planillaStorageKey = `prece_planilla_${anioNum}_${divisionStr}_${encodeURIComponent(materiaStr)}`;
+  // Nombre oficial de la materia en el plan (el mismo con el que la ve el boletín)
+  const materiaOficial = useMemo(() => {
+    const claves = obtenerClavesMateriaBoletin(materiaStr, anioNum);
+    return claves[1] ?? claves[0];
+  }, [materiaStr, anioNum]);
 
-  // Función para cargar notas existentes de un alumno
-  const cargarNotasAlumno = useCallback((studentId) => {
-    const boletinKey = `prece_boletin_${studentId}_anio_${anioNum}`;
-    let c1 = "", c2 = "", dic = "-", feb = "-", final = "";
-    let p1 = "", p2 = "", v1 = "", f1 = 0, p3 = "", p4 = "", v2 = "", f2 = 0;
+  // Ciclo lectivo en que se carga la planilla
+  const cicloLectivo = new Date().getFullYear();
 
-    try {
-      // 1. Leer del boletín digital (sincronización principal)
-      const rawBoletin = localStorage.getItem(boletinKey);
-      if (rawBoletin) {
-        const parsed = JSON.parse(rawBoletin);
-        const califs = parsed.calificaciones || {};
-        const keys = obtenerClavesMateriaBoletin(materiaStr, anioNum);
-        for (const k of keys) {
-          if (califs[k]) {
-            const entry = califs[k];
-            c1 = entry.informe1 || "";
-            c2 = entry.informe2 || "";
-            dic = entry.diciembre || "-";
-            feb = entry.febrero || "-";
-            final = entry.definitiva || entry.promedioAnual || "";
-            break;
-          }
-        }
+  // Arma las notas de un alumno a partir de su registro del backend (misma fuente que el boletín y el portal)
+  const notasDeRegistro = useCallback(
+    (registro) => {
+      const claves = obtenerClavesMateriaBoletin(materiaStr, anioNum);
+      let entrada = null;
+      let detalle = null;
+      for (const k of claves) {
+        entrada = entrada ?? buscarNota(registro?.notas, k);
+        detalle = detalle ?? buscarNota(registro?.detalle, k);
       }
+      entrada = entrada ?? {};
+      detalle = detalle ?? {};
 
-      // 2. Leer detalles finos de la planilla si existen
-      const rawPlanilla = localStorage.getItem(planillaStorageKey);
-      if (rawPlanilla) {
-        const parsedP = JSON.parse(rawPlanilla);
-        const stData = parsedP[studentId];
-        if (stData) {
-          p1 = stData.p1 || "";
-          p2 = stData.p2 || "";
-          v1 = stData.v1 || "";
-          f1 = stData.f1 ?? 0;
-          p3 = stData.p3 || "";
-          p4 = stData.p4 || "";
-          v2 = stData.v2 || "";
-          f2 = stData.f2 ?? 0;
-          if (stData.c1) c1 = stData.c1;
-          if (stData.c2) c2 = stData.c2;
-          if (stData.final) final = stData.final;
-          if (stData.dic) dic = stData.dic;
-          if (stData.feb) feb = stData.feb;
-        }
-      }
-    } catch (e) {
-      console.warn("Error leyendo calificaciones guardadas:", e);
-    }
+      const c1 = entrada.informe1 || "";
+      const c2 = entrada.informe2 || "";
+      const dic = entrada.diciembre || "-";
+      const feb = entrada.febrero || "-";
+      const final = recalcularNota({ informe1: c1, informe2: c2, diciembre: entrada.diciembre || "", febrero: entrada.febrero || "" }).definitiva;
 
-    // Sugerir valoraciones iniciales si hay nota
-    if (c1 && !v1) v1 = parseFloat(c1) >= 7 ? "TEA" : "TEP";
-    if (c2 && !v2) v2 = parseFloat(c2) >= 7 ? "TEA" : "TEP";
+      const p1 = detalle.p1 || "";
+      const p2 = detalle.p2 || "";
+      const p3 = detalle.p3 || "";
+      const p4 = detalle.p4 || "";
+      const f1 = Number(detalle.f1) || 0;
+      const f2 = Number(detalle.f2) || 0;
+      let v1 = detalle.v1 || "";
+      let v2 = detalle.v2 || "";
 
-    return { p1, p2, v1, c1, f1, p3, p4, v2, c2, f2, dic, feb, final };
-  }, [anioNum, materiaStr, planillaStorageKey]);
+      // Sugerir valoraciones iniciales si hay nota
+      if (c1 && !v1) v1 = parseFloat(c1) >= 7 ? "TEA" : "TEP";
+      if (c2 && !v2) v2 = parseFloat(c2) >= 7 ? "TEA" : "TEP";
+
+      return { p1, p2, v1, c1, f1, p3, p4, v2, c2, f2, dic, feb, final };
+    },
+    [anioNum, materiaStr]
+  );
 
   // Cargar estudiantes de la división actual estrictamente desde la base de datos
   const cargarEstudiantes = useCallback(async () => {
@@ -236,25 +225,27 @@ export function PlanillaCalificacionesModal({
     try {
       let rawList = [];
 
-      // Filtrar estrictamente de estudiantesIniciales SOLO los que pertenecen al curso y división actual
-      const listaCoincidente = (estudiantesIniciales || []).filter((alu) => {
+      // Siempre se carga la nómina COMPLETA de la división (todas las páginas);
+      // estudiantesIniciales (una sola página del listado) solo es respaldo.
+      const coincide = (alu) => {
         const cNum = Number(String(alu.curso || "").replace(/\D/g, ""));
         const dStr = String(alu.division || "").replace(/\D/g, "");
         return cNum === anioNum && dStr === divisionStr;
-      });
-
-      if (listaCoincidente.length > 0) {
-        rawList = listaCoincidente;
-      } else {
-        const res = await StudentsService.getAlumnos({
+      };
+      try {
+        const res = await StudentsService.getTodosLosAlumnos({
           curso: `${anioNum}°`,
           division: divisionStr,
           estado: "activo",
-          limit: 100,
           sortBy: "apellido",
           sortOrder: "asc"
         });
         rawList = res?.data || [];
+      } catch (errCarga) {
+        console.error("No se pudo cargar la nómina completa; se usa la lista recibida:", errCarga);
+      }
+      if (rawList.length === 0) {
+        rawList = (estudiantesIniciales || []).filter(coincide);
       }
 
       // Si alumnoInicial pertenece a este curso y división y no está en la lista, incluirlo
@@ -269,10 +260,24 @@ export function PlanillaCalificacionesModal({
         }
       }
 
+      // Las notas salen del backend: las mismas que ve el alumno en su portal
+      let registros = {};
+      try {
+        registros = await BoletinOficialService.obtenerVarios(
+          rawList.map((alu) => alu.id),
+          cicloLectivo
+        );
+      } catch (errNotas) {
+        console.error("No se pudieron cargar las calificaciones:", errNotas);
+        setToastMsg("No se pudieron cargar las calificaciones guardadas");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3500);
+      }
+
       // Mapear con sus notas guardadas
       const listConNotas = rawList.map((alu, idx) => {
         const studentId = alu.id || `alu-row-${idx + 1}`;
-        const notas = cargarNotasAlumno(studentId);
+        const notas = notasDeRegistro(registros[studentId]);
 
         return {
           id: studentId,
@@ -280,7 +285,9 @@ export function PlanillaCalificacionesModal({
           apellido: alu.apellido || "Estudiante",
           nombre: alu.nombre || "",
           dni: alu.dni || "",
-          isSelected: alumnoInicial && (alumnoInicial.id === alu.id || alumnoInicial.dni === alu.dni),
+          isSelected: Boolean(alumnoInicial) && (alumnoInicial.id === alu.id || alumnoInicial.dni === alu.dni),
+          // Con un alumno seleccionado, el resto de la planilla queda en solo lectura
+          bloqueado: Boolean(alumnoInicial) && !(alumnoInicial.id === alu.id || alumnoInicial.dni === alu.dni),
           ...notas
         };
       });
@@ -296,7 +303,8 @@ export function PlanillaCalificacionesModal({
     divisionStr,
     estudiantesIniciales,
     alumnoInicial,
-    cargarNotasAlumno
+    notasDeRegistro,
+    cicloLectivo
   ]);
 
   useEffect(() => {
@@ -309,6 +317,7 @@ export function PlanillaCalificacionesModal({
   const handleCellChange = (studentId, field, value) => {
     setEstudiantes((prev) =>
       prev.map((e) => {
+        if (e.id === studentId && e.bloqueado) return e;
         if (e.id !== studentId) return e;
 
         const updated = { ...e, [field]: value };
@@ -369,65 +378,29 @@ export function PlanillaCalificacionesModal({
     );
   };
 
-  // Guardar calificaciones y sincronizarlas automáticamente con el Boletín Oficial
-  const handleGuardarCalificaciones = () => {
+  // Guardar calificaciones en el backend: el boletín oficial y el portal del alumno leen estos mismos registros
+  const [guardando, setGuardando] = useState(false);
+  const handleGuardarCalificaciones = async () => {
+    if (guardando) return;
+    setGuardando(true);
+    const avisar = (mensaje, ms = 3000) => {
+      setToastMsg(mensaje);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), ms);
+    };
+
     try {
-      const keysMateria = obtenerClavesMateriaBoletin(materiaStr, anioNum);
-      const planillaState = {};
+      const aGuardar = estudiantes.filter((st) => !st.bloqueado);
+      const vacio = (valor) => (valor === "-" ? "" : String(valor ?? "").trim());
 
-      estudiantes.forEach((st) => {
-        const studentId = st.id;
-        planillaState[studentId] = {
-          p1: st.p1,
-          p2: st.p2,
-          v1: st.v1,
-          c1: st.c1,
-          f1: st.f1,
-          p3: st.p3,
-          p4: st.p4,
-          v2: st.v2,
-          c2: st.c2,
-          f2: st.f2,
-          dic: st.dic,
-          feb: st.feb,
-          final: st.final
-        };
-
-        // Actualizar el Boletín Oficial del Alumno
-        const boletinKey = `prece_boletin_${studentId}_anio_${anioNum}`;
-        let boletinData = {};
-        try {
-          const raw = localStorage.getItem(boletinKey);
-          if (raw) boletinData = JSON.parse(raw);
-        } catch {}
-
-        if (!boletinData.calificaciones) boletinData.calificaciones = {};
-
-        const califItem = {
-          informe1: String(st.c1 || "").trim(),
-          informe2: String(st.c2 || "").trim(),
-          promedioAnual: String(st.final || "").trim(),
-          diciembre: st.dic && st.dic !== "-" ? String(st.dic).trim() : "",
-          febrero: st.feb && st.feb !== "-" ? String(st.feb).trim() : "",
-          definitiva: String(st.final || "").trim()
-        };
-
-        // Guardar bajo todas las claves de materia correspondientes
-        keysMateria.forEach((k) => {
-          boletinData.calificaciones[k] = califItem;
+      for (const st of aGuardar) {
+        await BoletinOficialService.guardarMateria(st.id, {
+          ciclo: cicloLectivo,
+          materia: materiaOficial,
+          notas: { informe1: vacio(st.c1), informe2: vacio(st.c2), diciembre: vacio(st.dic), febrero: vacio(st.feb) },
+          detalle: { p1: st.p1, p2: st.p2, v1: st.v1, f1: st.f1, p3: st.p3, p4: st.p4, v2: st.v2, f2: st.f2 }
         });
-
-        boletinData.actualizadoEn = new Date().toISOString();
-        localStorage.setItem(boletinKey, JSON.stringify(boletinData));
-
-        // Marcar que el estudiante ya tiene calificaciones asentadas
-        if (st.c1 || st.c2 || st.final) {
-          localStorage.setItem(`prece_student_${studentId}_boletin_calificaciones`, "1");
-        }
-      });
-
-      // Guardar caché de planilla de la materia
-      localStorage.setItem(planillaStorageKey, JSON.stringify(planillaState));
+      }
 
       // Disparar eventos globales para actualizar otras vistas (listados de boletines, tableros)
       window.dispatchEvent(
@@ -437,73 +410,12 @@ export function PlanillaCalificacionesModal({
       );
       window.dispatchEvent(new CustomEvent("prece:boletin-updated"));
 
-      setToastMsg("✓ Calificaciones guardadas y sincronizadas con el Boletín Oficial");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      avisar("✓ Calificaciones guardadas: ya las ven el Boletín Oficial y el portal del alumno");
     } catch (e) {
       console.error("Error al guardar calificaciones:", e);
-      setToastMsg("Error al guardar calificaciones");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }
-  };
-
-  // Exportar planilla completa a archivo Excel (XLSX)
-  const handleExportarExcel = () => {
-    try {
-      const rows = [
-        ["DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN · PROVINCIA DE BUENOS AIRES"],
-        ["ESCUELA DE EDUCACIÓN SECUNDARIA TÉCNICA N° 1 'CECILIA BERDICHEVSKI'"],
-        [`PLANILLA OFICIAL DE CALIFICACIONES ${fecha.anio}`],
-        [],
-        ["MATERIA:", materiaStr, "", "AÑO:", cursoStr, "SECCIÓN:", `${divisionStr}°`],
-        ["TURNO:", turnoStr, "", "PROFESOR/A:", nombreDocente, "PRECEPTOR/A:", nombrePreceptor || "-"],
-        [],
-        [
-          "Nº",
-          "APELLIDO/S Y NOMBRE/S",
-          "DNI",
-          "1C PARC.",
-          "1C VAL. PREL.",
-          "CALIF. 1C",
-          "INAS. 1C",
-          "2C PARC.",
-          "2C VAL. PREL.",
-          "CALIF. 2C",
-          "INAS. 2C",
-          "INT. DIC.",
-          "INT. FEB.",
-          "CALIF. FINAL"
-        ]
-      ];
-
-      estudiantesOrdenados.forEach((e) => {
-        rows.push([
-          e.num,
-          `${e.apellido}, ${e.nombre}`,
-          e.dni,
-          `${e.p1 || ""} ${e.p2 ? `- ${e.p2}` : ""}`.trim(),
-          e.v1 || "-",
-          e.c1 || "",
-          e.f1 ?? 0,
-          `${e.p3 || ""} ${e.p4 ? `- ${e.p4}` : ""}`.trim(),
-          e.v2 || "-",
-          e.c2 || "",
-          e.f2 ?? 0,
-          e.dic || "-",
-          e.feb || "-",
-          e.final || ""
-        ]);
-      });
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, "Planilla Calificaciones");
-
-      const safeMateria = materiaStr.replace(/[^a-zA-Z0-9]/g, "_");
-      XLSX.writeFile(wb, `Planilla_${cursoStr}_${divisionStr}_${safeMateria}.xlsx`);
-    } catch (err) {
-      console.error("Error exportando planilla a Excel:", err);
+      avisar(`No se guardaron las calificaciones: ${e?.mensaje ?? "intentá de nuevo."}`, 5000);
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -533,28 +445,32 @@ export function PlanillaCalificacionesModal({
     }
   };
 
-  // Métricas estadísticas en vivo
-  const metricas = useMemo(() => {
-    const total = estudiantes.length;
-    let aprobados = 0;
-    let desaprobados = 0;
-    let sumaFinales = 0;
-    let conNotaFinal = 0;
+  // Métricas en vivo, por cuatrimestre: TEA o 7 o más = aprobado; el resto = desaprobado
+  const metricas = useMemo(() => calcularMetricas(estudiantes), [estudiantes]);
 
-    estudiantes.forEach((e) => {
-      const f = parseFloat(e.final);
-      if (!isNaN(f) && f > 0) {
-        sumaFinales += f;
-        conNotaFinal++;
-        if (f >= 7) aprobados++;
-        else desaprobados++;
-      }
-    });
-
-    const promedioCurso = conNotaFinal > 0 ? (sumaFinales / conNotaFinal).toFixed(2) : "-";
-
-    return { total, aprobados, desaprobados, promedioCurso };
-  }, [estudiantes]);
+  // Exportar PDF (Oficio vertical, una hoja) o Excel con el mismo diseño y los datos de pantalla
+  const exportar = async (descargar, formato) => {
+    try {
+      await descargar({
+        anioLectivo: fecha.anio,
+        materia: materiaStr,
+        curso: cursoStr,
+        division: divisionStr,
+        turno: turnoStr,
+        docente: nombreDocente,
+        preceptor: nombrePreceptor,
+        estudiantes: estudiantesOrdenados,
+        metricas
+      });
+    } catch (err) {
+      console.error(`Error exportando planilla a ${formato}:`, err);
+      setToastMsg(`No se pudo generar el archivo ${formato}. Intentá de nuevo.`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  };
+  const handleExportarPdf = () => exportar(descargarPlanillaPdf, "PDF");
+  const handleExportarExcel = () => exportar(descargarPlanillaXlsx, "Excel");
 
   if (!abierto) return null;
 
@@ -630,7 +546,8 @@ export function PlanillaCalificacionesModal({
               type: "button",
               className: "matriz-btn matriz-btn--primary",
               onClick: handleGuardarCalificaciones,
-              title: "Guardar notas y sincronizar con el boletín del alumno"
+              disabled: guardando,
+              title: "Guardar notas: las ven el boletín oficial y el portal del alumno"
             },
             h(
               "svg",
@@ -676,6 +593,24 @@ export function PlanillaCalificacionesModal({
               h("line", { x1: "12", y1: "15", x2: "12", y2: "3" })
             ),
             h("span", null, "Excel")
+          ),
+
+          // Descargar PDF
+          h(
+            "button",
+            {
+              type: "button",
+              className: "matriz-btn matriz-btn--secondary",
+              onClick: handleExportarPdf,
+              title: "Descargar planilla en PDF (Oficio, vertical)"
+            },
+            h(
+              "svg",
+              { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+              h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+              h("polyline", { points: "14 2 14 8 20 8" })
+            ),
+            h("span", null, "PDF")
           ),
 
           // Imprimir / PDF
@@ -768,10 +703,19 @@ export function PlanillaCalificacionesModal({
             h(
               "div",
               { className: "doc-planilla-stats-box" },
-              h("div", { className: "doc-stat-item" }, h("span", null, "TOTAL ESTUDIANTES:"), h("strong", null, metricas.total)),
-              h("div", { className: "doc-stat-item text-success" }, h("span", null, "APROBADOS:"), h("strong", null, metricas.aprobados)),
-              h("div", { className: "doc-stat-item text-danger" }, h("span", null, "DESAPROBADOS:"), h("strong", null, metricas.desaprobados)),
-              h("div", { className: "doc-stat-item" }, h("span", null, "PROMEDIO DEL CURSO:"), h("strong", null, metricas.promedioCurso))
+              ...resumenCurso(metricas).flatMap((grupo) =>
+                grupo.celdas.map(([nombre, valor]) =>
+                  h(
+                    "div",
+                    {
+                      key: `${grupo.titulo}-${nombre}`,
+                      className: `doc-stat-item${nombre === "Aprobados" ? " text-success" : nombre === "Desaprobados" ? " text-danger" : ""}`
+                    },
+                    h("span", null, grupo.celdas.length === 1 ? "TOTAL ESTUDIANTES:" : `${grupo.titulo.replace("CUATRIMESTRE", "CUAT.")} · ${nombre.toUpperCase()}:`),
+                    h("strong", null, valor)
+                  )
+                )
+              )
             )
           ),
 
@@ -857,7 +801,7 @@ export function PlanillaCalificacionesModal({
                     h("td", { colSpan: 13, style: { textAlign: "center", padding: "26px", color: "#64748b", fontStyle: "italic" } }, "No se encontraron alumnos matriculados en esta división.")
                   )
                 : estudiantesOrdenados.map((e) => {
-                    const rowClass = e.isSelected ? "doc-planilla-row--selected" : "";
+                    const rowClass = e.isSelected ? "doc-planilla-row--selected" : e.bloqueado ? "doc-planilla-row--locked" : "";
                     const fNum = parseFloat(e.final);
                     const isApproved = !isNaN(fNum) && fNum >= 7;
                     const isDisapproved = !isNaN(fNum) && fNum < 7;
@@ -878,6 +822,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "text",
                           className: "doc-planilla-cell-input",
                           placeholder: "p1 - p2",
@@ -899,6 +844,7 @@ export function PlanillaCalificacionesModal({
                           "select",
                           {
                             className: "doc-planilla-cell-select",
+                            disabled: Boolean(e.bloqueado),
                             value: e.v1 || "-",
                             onChange: (ev) => handleCellChange(e.id, "v1", ev.target.value === "-" ? "" : ev.target.value)
                           },
@@ -914,6 +860,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "text",
                           maxLength: 4,
                           className: `doc-planilla-cell-input ${parseFloat(e.c1) >= 7 ? "doc-planilla-cell-input--approved" : e.c1 ? "doc-planilla-cell-input--disapproved" : ""}`,
@@ -927,6 +874,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "number",
                           min: 0,
                           max: 99,
@@ -941,6 +889,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "text",
                           className: "doc-planilla-cell-input",
                           placeholder: "p3 - p4",
@@ -962,6 +911,7 @@ export function PlanillaCalificacionesModal({
                           "select",
                           {
                             className: "doc-planilla-cell-select",
+                            disabled: Boolean(e.bloqueado),
                             value: e.v2 || "-",
                             onChange: (ev) => handleCellChange(e.id, "v2", ev.target.value === "-" ? "" : ev.target.value)
                           },
@@ -977,6 +927,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "text",
                           maxLength: 4,
                           className: `doc-planilla-cell-input ${parseFloat(e.c2) >= 7 ? "doc-planilla-cell-input--approved" : e.c2 ? "doc-planilla-cell-input--disapproved" : ""}`,
@@ -990,6 +941,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "number",
                           min: 0,
                           max: 99,
@@ -1004,6 +956,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "text",
                           maxLength: 4,
                           className: "doc-planilla-cell-input",
@@ -1017,6 +970,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "text",
                           maxLength: 4,
                           className: "doc-planilla-cell-input",
@@ -1030,6 +984,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
+                          disabled: Boolean(e.bloqueado),
                           type: "text",
                           maxLength: 4,
                           className: `doc-planilla-cell-input doc-planilla-cell-input--final ${isApproved ? "doc-planilla-cell-input--approved" : isDisapproved ? "doc-planilla-cell-input--disapproved" : ""}`,
