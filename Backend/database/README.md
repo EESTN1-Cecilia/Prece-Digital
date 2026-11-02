@@ -6,6 +6,8 @@ La API persiste en memoria: `memory-store.mjs` es el único almacenamiento y cad
 
 `seeds/index.mjs` carga los datos de desarrollo de todos los módulos al arrancar fuera de producción. `seeds/students.seed.mjs` es la única lista de alumnos: los demás seeds referencian sus ids.
 
+`seeds/alumnos-datos.seed.mjs` completa a todos los alumnos al arrancar en desarrollo (no corre en los tests): notas del ciclo actual y de los anteriores según el plan de su año (`Shared/src/planes-boletin.mjs`), previas, inasistencias, datos personales faltantes y un tutor. Los valores salen del id del alumno: cada reinicio genera los mismos datos.
+
 ## Modelo objetivo
 
 `schema.sql` y `migrations/` describen el modelo relacional para MySQL (desarrollo) y PostgreSQL (producción). Todavía no está conectado.
