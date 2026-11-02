@@ -139,6 +139,19 @@
 
 .alumnos-main-card {
   margin-top: 14px;
+  border-radius: 20px;
+  border-color: #dfe6ef;
+  box-shadow: 0 16px 38px -34px rgba(15, 23, 42, 0.7);
+}
+
+.alumnos-main-card > .dashboard-card__header {
+  padding: 18px 24px;
+  background: linear-gradient(110deg, #ffffff 35%, #f4f8fc 100%);
+  border-bottom-color: #e6ebf2;
+}
+
+.alumnos-main-card > .dashboard-card__body {
+  padding: 20px 24px 24px;
 }
 
 /* ==========================================================================
@@ -631,6 +644,17 @@
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
+}
+
+.btn-ver-ficha-inline::after {
+  content: "→";
+  margin-left: 5px;
+  font-size: 13px;
+  transition: transform 140ms ease;
+}
+
+.btn-ver-ficha-inline:hover::after {
+  transform: translateX(2px);
 }
 
 .active-filters-bar {
@@ -1497,6 +1521,130 @@ input.form-control:focus,
   border-bottom: 2px solid rgba(0, 0, 0, 0.04);
 }
 
+.alumnos-toolbar.alumnos-toolbar--directory {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 17px 18px 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.alumnos-toolbar__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.alumnos-toolbar__heading-copy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.alumnos-toolbar__heading-copy > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alumnos-toolbar__heading-copy strong {
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.alumnos-toolbar__heading-copy span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.alumnos-toolbar__heading-icon {
+  width: 18px;
+  height: 18px;
+  padding: 7px;
+  box-sizing: content-box;
+  background: #eaf1ff;
+  border-radius: 9px;
+  color: #3659a7;
+  flex-shrink: 0;
+}
+
+.alumnos-toolbar__clear {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #d7dee8;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.alumnos-toolbar__clear:hover {
+  color: #9f1239;
+  background: #fff7f8;
+  border-color: #fecdd3;
+}
+
+.alumnos-toolbar--directory .search-input {
+  height: 44px;
+  border-color: #d4dde8;
+  border-radius: 10px;
+}
+
+.alumnos-toolbar--directory .filters-group {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.alumnos-toolbar--directory .filters-group .custom-select-wrapper,
+.alumnos-toolbar--directory .filters-group .custom-select__trigger {
+  width: 100%;
+  min-width: 0;
+}
+
+.alumnos-toolbar--directory .filters-group .custom-select__trigger {
+  justify-content: space-between;
+  border-color: #d4dde8;
+  border-radius: 10px;
+}
+
+.alumnos-active-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-top: 11px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.alumnos-active-filters__label {
+  margin-right: 2px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.alumnos-active-filter {
+  padding: 4px 9px;
+  color: #315b7c;
+  background: #edf5fb;
+  border: 1px solid #d5e4ef;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
 .search-input-wrapper {
   position: relative;
   display: flex;
@@ -1708,9 +1856,9 @@ input.form-control:focus,
 
 /* Tabla de Alumnos */
 .alumnos-table-wrap {
-  margin: 6px 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  margin: 4px 0 6px;
+  border: 1px solid #dfe6ef;
+  border-radius: 14px;
   overflow-x: auto;
   overflow-y: visible;
   max-height: none;
@@ -1725,6 +1873,22 @@ input.form-control:focus,
 
 .alumnos-table th {
   user-select: none;
+  padding: 12px 14px;
+  color: #526175;
+  background: #f4f7fa;
+  border-bottom: 1px solid #dfe6ef;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.alumnos-table td {
+  padding: 11px 14px;
+  border-bottom-color: #edf1f5;
+  color: #334155;
+}
+
+.alumnos-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .sortable-th {
@@ -1754,12 +1918,38 @@ input.form-control:focus,
 }
 
 .alumno-row:hover {
-  background: #f8faff;
+  background: #f6f9fc;
 }
 
 .alumno-name {
   color: var(--navy);
   font-size: 13.5px;
+}
+
+.alumno-identity-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alumno-table-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  color: #315b7c;
+  background: #edf5fb;
+  border: 1px solid #d5e4ef;
+  border-radius: 9px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.alumnos-table .status-badge {
+  padding: 4px 9px;
+  border-radius: 999px;
 }
 
 .curso-badge {
@@ -1975,9 +2165,32 @@ input.form-control:focus,
     min-width: 120px;
     max-width: none;
   }
+
+  .alumnos-toolbar--directory .filters-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 600px) {
+  .alumnos-main-card > .dashboard-card__header,
+  .alumnos-main-card > .dashboard-card__body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .alumnos-toolbar__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .alumnos-toolbar__clear {
+    width: 100%;
+  }
+
+  .alumnos-toolbar--directory .filters-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .filters-group {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

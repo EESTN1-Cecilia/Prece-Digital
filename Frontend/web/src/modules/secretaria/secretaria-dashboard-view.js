@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, Fragment } from "react";
-import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
+import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
-import { SummaryCard } from "../../components/dashboard/summary-card.js";
-import { AlertCard } from "../../components/dashboard/alert-card.js";
 import { QuickAccessGrid } from "../../components/dashboard/quick-access-grid.js";
 import { CursoDistribucionGrafico } from "../../components/dashboard/curso-distribucion-grafico.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge} from "../../components/common/state-handlers.js";
@@ -92,7 +90,6 @@ export default function SecretariaDashboardView() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [selectedTurnoFilter, setSelectedTurnoFilter] = useState("todos");
-  const [selectedOrientacionFilter, setSelectedOrientacionFilter] = useState("todas");
   const [matrizModalAbierto, setMatrizModalAbierto] = useState(false);
 
   // Apertura del Libro Matriz desde otros componentes
@@ -125,17 +122,6 @@ export default function SecretariaDashboardView() {
     fetchData();
   }, [fetchData]);
 
-  const handleDismissAlert = async (alertId) => {
-    await SecretariaService.dismissAlert(alertId);
-    setData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        alertas: prev.alertas.filter((a) => a.id !== alertId)
-      };
-    });
-  };
-
   const formatFechaHora = (date) => {
     if (!date) return "";
     return new Intl.DateTimeFormat("es-AR", {
@@ -158,11 +144,7 @@ export default function SecretariaDashboardView() {
       selectedTurnoFilter === "todos" ||
       turnoCurso.includes(selectedTurnoFilter.toLowerCase());
 
-    const coincideOrientacion =
-      selectedOrientacionFilter === "todas" ||
-      String(c.orientacion ?? "").toLowerCase().includes(selectedOrientacionFilter.toLowerCase());
-
-    return coincideTurno && coincideOrientacion;
+    return coincideTurno;
   });
 
   // Matrícula = alumnos activos: la misma cifra que muestran Dirección y los cursos
@@ -173,44 +155,50 @@ export default function SecretariaDashboardView() {
 
   return h(
     "section",
-    { className: "secretaria-dashboard" },
+    { className: "secretaria-dashboard secretaria-dashboard--home" },
 
-    // Barra superior con datos institucionales (sin switch de roles)
+    // Una sola cabecera, breve y orientada a la tarea.
     h(
-      "div",
-      { className: "secretaria-top-bar" },
+      "header",
+      { className: "secretaria-home-header" },
       h(
         "div",
-        { className: "secretaria-eyebrow" },
-        `${data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"}`
-      )
-    ),
-
-    // Título institucional y botón "Actualizar datos"
-    h(
-      "div",
-      { className: "secretaria-title-row" },
-      h(
-        "div",
-        null,
-        h("h1", { className: "secretaria-title" }, "Dashboard de Secretaría"),
+        { className: "secretaria-home-header__copy" },
+        h(
+          "div",
+          { className: "secretaria-home-header__brand" },
+          h("img", {
+            src: "/assets/precelogo.jpeg",
+            alt: "",
+            className: "secretaria-home-header__logo",
+            "aria-hidden": "true"
+          }),
+          h(
+            "span",
+            { className: "secretaria-eyebrow" },
+            data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"
+          )
+        ),
+        h("h1", { className: "secretaria-title" }, "Secretaría"),
+        h(
+          "p",
+          { className: "secretaria-home-header__description" },
+          `${formatFechaBanner(new Date())}. Todo lo importante de la gestión escolar, en un solo lugar.`
+        ),
         lastUpdated
-          ? h("p", { className: "secretaria-last-updated" }, `Última actualización: ${formatFechaHora(lastUpdated)}`)
-          : h("p", { className: "secretaria-last-updated" }, "Panel de control institucional")
+          ? h("p", { className: "secretaria-last-updated" }, `Actualizado ${formatFechaHora(lastUpdated)}`)
+          : null
       ),
       h(
-        "div",
-        { className: "secretaria-title-actions" },
-        h(
-          "button",
-          {
-            type: "button",
-            className: "btn-actualizar-datos",
-            onClick: fetchData
-          },
-          h(IconoFigma, { className: "btn-actualizar-icon", nombre: "filter" }),
-          h("span", null, loading ? "Actualizando..." : "Actualizar datos")
-        )
+        "button",
+        {
+          type: "button",
+          className: "btn-actualizar-datos",
+          onClick: fetchData,
+          disabled: loading
+        },
+        h(IconoFigma, { className: "btn-actualizar-icon", nombre: "filter" }),
+        h("span", null, loading ? "Actualizando..." : "Actualizar")
       )
     ),
 
@@ -226,42 +214,7 @@ export default function SecretariaDashboardView() {
           Fragment,
           null,
 
-          // 1. Banner Principal con Fecha y Escudo Institucional Notorio
-          h(
-            "div",
-            { className: "dashboard-hero-banner" },
-            h(
-              "div",
-              { className: "dashboard-hero-banner__left" },
-              h("h2", { className: "dashboard-hero-banner__date" }, formatFechaBanner(new Date())),
-              h(
-                "p",
-                { className: "dashboard-hero-banner__text" },
-                "Aquí tenés un resumen de la gestión institucional de la escuela."
-              )
-            ),
-            h(
-              "div",
-              { className: "dashboard-hero-badge" },
-              h(
-                "div",
-                { className: "school-crest-avatar" },
-                h("img", {
-                  src: "/assets/precelogo.jpeg",
-                  alt: "Prece Digital",
-                  className: "school-crest-img"
-                })
-              ),
-              h(
-                "div",
-                { className: "school-crest-text" },
-                h("strong", { className: "school-crest-title" }, "E.E.S.T. N°1"),
-                h("span", { className: "school-crest-subtitle" }, "Cecilia Berdichevski")
-              )
-            )
-          ),
-
-          // 2. Resumen General de Alumnos & Distribución por Turnos
+          // Resumen general, con una paleta contenida y lectura rápida.
           h(
             "div",
             { className: "secretaria-summary-layout" },
@@ -387,13 +340,14 @@ export default function SecretariaDashboardView() {
             )
           ),
 
-          // 2. Accesos Rápidos
+          // Acciones frecuentes, visibles sin sumar otra capa de navegación.
           h(
             DashboardCard,
             {
-              title: "Accesos Rápidos a Módulos",
+              title: "Accesos frecuentes",
               icon: "filter",
-              className: "dashboard-card--highlight"
+              className: "dashboard-card--highlight secretaria-quick-access-card",
+              collapsible: false
             },
             h(QuickAccessGrid, {
               userPermissions: user.permisos,
@@ -415,9 +369,10 @@ export default function SecretariaDashboardView() {
               h(
                 DashboardCard,
                 {
-                  title: "Distribución por Curso y División",
+                  title: "Cursos y divisiones",
                   icon: "people",
                   badge: `${cursosFiltrados.length} Divisiones`,
+                  collapsible: false,
                   actions: h(
                     "div",
                     { className: "filters-toolbar" },
@@ -455,7 +410,8 @@ export default function SecretariaDashboardView() {
                   title: "Registro de Actividad y Auditoría Reciente",
                   icon: "activity",
                   badge: `${data.actividadReciente?.length || 0} eventos`,
-                  collapsible: true
+                  collapsible: true,
+                  defaultExpanded: false
                 },
                 data.actividadReciente?.length === 0
                   ? h(EmptyState, { mensaje: "No hay actividades registradas recientemente." })
@@ -494,7 +450,7 @@ export default function SecretariaDashboardView() {
               h(
                 DashboardCard,
                 {
-                  title: "Resumen de Inasistencias Institucionales",
+                  title: "Inasistencias",
                   icon: "attendance",
                   actions: h(
                     "a",
@@ -563,8 +519,9 @@ export default function SecretariaDashboardView() {
               h(
                 DashboardCard,
                 {
-                  title: "Situaciones Académicas Relevantes",
-                  icon: "academic"
+                  title: "Situaciones académicas",
+                  icon: "academic",
+                  defaultExpanded: false
                 },
                 h(
                   "div",

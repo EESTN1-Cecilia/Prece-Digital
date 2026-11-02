@@ -473,6 +473,143 @@
   align-items: flex-end;
 }
 
+/* Panel principal de búsqueda y filtros de Observaciones. */
+.alumnos-toolbar.observations-toolbar--main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin: 4px 0 20px;
+  padding: 18px 20px 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-sizing: border-box;
+}
+
+.observations-toolbar--main .observations-toolbar__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.observations-toolbar__heading-copy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.observations-toolbar__heading-copy > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.observations-toolbar__heading-copy strong {
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.observations-toolbar__heading-copy span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.observations-toolbar__heading-icon {
+  width: 18px;
+  height: 18px;
+  padding: 7px;
+  box-sizing: content-box;
+  background: #eaf1ff;
+  border-radius: 9px;
+  color: #3659a7;
+  flex-shrink: 0;
+}
+
+.observations-toolbar__clear {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #d7dee8;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+
+.observations-toolbar__clear:hover {
+  color: #9f1239;
+  background: #fff7f8;
+  border-color: #fecdd3;
+}
+
+.observations-toolbar--main .observations-toolbar__search {
+  grid-column: 1 / -1;
+}
+
+.observations-toolbar--main .observations-toolbar__search input {
+  height: 44px;
+  background: #ffffff;
+}
+
+.observations-toolbar--main .observations-toolbar__filters {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: end;
+  width: 100%;
+  gap: 10px;
+}
+
+.observations-toolbar--main .observations-toolbar__field {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.observations-toolbar--main .observations-toolbar__field-label {
+  position: absolute;
+  top: -7px;
+  left: 12px;
+  z-index: 2;
+  padding: 0 4px;
+  color: #475569;
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.observations-toolbar--main .custom-select-wrapper,
+.observations-toolbar--main .custom-select__trigger,
+.observations-toolbar--main .observation-date-picker {
+  width: 100%;
+  min-width: 0;
+}
+
+.observations-toolbar--main .custom-select__trigger {
+  justify-content: space-between;
+  height: 42px;
+  background: #ffffff;
+}
+
+.observations-toolbar--main .observation-date-picker {
+  flex: 1 1 auto;
+}
+
+.observations-toolbar--main .observations-toolbar__active {
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
 .observation-date-picker {
   position: relative;
   display: flex;
@@ -937,6 +1074,14 @@ input[type="date"].form-input:focus {
   border-radius: 10px;
   background: #ffffff;
   padding: 14px 16px 12px;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.student-observation:hover {
+  border-color: #cbd5e1;
+  border-left-color: var(--indigo);
+  box-shadow: 0 8px 22px -20px rgba(15, 23, 42, 0.65);
+  transform: translateY(-1px);
 }
 
 .student-observation__body {
@@ -1078,6 +1223,71 @@ input[type="date"].form-input:focus {
   margin: 16px 0;
   color: #6c757d;
   text-align: center;
+}
+
+@media (max-width: 1040px) {
+  .observations-toolbar--main .observations-toolbar__filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 14px;
+  }
+
+  .student-observation__row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .observations-panel {
+    width: calc(100% - 24px);
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .observations-panel__top,
+  .observations-toolbar--main .observations-toolbar__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .observations-panel__top .action-button,
+  .observations-toolbar__clear {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .alumnos-toolbar.observations-toolbar--main {
+    padding: 16px;
+  }
+
+  .observations-toolbar--main .observations-toolbar__filters,
+  .student-observation__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .student-observation__field {
+    min-height: 58px;
+  }
+
+  .student-observation__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .student-observation__description {
+    white-space: normal;
+  }
+
+  .student-observation__actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 440px) {
+  .observations-toolbar--main .observations-toolbar__filters,
+  .student-observation__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .observation-form-card {
@@ -1382,47 +1592,85 @@ input[type="date"].form-input:focus {
 
 .student-history {
   display: grid;
-  gap: 10px;
+  gap: 14px;
 }
 
 .student-history__header {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 16px;
-}
-
-.student-history__header:has(.observations-toolbar__active) {
-  padding-bottom: 52px;
+  padding: 8px 0 0;
 }
 
 .student-history__filters.observations-toolbar {
-  display: flex;
-  flex: 1 1 auto;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  width: auto;
-  gap: 8px;
+  display: grid;
+  flex: 1 1 0;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  gap: 10px;
   min-width: 0;
   margin: 0;
 }
 
 .student-history__filters .observations-toolbar__filters {
-  display: flex;
-  width: auto;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(145px, 1.1fr)) repeat(4, minmax(105px, 0.8fr));
+  align-items: end;
+  width: 100%;
+  gap: 9px;
 }
 
 .student-history__filters .observations-toolbar__active {
-  position: absolute;
-  top: calc(100% - 44px);
-  left: 0;
+  position: static;
   width: 100%;
-  box-sizing: border-box;
-  transform: translateY(6px);
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  transform: none;
+}
+
+.student-history__filter-panel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.student-history__filter-intro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.student-history__filter-icon {
+  width: 17px;
+  height: 17px;
+  opacity: 0.72;
+}
+
+.student-history__filters .observations-toolbar__field,
+.student-history__filters .custom-select-wrapper,
+.student-history__filters .observation-date-picker {
+  width: 100%;
+  min-width: 0;
+}
+
+.student-history__filters .observation-date-picker {
+  flex: 1 1 auto;
+}
+
+.student-history__filters .custom-select__trigger {
+  justify-content: space-between;
+  width: 100%;
+  height: 42px;
 }
 
 .student-history__controls {
@@ -1491,7 +1739,7 @@ input[type="date"].form-input:focus {
 .student-history__heading {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 12px;
   margin: 0;
 }
 
@@ -1503,9 +1751,12 @@ input[type="date"].form-input:focus {
 }
 
 .student-history__count {
-  color: #6c757d;
-  font-size: 15px;
-  font-weight: 500;
+  padding: 4px 9px;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .student-history__select {
@@ -1522,14 +1773,15 @@ input[type="date"].form-input:focus {
 .history-item {
   border: 1px solid #e2e8f0;
   border-left: 4px solid var(--indigo);
-  border-radius: 9px;
+  border-radius: 13px;
   background: #ffffff;
-  padding: 12px 14px;
+  padding: 17px 18px;
+  box-shadow: 0 8px 22px -24px rgba(15, 23, 42, 0.7);
 }
 
 .history-item__main {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .history-item__top-grid {
@@ -1540,8 +1792,8 @@ input[type="date"].form-input:focus {
 
 .history-item__content {
   display: grid;
-  grid-template-columns: minmax(0, 2.4fr) minmax(180px, 0.8fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.42fr);
+  gap: 18px;
   align-items: start;
 }
 
@@ -1553,15 +1805,18 @@ input[type="date"].form-input:focus {
 
 .history-item__audit {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   align-self: start;
-  margin-top: 0;
-  padding-top: 0;
+  padding: 11px 12px;
+  background: #f8fafc;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
 }
 
 .history-item__audit .history-item__field {
   min-height: 0;
-  margin-left: 3px;
+  margin-left: 0;
 }
 
 .history-item__field {
@@ -1626,6 +1881,68 @@ input[type="date"].form-input:focus {
   color: #334155;
   font-size: 14px;
   line-height: 1.45;
+}
+
+@media (max-width: 1060px) {
+  .student-history__filter-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .student-history__filters .observations-toolbar__filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 13px;
+  }
+}
+
+@media (max-width: 720px) {
+  .student-detail__topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-detail__topbar > .action-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .student-detail__info h1 {
+    font-size: 28px;
+  }
+
+  .student-detail__info p {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .student-detail__observation-count {
+    margin-left: 0;
+  }
+
+  .student-history__filters .observations-toolbar__filters,
+  .history-item__top-grid,
+  .history-item__details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-item__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 440px) {
+  .student-history__filters .observations-toolbar__filters,
+  .history-item__top-grid,
+  .history-item__details,
+  .history-item__audit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .student-history__heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 /* ==== Biblioteca de componentes compartidos (components/ui) ====

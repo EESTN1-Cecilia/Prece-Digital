@@ -3,15 +3,15 @@
    ========================================================================== */
 
 .alumno-resumen-panel {
-  width: min(1180px, 100%);
+  width: min(1220px, 100%);
   margin: 0 auto;
-  padding: 24px 28px 40px;
+  padding: 24px 30px 42px;
 }
 
 .student-summary-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 /* 1. Top Bar de Navegación y Acciones */
@@ -21,7 +21,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 14px;
-  padding-bottom: 4px;
+  padding: 2px 2px 4px;
 }
 
 .student-summary-header-actions {
@@ -35,7 +35,7 @@
   font-size: 13px;
   font-weight: 500;
   color: #64748b;
-  background: rgba(241, 245, 249, 0.85);
+  background: rgba(248, 250, 252, 0.9);
   padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
@@ -119,11 +119,23 @@
 
 /* 2. Hero Card del Alumno */
 .student-summary-hero-card {
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #d7e3f1;
   border-radius: 18px;
-  background: linear-gradient(135deg, #ffffff 0%, #f1f7fe 100%);
-  padding: 20px 24px;
-  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.05);
+  background:
+    radial-gradient(circle at 92% 18%, rgba(56, 189, 248, 0.11), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #f3f8ff 62%, #eef7ff 100%);
+  padding: 22px 24px;
+  box-shadow: 0 8px 26px rgba(30, 58, 138, 0.07);
+}
+
+.student-summary-hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #23376d, #3b82f6 58%, #38bdf8);
 }
 
 .student-hero-content {
@@ -154,11 +166,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(147, 197, 253, 0.65);
+  box-shadow: 0 8px 18px rgba(30, 64, 175, 0.08);
 }
 
 .student-hero-avatar-icon {
-  width: 76px;
-  height: 76px;
+  width: 68px;
+  height: 68px;
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 4px 10px rgba(30, 58, 138, 0.12));
@@ -181,7 +199,7 @@
 
 .student-hero-name {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.01em;
@@ -198,8 +216,8 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  border-radius: 6px;
-  background: #f1f5f9;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.9);
   border: 1px solid #e2e8f0;
   font-size: 12.5px;
   font-weight: 600;
@@ -223,28 +241,44 @@
 .student-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 18px;
   align-items: start;
 }
 
 .student-summary-column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 /* Tarjeta base */
 .student-summary-card {
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #dfe7f1;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.96);
   padding: 18px 20px 20px;
-  box-shadow: 0 4px 16px rgba(42, 51, 76, 0.05);
+  box-shadow: 0 6px 18px rgba(42, 51, 76, 0.055);
   transition: transform 160ms ease, box-shadow 160ms ease, padding 160ms ease;
 }
 
+.student-summary-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: #93c5fd;
+}
+
+.student-basic-info-card::before { background: linear-gradient(90deg, #3b82f6, #7dd3fc); }
+.student-school-info-card::before { background: linear-gradient(90deg, #4f46e5, #818cf8); }
+.student-academic-status-card::before { background: linear-gradient(90deg, #16a34a, #86efac); }
+.student-attendance-summary-card::before { background: linear-gradient(90deg, #0284c7, #67e8f9); }
+.student-alert-list-card::before { background: linear-gradient(90deg, #f59e0b, #fde68a); }
+
 .student-summary-card:hover {
-  box-shadow: 0 6px 22px rgba(42, 51, 76, 0.08);
+  box-shadow: 0 9px 24px rgba(42, 51, 76, 0.085);
 }
 
 .student-summary-card.card--collapsed {
@@ -288,6 +322,12 @@
   color: #1e3a8a;
   flex-shrink: 0;
 }
+
+.student-basic-info-card .student-summary-card__icon { color: #2563eb; }
+.student-school-info-card .student-summary-card__icon { color: #4f46e5; }
+.student-academic-status-card .student-summary-card__icon { color: #15803d; }
+.student-attendance-summary-card .student-summary-card__icon { color: #0284c7; }
+.student-alert-list-card .student-summary-card__icon { color: #d97706; }
 
 .student-summary-card__title {
   margin: 0;
@@ -455,6 +495,13 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+
+.student-info-item:hover {
+  background: #f8fafc;
 }
 
 .student-info-item__label {
@@ -497,6 +544,8 @@
   border-radius: 10px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
+  min-height: 70px;
+  justify-content: center;
 }
 
 .student-metric-box.highlight-metric {
@@ -614,6 +663,7 @@
   text-align: center;
   border: 1px solid #e2e8f0;
   background: #ffffff;
+  min-height: 82px;
 }
 
 .counter--aprobadas {
@@ -713,7 +763,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #f8fbff, #f8fafc);
   border-radius: 12px;
   border: 1px solid #e2e8f0;
 }
@@ -747,6 +797,12 @@
   color: #b91c1c;
 }
 
+.percentage--neutral {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  color: #64748b;
+}
+
 .percentage-number {
   font-size: 18px;
   font-weight: 800;
@@ -773,6 +829,10 @@
   border-radius: 9999px;
 }
 
+.percentage-progress-bar-fill--empty {
+  background: #cbd5e1;
+}
+
 .attendance-breakdown-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -787,6 +847,8 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   text-align: center;
+  min-height: 76px;
+  justify-content: center;
 }
 
 .counter-value {
@@ -823,7 +885,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 0;
+  padding: 20px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fbfefc, #f8fafc);
+  border: 1px dashed #dbe5df;
   color: #64748b;
   text-align: center;
   font-size: 13px;
@@ -1166,6 +1231,21 @@
     flex-direction: column;
     text-align: center;
     gap: 12px;
+  }
+
+  .student-hero-left,
+  .student-hero-right {
+    width: 100%;
+  }
+
+  .student-hero-left {
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .student-hero-right {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .student-hero-title-row {
