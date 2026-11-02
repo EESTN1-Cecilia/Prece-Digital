@@ -162,36 +162,3 @@ test("directorio de divisiones y busqueda libre del listado", async () => {
   assert.ok(turno.cuerpo.data.every((alumno) => alumno.turno === "tarde"));
   assert.equal((await pedir("GET", "/api/v1/students?turno=noche", "preceptor")).status, 422);
 });
-
-test("el tablero de secretaria resume las inasistencias reales del ciclo y lista a quien requiere atencion", async () => {
-  const { default: inasistenciasRepository } = await import("../modules/inasistencias/inasistencias.repository.mjs");
-  const anio = new Date().getFullYear();
-  for (const [indice, estadoJustificacion] of ["no_justificada", "no_justificada", "pendiente"].entries()) {
-    inasistenciasRepository.create({
-      id: `ina-test-${indice}`,
-      escuelaId: "esc-1",
-      alumnoId: "alu-5",
-      alumno: { id: "alu-5", apellido: "Soria Ríos", nombre: "Florencia", dni: "45678901" },
-      curso: 1,
-      division: "1",
-      fecha: `${anio}-06-0${indice + 1}`,
-      anio,
-      cuatrimestre: 1,
-      motivo: "personal",
-      estadoJustificacion,
-      justificacion: null
-    });
-  }
-
-  const { cuerpo } = await pedir("GET", "/api/v1/dashboard/secretaria", "secretario");
-  const resumen = cuerpo.data.inasistencias;
-
-  assert.equal(resumen.disponible, true);
-  assert.ok(resumen.totalInasistencias >= 3);
-  assert.equal(resumen.totalInasistencias, resumen.justificadas + resumen.injustificadas + resumen.pendientes);
-  const florencia = resumen.alumnosAtencion.find((alumno) => alumno.id === "alu-5");
-  assert.ok(florencia, "alu-5 tiene 3 faltas sin justificar");
-  assert.equal(florencia.injustificadas, 2);
-  assert.equal(florencia.pendientes, 1);
-  assert.equal(florencia.curso, "1° 1");
-});

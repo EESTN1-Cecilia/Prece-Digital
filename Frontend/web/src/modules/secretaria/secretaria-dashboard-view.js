@@ -1,177 +1,89 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { h } from "../../layouts/site-layout.js";
+import React, { useState, useEffect, useCallback, Fragment } from "react";
+import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
+import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
+import { SummaryCard } from "../../components/dashboard/summary-card.js";
+import { AlertCard } from "../../components/dashboard/alert-card.js";
+import { QuickAccessGrid } from "../../components/dashboard/quick-access-grid.js";
 import { CursoDistribucionGrafico } from "../../components/dashboard/curso-distribucion-grafico.js";
-import { LoadingState, ErrorState } from "../../components/common/state-handlers.js";
+import { LoadingState, EmptyState, ErrorState, StatusBadge} from "../../components/common/state-handlers.js";
 import { SecretariaService } from "./secretaria-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { AlumnoMatrizModal } from "../students/alumno-matriz-wiew.js";
-import {
-  ACCIONES,
-  DOCUMENTOS,
-  itemsParaRevisar,
-  saludo,
-  fechaLarga,
-  palabra,
-  plural
-} from "./secretaria-inicio.js";
 
-/* Inicio de Secretaria pensado para personas que no usan pantallas todo el dia:
-   primero las tareas (botones grandes con un verbo), despues tres numeros en
-   palabras, despues lo que hay que revisar, y al final el detalle plegado.
-   Todas las funciones del tablero anterior siguen disponibles. */
-
-const CLAVE_LETRA = "prece.secretaria.letraGrande";
-const VISIBLES_PARA_REVISAR = 5;
-
-/* ---------------- Iconos (trazo simple, 24x24) ------------------------------ */
-
-const TRAZOS = {
-  buscar: [["circle", { cx: 11, cy: 11, r: 7 }], ["path", { d: "m20 20-3.5-3.5" }]],
-  inscribir: [["circle", { cx: 9, cy: 8, r: 4 }], ["path", { d: "M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1" }], ["path", { d: "M19 8v6M16 11h6" }]],
-  boletin: [["path", { d: "M6 3h9l4 4v14H6z" }], ["path", { d: "M14 3v5h5" }], ["path", { d: "M9 13h6M9 17h4" }]],
-  documento: [["path", { d: "M5 4h14v16H5z" }], ["path", { d: "M8 9h8M8 13h8" }], ["circle", { cx: 15, cy: 17, r: 1.5 }]],
-  asistencia: [["rect", { x: 3, y: 5, width: 18, height: 16, rx: 2 }], ["path", { d: "M3 10h18M8 3v4M16 3v4" }], ["path", { d: "m9 15 2 2 4-4" }]],
-  cursos: [["path", { d: "M3 9 12 4l9 5-9 5z" }], ["path", { d: "M7 11v5c3 2 7 2 10 0v-5" }]],
-  observaciones: [["path", { d: "M4 5h16v11H9l-5 4z" }], ["path", { d: "M8 9h8M8 12h5" }]],
-  libro: [["path", { d: "M4 4h7a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4z" }], ["path", { d: "M20 4h-7a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z" }]],
-  actualizar: [["path", { d: "M20 11a8 8 0 1 0-2.3 5.7" }], ["path", { d: "M20 4v7h-7" }]],
-  letra: [["path", { d: "M4 19 9 5l5 14M6 14h6" }], ["path", { d: "M15 19l3-8 3 8M16 17h4" }]],
-  ok: [["path", { d: "m5 12 5 5 9-10" }]],
-  alerta: [["path", { d: "M12 3 2 20h20z" }], ["path", { d: "M12 10v4M12 17v.5" }]],
-  flecha: [["path", { d: "m9 6 6 6-6 6" }]],
-  cerrar: [["path", { d: "M6 6l12 12M18 6 6 18" }]]
-};
-
-function Icono({ nombre, className = "sec-icono" }) {
+// Helper icons para las tarjetas de métricas
+function IconGroupUsers({ className }) {
   return h(
     "svg",
-    { className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", focusable: "false" },
-    ...(TRAZOS[nombre] ?? []).map(([tag, props], indice) => h(tag, { key: indice, ...props }))
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("path", { d: "M22 21v-2a4 4 0 0 0-3-3.87" }),
+    h("path", { d: "M16 3.13a4 4 0 0 1 0 7.75" })
   );
 }
 
-/* ---------------- Preferencia de letra grande ------------------------------ */
-
-function leerLetraGrande() {
-  try {
-    return window.localStorage.getItem(CLAVE_LETRA) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function guardarLetraGrande(valor) {
-  try {
-    window.localStorage.setItem(CLAVE_LETRA, valor ? "1" : "0");
-  } catch {
-    /* sin almacenamiento: la preferencia dura hasta recargar */
-  }
-}
-
-/* ---------------- Piezas de la pantalla ------------------------------------ */
-
-function Accion({ accion, onAbrir }) {
-  const contenido = [
-    h("span", { key: "i", className: `sec-accion__icono sec-tono--${accion.tono}` }, h(Icono, { nombre: accion.icono })),
-    h(
-      "span",
-      { key: "t", className: "sec-accion__texto" },
-      h("strong", { className: "sec-accion__titulo" }, accion.titulo),
-      h("span", { className: "sec-accion__ayuda" }, accion.ayuda)
-    )
-  ];
-
-  return accion.href
-    ? h("a", { className: "sec-accion", href: accion.href }, ...contenido)
-    : h("button", { type: "button", className: "sec-accion", onClick: () => onAbrir(accion.id) }, ...contenido);
-}
-
-function Numero({ valor, texto, tono }) {
+function IconUserVerified({ className }) {
   return h(
-    "div",
-    { className: `sec-numero sec-numero--${tono}` },
-    h("strong", { className: "sec-numero__valor" }, valor),
-    h("span", { className: "sec-numero__texto" }, texto)
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("polyline", { points: "16 11 18 13 22 9" })
   );
 }
 
-function FilaRevisar({ item, onRevisado, guardando }) {
+function IconUserAdd({ className }) {
   return h(
-    "li",
-    { className: `sec-revisar__fila sec-revisar__fila--${item.urgencia}` },
-    h(
-      "div",
-      { className: "sec-revisar__info" },
-      h("strong", { className: "sec-revisar__alumno" }, item.alumno),
-      h("ul", { className: "sec-revisar__motivos" }, item.motivos.map((motivo, indice) => h("li", { key: indice }, motivo)))
-    ),
-    h(
-      "div",
-      { className: "sec-revisar__botones" },
-      item.href ? h("a", { className: "sec-boton sec-boton--principal", href: item.href }, "Ver alumno") : null,
-      item.alertaIds.length > 0
-        ? h(
-          "button",
-          { type: "button", className: "sec-boton sec-boton--secundario", disabled: guardando, onClick: () => onRevisado(item) },
-          h(Icono, { nombre: "ok", className: "sec-icono sec-icono--chico" }),
-          guardando ? "Guardando..." : "Ya lo revisé"
-        )
-        : null
-    )
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("line", { x1: "19", y1: "8", x2: "19", y2: "14" }),
+    h("line", { x1: "16", y1: "11", x2: "22", y2: "11" })
   );
 }
 
-function Seccion({ titulo, resumen, children, abierta, onAlternar }) {
+function IconUserRemove({ className }) {
   return h(
-    "section",
-    { className: `sec-detalle${abierta ? " sec-detalle--abierta" : ""}` },
-    h(
-      "button",
-      { type: "button", className: "sec-detalle__cabecera", "aria-expanded": abierta, onClick: onAlternar },
-      h("span", { className: "sec-detalle__titulos" }, h("strong", null, titulo), h("span", null, resumen)),
-      h("span", { className: "sec-detalle__estado" }, abierta ? "Ocultar" : "Ver", h(Icono, { nombre: "flecha", className: "sec-icono sec-detalle__flecha" }))
-    ),
-    abierta ? h("div", { className: "sec-detalle__cuerpo" }, children) : null
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("line", { x1: "22", y1: "11", x2: "16", y2: "11" })
   );
 }
-
-function ElegirDocumento({ onElegir, onCerrar }) {
-  useEffect(() => {
-    const alTeclear = (evento) => evento.key === "Escape" && onCerrar();
-    document.addEventListener("keydown", alTeclear);
-    return () => document.removeEventListener("keydown", alTeclear);
-  }, [onCerrar]);
-
-  return h(
-    "div",
-    { className: "sec-dialogo", role: "dialog", "aria-modal": "true", "aria-labelledby": "sec-dialogo-titulo", onClick: onCerrar },
-    h(
-      "div",
-      { className: "sec-dialogo__panel", onClick: (evento) => evento.stopPropagation() },
-      h(
-        "div",
-        { className: "sec-dialogo__cabecera" },
-        h("h2", { id: "sec-dialogo-titulo" }, "¿Qué documento necesitás?"),
-        h("button", { type: "button", className: "sec-dialogo__cerrar", onClick: onCerrar, "aria-label": "Cerrar" }, h(Icono, { nombre: "cerrar" }))
-      ),
-      h("p", { className: "sec-dialogo__ayuda" }, "Elegí el documento. En la pantalla siguiente buscás al alumno y lo imprimís."),
-      h(
-        "div",
-        { className: "sec-dialogo__lista" },
-        DOCUMENTOS.map((documento) =>
-          h(
-            "button",
-            { key: documento.tipo, type: "button", className: "sec-documento", onClick: () => onElegir(documento.tipo) },
-            h("strong", null, documento.titulo),
-            h("span", null, documento.ayuda)
-          )
-        )
-      )
-    )
-  );
-}
-
-/* ---------------- Vista ------------------------------------------------------ */
 
 export default function SecretariaDashboardView() {
   const user = useUsuarioActual();
@@ -179,30 +91,30 @@ export default function SecretariaDashboardView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [turnoFiltro, setTurnoFiltro] = useState("todos");
+  const [selectedTurnoFilter, setSelectedTurnoFilter] = useState("todos");
+  const [selectedOrientacionFilter, setSelectedOrientacionFilter] = useState("todas");
   const [matrizModalAbierto, setMatrizModalAbierto] = useState(false);
-  const [eligiendoDocumento, setEligiendoDocumento] = useState(false);
-  const [letraGrande, setLetraGrande] = useState(leerLetraGrande);
-  const [verTodos, setVerTodos] = useState(false);
-  const [descartando, setDescartando] = useState(null);
-  const [aviso, setAviso] = useState(null);
-  const [abiertas, setAbiertas] = useState({});
 
   // Apertura del Libro Matriz desde otros componentes
   useEffect(() => {
-    const abrir = () => setMatrizModalAbierto(true);
-    window.addEventListener("prece:open_matriz_modal", abrir);
-    return () => window.removeEventListener("prece:open_matriz_modal", abrir);
+    const handleOpenMatriz = () => {
+      setMatrizModalAbierto(true);
+    };
+    window.addEventListener("prece:open_matriz_modal", handleOpenMatriz);
+    return () => {
+      window.removeEventListener("prece:open_matriz_modal", handleOpenMatriz);
+    };
   }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setData(await SecretariaService.getDashboardData());
+      const result = await SecretariaService.getDashboardData();
+      setData(result);
       setLastUpdated(new Date());
     } catch (err) {
-      setError(err?.mensaje || err?.message || "No se pudo cargar la información de la escuela.");
+      setError(err.message || "Error al consultar la información institucional de la base de datos.");
     } finally {
       setLoading(false);
     }
@@ -213,301 +125,489 @@ export default function SecretariaDashboardView() {
     fetchData();
   }, [fetchData]);
 
-  const mostrarAviso = (texto) => {
-    setAviso(texto);
-    setTimeout(() => setAviso(null), 4000);
-  };
-
-  /* "Ya lo revisé" descarta todas las alertas del alumno. Las faltas sin
-     justificar no se descartan: salen de la lista cuando se justifican. */
-  const marcarRevisado = async (item) => {
-    setDescartando(item.id);
-    try {
-      for (const alertId of item.alertaIds) {
-        await SecretariaService.dismissAlert(alertId);
-      }
-      setData((prev) => (prev ? { ...prev, alertas: prev.alertas.filter((a) => !item.alertaIds.includes(a.id)) } : prev));
-      mostrarAviso(item.motivos.length > item.alertaIds.length
-        ? "Listo. Las faltas sin justificar siguen en la lista hasta que se justifiquen."
-        : "Listo: lo marcaste como revisado.");
-    } catch (err) {
-      mostrarAviso(err?.mensaje || "No se pudo guardar. Probá de nuevo.");
-    } finally {
-      setDescartando(null);
-    }
-  };
-
-  const alternarLetra = () => {
-    setLetraGrande((actual) => {
-      guardarLetraGrande(!actual);
-      return !actual;
+  const handleDismissAlert = async (alertId) => {
+    await SecretariaService.dismissAlert(alertId);
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        alertas: prev.alertas.filter((a) => a.id !== alertId)
+      };
     });
   };
 
-  const abrirAccion = (id) => {
-    if (id === "libro-matriz") setMatrizModalAbierto(true);
-    if (id === "documentos") setEligiendoDocumento(true);
+  const formatFechaHora = (date) => {
+    if (!date) return "";
+    return new Intl.DateTimeFormat("es-AR", {
+      dateStyle: "short",
+      timeStyle: "medium"
+    }).format(new Date(date));
   };
 
-  const elegirDocumento = (tipo) => {
-    setEligiendoDocumento(false);
-    window.dispatchEvent(new CustomEvent("prece:open_document_modal", { detail: { tipo } }));
+  const formatFechaBanner = (date) => {
+    const d = date ? new Date(date) : new Date();
+    const options = { weekday: "long", day: "numeric", month: "long", year: "numeric" };
+    const raw = new Intl.DateTimeFormat("es-AR", options).format(d);
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
   };
 
-  const alternarSeccion = (id) => setAbiertas((previo) => ({ ...previo, [id]: !previo[id] }));
+  // Filtrado de cursos por turno y orientación
+  const cursosFiltrados = (data?.alumnosPorCurso || []).filter((c) => {
+    const turnoCurso = String(c.turnoAula || c.turno || "").toLowerCase();
+    const coincideTurno =
+      selectedTurnoFilter === "todos" ||
+      turnoCurso.includes(selectedTurnoFilter.toLowerCase());
 
-  const paraRevisar = useMemo(() => itemsParaRevisar(data), [data]);
-  const visibles = verTodos ? paraRevisar : paraRevisar.slice(0, VISIBLES_PARA_REVISAR);
+    const coincideOrientacion =
+      selectedOrientacionFilter === "todas" ||
+      String(c.orientacion ?? "").toLowerCase().includes(selectedOrientacionFilter.toLowerCase());
 
+    return coincideTurno && coincideOrientacion;
+  });
+
+  // Matrícula = alumnos activos: la misma cifra que muestran Dirección y los cursos
+  const totalAlumnos = data?.resumenAlumnos?.total ?? 0;
   const matricula = data?.resumenAlumnos?.matricula ?? data?.resumenAlumnos?.activos ?? 0;
-  const ausentesHoy = data?.asistenciaHoy?.ausentes ?? 0;
-  const cursos = (data?.alumnosPorCurso ?? []).filter(
-    (curso) => turnoFiltro === "todos" || String(curso.turnoAula ?? curso.turno ?? "").toLowerCase().includes(turnoFiltro)
-  );
-  const faltas = data?.inasistencias ?? {};
-  const academico = data?.situacionesAcademicas ?? {};
-  const actividad = data?.actividadReciente ?? [];
-  const nombre = user?.nombre && !/secretar/i.test(user.nombre) ? user.nombre.split(" ")[0] : null;
+  const inactivosAlumnos = data?.resumenAlumnos?.inactivos ?? 0;
+  const altasDelMes = data?.resumenAlumnos?.altasDelMes ?? 0;
 
   return h(
     "section",
-    { className: `sec-inicio${letraGrande ? " sec-inicio--grande" : ""}`, "aria-labelledby": "sec-inicio-titulo" },
+    { className: "secretaria-dashboard" },
 
-    /* Saludo y herramientas */
+    // Barra superior con datos institucionales (sin switch de roles)
     h(
-      "header",
-      { className: "sec-cabecera" },
+      "div",
+      { className: "secretaria-top-bar" },
+      h(
+        "div",
+        { className: "secretaria-eyebrow" },
+        `${data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"}`
+      )
+    ),
+
+    // Título institucional y botón "Actualizar datos"
+    h(
+      "div",
+      { className: "secretaria-title-row" },
       h(
         "div",
         null,
-        h("h1", { id: "sec-inicio-titulo", className: "sec-cabecera__titulo" }, saludo(new Date(), nombre)),
-        h("p", { className: "sec-cabecera__fecha" }, fechaLarga(new Date())),
-        h("p", { className: "sec-cabecera__escuela" }, data?.institucion?.nombre ?? "E.E.S.T. N° 1 Cecilia Berdichevski")
+        h("h1", { className: "secretaria-title" }, "Dashboard de Secretaría"),
+        lastUpdated
+          ? h("p", { className: "secretaria-last-updated" }, `Última actualización: ${formatFechaHora(lastUpdated)}`)
+          : h("p", { className: "secretaria-last-updated" }, "Panel de control institucional")
       ),
       h(
         "div",
-        { className: "sec-cabecera__herramientas" },
+        { className: "secretaria-title-actions" },
         h(
           "button",
-          { type: "button", className: "sec-boton sec-boton--secundario", "aria-pressed": letraGrande, onClick: alternarLetra },
-          h(Icono, { nombre: "letra", className: "sec-icono sec-icono--chico" }),
-          letraGrande ? "Letra normal" : "Letra más grande"
-        ),
-        h(
-          "button",
-          { type: "button", className: "sec-boton sec-boton--secundario", onClick: fetchData, disabled: loading },
-          h(Icono, { nombre: "actualizar", className: "sec-icono sec-icono--chico" }),
-          loading ? "Actualizando..." : "Actualizar"
+          {
+            type: "button",
+            className: "btn-actualizar-datos",
+            onClick: fetchData
+          },
+          h(IconoFigma, { className: "btn-actualizar-icon", nombre: "filter" }),
+          h("span", null, loading ? "Actualizando..." : "Actualizar datos")
         )
       )
     ),
 
-    aviso ? h("div", { className: "sec-aviso", role: "status" }, h(Icono, { nombre: "ok", className: "sec-icono sec-icono--chico" }), aviso) : null,
+    // Estado de Carga
+    loading && !data ? h(LoadingState, { mensaje: "Consultando base de datos institucional..." }) : null,
 
-    /* Tareas */
-    h(
-      "section",
-      { className: "sec-bloque", "aria-labelledby": "sec-tareas" },
-      h("h2", { id: "sec-tareas", className: "sec-bloque__titulo" }, "¿Qué necesitás hacer?"),
-      h("div", { className: "sec-acciones" }, ACCIONES.map((accion) => h(Accion, { key: accion.id, accion, onAbrir: abrirAccion })))
-    ),
-
-    loading && !data ? h(LoadingState, { mensaje: "Buscando la información de la escuela..." }) : null,
+    // Estado de Error
     error && !data ? h(ErrorState, { mensaje: error, onRetry: fetchData }) : null,
 
+    // Contenido del Dashboard cuando hay datos
     data
-      ? [
-        /* Hoy en la escuela */
-        h(
-          "section",
-          { key: "hoy", className: "sec-bloque", "aria-labelledby": "sec-hoy" },
-          h("h2", { id: "sec-hoy", className: "sec-bloque__titulo" }, "Hoy en la escuela"),
+      ? h(
+          Fragment,
+          null,
+
+          // 1. Banner Principal con Fecha y Escudo Institucional Notorio
           h(
             "div",
-            { className: "sec-numeros" },
-            h(Numero, { valor: matricula, texto: `${palabra(matricula, "alumno está cursando", "alumnos están cursando")} este año`, tono: "azul" }),
-            h(Numero, {
-              valor: ausentesHoy,
-              texto: ausentesHoy === 0 ? "faltas cargadas hoy" : `${palabra(ausentesHoy, "alumno faltó", "alumnos faltaron")} hoy`,
-              tono: ausentesHoy > 0 ? "ambar" : "verde"
-            }),
-            h(Numero, {
-              valor: paraRevisar.length,
-              texto: paraRevisar.length === 0 ? "alumnos para revisar: está todo al día" : palabra(paraRevisar.length, "alumno para revisar", "alumnos para revisar"),
-              tono: paraRevisar.length > 0 ? "rojo" : "verde"
-            })
-          )
-        ),
-
-        /* Para revisar */
-        h(
-          "section",
-          { key: "revisar", className: "sec-bloque", "aria-labelledby": "sec-revisar" },
-          h("h2", { id: "sec-revisar", className: "sec-bloque__titulo" }, "Para revisar"),
-          paraRevisar.length === 0
-            ? h("p", { className: "sec-vacio" }, h(Icono, { nombre: "ok", className: "sec-icono sec-icono--chico" }), "No hay nada pendiente. Cuando un alumno necesite atención va a aparecer acá.")
-            : [
-              h("p", { key: "ayuda", className: "sec-bloque__ayuda" }, "Primero lo más urgente. Cuando termines con un alumno, tocá “Ya lo revisé” y deja de aparecer."),
+            { className: "dashboard-hero-banner" },
+            h(
+              "div",
+              { className: "dashboard-hero-banner__left" },
+              h("h2", { className: "dashboard-hero-banner__date" }, formatFechaBanner(new Date())),
               h(
-                "ul",
-                { key: "lista", className: "sec-revisar" },
-                visibles.map((item) => h(FilaRevisar, { key: item.id, item, onRevisado: marcarRevisado, guardando: descartando === item.id }))
-              ),
-              paraRevisar.length > VISIBLES_PARA_REVISAR
-                ? h(
-                  "button",
-                  { key: "mas", type: "button", className: "sec-boton sec-boton--texto", onClick: () => setVerTodos((actual) => !actual) },
-                  verTodos ? "Mostrar menos" : `Mostrar los ${paraRevisar.length - VISIBLES_PARA_REVISAR} restantes`
-                )
-                : null
-            ]
-        ),
-
-        /* Detalle plegado */
-        h(
-          "section",
-          { key: "detalle", className: "sec-bloque", "aria-labelledby": "sec-mas" },
-          h("h2", { id: "sec-mas", className: "sec-bloque__titulo" }, "Más información"),
-          h("p", { className: "sec-bloque__ayuda" }, "Tocá un tema para ver el detalle."),
-
-          h(
-            Seccion,
-            {
-              titulo: "Alumnos por curso y turno",
-              resumen: `${plural(data.resumenAlumnos?.divisiones ?? cursos.length, "división", "divisiones")}, ${(data.resumenAlumnos?.porTurno ?? []).map((t) => `${t.cantidad} a la ${t.turno.toLowerCase()}`).join(" y ")}`,
-              abierta: Boolean(abiertas.cursos),
-              onAlternar: () => alternarSeccion("cursos")
-            },
-            h(
-              "div",
-              { className: "sec-turnos" },
-              (data.resumenAlumnos?.porTurno ?? []).map((t) =>
-                h("div", { key: t.turno, className: "sec-turno" }, h("strong", null, t.cantidad), h("span", null, `alumnos en el turno ${t.turno.toLowerCase()}`))
-              ),
-              h("div", { className: "sec-turno" }, h("strong", null, data.resumenAlumnos?.altasDelMes ?? 0), h("span", null, "inscriptos este mes")),
-              h("div", { className: "sec-turno" }, h("strong", null, data.resumenAlumnos?.inactivos ?? 0), h("span", null, "dados de baja o egresados"))
-            ),
-            h(
-              "div",
-              { className: "sec-filtro", role: "group", "aria-label": "Mostrar turno" },
-              h("span", null, "Mostrar:"),
-              [["todos", "Todos los turnos"], ["mañana", "Mañana"], ["tarde", "Tarde"]].map(([valor, texto]) =>
-                h("button", { key: valor, type: "button", className: `sec-filtro__opcion${turnoFiltro === valor ? " sec-filtro__opcion--activa" : ""}`, "aria-pressed": turnoFiltro === valor, onClick: () => setTurnoFiltro(valor) }, texto)
+                "p",
+                { className: "dashboard-hero-banner__text" },
+                "Aquí tenés un resumen de la gestión institucional de la escuela."
               )
             ),
-            cursos.length === 0
-              ? h("p", { className: "sec-vacio" }, "No hay cursos en ese turno.")
-              : h(CursoDistribucionGrafico, { cursos, turnoFiltro, totalDivisiones: cursos.length })
-          ),
-
-          h(
-            Seccion,
-            {
-              titulo: "Faltas del año",
-              resumen: faltas.disponible === false
-                ? "Todavía no hay faltas registradas"
-                : `${plural(faltas.totalInasistencias ?? 0, "falta cargada", "faltas cargadas")}, ${faltas.pendientes ?? 0} sin justificar todavía`,
-              abierta: Boolean(abiertas.faltas),
-              onAlternar: () => alternarSeccion("faltas")
-            },
             h(
               "div",
-              { className: "sec-turnos" },
-              h("div", { className: "sec-turno" }, h("strong", null, faltas.totalInasistencias ?? 0), h("span", null, "faltas en total")),
-              h("div", { className: "sec-turno sec-turno--verde" }, h("strong", null, faltas.justificadas ?? 0), h("span", null, "justificadas")),
-              h("div", { className: "sec-turno sec-turno--rojo" }, h("strong", null, faltas.injustificadas ?? 0), h("span", null, "sin justificación")),
-              h("div", { className: "sec-turno sec-turno--ambar" }, h("strong", null, faltas.pendientes ?? 0), h("span", null, "esperando nota o certificado"))
-            ),
-            (faltas.alumnosAtencion ?? []).length === 0
-              ? h("p", { className: "sec-vacio" }, "Ningún alumno tiene 3 o más faltas sin justificar.")
-              : h(
+              { className: "dashboard-hero-badge" },
+              h(
                 "div",
-                null,
-                h("h3", { className: "sec-detalle__subtitulo" }, "Alumnos con 3 o más faltas sin justificar"),
+                { className: "school-crest-avatar" },
+                h("img", {
+                  src: "/assets/precelogo.jpeg",
+                  alt: "Prece Digital",
+                  className: "school-crest-img"
+                })
+              ),
+              h(
+                "div",
+                { className: "school-crest-text" },
+                h("strong", { className: "school-crest-title" }, "E.E.S.T. N°1"),
+                h("span", { className: "school-crest-subtitle" }, "Cecilia Berdichevski")
+              )
+            )
+          ),
+
+          // 2. Resumen General de Alumnos & Distribución por Turnos
+          h(
+            "div",
+            { className: "secretaria-summary-layout" },
+
+            // Columna Izquierda: Grilla 2x2 de métricas con cajas de colores y hover temático
+            h(
+              "div",
+              { className: "kpi-summary-grid" },
+
+              // Card 1: Total de Alumnos (Azul)
+              h(
+                "div",
+                { className: "kpi-metric-card kpi-metric-card--blue" },
                 h(
-                  "ul",
-                  { className: "sec-tabla" },
-                  faltas.alumnosAtencion.map((alumno) =>
+                  "div",
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--blue" },
+                  h(IconGroupUsers, null)
+                ),
+                h(
+                  "div",
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Matrícula"),
+                  h("div", { className: "kpi-metric-card__value" }, matricula),
+                  h(
+                    "div",
+                    { className: "kpi-metric-card__subrow" },
+                    h("span", { className: "kpi-metric-card__period" }, `Ciclo ${data?.institucion?.cicloLectivo || 2026}`),
+                    h("span", { className: "kpi-metric-card__trend" }, `↗ +${altasDelMes} este mes`)
+                  )
+                )
+              ),
+
+              // Card 2: Alumnos Activos (Violeta)
+              h(
+                "div",
+                { className: "kpi-metric-card kpi-metric-card--purple" },
+                h(
+                  "div",
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--purple" },
+                  h(IconUserVerified, null)
+                ),
+                h(
+                  "div",
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Padrón Total"),
+                  h("div", { className: "kpi-metric-card__value" }, totalAlumnos),
+                  h(
+                    "span",
+                    { className: "kpi-metric-card__subtext" },
+                    `${totalAlumnos ? ((matricula / totalAlumnos) * 100).toFixed(1).replace(".", ",") : "0"}% con matrícula activa`
+                  )
+                )
+              ),
+
+              // Card 3: Nuevas Inscripciones (Verde)
+              h(
+                "div",
+                { className: "kpi-metric-card kpi-metric-card--green" },
+                h(
+                  "div",
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--green" },
+                  h(IconUserAdd, null)
+                ),
+                h(
+                  "div",
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Nuevas Inscripciones"),
+                  h("div", { className: "kpi-metric-card__value" }, altasDelMes),
+                  h("span", { className: "kpi-metric-card__subtext" }, "Altas de este mes")
+                )
+              ),
+
+              // Card 4: Bajas / Egresos (Ámbar)
+              h(
+                "div",
+                { className: "kpi-metric-card kpi-metric-card--amber" },
+                h(
+                  "div",
+                  { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--amber" },
+                  h(IconUserRemove, null)
+                ),
+                h(
+                  "div",
+                  { className: "kpi-metric-card__content" },
+                  h("span", { className: "kpi-metric-card__label" }, "Bajas / Egresos"),
+                  h("div", { className: "kpi-metric-card__value" }, inactivosAlumnos),
+                  h("span", { className: "kpi-metric-card__subtext" }, "Requieren revisión")
+                )
+              )
+            ),
+
+            // Columna Derecha: DISTRIBUCIÓN POR TURNOS con barras de progreso
+            h(
+              "div",
+              { className: "turnos-side-card" },
+              h("span", { className: "turnos-side-card__label" }, "DISTRIBUCIÓN POR TURNOS"),
+              h(
+                "div",
+                { className: "turnos-side-card__value" },
+                `${data.resumenAlumnos?.porTurno?.length ?? 2} turnos`
+              ),
+              (data.resumenAlumnos?.porTurno ?? []).map((t) => {
+                const pct = t.porcentaje || (matricula > 0 ? (t.cantidad / matricula) * 100 : 50);
+                return h(
+                  "div",
+                  { key: t.turno, className: "turno-progress-item" },
+                  h(
+                    "div",
+                    { className: "turno-progress-header" },
+                    h("span", { className: "turno-progress-name" }, t.turno),
+                    h("span", { className: "turno-progress-count" }, t.cantidad)
+                  ),
+                  h(
+                    "div",
+                    { className: "turno-progress-bar-bg" },
+                    h("div", {
+                      className: "turno-progress-bar-fill",
+                      style: { width: `${Math.min(100, Math.max(6, pct))}%` }
+                    })
+                  )
+                );
+              })
+            )
+          ),
+
+          // 2. Accesos Rápidos
+          h(
+            DashboardCard,
+            {
+              title: "Accesos Rápidos a Módulos",
+              icon: "filter",
+              className: "dashboard-card--highlight"
+            },
+            h(QuickAccessGrid, {
+              userPermissions: user.permisos,
+              onOpenMatriz: () => setMatrizModalAbierto(true)
+            })
+          ),
+
+          // 3. Grilla de 2 Columnas Verticales
+          h(
+            "div",
+            { className: "secretaria-grid-2col" },
+
+            // Columna Izquierda: Distribución por Curso y División + Alertas de Secretaría
+            h(
+              "div",
+              { className: "secretaria-grid-column" },
+
+              // 3.1 Tarjeta de Distribución de Cursos y Divisiones
+              h(
+                DashboardCard,
+                {
+                  title: "Distribución por Curso y División",
+                  icon: "people",
+                  badge: `${cursosFiltrados.length} Divisiones`,
+                  actions: h(
+                    "div",
+                    { className: "filters-toolbar" },
                     h(
-                      "li",
-                      { key: alumno.id },
-                      h("span", { className: "sec-tabla__nombre" }, alumno.nombre, h("small", null, alumno.curso)),
-                      h("span", null, `${alumno.injustificadas} sin justificación, ${alumno.pendientes} esperando nota`),
-                      h("a", { className: "sec-boton sec-boton--secundario", href: `#/alumnos/${encodeURIComponent(alumno.id)}` }, "Ver alumno")
+                      "div",
+                      { className: "filter-pills" },
+                      ["todos", "mañana", "tarde"].map((turno) =>
+                        h(
+                          "button",
+                          {
+                            key: turno,
+                            type: "button",
+                            className: `filter-pill ${selectedTurnoFilter === turno ? "active" : ""}`,
+                            onClick: () => setSelectedTurnoFilter(turno)
+                          },
+                          turno.charAt(0).toUpperCase() + turno.slice(1)
+                        )
+                      )
                     )
                   )
-                )
+                },
+                cursosFiltrados.length === 0
+                  ? h(EmptyState, { mensaje: "No hay cursos registrados para los filtros seleccionados." })
+                  : h(CursoDistribucionGrafico, {
+                      cursos: cursosFiltrados,
+                      turnoFiltro: selectedTurnoFilter,
+                      totalDivisiones: cursosFiltrados.length
+                    })
               ),
-            h("a", { className: "sec-boton sec-boton--principal sec-boton--ancho", href: "#/asistencias" }, "Ir a Asistencias")
-          ),
 
-          h(
-            Seccion,
-            {
-              titulo: "Materias previas y desaprobadas",
-              resumen: `${plural(academico.totalMateriasPendientes ?? 0, "materia previa", "materias previas")} y ${plural(academico.totalMateriasDesaprobadas ?? 0, "desaprobada", "desaprobadas")}`,
-              abierta: Boolean(abiertas.academico),
-              onAlternar: () => alternarSeccion("academico")
-            },
+              // 3.2 Tarjeta de Registro de Actividad y Auditoría Reciente
+              h(
+                DashboardCard,
+                {
+                  title: "Registro de Actividad y Auditoría Reciente",
+                  icon: "activity",
+                  badge: `${data.actividadReciente?.length || 0} eventos`,
+                  collapsible: true
+                },
+                data.actividadReciente?.length === 0
+                  ? h(EmptyState, { mensaje: "No hay actividades registradas recientemente." })
+                  : h(
+                      "div",
+                      { className: "activity-timeline-list" },
+                      data.actividadReciente?.map((item, idx) => {
+                        const initials = ["GB", "MP", "GB", "AR"][idx % 4] || "GB";
+                        return h(
+                          "div",
+                          { key: item.id, className: "activity-item-row" },
+                          h(
+                            "div",
+                            { className: "activity-item-left" },
+                            h("div", { className: "activity-avatar" }, initials),
+                            h(
+                              "div",
+                              { className: "activity-info" },
+                              h("strong", { className: "activity-title" }, item.descripcion),
+                              h("span", { className: "activity-subtitle" }, item.recurso || `Por: ${item.usuario}`)
+                            )
+                          ),
+                          h("time", { className: "activity-time" }, item.fecha)
+                        );
+                      })
+                    )
+              )
+            ),
+
+            // Columna Derecha: Resumen de Inasistencias + Situaciones Académicas Relevantes
             h(
               "div",
-              { className: "sec-turnos" },
-              h("div", { className: "sec-turno sec-turno--ambar" }, h("strong", null, academico.totalMateriasPendientes ?? 0), h("span", null, "materias previas")),
-              h("div", { className: "sec-turno sec-turno--rojo" }, h("strong", null, academico.totalMateriasDesaprobadas ?? 0), h("span", null, "materias desaprobadas")),
-              h("div", { className: "sec-turno" }, h("strong", null, academico.cambiosCursoPendientes ?? 0), h("span", null, "pases en trámite"))
-            ),
-            (academico.casosDestacados ?? []).length === 0
-              ? h("p", { className: "sec-vacio" }, "Ningún alumno adeuda materias.")
-              : h(
-                "ul",
-                { className: "sec-tabla" },
-                academico.casosDestacados.map((caso) =>
-                  h(
-                    "li",
-                    { key: caso.id },
-                    h("span", { className: "sec-tabla__nombre" }, caso.alumno, h("small", null, caso.curso)),
-                    h("span", null, caso.detalle.replace(/\(s\)/g, "s")),
-                    h("a", { className: "sec-boton sec-boton--secundario", href: `#/alumnos/${encodeURIComponent(caso.id)}` }, "Ver alumno")
+              { className: "secretaria-grid-column" },
+
+              // 3.3 Tarjeta de Inasistencias Institucionales
+              h(
+                DashboardCard,
+                {
+                  title: "Resumen de Inasistencias Institucionales",
+                  icon: "attendance",
+                  actions: h(
+                    "a",
+                    { href: "#/asistencias", className: "attendance-module-link" },
+                    "Módulo Asistencias",
+                    h(
+                      "svg",
+                      {
+                        width: "13",
+                        height: "13",
+                        viewBox: "0 0 24 24",
+                        fill: "none",
+                        stroke: "currentColor",
+                        strokeWidth: "2.5",
+                        strokeLinecap: "round",
+                        strokeLinejoin: "round"
+                      },
+                      h("polyline", { points: "6 9 12 15 18 9" })
+                    )
                   )
-                )
+                },
+                h(
+                  "div",
+                  { className: "attendance-summary-banner" },
+                  h("div", { className: "attendance-metric" },
+                    h("strong", null, data.inasistencias?.totalInasistencias || 0),
+                    h("span", null, "Total Inasistencias")
+                  ),
+                  h("div", { className: "attendance-metric text-success" },
+                    h("strong", null, data.inasistencias?.justificadas || 0),
+                    h("span", null, "Justificadas")
+                  ),
+                  h("div", { className: "attendance-metric text-danger" },
+                    h("strong", null, data.inasistencias?.injustificadas || 0),
+                    h("span", null, "Injustificadas")
+                  )
+                ),
+                h("h4", { className: "subsection-title" }, "Alumnos que requieren atención:"),
+                data.inasistencias?.alumnosAtencion?.length === 0
+                  ? h(EmptyState, { mensaje: "No hay alumnos en situación crítica de inasistencias." })
+                  : h(
+                      "ul",
+                      { className: "attention-list" },
+                      data.inasistencias?.alumnosAtencion?.map((al) =>
+                        h(
+                          "li",
+                          { key: al.id, className: "attention-list__item" },
+                          h(
+                            "div",
+                            null,
+                            h("strong", { className: "attention-list__name" }, al.nombre),
+                            h("span", { className: "attention-list__course" }, `Legajo: ${al.legajo} • Curso: ${al.curso}`)
+                          ),
+                          h(
+                            "div",
+                            { className: "attention-list__right" },
+                            h("span", { className: "attention-list__faltas" }, `${al.faltas} faltas`),
+                            h(StatusBadge, { status: al.estado })
+                          )
+                        )
+                      )
+                    )
               ),
-            h("a", { className: "sec-boton sec-boton--principal sec-boton--ancho", href: "#/boletines" }, "Ir a Boletines y notas")
-          ),
 
-          h(
-            Seccion,
-            {
-              titulo: "Últimos cambios en los legajos",
-              resumen: actividad.length === 0 ? "Sin cambios recientes" : plural(actividad.length, "cambio reciente", "cambios recientes"),
-              abierta: Boolean(abiertas.actividad),
-              onAlternar: () => alternarSeccion("actividad")
-            },
-            actividad.length === 0
-              ? h("p", { className: "sec-vacio" }, "Cuando se inscriba, modifique o dé de baja a un alumno, va a aparecer acá.")
-              : h(
-                "ul",
-                { className: "sec-tabla" },
-                actividad.map((item) =>
-                  h(
-                    "li",
-                    { key: item.id },
-                    h("span", { className: "sec-tabla__nombre" }, item.recurso, h("small", null, item.descripcion)),
-                    h("span", null, item.fecha ? new Date(item.fecha).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" }) : ""),
-                    h("span", null)
+              // 3.4 Tarjeta de Situaciones Académicas Relevantes
+              h(
+                DashboardCard,
+                {
+                  title: "Situaciones Académicas Relevantes",
+                  icon: "academic"
+                },
+                h(
+                  "div",
+                  { className: "academic-overview-metrics" },
+                  h("div", { className: "academic-badge" },
+                    h("strong", null, data.situacionesAcademicas?.totalMateriasPendientes || 0),
+                    h("span", null, "Materias Previas")
+                  ),
+                  h("div", { className: "academic-badge" },
+                    h("strong", null, data.situacionesAcademicas?.totalMateriasDesaprobadas || 0),
+                    h("span", null, "Materias Desaprobadas")
+                  ),
+                  h("div", { className: "academic-badge" },
+                    h("strong", null, data.situacionesAcademicas?.evaluacionesPendientes || 0),
+                    h("span", null, "Mesas de Examen")
                   )
-                )
+                ),
+                h("h4", { className: "subsection-title" }, "Casos para revisión:"),
+                data.situacionesAcademicas?.casosDestacados?.length === 0
+                  ? h(EmptyState, { mensaje: "Sin casos académicos pendientes de revisión." })
+                  : h(
+                      "div",
+                      { className: "academic-cases" },
+                      data.situacionesAcademicas?.casosDestacados?.map((caso) =>
+                        h(
+                          "div",
+                          { key: caso.id, className: "academic-case-card" },
+                          h(
+                            "div",
+                            { className: "academic-case-card__header" },
+                            h("strong", null, caso.alumno),
+                            h(StatusBadge, { status: caso.situacion })
+                          ),
+                          h("p", { className: "academic-case-card__detail" }, caso.detalle),
+                          h("span", { className: "academic-case-card__course" }, `Curso: ${caso.curso}`)
+                        )
+                      )
+                    )
               )
-          ),
-
-          lastUpdated
-            ? h("p", { className: "sec-actualizado" }, `Datos actualizados a las ${lastUpdated.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })} h`)
-            : null
+            )
+          )
         )
-      ]
       : null,
-
-    eligiendoDocumento ? h(ElegirDocumento, { onElegir: elegirDocumento, onCerrar: () => setEligiendoDocumento(false) }) : null,
-
     h(AlumnoMatrizModal, {
       abierto: matrizModalAbierto,
       onCerrar: () => setMatrizModalAbierto(false),
