@@ -10,6 +10,7 @@ import { calcularMetricas, resumenCurso } from "./planilla-estructura.js";
 import { descargarPlanillaXlsx } from "./planilla-xlsx.js";
 import { BoletinOficialService } from "../boletin/boletin-oficial-service.js";
 import { buscarNota, recalcularNota } from "../boletin/boletin-oficial-datos.js";
+import { PeriodosCargaService, bloqueosDe, enumerar } from "../grades/periodos-carga.js";
 
 // Cursos de referencia por defecto para docentes si no vienen en la sesión
 const ASIGNACIONES_DEFAULT = [
@@ -181,6 +182,24 @@ export function PlanillaCalificacionesModal({
 
   // Ciclo lectivo en que se carga la planilla
   const cicloLectivo = new Date().getFullYear();
+
+  // Períodos de carga que la Dirección bloqueó: esas columnas quedan de solo lectura
+  const [estadoPeriodos, setEstadoPeriodos] = useState(null);
+  useEffect(() => {
+    if (!abierto) return undefined;
+    let vigente = true;
+    PeriodosCargaService.obtener(cicloLectivo)
+      .then((datos) => vigente && setEstadoPeriodos(datos))
+      .catch(() => vigente && setEstadoPeriodos(null));
+    return () => {
+      vigente = false;
+    };
+  }, [abierto, cicloLectivo]);
+  const bloqueo = useMemo(() => bloqueosDe(estadoPeriodos, user?.assignments ?? []), [estadoPeriodos, user?.assignments]);
+  const avisoBloqueo = useMemo(() => {
+    const nombres = (estadoPeriodos?.periodos ?? []).filter((periodo) => bloqueo[periodo.id]).map((periodo) => periodo.nombre);
+    return nombres.length > 0 ? `La Dirección bloqueó la carga de notas de: ${enumerar(nombres)}. Esas columnas son de solo lectura.` : null;
+  }, [estadoPeriodos, bloqueo]);
 
   // Arma las notas de un alumno a partir de su registro del backend (misma fuente que el boletín y el portal)
   const notasDeRegistro = useCallback(
@@ -631,6 +650,10 @@ export function PlanillaCalificacionesModal({
         )
       ),
 
+      avisoBloqueo
+        ? h("div", { className: "doc-planilla-aviso-bloqueo no-print", role: "status" }, "🔒 ", avisoBloqueo)
+        : null,
+
       // Contenedor scrollable
       h(
         "div",
@@ -822,7 +845,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre1,
                           type: "text",
                           className: "doc-planilla-cell-input",
                           placeholder: "p1 - p2",
@@ -844,7 +867,7 @@ export function PlanillaCalificacionesModal({
                           "select",
                           {
                             className: "doc-planilla-cell-select",
-                            disabled: Boolean(e.bloqueado),
+                            disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre1,
                             value: e.v1 || "-",
                             onChange: (ev) => handleCellChange(e.id, "v1", ev.target.value === "-" ? "" : ev.target.value)
                           },
@@ -860,7 +883,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre1,
                           type: "text",
                           maxLength: 4,
                           className: `doc-planilla-cell-input ${parseFloat(e.c1) >= 7 ? "doc-planilla-cell-input--approved" : e.c1 ? "doc-planilla-cell-input--disapproved" : ""}`,
@@ -874,7 +897,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre1,
                           type: "number",
                           min: 0,
                           max: 99,
@@ -889,7 +912,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre2,
                           type: "text",
                           className: "doc-planilla-cell-input",
                           placeholder: "p3 - p4",
@@ -911,7 +934,7 @@ export function PlanillaCalificacionesModal({
                           "select",
                           {
                             className: "doc-planilla-cell-select",
-                            disabled: Boolean(e.bloqueado),
+                            disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre2,
                             value: e.v2 || "-",
                             onChange: (ev) => handleCellChange(e.id, "v2", ev.target.value === "-" ? "" : ev.target.value)
                           },
@@ -927,7 +950,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre2,
                           type: "text",
                           maxLength: 4,
                           className: `doc-planilla-cell-input ${parseFloat(e.c2) >= 7 ? "doc-planilla-cell-input--approved" : e.c2 ? "doc-planilla-cell-input--disapproved" : ""}`,
@@ -941,7 +964,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre2,
                           type: "number",
                           min: 0,
                           max: 99,
@@ -956,7 +979,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.diciembre,
                           type: "text",
                           maxLength: 4,
                           className: "doc-planilla-cell-input",
@@ -970,7 +993,7 @@ export function PlanillaCalificacionesModal({
                         "td",
                         { style: { padding: "2px" } },
                         h("input", {
-                          disabled: Boolean(e.bloqueado),
+                          disabled: Boolean(e.bloqueado) || bloqueo.febrero,
                           type: "text",
                           maxLength: 4,
                           className: "doc-planilla-cell-input",

@@ -7,6 +7,7 @@ import { DirectorService, ROLES_DISPONIBLES } from "./director-service.js";
 import { NuevoPerfilModal } from "./components/nuevo-perfil-modal.js";
 import { EditarRolesModal } from "./components/editar-roles-modal.js";
 import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.js";
+import { PeriodosCargaSection } from "./components/periodos-carga-section.js";
 import { AsignacionesSection, calcularMetricasAsignaciones } from "./components/asignaciones-section.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { fecha } from "../../utils/formato.js";
@@ -159,7 +160,7 @@ export default function DirectorDashboardView() {
   const [personal, setPersonal] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'supervision' | 'pedidos' | 'alertas'
+  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'supervision' | 'carga-notas' | 'pedidos' | 'alertas'
   const [modoAsistencia, setModoAsistencia] = useState("porcentaje"); // 'porcentaje' | 'cantidad'
   const [modoAlumnos, setModoAlumnos] = useState("cantidad"); // 'cantidad' | 'porcentaje'
 
@@ -556,6 +557,7 @@ export default function DirectorDashboardView() {
           { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
           { id: "asignaciones", label: "Asignaciones", icon: IconSchool },
           { id: "supervision", label: "Supervisión de Áreas", icon: IconSchool },
+          { id: "carga-notas", label: "Carga de Notas", icon: IconClipboard },
           ...(MOSTRAR_HABILITAR_PEDIDOS
             ? [
               {
@@ -1786,6 +1788,17 @@ export default function DirectorDashboardView() {
               )
             )
           )
+        )
+        : null,
+
+      // =========================================================================
+      // CARGA DE NOTAS: bloqueo y habilitación de períodos (cuatrimestres)
+      // =========================================================================
+      !cargando && pestanaActiva === "carga-notas"
+        ? h(
+          "div",
+          { className: "director-section-content" },
+          h(PeriodosCargaSection, { onMostrarToast: mostrarToast })
         )
         : null,
 

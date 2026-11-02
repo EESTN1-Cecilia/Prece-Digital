@@ -5107,3 +5107,176 @@
   text-align: center;
   justify-content: center;
 }
+/* =========================================================================
+   Carga de notas: bloqueo y habilitación de períodos
+   ========================================================================= */
+.director-periodos-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.director-periodos-ciclo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.director-periodos-ciclo label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.director-periodos-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.director-periodo-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #16a34a;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.director-periodo-card:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+}
+
+.director-periodo-card--bloqueado {
+  border-left-color: #dc2626;
+  background: #fef2f2;
+}
+
+.director-periodo-check {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: #16a34a;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.director-periodo-check:disabled {
+  cursor: wait;
+}
+
+.director-periodo-card__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.director-periodo-card__titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.director-periodo-card__titulo strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.director-periodo-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.director-periodo-estado svg {
+  width: 13px;
+  height: 13px;
+}
+
+.director-periodo-estado--abierto {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.director-periodo-estado--bloqueado {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.director-periodo-card__desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.director-periodo-card__meta {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.director-periodos-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #475569;
+}
+
+.director-periodos-acciones__botones {
+  display: flex;
+  gap: 8px;
+}
+
+.director-periodos-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.director-periodos-btn--bloquear {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.director-periodos-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.director-periodos-error {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.director-periodos-cargando {
+  color: #64748b;
+  font-size: 13px;
+}
