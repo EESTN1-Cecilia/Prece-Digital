@@ -27,6 +27,10 @@ const gradesRepository = {
     if (!store.gradesAudit) {
       store.gradesAudit = [];
     }
+
+    if (!store.gradesPeriodosCarga) {
+      store.gradesPeriodosCarga = new Map();
+    }
   },
 
   resetData() {
@@ -34,6 +38,24 @@ const gradesRepository = {
     const store = getStore();
     store.gradesCalificaciones.clear();
     store.gradesAudit.length = 0;
+    store.gradesPeriodosCarga.clear();
+  },
+
+  /* ---------------- Periodos de carga --------------------------------------- */
+
+  /* Un registro por ciclo lectivo: { anio, periodos: { cuatrimestre1: { habilitado,
+     actualizadoEn, actualizadoPor }, ... } }. Sin registro, todo esta habilitado. */
+  obtenerPeriodosCarga(anio) {
+    this.init();
+    const registro = getStore().gradesPeriodosCarga.get(String(anio));
+    return registro ? cloneDeep(registro) : null;
+  },
+
+  guardarPeriodosCarga(anio, periodos) {
+    this.init();
+    const registro = { anio: Number(anio), periodos: cloneDeep(periodos) };
+    getStore().gradesPeriodosCarga.set(String(anio), registro);
+    return cloneDeep(registro);
   },
 
   /* ---------------- Calificaciones ---------------------------------------- */

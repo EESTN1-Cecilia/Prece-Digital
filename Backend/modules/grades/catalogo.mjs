@@ -80,6 +80,27 @@ export function normalizarCuatrimestre(valor) {
   return CUATRIMESTRES.includes(numero) ? numero : undefined;
 }
 
+/* Periodos de carga de notas que la Direccion habilita o bloquea por ciclo
+   lectivo. Son las columnas de la planilla del docente y del boletin oficial:
+   los dos cuatrimestres y las dos instancias de intensificacion. Mientras la
+   Direccion no los toque, todos estan habilitados. */
+export const PERIODOS_CARGA = [
+  { id: "cuatrimestre1", nombre: "1° cuatrimestre", descripcion: "Parciales, valoración preliminar, calificación e inasistencias del 1° cuatrimestre." },
+  { id: "cuatrimestre2", nombre: "2° cuatrimestre", descripcion: "Parciales, valoración preliminar, calificación e inasistencias del 2° cuatrimestre." },
+  { id: "diciembre", nombre: "Intensificación de diciembre", descripcion: "Instancia de diciembre y calificaciones anuales." },
+  { id: "febrero", nombre: "Intensificación de febrero", descripcion: "Instancia de febrero (recuperatorio)." }
+];
+
+export const PERIODOS_CARGA_VALIDOS = PERIODOS_CARGA.map((periodo) => periodo.id);
+
+/* Periodo de carga al que pertenece una calificacion. Las anuales (sin
+   cuatrimestre) son diciembre, salvo el recuperatorio de febrero. */
+export function periodoDeCarga({ cuatrimestre, tipoEvaluacion, periodo } = {}) {
+  if (cuatrimestre === 1) return "cuatrimestre1";
+  if (cuatrimestre === 2) return "cuatrimestre2";
+  return tipoEvaluacion === "recuperatorio" || periodo === "Febrero" ? "febrero" : "diciembre";
+}
+
 export function etiquetaPeriodo(anio, cuatrimestre) {
   return cuatrimestre ? `${anio} - C${cuatrimestre}` : String(anio);
 }

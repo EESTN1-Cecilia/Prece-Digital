@@ -1,4 +1,5 @@
 import gradesService from "./grades.service.mjs";
+import periodosCargaService from "./periodos-carga.service.mjs";
 
 function query(url) {
   return Object.fromEntries(url.searchParams.entries());
@@ -28,6 +29,16 @@ export function updateCalificacion({ params, body, user }) {
 
 export function deleteCalificacion({ params, user }) {
   return gradesService.deleteCalificacion(params.calificacionId, user);
+}
+
+/* ---------------- Periodos de carga --------------------------------------- */
+
+export function getPeriodosCarga({ url }) {
+  return periodosCargaService.obtener(query(url));
+}
+
+export function updatePeriodosCarga({ params, body, user }) {
+  return periodosCargaService.actualizar(params.anio, body, user);
 }
 
 /* ---------------- Consultas por alumno y docente ------------------------- */

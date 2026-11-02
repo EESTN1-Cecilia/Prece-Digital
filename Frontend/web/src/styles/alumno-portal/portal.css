@@ -1138,3 +1138,20 @@ a.pa-indicador:hover {
   .pa-novedad { flex-wrap: wrap; }
   .pa-novedad__fecha { margin-left: auto; }
 }
+
+/* Boletin en modal (personal): el marco nuevo de .pa (position relative, fondo y
+   formas decorativas) no aplica al modal. Sin esto el modal queda al final de la
+   pagina, fuera de la vista, y solo se ven las formas de fondo. */
+.pa.pa-modal {
+  position: fixed;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: rgba(23, 25, 31, 0.55);
+}
+
+.pa.pa-modal::before,
+.pa.pa-modal::after { display: none; }
+
+@media print {
+  .pa.pa-modal { position: static; overflow: visible; background: none; }
+}

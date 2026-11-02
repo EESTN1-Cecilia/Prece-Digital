@@ -9,6 +9,7 @@ import { h } from "../../../layouts/site-layout.js";
 import {
   anioDelAlumno,
   armarBoletinOficial,
+  cicloDeAnio,
   planDelAnio,
   promedioGeneral,
   recalcularNota,
@@ -16,6 +17,8 @@ import {
 } from "../../boletin/boletin-oficial-datos.js";
 import { abrirBoletinesOficial } from "../../boletin/boletin-oficial-pdf.js";
 import { BoletinOficialService } from "../../boletin/boletin-oficial-service.js";
+import { PeriodosCargaService, bloqueosDe, enumerar } from "../../grades/periodos-carga.js";
+import { useUsuarioActual } from "../../../estado/index.js";
 
 const ANIOS = [1, 2, 3, 4, 5, 6, 7];
 
@@ -60,6 +63,7 @@ const ESTILOS = `
 .bof-tabla td.bof-def{background:#efd6d9!important;font-weight:800}
 .bof-nota{width:100%;height:100%;border:0;background:transparent;text-align:center;font:inherit;font-size:12px;padding:4px 0;color:#111827}
 .bof-nota:focus{outline:2px solid #1e2a44;background:#fff}
+.bof-nota:disabled{background:#e5e7eb;color:#6b7280;cursor:not-allowed}
 .bof-pie td{background:#f3f4f6!important;height:28px;font-weight:700}
 .bof-pie input{width:46px;border:1px solid #9ca3af;border-radius:4px;text-align:center;font:inherit;padding:2px}
 .bof-pend-t{background:#5c121c;color:#fff;font-weight:800;padding:5px 8px;margin-top:16px;font-size:10px}
@@ -82,6 +86,9 @@ const COLS_NOTA = [
   ["febrero", true],
   ["definitiva", false]
 ];
+
+/* Columna del boletin -> periodo de carga que la Direccion puede bloquear. */
+const PERIODO_DE_CAMPO = { informe1: "cuatrimestre1", informe2: "cuatrimestre2", diciembre: "diciembre", febrero: "febrero" };
 
 export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
   const anioAlumno = anioDelAlumno(alumno);
@@ -128,6 +135,26 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
   }, [abierto, onCerrar]);
 
   const materias = useMemo(() => (boletin ? [...boletin.plan.general, ...boletin.plan.taller] : []), [boletin]);
+
+  /* Periodos de carga bloqueados por la Direccion para el ciclo del boletin. */
+  const usuario = useUsuarioActual();
+  const ciclo = alumno ? cicloDeAnio(anio, alumno) : null;
+  const [estadoPeriodos, setEstadoPeriodos] = useState(null);
+  useEffect(() => {
+    if (!abierto || !ciclo) return undefined;
+    let vigente = true;
+    PeriodosCargaService.obtener(ciclo)
+      .then((datos) => vigente && setEstadoPeriodos(datos))
+      .catch(() => vigente && setEstadoPeriodos(null));
+    return () => {
+      vigente = false;
+    };
+  }, [abierto, ciclo]);
+  const bloqueo = useMemo(() => bloqueosDe(estadoPeriodos, usuario?.assignments ?? []), [estadoPeriodos, usuario?.assignments]);
+  const avisoBloqueo = useMemo(() => {
+    const nombres = (estadoPeriodos?.periodos ?? []).filter((periodo) => bloqueo[periodo.id]).map((periodo) => periodo.nombre);
+    return nombres.length > 0 ? `🔒 La Dirección bloqueó la carga de notas de: ${enumerar(nombres)}. Esas columnas son de solo lectura.` : null;
+  }, [estadoPeriodos, bloqueo]);
 
   if (!abierto || !alumno) return null;
 
@@ -183,6 +210,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
         ? h("input", {
             className: "bof-nota",
             value: valor,
+            disabled: Boolean(bloqueo[PERIODO_DE_CAMPO[campo]]),
             inputMode: "decimal",
             maxLength: 5,
             "aria-label": `${campo} de ${materia}`,
@@ -350,6 +378,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
         h(
           "div",
           { className: "bof-cuerpo" },
+          avisoBloqueo ? h("div", { className: "bof-aviso bof-aviso--err", role: "status" }, avisoBloqueo) : null,
           mensaje ? h("div", { className: `bof-aviso${mensaje.ok ? "" : " bof-aviso--err"}`, role: "status" }, mensaje.texto) : null,
           contenido
         )

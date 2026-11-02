@@ -5,6 +5,7 @@ import { seedDesarrollo } from "../database/seeds/index.mjs";
 import { seedAlumnosLocales } from "../database/seeds/students.seed.mjs";
 import calendarioService from "../modules/calendario/calendario.service.mjs";
 import { seedAcademiaLocal } from "../database/seeds/alumnos-locales-academia.seed.mjs";
+import { seedDatosAlumnos } from "../database/seeds/alumnos-datos.seed.mjs";
 import { createApp } from "./app.mjs";
 import repositorioPortalAlumno from "../modules/student-portal/repositorio.mjs";
 
@@ -25,6 +26,8 @@ async function startServer() {
     if (notas > 0) {
       console.log(`Nomina local: ${notas} notas, ${ausencias} ausencias y ${previas} previas de prueba cargadas`);
     }
+    const datos = seedDatosAlumnos();
+    console.log(`Datos de alumnos: ${datos.notas} notas, ${datos.previas} previas y ${datos.inasistencias} inasistencias en ${datos.alumnos} alumnos; ${datos.datosPersonales} legajos completados y ${datos.tutores} tutores`);
   }
 
   const nuevosEventos = calendarioService.cargarIniciales();

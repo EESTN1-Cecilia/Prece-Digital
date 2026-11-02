@@ -23,6 +23,24 @@ materia activas del período: el par materia + curso/división debe estar cubier
 Si el usuario no tiene legajo de docente asociado o la asignación no cubre el
 alcance solicitado, responde 403. Admin y director no se restringen.
 
+## Periodos de carga (bloqueo por la Dirección)
+
+La Dirección habilita o bloquea, por ciclo lectivo, la carga de cada período:
+`cuatrimestre1`, `cuatrimestre2`, `diciembre` y `febrero` (las columnas de la
+planilla y del boletín oficial). Por defecto todos están habilitados.
+
+- Con un período bloqueado, alta, modificación y baja de calificaciones de ese
+  período responden 409 `PERIODO_BLOQUEADO`. Una modificación tampoco puede
+  mover una nota desde o hacia un período bloqueado.
+- Vale para la API de calificaciones y para el guardado de la planilla /
+  boletín oficial (`PUT /api/v1/boletin-oficial/alumnos/:alumnoId`). La planilla
+  guarda todo o nada: si una nota modificada cae en un período bloqueado no se
+  guarda ninguna. Las notas que llegan sin cambios no cuentan, y el detalle de
+  la planilla de un cuatrimestre bloqueado (parciales, valoración, faltas)
+  conserva lo guardado.
+- Admin y director no se restringen.
+- Cada cambio de estado queda en la auditoría del módulo con el responsable.
+
 ## Endpoints
 
 ### Calificaciones
@@ -34,6 +52,9 @@ alcance solicitado, responde 403. Admin y director no se restringen.
 - PATCH /api/v1/calificaciones/:calificacionId — modificar valor, tipo, período, fecha, alcance u observaciones (guarda historial)
 - DELETE /api/v1/calificaciones/:calificacionId — baja lógica
 
+- GET /api/v1/calificaciones/periodos — estado de los períodos de carga (`anio`, por defecto el ciclo actual). Cualquier usuario autenticado.
+- PUT /api/v1/calificaciones/periodos/:anio — bloquear o habilitar períodos: `{ "periodos": { "cuatrimestre1": false } }`. Permiso `grades.manage`.
+
 ### Consultas por alumno y docente
 
 - GET /api/v1/alumnos/:alumnoId/calificaciones — boletín del alumno agrupado por materia
@@ -44,6 +65,7 @@ alcance solicitado, responde 403. Admin y director no se restringen.
 
 - Lectura: `grades.read`
 - Alta, modificación y baja: `grades.write`
+- Bloqueo de períodos de carga: `grades.manage` (admin y director)
 
 Los listados responden `{ data, filtros, paginacion }`; los recursos simples, `{ data }`.
 Las operaciones protegidas responden 401 sin token y 403 sin permisos.

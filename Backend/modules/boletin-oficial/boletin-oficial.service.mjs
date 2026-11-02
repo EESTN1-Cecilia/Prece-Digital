@@ -14,6 +14,7 @@ import gradesRepository from "../grades/grades.repository.mjs";
 import gradesService from "../grades/grades.service.mjs";
 import { interpretarValor } from "../grades/catalogo.mjs";
 import { ultimaCalificacion, cicloLectivoActual } from "../student-portal/catalogo.mjs";
+import { exigirPeriodoHabilitado, puedeCargar } from "../grades/periodos-carga.service.mjs";
 import boletinOficialRepository from "./boletin-oficial.repository.mjs";
 
 /* Campo de pantalla -> periodo del backend. Diciembre y febrero son instancias
@@ -23,6 +24,13 @@ export const CAMPOS = {
   informe2: { cuatrimestre: 2, tipoEvaluacion: "escrito", periodo: "Informe 2" },
   diciembre: { cuatrimestre: null, tipoEvaluacion: "escrito", periodo: "Diciembre" },
   febrero: { cuatrimestre: null, tipoEvaluacion: "recuperatorio", periodo: "Febrero" }
+};
+
+/* Detalle de la planilla (parciales, valoracion e inasistencias) que pertenece
+   a cada cuatrimestre: si el periodo esta bloqueado se conserva lo guardado. */
+const DETALLE_POR_CAMPO = {
+  informe1: ["p1", "p2", "v1", "f1"],
+  informe2: ["p3", "p4", "v2", "f2"]
 };
 
 const VACIO = new Set(["", "-", "—"]);
@@ -95,6 +103,21 @@ function limpiarDetalle(detalle) {
   return limpio;
 }
 
+/* Deja en `detalle` los valores ya guardados de las claves bloqueadas. */
+function conservarDetalle(detalle, guardado, claves) {
+  const resultado = {};
+  for (const [materia, filas] of Object.entries(detalle)) {
+    const previas = guardado?.[materia] ?? {};
+    const fila = { ...filas };
+    for (const clave of claves) {
+      if (previas[clave] !== undefined) fila[clave] = previas[clave];
+      else delete fila[clave];
+    }
+    resultado[materia] = fila;
+  }
+  return resultado;
+}
+
 export const boletinOficialService = {
   obtener(alumnoId, query = {}) {
     return armar(exigirAlumno(alumnoId), leerAnio(query.anio));
@@ -159,41 +182,64 @@ export const boletinOficialService = {
 
     if (errores.length > 0) throw errorDeValidacion(errores);
 
-    const cambios = [];
+    /* Primera pasada, sin efectos: que cambia en cada campo. Asi un periodo de
+       carga bloqueado frena el guardado antes de tocar ninguna nota. */
+    const acciones = [];
     for (const { materia, campo, valor } of plan) {
-      const definicion = CAMPOS[campo];
       const nombre = String(materia).trim();
-      const ref = valor === null
-        ? academicRepository.findSubjectRefByName(nombre)
-        : academicRepository.ensureSubjectRef(nombre);
-      if (!ref) continue; // borrar una nota de una materia que nunca tuvo notas
+      const ref = academicRepository.findSubjectRefByName(nombre);
 
       /* Lo que muestra la pantalla para este campo es la ULTIMA calificacion del
          periodo (igual que el portal), asi que esa es la que se corrige. Si
          hay varias evaluaciones en el periodo, al vaciar el campo se dan de
          baja todas. */
-      const delCampo = gradesRepository
-        .listCalificaciones({ alumnoId: alumno.id, materiaId: ref.id, anio, estado: "activo" })
-        .filter((item) => campoDe(item) === campo);
-      const existente = ultimaCalificacion(delCampo);
+      const delCampo = ref
+        ? gradesRepository
+          .listCalificaciones({ alumnoId: alumno.id, materiaId: ref.id, anio, estado: "activo" })
+          .filter((item) => campoDe(item) === campo)
+        : [];
 
       if (valor === null) {
-        for (const item of delCampo) {
-          gradesService.deleteCalificacion(item.id, user);
-          cambios.push({ materia: ref.nombre, campo, accion: "baja" });
-        }
+        if (delCampo.length > 0) acciones.push({ tipo: "baja", campo, ref, delCampo });
         continue;
       }
 
+      const existente = ultimaCalificacion(delCampo);
       if (existente) {
         const info = interpretarValor(valor);
         if (String(existente.valor) !== String(info.nota ?? info.concepto)) {
-          gradesService.updateCalificacion(existente.id, { valor, fecha: hoy() }, user);
-          cambios.push({ materia: ref.nombre, campo, accion: "modificada" });
+          acciones.push({ tipo: "modificar", campo, ref, existente, valor });
         }
         continue;
       }
 
+      acciones.push({ tipo: "alta", campo, nombre, valor });
+    }
+
+    for (const campo of new Set(acciones.map((accion) => accion.campo))) {
+      exigirPeriodoHabilitado(user, { anio, ...CAMPOS[campo] });
+    }
+
+    const cambios = [];
+    for (const accion of acciones) {
+      const { campo } = accion;
+
+      if (accion.tipo === "baja") {
+        for (const item of accion.delCampo) {
+          gradesService.deleteCalificacion(item.id, user);
+          cambios.push({ materia: accion.ref.nombre, campo, accion: "baja" });
+        }
+        continue;
+      }
+
+      if (accion.tipo === "modificar") {
+        gradesService.updateCalificacion(accion.existente.id, { valor: accion.valor, fecha: hoy() }, user);
+        cambios.push({ materia: accion.ref.nombre, campo, accion: "modificada" });
+        continue;
+      }
+
+      const definicion = CAMPOS[campo];
+      const ref = academicRepository.ensureSubjectRef(accion.nombre);
       let fecha = hoy();
       if (campo === "febrero") {
         // Febrero siempre es posterior a diciembre para que prevalezca como definitiva
@@ -208,7 +254,7 @@ export const boletinOficialService = {
         cuatrimestre: definicion.cuatrimestre,
         tipoEvaluacion: definicion.tipoEvaluacion,
         periodo: definicion.periodo,
-        valor,
+        valor: accion.valor,
         fecha
       }, user);
       cambios.push({ materia: ref.nombre, campo, accion: "alta" });
@@ -220,7 +266,15 @@ export const boletinOficialService = {
     if (cuerpo?.libroFolio && typeof cuerpo.libroFolio === "object") {
       extra.libroFolio = { libro: String(cuerpo.libroFolio.libro ?? "").slice(0, 20), folio: String(cuerpo.libroFolio.folio ?? "").slice(0, 20) };
     }
-    if (cuerpo?.detalle) extra.detalle = limpiarDetalle(cuerpo.detalle);
+    if (cuerpo?.detalle) {
+      const bloqueadas = Object.keys(DETALLE_POR_CAMPO)
+        .filter((campo) => !puedeCargar(user, { anio, ...CAMPOS[campo] }))
+        .flatMap((campo) => DETALLE_POR_CAMPO[campo]);
+      const detalle = limpiarDetalle(cuerpo.detalle);
+      extra.detalle = bloqueadas.length > 0
+        ? conservarDetalle(detalle, boletinOficialRepository.obtener(alumno.id, anio).detalle, bloqueadas)
+        : detalle;
+    }
     if (Object.keys(extra).length > 0) boletinOficialRepository.guardar(alumno.id, anio, extra);
 
     return { ...armar(alumno, anio), cambios };
