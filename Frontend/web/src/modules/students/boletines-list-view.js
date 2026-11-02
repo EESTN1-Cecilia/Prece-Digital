@@ -338,6 +338,13 @@ export default function BoletinesListView() {
     selectedDivision !== "todas" ||
     selectedTurno !== "todos";
 
+  const activeFilterLabels = [
+    debouncedStudentSearch ? `Búsqueda: ${debouncedStudentSearch}` : null,
+    selectedCurso !== "todos" ? `Año ${selectedCurso}` : null,
+    selectedDivision !== "todas" ? `División ${selectedDivision}` : null,
+    selectedTurno !== "todos" ? `Turno ${selectedTurno}` : null
+  ].filter(Boolean);
+
   return h(
     "section",
     { className: "welcome-panel boletines-panel" },
@@ -432,6 +439,34 @@ export default function BoletinesListView() {
     h(
       "div",
       { className: "boletines-toolbar" },
+      h(
+        "div",
+        { className: "boletines-toolbar__heading" },
+        h(
+          "div",
+          { className: "boletines-toolbar__heading-copy" },
+          h(IconoFigma, { className: "boletines-toolbar__heading-icon", nombre: "filter" }),
+          h(
+            "div",
+            null,
+            h("strong", null, "Buscar y filtrar boletines"),
+            h(
+              "span",
+              null,
+              loading
+                ? "Consultando la nómina…"
+                : `${pagination.total} ${pagination.total === 1 ? "alumno encontrado" : "alumnos encontrados"}`
+            )
+          )
+        ),
+        isFiltered
+          ? h(
+              "button",
+              { type: "button", className: "boletines-toolbar__clear", onClick: handleResetFilters },
+              "Limpiar filtros"
+            )
+          : null
+      ),
       // Buscador
       h(
         "div",
@@ -500,7 +535,17 @@ export default function BoletinesListView() {
             { value: "Tarde", label: "Tarde" }
           ]
         })
-      )
+      ),
+      isFiltered
+        ? h(
+            "div",
+            { className: "boletines-active-filters", "aria-label": "Filtros activos" },
+            h("span", { className: "boletines-active-filters__label" }, "Aplicados"),
+            activeFilterLabels.map((label) =>
+              h("span", { key: label, className: "boletines-active-filter" }, label)
+            )
+          )
+        : null
     ),
 
     // Banner informativo para el docente con sus cursos a cargo y acceso a la planilla completa
@@ -553,35 +598,6 @@ export default function BoletinesListView() {
         )
       : null,
 
-    // Estado de filtros activos
-    isFiltered
-      ? h(
-          "div",
-          { className: "alumnos-filter-status-bar" },
-          h(
-            "span",
-            { className: "filter-status-text" },
-            `Filtros activos: ${[
-              debouncedStudentSearch ? `Búsqueda: "${debouncedStudentSearch}"` : null,
-              selectedCurso !== "todos" ? `Año: ${selectedCurso}` : null,
-              selectedDivision !== "todas" ? `División: ${selectedDivision}` : null,
-              selectedTurno !== "todos" ? `Turno: ${selectedTurno}` : null
-            ]
-              .filter(Boolean)
-              .join(" • ")}`
-          ),
-          h(
-            "button",
-            {
-              type: "button",
-              className: "clear-all-filters-btn",
-              onClick: handleResetFilters
-            },
-            "Limpiar Filtros"
-          )
-        )
-      : null,
-
     // Estados de Carga, Error o Vacío
     loading ? h(LoadingState, { message: "Cargando nómina de estudiantes..." }) : null,
     error ? h(ErrorState, { message: error, onRetry: fetchStudents }) : null,
@@ -602,23 +618,50 @@ export default function BoletinesListView() {
         })
       : null,
 
-    // Imprimir boletines del curso filtrado (Dirección, Secretaría, Preceptoría)
-    !esDocente
+    // Resumen de resultados y acción masiva
+    !loading && !error && students.length > 0
       ? h(
           "div",
-          { style: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "12px", margin: "0 0 12px" } },
-          errorImpresion ? h("span", { role: "alert", style: { color: "#b91c1c", fontSize: "13px" } }, errorImpresion) : null,
+          { className: "boletines-results-bar" },
           h(
-            "button",
-            {
-              type: "button",
-              onClick: imprimirBoletinesDelCurso,
-              disabled: imprimiendo,
-              title: "Imprime los boletines de todos los alumnos filtrados: 2 por hoja Oficio apaisada",
-              style: { background: "#1d4ed8", color: "#fff", border: "1px solid #1d4ed8", borderRadius: "10px", padding: "8px 18px", fontSize: "13px", fontWeight: 700, cursor: "pointer", opacity: imprimiendo ? 0.6 : 1 }
-            },
-            imprimiendo ? "Preparando…" : "Imprimir Boletines"
+            "div",
+            { className: "boletines-results-summary" },
+            h("span", { className: "boletines-results-icon", "aria-hidden": "true" }, "✓"),
+            h(
+              "div",
+              null,
+              h("strong", null, `${pagination.total} ${pagination.total === 1 ? "boletín" : "boletines"}`),
+              h("span", null, isFiltered ? "según los filtros aplicados" : "en la nómina activa")
+            )
           )
+          ,
+          !esDocente
+            ? h(
+                "div",
+                { className: "boletines-print-actions" },
+                errorImpresion
+                  ? h("span", { role: "alert", className: "boletines-print-error" }, errorImpresion)
+                  : null,
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "boletines-print-btn",
+                    onClick: imprimirBoletinesDelCurso,
+                    disabled: imprimiendo,
+                    title: "Imprime los boletines de todos los alumnos filtrados: 2 por hoja Oficio apaisada"
+                  },
+                  h(
+                    "svg",
+                    { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", "aria-hidden": "true" },
+                    h("path", { d: "M6 9V2h12v7" }),
+                    h("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
+                    h("rect", { x: "6", y: "14", width: "12", height: "8" })
+                  ),
+                  imprimiendo ? "Preparando…" : "Imprimir boletines"
+                )
+              )
+            : null
         )
       : null,
 
@@ -656,7 +699,12 @@ export default function BoletinesListView() {
                   { key: alumno.id, className: "boletines-row" },
                   h(
                     "td",
-                    null,
+                    { className: "boletin-identity-cell" },
+                    h(
+                      "span",
+                      { className: "boletin-table-avatar", "aria-hidden": "true" },
+                      `${alumno.apellido?.charAt(0) || ""}${alumno.nombre?.charAt(0) || ""}`
+                    ),
                     h("strong", { className: "boletin-alumno-name" }, `${alumno.apellido}, ${alumno.nombre}`)
                   ),
                   h("td", { className: "text-muted font-mono" }, alumno.dni),

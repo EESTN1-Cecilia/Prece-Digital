@@ -167,6 +167,15 @@ export default function AlumnosListView() {
     selectedEstado !== "todos" ||
     selectedCondicion !== "todas";
 
+  const activeFilterLabels = [
+    debouncedStudentSearch ? `Búsqueda: ${debouncedStudentSearch}` : null,
+    selectedCurso !== "todos" ? `Año ${selectedCurso}` : null,
+    selectedDivision !== "todas" ? `División ${selectedDivision}` : null,
+    selectedTurno !== "todos" ? `Turno ${selectedTurno}` : null,
+    selectedEstado !== "todos" ? selectedEstado : null,
+    selectedCondicion !== "todas" ? selectedCondicion : null
+  ].filter(Boolean);
+
   return h(
     "section",
     { className: "welcome-panel alumnos-panel" },
@@ -315,7 +324,29 @@ export default function AlumnosListView() {
       // Toolbar de Búsqueda y Filtros
       h(
         "div",
-        { className: "alumnos-toolbar" },
+        { className: "alumnos-toolbar alumnos-toolbar--directory" },
+        h(
+          "div",
+          { className: "alumnos-toolbar__heading" },
+          h(
+            "div",
+            { className: "alumnos-toolbar__heading-copy" },
+            h(IconoFigma, { className: "alumnos-toolbar__heading-icon", nombre: "filter" }),
+            h(
+              "div",
+              null,
+              h("strong", null, "Buscar y filtrar alumnos"),
+              h("span", null, `${pagination.total} ${pagination.total === 1 ? "resultado" : "resultados"} en el padrón`)
+            )
+          ),
+          isFiltered
+            ? h(
+                "button",
+                { type: "button", className: "alumnos-toolbar__clear", onClick: handleResetFilters },
+                "Limpiar filtros"
+              )
+            : null
+        ),
         // Input de búsqueda principal
         h(
           "div",
@@ -376,7 +407,7 @@ export default function AlumnosListView() {
               setCurrentPage(1);
             },
             options: [
-              { value: "todas", label: "Todas las Div." },
+              { value: "todas", label: "Todas las Divisiones" },
               { value: "1", label: "División 1" },
               { value: "2", label: "División 2" },
               { value: "3", label: "División 3" },
@@ -420,44 +451,21 @@ export default function AlumnosListView() {
               setCurrentPage(1);
             },
             options: [
-              { value: "todas", label: "Todas las Cond." },
+              { value: "todas", label: "Todas las Condiciones" },
               { value: "Regular", label: "Regular" },
               { value: "Irregular", label: "Irregular" }
             ]
           })
-        )
-      ),
-
-      // Banner informativo si hay un filtro de curso activo
-      isFiltered
-        ? h(
-            "div",
-            { className: "alumnos-filter-status-bar" },
-            h(
-              "span",
-              { className: "filter-status-text" },
-              `Filtros activos: ${[
-                debouncedStudentSearch ? `Búsqueda: "${debouncedStudentSearch}"` : null,
-                selectedCurso !== "todos" ? `Año: ${selectedCurso}` : null,
-                selectedDivision !== "todas" ? `División: ${selectedDivision}` : null,
-                selectedTurno !== "todos" ? `Turno: ${selectedTurno}` : null,
-                selectedEstado !== "todos" ? `Estado: ${selectedEstado}` : null,
-                selectedCondicion !== "todas" ? `Condición: ${selectedCondicion}` : null
-              ]
-                .filter(Boolean)
-                .join(" • ")}`
-            ),
-            h(
-              "button",
-              {
-                type: "button",
-                className: "btn-clear-all-filters",
-                onClick: handleResetFilters
-              },
-              "Limpiar Filtros"
+        ),
+        isFiltered
+          ? h(
+              "div",
+              { className: "alumnos-active-filters", "aria-label": "Filtros activos" },
+              h("span", { className: "alumnos-active-filters__label" }, "Aplicados"),
+              activeFilterLabels.map((label) => h("span", { key: label, className: "alumnos-active-filter" }, label))
             )
-          )
-        : null,
+          : null
+      ),
 
       // Estado de Carga
       loading ? h(LoadingState, { mensaje: "Cargando nómina de alumnos..." }) : null,
@@ -555,7 +563,8 @@ export default function AlumnosListView() {
                       { key: alumno.id, className: "alumno-row" },
                       h(
                         "td",
-                        null,
+                        { className: "alumno-identity-cell" },
+                        h("span", { className: "alumno-table-avatar", "aria-hidden": "true" }, `${alumno.apellido?.charAt(0) || ""}${alumno.nombre?.charAt(0) || ""}`),
                         h("strong", { className: "alumno-name" }, `${alumno.apellido}, ${alumno.nombre}`)
                       ),
                       h("td", { className: "text-muted" }, alumno.dni),
