@@ -49,6 +49,8 @@ export const PERMISSIONS = {
   ATTENDANCE_FOLLOWUPS_WRITE: "attendance-followups.write",
   GRADES_READ: "grades.read",
   GRADES_WRITE: "grades.write",
+  /* Bloquear y habilitar los periodos de carga de notas (Direccion). */
+  GRADES_MANAGE: "grades.manage",
   BOLETIN_OFICIAL_WRITE: "grades.boletin",
   SCHOOLS_READ: "schools.read",
   SCHOOLS_MANAGE: "schools.manage",

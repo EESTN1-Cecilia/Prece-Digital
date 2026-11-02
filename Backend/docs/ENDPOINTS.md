@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 444 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 446 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -322,6 +322,8 @@ Total: 444 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
+| GET | `/api/v1/calificaciones/periodos` | sesion valida |
+| PUT | `/api/v1/calificaciones/periodos/:anio` | `grades.manage` |
 | GET | `/api/v1/calificaciones/catalogos` | `grades.read` |
 | POST | `/api/v1/calificaciones` | `grades.write` |
 | GET | `/api/v1/calificaciones` | `grades.read` |

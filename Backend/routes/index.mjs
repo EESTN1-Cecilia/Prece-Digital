@@ -265,6 +265,10 @@ const rutasDeclaradas = [
   { method: "GET", path: "/api/v1/boletin-oficial/alumnos", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.listar },
   { method: "GET", path: "/api/v1/boletin-oficial/alumnos/:alumnoId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.obtener },
   { method: "PUT", path: "/api/v1/boletin-oficial/alumnos/:alumnoId", middlewares: [verifyToken, required(P.BOLETIN_OFICIAL_WRITE)], handler: boletinOficialController.guardar },
+  /* Periodos de carga: cualquier usuario autenticado consulta el estado (la
+     planilla lo usa para bloquear columnas); solo la Direccion lo cambia. */
+  { method: "GET", path: "/api/v1/calificaciones/periodos", middlewares: [verifyToken], handler: gradesController.getPeriodosCarga },
+  { method: "PUT", path: "/api/v1/calificaciones/periodos/:anio", middlewares: [verifyToken, required(P.GRADES_MANAGE)], handler: gradesController.updatePeriodosCarga },
   { method: "GET", path: "/api/v1/calificaciones/catalogos", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCatalogos },
   { method: "POST", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.createCalificacion },
   { method: "GET", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.listCalificaciones },
