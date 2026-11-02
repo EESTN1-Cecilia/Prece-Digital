@@ -10,7 +10,7 @@ export function QuickAccessGrid({ userPermissions = ["all"], onOpenMatriz }) {
     { id: "courses", label: "Cursos", icon: "academic", href: "#/cursos", permission: "courses:view" },
     { id: "attendance", label: "Asistencias", icon: "clipboard", href: "#/asistencias", permission: "attendance:view" },
     { id: "observations", label: "Observaciones", icon: "clipboard", href: "#/preceptoria/observaciones", permission: "observations:view" },
-    { id: "grades", label: "Calificaciones", icon: "clipboard", href: "#/calificaciones", permission: "grades:view" },
+    { id: "grades", label: "Calificaciones", icon: "clipboard", href: "#/boletines", permission: "grades:view" },
     {
       id: "matriz",
       label: "Libro Matriz",
