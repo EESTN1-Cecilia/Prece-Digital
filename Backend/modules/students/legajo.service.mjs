@@ -251,6 +251,54 @@ function alertasDelAlumno(alumno, academico) {
 
 /* ---------------- Servicio ---------------- */
 
+/* Inasistencias del ciclo lectivo de los alumnos activos del tablero (modulo
+   inasistencias). Un alumno requiere atencion desde 3 faltas injustificadas o
+   pendientes de justificar. */
+const UMBRAL_ATENCION = 3;
+
+function resumenInasistenciasDelCiclo(escuelaId, activos) {
+  const porId = new Map(activos.map((alumno) => [alumno.id, alumno]));
+  const registros = inasistenciasRepository.list({ escuelaId, anio: anioLectivo() }).filter((registro) => porId.has(registro.alumnoId));
+  const cuenta = (estado) => registros.filter((registro) => registro.estadoJustificacion === estado).length;
+
+  const porAlumno = new Map();
+  for (const registro of registros) {
+    const actual = porAlumno.get(registro.alumnoId) ?? { faltas: 0, injustificadas: 0, pendientes: 0 };
+    actual.faltas += 1;
+    if (registro.estadoJustificacion === "no_justificada") actual.injustificadas += 1;
+    if (registro.estadoJustificacion === "pendiente") actual.pendientes += 1;
+    porAlumno.set(registro.alumnoId, actual);
+  }
+
+  const alumnosAtencion = [...porAlumno.entries()]
+    .filter(([, totales]) => totales.injustificadas + totales.pendientes >= UMBRAL_ATENCION)
+    .sort(([, a], [, b]) => b.injustificadas + b.pendientes - (a.injustificadas + a.pendientes) || b.faltas - a.faltas)
+    .map(([id, totales]) => {
+      const alumno = porId.get(id);
+      return {
+        id,
+        nombre: nombreCompleto(alumno),
+        legajo: alumno.id,
+        curso: `${cursoTexto(alumno) ?? "-"} ${alumno.division ?? ""}`.trim(),
+        faltas: totales.faltas,
+        injustificadas: totales.injustificadas,
+        pendientes: totales.pendientes,
+        estado: totales.injustificadas >= UMBRAL_ATENCION * 2 ? "Crítico" : "En riesgo"
+      };
+    });
+
+  return {
+    totalInasistencias: registros.length,
+    justificadas: cuenta("justificada"),
+    injustificadas: cuenta("no_justificada"),
+    pendientes: cuenta("pendiente"),
+    alumnosEnRiesgo: alumnosAtencion.length,
+    periodo: `Ciclo Lectivo ${anioLectivo()}`,
+    alumnosAtencion: alumnosAtencion.slice(0, 8),
+    disponible: true
+  };
+}
+
 const legajoService = {
   resumen(alumnoId) {
     const alumno = alumnoExistente(alumnoId);
@@ -571,15 +619,7 @@ const legajoService = {
         },
         alumnosPorCurso,
         asistenciaHoy,
-        inasistencias: {
-          totalInasistencias: 0,
-          justificadas: 0,
-          injustificadas: 0,
-          alumnosEnRiesgo: 0,
-          periodo: "Sin módulo de asistencia",
-          alumnosAtencion: [],
-          disponible: false
-        },
+        inasistencias: resumenInasistenciasDelCiclo(escuelaId, activos),
         alertas,
         situacionesAcademicas: {
           totalMateriasPendientes: totalPendientes,
