@@ -4,7 +4,11 @@ import spacesRepository from "../spaces/spaces.repository.mjs";
 import absencesRepository from "../absences/absences.repository.mjs";
 import teachersRepository from "../teachers/teachers.repository.mjs";
 import reservationsRepository from "../reservations/reservations.repository.mjs";
-import { noEncontrado } from "../../utils/api-error.mjs";
+import studentRepository from "../students/students.repository.mjs";
+import { buscarDivision } from "../students/catalogo.mjs";
+import { getStore } from "../../database/memory-store.mjs";
+import { filtrarPorCurso } from "../preceptor-assignments/alcance.mjs";
+import { errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
 
 const DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
 const DIAS_LABEL = {
@@ -287,7 +291,150 @@ function paginar(lista, query) {
   };
 }
 
+const CODIGO_GRUPO = /^\d{1,2}\.\d{1,2}$/;
+
+/* Valida el cuerpo de la division de talleres: { anio, division, grupos: { A, B }, asignaciones: { alumnoId: "A" | "B" } }. */
+function leerDivisionTalleres(body) {
+  const errores = [];
+  const anio = Number.parseInt(body?.anio, 10);
+  const division = String(body?.division ?? "").trim();
+  const grupos = body?.grupos ?? {};
+  const asignaciones = body?.asignaciones;
+
+  if (!Number.isInteger(anio) || !division || !buscarDivision(anio, division)) {
+    errores.push({ field: "division", message: "El curso y la division indicados no existen para esta escuela." });
+  }
+  if (!CODIGO_GRUPO.test(String(grupos.A ?? "")) || !CODIGO_GRUPO.test(String(grupos.B ?? "")) || grupos.A === grupos.B) {
+    errores.push({ field: "grupos", message: "Indicar dos codigos de grupo de taller distintos (por ejemplo 1.1 y 1.3)." });
+  }
+  if (!asignaciones || typeof asignaciones !== "object" || Array.isArray(asignaciones)) {
+    errores.push({ field: "asignaciones", message: "Las asignaciones deben ser un objeto { alumnoId: \"A\" | \"B\" }." });
+  } else if (Object.values(asignaciones).some((letra) => letra !== "A" && letra !== "B")) {
+    errores.push({ field: "asignaciones", message: "Cada alumno se asigna al grupo A o al B." });
+  }
+  if (errores.length) throw errorDeValidacion(errores);
+
+  return { anio, division, grupos: { A: String(grupos.A), B: String(grupos.B) }, asignaciones };
+}
+
+/* Valida { asignaciones: [{ grupo: "1.1", anio, division, docente: { id, nombre, email } | null }] }.
+   docente null quita al profe del grupo. */
+function leerDocentesTalleres(body) {
+  const errores = [];
+  const lista = body?.asignaciones;
+  if (!Array.isArray(lista) || lista.length === 0 || lista.length > 200) {
+    throw errorDeValidacion([{ field: "asignaciones", message: "Enviar entre 1 y 200 grupos de taller." }]);
+  }
+  const vistos = new Set();
+  const limpias = lista.map((item, indice) => {
+    const grupo = String(item?.grupo ?? "");
+    const anio = Number.parseInt(item?.anio, 10);
+    const division = String(item?.division ?? "").trim();
+    if (!CODIGO_GRUPO.test(grupo) || vistos.has(grupo)) {
+      errores.push({ field: `asignaciones.${indice}.grupo`, message: "Indicar un codigo de grupo de taller valido y sin repetir (por ejemplo 1.1)." });
+    }
+    vistos.add(grupo);
+    if (!Number.isInteger(anio) || !division || !buscarDivision(anio, division)) {
+      errores.push({ field: `asignaciones.${indice}.division`, message: "El curso y la division indicados no existen para esta escuela." });
+    }
+    const docente = item?.docente ?? null;
+    if (docente !== null && (typeof docente !== "object" || !String(docente.id ?? docente.email ?? "").trim() || !String(docente.nombre ?? "").trim())) {
+      errores.push({ field: `asignaciones.${indice}.docente`, message: "El docente necesita identificador y nombre." });
+    }
+    return {
+      grupo,
+      anio,
+      division,
+      docente: docente
+        ? {
+            id: String(docente.id ?? docente.email).trim(),
+            nombre: String(docente.nombre).trim().slice(0, 120),
+            email: String(docente.email ?? "").trim().toLowerCase().slice(0, 160)
+          }
+        : null
+    };
+  });
+  if (errores.length) throw errorDeValidacion(errores);
+  return limpias;
+}
+
+const claveDocenteTaller = (escuelaId, grupo) => `${escuelaId}|${grupo}`;
+
 const jefaturaService = {
+  /* Profes asignados a cada grupo de taller (lo define la direccion). Un grupo tiene un solo profe. */
+  listarDocentesTalleres(query, user) {
+    const escuelaId = escuelaDel(user, query);
+    const todas = [...getStore().tallerDocentes.values()].filter((item) => item.escuelaId === escuelaId);
+    const docenteId = String(query?.docenteId ?? "").trim();
+    const email = String(query?.email ?? "").trim().toLowerCase();
+    const data = todas
+      .filter((item) => (!docenteId || item.docente.id === docenteId) && (!email || item.docente.email === email))
+      .sort((a, b) => a.grupo.localeCompare(b.grupo, "es", { numeric: true }));
+    return { statusCode: 200, body: { data } };
+  },
+
+  guardarDocentesTalleres(body, user) {
+    const escuelaId = escuelaDel(user);
+    const lista = leerDocentesTalleres(body);
+    const mapa = getStore().tallerDocentes;
+    let asignados = 0;
+    let quitados = 0;
+
+    for (const item of lista) {
+      const clave = claveDocenteTaller(escuelaId, item.grupo);
+      if (!item.docente) {
+        if (mapa.delete(clave)) quitados += 1;
+        continue;
+      }
+      mapa.set(clave, {
+        escuelaId,
+        grupo: item.grupo,
+        anio: item.anio,
+        division: item.division,
+        docente: item.docente,
+        actualizadoPor: user.id,
+        actualizadoEn: new Date().toISOString()
+      });
+      asignados += 1;
+    }
+
+    const data = [...mapa.values()]
+      .filter((item) => item.escuelaId === escuelaId)
+      .sort((a, b) => a.grupo.localeCompare(b.grupo, "es", { numeric: true }));
+    return { statusCode: 200, body: { data, meta: { asignados, quitados } } };
+  },
+  /* Guarda en cada alumno activo del curso el grupo de taller que le asigno la jefatura
+     (campo grupoTaller del legajo). Es la unica fuente: listados, legajos y planillas la leen de ahi. */
+  guardarDivisionTalleres(body, user) {
+    const { anio, division, grupos, asignaciones } = leerDivisionTalleres(body);
+    const alumnos = filtrarPorCurso(
+      user,
+      studentRepository.search({ escuelaId: escuelaDel(user), criterios: { estado: "activo", curso: anio, division }, orden: "apellido" })
+    );
+    const porId = new Map(alumnos.map((alumno) => [alumno.id, alumno]));
+    const ignorados = Object.keys(asignaciones).filter((id) => !porId.has(id)).length;
+    let actualizados = 0;
+
+    for (const alumno of alumnos) {
+      const letra = asignaciones[alumno.id];
+      if (!letra) continue;
+      const codigo = grupos[letra];
+      if (alumno.grupoTaller === codigo) continue;
+
+      studentRepository.update(alumno.id, { grupoTaller: codigo });
+      studentRepository.registrarAuditoria({
+        accion: "update",
+        usuarioId: user.id,
+        registroId: alumno.id,
+        valorAnterior: { grupoTaller: alumno.grupoTaller ?? null },
+        valorNuevo: { grupoTaller: codigo }
+      });
+      actualizados += 1;
+    }
+
+    return { statusCode: 200, body: { data: { anio, division, grupos, total: alumnos.length, actualizados, ignorados } } };
+  },
+
   listCursosGrupos(query, user) {
     const escuelaId = escuelaDel(user, query);
     const grupos = listarCursosGruposBase({

@@ -55,6 +55,7 @@ El portal del alumno usa el mismo login que el personal (`#/login`); el sistema 
 
 ## Forma de trabajo (8 personas, un repo)
 
+
 1. Rama desde `main` actualizado:
 
    ```bash

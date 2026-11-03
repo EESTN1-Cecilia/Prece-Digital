@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import net from "node:net";
 
 function npmProcess(args) {
   if (process.platform === "win32") {
@@ -14,19 +15,35 @@ function npmProcess(args) {
   };
 }
 
-const apiProcess = npmProcess(["run", "dev", "-w", "@prece-digital/api"]);
-const webProcess = npmProcess(["run", "dev", "-w", "@prece-digital/web"]);
+/* Devuelve true si el puerto ya esta ocupado (por ejemplo, la API ya corre en
+   otra terminal). Evita el error EADDRINUSE al volver a levantarla. */
+function puertoOcupado(port) {
+  return new Promise((resolve) => {
+    const probe = net.createServer();
+    probe.once("error", (error) => resolve(error.code === "EADDRINUSE"));
+    probe.once("listening", () => probe.close(() => resolve(false)));
+    probe.listen(port);
+  });
+}
 
-const processes = [
-  {
+const apiPort = Number(process.env.API_PORT || process.env.PORT || 3000);
+const apiYaCorre = await puertoOcupado(apiPort);
+
+const processes = [];
+
+if (apiYaCorre) {
+  console.log(`La API ya esta corriendo en el puerto ${apiPort}: se levanta solo la web.`);
+} else {
+  processes.push({
     name: "api",
-    ...apiProcess
-  },
-  {
-    name: "web",
-    ...webProcess
-  }
-];
+    ...npmProcess(["run", "dev", "-w", "@prece-digital/api"])
+  });
+}
+
+processes.push({
+  name: "web",
+  ...npmProcess(["run", "dev", "-w", "@prece-digital/web"])
+});
 
 for (const processConfig of processes) {
   const child = spawn(processConfig.command, processConfig.args, {

@@ -124,6 +124,8 @@ export function aVistaAlumno(item) {
     division: item.division ?? "-",
     turno: capitalizar(item.turno) ?? "-",
     orientacion: item.orientacion ?? "Ciclo Básico",
+    /* Grupo de taller que le asigno la jefatura (por ejemplo "1.1"), o null */
+    grupoTaller: item.grupoTaller ?? null,
     condicion: capitalizar(item.condicion) ?? "-",
     estado: capitalizar(item.estado),
     email: item.email,

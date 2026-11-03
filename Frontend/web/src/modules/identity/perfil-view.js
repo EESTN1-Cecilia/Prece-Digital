@@ -686,24 +686,8 @@ export default function PerfilView() {
       h(
         "header",
         { className: "profile-header" },
-        h("h1", { className: "profile-header__title" }, "Configuración de perfil"),
+        h("h1", { className: "profile-header__title" }, "Mi perfil"),
         h("p", { className: "profile-header__subtitle" }, "Administrá tu información personal y mantené tus datos actualizados.")
-      ),
-
-      // Barra de Pestañas / Categorías
-      h(
-        "div",
-        { className: "profile-tabs-bar" },
-        h(
-          "button",
-          {
-            type: "button",
-            className: "profile-tab-pill profile-tab-pill--active",
-            "aria-current": "page"
-          },
-          h(IconUser, { className: "profile-tab-icon" }),
-          h("span", null, "Información personal")
-        )
       ),
 
       // Rejilla Principal (Formulario a la izquierda, Tarjeta informativa a la derecha)
@@ -726,8 +710,8 @@ export default function PerfilView() {
             h(
               "div",
               { className: "profile-card-header-text" },
-              h("h2", { id: "profile-form-title", className: "profile-card-title" }, "Mi perfil"),
-              h("p", { className: "profile-card-subtitle" }, "Datos de tu cuenta")
+              h("h2", { id: "profile-form-title", className: "profile-card-title" }, "Información personal"),
+              h("p", { className: "profile-card-subtitle" }, "Editá tus datos y preferencias de contacto.")
             )
           ),
 

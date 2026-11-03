@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import { DirectorService } from "../director-service.js";
 import { CustomSelect } from "../../../components/common/custom-select.js";
+import AsignacionesTalleres from "./asignaciones-talleres.js";
 
 // Íconos auxiliares SVG
 function IconCheckShield({ className = "w-5 h-5", width = "20", height = "20" }) {
@@ -2311,6 +2312,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
   const [filtroMateriaProfesores, setFiltroMateriaProfesores] = useState("todas");
   const [catedraParaAsignar, setCatedraParaAsignar] = useState(null);
   const [modoVistaProfesores, setModoVistaProfesores] = useState("tabla"); // "tabla" | "tarjetas"
+  const [talleresAsignados, setTalleresAsignados] = useState(0);
 
   // Estados de expansión de división ("Ver más") en tablas
   const [expandidasPreceptores, setExpandidasPreceptores] = useState({});
@@ -2716,7 +2718,8 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
       { className: "asignaciones-subtabs-nav" },
       [
         { id: "preceptores", label: "Preceptores", icon: IconUsers, count: preceptoresAsignadosCount },
-        { id: "profesores", label: "Docentes", icon: IconGraduationCap, count: profesoresAsignadosCount }
+        { id: "profesores", label: "Docentes", icon: IconGraduationCap, count: profesoresAsignadosCount },
+        { id: "talleres", label: "Grupos de taller", icon: IconUsers, count: talleresAsignados }
       ].map((tab) =>
         h(
           "button",
@@ -3786,6 +3789,20 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
                       );
                     })
               )
+        )
+      : null,
+
+    // Grupos de taller (1.1, 1.3, ...) con su profe
+    subPestana === "talleres"
+      ? h(
+          "div",
+          { className: "asignaciones-card" },
+          h(
+            "div",
+            { className: "asignaciones-card-header" },
+            h("div", { className: "asignaciones-card-title-wrap" }, h("h2", { className: "asignaciones-card-title" }, "Asignación de Grupos de Taller a Profes"))
+          ),
+          h(AsignacionesTalleres, { personal, onMostrarToast, onContar: setTalleresAsignados })
         )
       : null,
 
