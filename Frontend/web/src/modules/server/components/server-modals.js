@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { h, IconoFigma } from "../../../layouts/site-layout.js";
 import { ServerService } from "../server-service.js";
+import { CustomSelect } from "../../../components/common/custom-select.js";
 
 // 1. Modal de Detalle de Material
 export function MaterialDetalleModal({ material, abierto, onCerrar, onRegistrarMovimiento }) {
@@ -215,18 +216,19 @@ export function CargarMaterialModal({ abierto, onCerrar, onGuardadoExitoso }) {
             ),
             h("div", { className: "form-group" },
               h("label", { className: "form-label" }, "Categoría"),
-              h("select", {
-                className: "form-input",
+              h(CustomSelect, {
                 value: form.category,
-                onChange: (e) => setForm({ ...form, category: e.target.value })
-              },
-                h("option", { value: "tecnologia" }, "Tecnología"),
-                h("option", { value: "material" }, "Material"),
-                h("option", { value: "equipamiento" }, "Equipamiento"),
-                h("option", { value: "herramienta" }, "Herramienta"),
-                h("option", { value: "mobiliario" }, "Mobiliario"),
-                h("option", { value: "otro" }, "Otro")
-              )
+                ariaLabel: "Categoría",
+                options: [
+                  { value: "tecnologia", label: "Tecnología" },
+                  { value: "material", label: "Material" },
+                  { value: "equipamiento", label: "Equipamiento" },
+                  { value: "herramienta", label: "Herramienta" },
+                  { value: "mobiliario", label: "Mobiliario" },
+                  { value: "otro", label: "Otro" }
+                ],
+                onChange: (val) => setForm({ ...form, category: val })
+              })
             ),
             h("div", { className: "form-group" },
               h("label", { className: "form-label" }, "Cantidad Inicial"),
@@ -386,28 +388,30 @@ export function RegistrarMovimientoModal({ materialInicial, materiales = [], abi
             { className: "modal-form-grid" },
             h("div", { className: "form-group" },
               h("label", { className: "form-label" }, "Material *"),
-              h("select", {
-                className: "form-input",
+              h(CustomSelect, {
                 value: itemId,
-                onChange: (e) => setItemId(e.target.value)
-              },
-                materiales.map((m) =>
-                  h("option", { key: m.id, value: m.id }, `${m.name} (Stock: ${m.quantity} ${m.unit || "uds"})`)
-                )
-              )
+                ariaLabel: "Material",
+                isSearchable: materiales.length > 6,
+                options: materiales.map((m) => ({
+                  value: m.id,
+                  label: `${m.name} (Stock: ${m.quantity} ${m.unit || "uds"})`
+                })),
+                onChange: (val) => setItemId(val)
+              })
             ),
             h("div", { className: "form-group" },
               h("label", { className: "form-label" }, "Tipo de Movimiento *"),
-              h("select", {
-                className: "form-input",
+              h(CustomSelect, {
                 value: tipo,
-                onChange: (e) => setTipo(e.target.value)
-              },
-                h("option", { value: "ingreso" }, "📥 Ingreso (Alta o reposición)"),
-                h("option", { value: "egreso" }, "📤 Egreso (Entrega o préstamo)"),
-                h("option", { value: "transferencia" }, "🔄 Transferencia a otro sector"),
-                h("option", { value: "ajuste" }, "⚖️ Ajuste de inventario")
-              )
+                ariaLabel: "Tipo de Movimiento",
+                options: [
+                  { value: "ingreso", label: "📥 Ingreso (Alta o reposición)" },
+                  { value: "egreso", label: "📤 Egreso (Entrega o préstamo)" },
+                  { value: "transferencia", label: "🔄 Transferencia a otro sector" },
+                  { value: "ajuste", label: "⚖️ Ajuste de inventario" }
+                ],
+                onChange: (val) => setTipo(val)
+              })
             ),
             h("div", { className: "form-group" },
               h("label", { className: "form-label" }, "Cantidad *"),

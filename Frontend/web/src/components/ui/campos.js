@@ -10,6 +10,7 @@
 
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { ErrorCampo } from "./avisos.js";
+import { CustomSelect } from "../common/custom-select.js";
 
 function envoltorio({ id, etiqueta, requerido, error, ayuda, children }) {
   return h(
@@ -148,10 +149,12 @@ export function Select({
   error,
   ayuda,
   requerido = false,
-  deshabilitado = false,
-  ...resto
+  deshabilitado = false
 }) {
   const lista = opciones.map(normalizarOpcion).filter(Boolean);
+  const opcionesCombo = placeholder
+    ? [{ value: "", label: placeholder }, ...lista.map((opcion) => ({ value: opcion.valor, label: opcion.nombre }))]
+    : lista.map((opcion) => ({ value: opcion.valor, label: opcion.nombre }));
 
   return envoltorio({
     id,
@@ -162,22 +165,17 @@ export function Select({
     children: h(
       "div",
       { className: "ui-campo__control ui-campo__control--select" },
-      h(
-        "select",
-        {
-          id,
-          name: id,
-          required: requerido || undefined,
-          disabled: deshabilitado || undefined,
-          "aria-invalid": error ? "true" : undefined,
-          "aria-describedby": descripcion({ id, error, ayuda }),
-          ...(valor === undefined ? { defaultValue: "" } : { value: valor }),
-          ...(onChange ? { onChange: (evento) => onChange(evento.target.value) } : null),
-          ...resto
-        },
-        placeholder ? h("option", { value: "" }, placeholder) : null,
-        lista.map((opcion) => h("option", { key: opcion.valor, value: opcion.valor }, opcion.nombre))
-      )
+      h(CustomSelect, {
+        id,
+        name: id,
+        value: valor ?? "",
+        options: opcionesCombo,
+        placeholder,
+        required: requerido,
+        disabled: deshabilitado,
+        ariaLabel: etiqueta || placeholder,
+        onChange: (nuevoValor) => onChange?.(nuevoValor)
+      })
     )
   });
 }
@@ -239,19 +237,21 @@ export function Casilla({ id, etiqueta, marcado = false, onChange, deshabilitado
   );
 }
 
-/* Filtro de listado: un select compacto con "Todos" como opcion vacia. */
+/* Filtro de listado: un combobox compacto con "Todos" como opcion vacia. */
 export function Filtro({ id, etiqueta, valor, opciones = [], onChange, textoVacio = "Todos" }) {
   const lista = opciones.map(normalizarOpcion).filter(Boolean);
 
   return h(
-    "label",
-    { className: "ui-filtro", htmlFor: id },
-    etiqueta,
-    h(
-      "select",
-      { id, value: valor ?? "", onChange: (evento) => onChange?.(evento.target.value) },
-      h("option", { value: "" }, textoVacio),
-      lista.map((opcion) => h("option", { key: opcion.valor, value: opcion.valor }, opcion.nombre))
-    )
+    "div",
+    { className: "ui-filtro" },
+    etiqueta ? h("span", { className: "ui-filtro__etiqueta" }, etiqueta) : null,
+    h(CustomSelect, {
+      id,
+      value: valor ?? "",
+      placeholder: textoVacio,
+      options: [{ value: "", label: textoVacio }, ...lista.map((opcion) => ({ value: opcion.valor, label: opcion.nombre }))],
+      onChange: (nuevoValor) => onChange?.(nuevoValor),
+      ariaLabel: etiqueta || textoVacio
+    })
   );
 }

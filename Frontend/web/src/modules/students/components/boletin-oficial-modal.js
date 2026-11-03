@@ -110,15 +110,20 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
     setBoletin(null);
     setSinGuardar(false);
     setMensaje(null);
-    BoletinOficialService.obtener(alumno, anio)
-      .then((registro) => vigente && setBoletin(armarBoletinOficial(alumno, anio, { registro })))
-      .catch((error) => {
-        if (!vigente) return;
-        setBoletin(armarBoletinOficial(alumno, anio));
-        setMensaje({ ok: false, texto: `No se pudieron cargar las notas: ${error?.mensaje ?? "intentá de nuevo."}` });
-      });
+    const recargarDesdeBackend = () => {
+      BoletinOficialService.obtener(alumno, anio)
+        .then((registro) => vigente && setBoletin(armarBoletinOficial(alumno, anio, { registro })))
+        .catch((error) => {
+          if (!vigente) return;
+          setBoletin(armarBoletinOficial(alumno, anio));
+          setMensaje({ ok: false, texto: `No se pudieron cargar las notas: ${error?.mensaje ?? "intentá de nuevo."}` });
+        });
+    };
+    recargarDesdeBackend();
+    window.addEventListener("prece:calificaciones-updated", recargarDesdeBackend);
     return () => {
       vigente = false;
+      window.removeEventListener("prece:calificaciones-updated", recargarDesdeBackend);
     };
   }, [abierto, alumno, anio]);
 

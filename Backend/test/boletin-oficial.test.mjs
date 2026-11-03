@@ -146,3 +146,29 @@ test("el resumen de un curso indica quien ya tiene notas y en que materias", asy
   assert.equal(cuerpo.data.materias["Historia"], 1);
   assert.equal((await pedir("/api/v1/boletin-oficial/resumen?curso=1", { token: admin })).status, 400);
 });
+
+test("el docente guarda desde la planilla en sus cursos asignados (1° 1° y 2° 1°) y se refleja en el boletin", async () => {
+  const docente = await login("docente@prece.local", "Docente123!");
+  const g1 = await pedir("/api/v1/boletin-oficial/alumnos/alu-1", {
+    metodo: "PUT",
+    token: docente,
+    cuerpo: {
+      anio: CICLO,
+      notas: { MATEMATICAS: { informe1: "9", informe2: "10", diciembre: "", febrero: "" } },
+      detalle: { MATEMATICAS: { p1: "9", p2: "9", v1: "TEA", f1: 1, p3: "10", p4: "10", v2: "TEA", f2: 0 } }
+    }
+  });
+  assert.equal(g1.status, 200, JSON.stringify(g1.cuerpo));
+  assert.equal(g1.cuerpo.data.notas["Matematicas"]?.informe1 ?? g1.cuerpo.data.notas["MATEMATICAS"]?.informe1, "9");
+
+  const g2 = await pedir("/api/v1/boletin-oficial/alumnos/alu-7", {
+    metodo: "PUT",
+    token: docente,
+    cuerpo: {
+      anio: CICLO,
+      notas: { "MATEMÁTICA": { informe1: "8", informe2: "9", diciembre: "", febrero: "" } },
+      detalle: { "MATEMÁTICA": { p1: "8", p2: "8", v1: "TEA", f1: 0, p3: "9", p4: "9", v2: "TEA", f2: 0 } }
+    }
+  });
+  assert.equal(g2.status, 200, JSON.stringify(g2.cuerpo));
+});

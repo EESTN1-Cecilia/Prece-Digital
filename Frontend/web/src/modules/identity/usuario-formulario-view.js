@@ -223,19 +223,15 @@ export default function UsuarioFormularioView({ id }) {
           error: errores.telefono,
           onChange: cambiar("telefono")
         }),
-        h(Campo, {
+        h(Select, {
           etiqueta: "Sector / area",
           id: "area",
           valor: datos.area,
+          placeholder: "Seleccionar sector o área...",
+          opciones: areasDisponibles(),
           error: errores.area,
-          list: "areas-conocidas",
           onChange: cambiar("area")
         }),
-        h(
-          "datalist",
-          { id: "areas-conocidas" },
-          areasDisponibles().map((area) => h("option", { key: area, value: area }))
-        ),
         h(Select, {
           etiqueta: "Estado",
           id: "estado",

@@ -394,16 +394,34 @@ function alcanceDeAlumno(alumno) {
   const matriculas = academicRepository.listMatricula().filter((matricula) => matricula.estudianteId === alumno.id);
   const matricula = matriculas[matriculas.length - 1] ?? null;
 
-  if (!matricula) {
-    return { cursoId: null, divisionId: null };
+  if (matricula) {
+    const division = academicRepository.findDivisionById(matricula.divisionId);
+    return { cursoId: division?.cursoId ?? null, divisionId: matricula.divisionId ?? null };
   }
 
-  const division = academicRepository.findDivisionById(matricula.divisionId);
+  const anioNum = Number(String(alumno?.curso ?? "").replace(/\D/g, ""));
+  const divNum = String(alumno?.division ?? "").replace(/\D/g, "");
+  const curso = anioNum ? academicRepository.listCursos().find((c) => Number(c.anio) === anioNum) : null;
+  const division =
+    curso && divNum
+      ? academicRepository.listDivisiones().find((d) => d.cursoId === curso.id && String(d.nombre).replace(/\D/g, "") === divNum)
+      : null;
 
-  return { cursoId: division?.cursoId ?? null, divisionId: matricula.divisionId ?? null };
+  return { cursoId: curso?.id ?? null, divisionId: division?.id ?? null };
 }
 
 /* ---------------- Autorizacion docente ----------------------------------- */
+
+function normalizarRaizMateria(nombre) {
+  return String(nombre ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\b(CICLO SUPERIOR|I|II|III|IV|V|VI|VII)\b/g, "")
+    .replace(/\bMATEMATICAS\b/g, "MATEMATICA")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
+}
 
 /* Un usuario con rol docente queda acotado a sus propias asignaciones
    (modulo docentes). Admin y director no se restringen. */
@@ -417,10 +435,10 @@ function esDocenteRestringido(user) {
   return roles.includes("docente");
 }
 
-function buscarAsignacion(docenteId, { materiaId, cursoId, divisionId, anio }) {
+function buscarAsignacion(docenteId, { materiaId, cursoId, divisionId, anio, alumno }, user = null) {
   const asignaciones = teachersRepository.listAsignacionesMateria({ docenteId, materiaId, anio, estado: "activo" });
 
-  return (
+  const directa =
     asignaciones.find((asignacion) => {
       if (asignacion.cursoId && asignacion.cursoId !== cursoId) {
         return false;
@@ -431,8 +449,51 @@ function buscarAsignacion(docenteId, { materiaId, cursoId, divisionId, anio }) {
       }
 
       return true;
-    }) ?? null
-  );
+    }) ?? null;
+
+  if (directa) return directa;
+
+  const materiaObj = academicRepository.findSubjectRefById(materiaId);
+  const raizBuscada = normalizarRaizMateria(materiaObj?.nombre ?? materiaId);
+  if (!raizBuscada) return null;
+
+  const delDocente = teachersRepository.listAsignacionesMateria({ docenteId, anio, estado: "activo" });
+  const porAlias =
+    delDocente.find((asignacion) => {
+      if (asignacion.cursoId && asignacion.cursoId !== cursoId) {
+        return false;
+      }
+      if (asignacion.divisionId && asignacion.divisionId !== divisionId) {
+        return false;
+      }
+      const matAsig = academicRepository.findSubjectRefById(asignacion.materiaId);
+      return normalizarRaizMateria(matAsig?.nombre ?? asignacion.materiaId) === raizBuscada;
+    }) ?? null;
+
+  if (porAlias) return porAlias;
+
+  if (user?.assignments) {
+    const cursoObj = cursoId ? academicRepository.findCursoById(cursoId) : null;
+    const divObj = divisionId ? academicRepository.findDivisionById(divisionId) : null;
+    const anioCurso = Number(cursoObj?.anio ?? String(alumno?.curso ?? "").replace(/\D/g, "")) || null;
+    const divNumero = String(divObj?.nombre ?? alumno?.division ?? "").replace(/\D/g, "") || null;
+
+    const asigUsuario = user.assignments.find((a) => {
+      if (a.role !== "docente" || !a.materia) return false;
+      if (normalizarRaizMateria(a.materia) !== raizBuscada) return false;
+      const anioAsig = Number(a.anio ?? String(a.curso ?? "").replace(/\D/g, "")) || null;
+      if (anioAsig && anioCurso && anioAsig !== anioCurso) return false;
+      const divAsig = String(a.division ?? "").replace(/\D/g, "") || null;
+      if (divAsig && divNumero && divAsig !== divNumero) return false;
+      return true;
+    });
+
+    if (asigUsuario) {
+      return { id: null, docenteId, materiaId };
+    }
+  }
+
+  return null;
 }
 
 function exigirAutorizacionDocente(user, alcance) {
@@ -446,7 +507,7 @@ function exigirAutorizacionDocente(user, alcance) {
     throw conflicto("El docente esta inactivo y no puede cargar calificaciones.");
   }
 
-  const asignacion = buscarAsignacion(docente.id, alcance);
+  const asignacion = buscarAsignacion(docente.id, alcance, user);
 
   if (!asignacion) {
     throw sinPermisos("No podes cargar calificaciones para esa materia, curso o periodo.");
@@ -582,7 +643,8 @@ const gradesService = {
         materiaId: materia.id,
         cursoId,
         divisionId,
-        anio
+        anio,
+        alumno
       }));
     } else if (data?.docenteId) {
       const docente = teachersRepository.findDocenteById(data.docenteId);
@@ -774,9 +836,15 @@ const gradesService = {
       throw errorDeValidacion(errores);
     }
 
-    const nuevoCursoId = curso?.id ?? (data?.cursoId !== undefined || data?.divisionId !== undefined ? null : actual.cursoId);
-    const nuevoDivisionId = division?.id ?? (data?.cursoId !== undefined || data?.divisionId !== undefined ? null : actual.divisionId);
+    let nuevoCursoId = curso?.id ?? (data?.cursoId !== undefined || data?.divisionId !== undefined ? null : actual.cursoId);
+    let nuevoDivisionId = division?.id ?? (data?.cursoId !== undefined || data?.divisionId !== undefined ? null : actual.divisionId);
     const nuevoAnio = anio ?? actual.anio;
+    const alumnoActual = studentRepository.findById(actual.alumnoId);
+    if (!nuevoCursoId && !nuevoDivisionId && alumnoActual) {
+      const alcanceAlu = alcanceDeAlumno(alumnoActual);
+      nuevoCursoId = alcanceAlu.cursoId;
+      nuevoDivisionId = alcanceAlu.divisionId;
+    }
 
     let docenteId = actual.docenteId;
     let asignacionMateriaId = actual.asignacionMateriaId;
@@ -786,7 +854,8 @@ const gradesService = {
         materiaId: actual.materiaId,
         cursoId: nuevoCursoId,
         divisionId: nuevoDivisionId,
-        anio: nuevoAnio
+        anio: nuevoAnio,
+        alumno: alumnoActual
       });
       docenteId = autorizado.docenteId;
       asignacionMateriaId = autorizado.asignacionMateriaId;
@@ -883,11 +952,17 @@ const gradesService = {
     }
 
     if (esDocenteRestringido(user)) {
+      const alumnoActual = studentRepository.findById(actual.alumnoId);
+      const alcanceAlu =
+        !actual.cursoId && !actual.divisionId && alumnoActual
+          ? alcanceDeAlumno(alumnoActual)
+          : { cursoId: actual.cursoId, divisionId: actual.divisionId };
       exigirAutorizacionDocente(user, {
         materiaId: actual.materiaId,
-        cursoId: actual.cursoId,
-        divisionId: actual.divisionId,
-        anio: actual.anio
+        cursoId: alcanceAlu.cursoId,
+        divisionId: alcanceAlu.divisionId,
+        anio: actual.anio,
+        alumno: alumnoActual
       });
     }
 

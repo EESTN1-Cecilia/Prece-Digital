@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { h, ActionButton, IconoFigma } from "../../../layouts/site-layout.js";
 import { DashboardCard } from "../../../components/dashboard/dashboard-card.js";
 import { LoadingState, ErrorState } from "../../../components/common/state-handlers.js";
+import { CustomSelect } from "../../../components/common/custom-select.js";
 import { InventarioService } from "./inventario-service.js";
 import { usePermisos, useSesion } from "../../../estado/index.js";
 import { PERMISOS } from "../../../utils/permisos.js";
@@ -352,22 +353,21 @@ export default function MaterialFormView({ match }) {
             "div",
             { className: `form-group ${validationErrors.category ? "has-error" : ""}` },
             h("label", { htmlFor: "field-category" }, "Categoría *"),
-            h(
-              "select",
-              {
-                id: "field-category",
-                name: "category",
-                className: "server-select",
-                value: formData.category,
-                onChange: handleChange
-              },
-              h("option", { value: "tecnologia" }, "Tecnología e Informática"),
-              h("option", { value: "equipamiento" }, "Equipamiento de Laboratorio"),
-              h("option", { value: "material" }, "Materiales y Consumibles"),
-              h("option", { value: "herramienta" }, "Herramientas de Taller"),
-              h("option", { value: "mobiliario" }, "Mobiliario y Racks"),
-              h("option", { value: "otro" }, "Otro / Varios")
-            ),
+            h(CustomSelect, {
+              id: "field-category",
+              name: "category",
+              value: formData.category,
+              ariaLabel: "Categoría",
+              options: [
+                { value: "tecnologia", label: "Tecnología e Informática" },
+                { value: "equipamiento", label: "Equipamiento de Laboratorio" },
+                { value: "material", label: "Materiales y Consumibles" },
+                { value: "herramienta", label: "Herramientas de Taller" },
+                { value: "mobiliario", label: "Mobiliario y Racks" },
+                { value: "otro", label: "Otro / Varios" }
+              ],
+              onChange: (val) => handleChange({ target: { name: "category", value: val } })
+            }),
             validationErrors.category ? h("span", { className: "form-error-msg" }, validationErrors.category) : null
           ),
           h(
@@ -421,22 +421,21 @@ export default function MaterialFormView({ match }) {
             "div",
             { className: "form-group" },
             h("label", { htmlFor: "field-unit" }, "Unidad de Medida"),
-            h(
-              "select",
-              {
-                id: "field-unit",
-                name: "unit",
-                className: "server-select",
-                value: formData.unit,
-                onChange: handleChange
-              },
-              h("option", { value: "unidad" }, "Unidad (u.)"),
-              h("option", { value: "kit" }, "Kit / Set"),
-              h("option", { value: "bobina" }, "Bobina"),
-              h("option", { value: "metro" }, "Metros (m)"),
-              h("option", { value: "caja" }, "Caja"),
-              h("option", { value: "par" }, "Par")
-            )
+            h(CustomSelect, {
+              id: "field-unit",
+              name: "unit",
+              value: formData.unit,
+              ariaLabel: "Unidad de Medida",
+              options: [
+                { value: "unidad", label: "Unidad (u.)" },
+                { value: "kit", label: "Kit / Set" },
+                { value: "bobina", label: "Bobina" },
+                { value: "metro", label: "Metros (m)" },
+                { value: "caja", label: "Caja" },
+                { value: "par", label: "Par" }
+              ],
+              onChange: (val) => handleChange({ target: { name: "unit", value: val } })
+            })
           )
         ),
 
@@ -503,20 +502,19 @@ export default function MaterialFormView({ match }) {
             "div",
             { className: "form-group" },
             h("label", { htmlFor: "field-status" }, "Estado Operativo"),
-            h(
-              "select",
-              {
-                id: "field-status",
-                name: "status",
-                className: "server-select",
-                value: formData.status,
-                onChange: handleChange
-              },
-              h("option", { value: "disponible" }, "Disponible en Server"),
-              h("option", { value: "en_uso" }, "En Uso / Asignado"),
-              h("option", { value: "mantenimiento" }, "En Mantenimiento"),
-              h("option", { value: "dado_de_baja" }, "Dado de Baja")
-            )
+            h(CustomSelect, {
+              id: "field-status",
+              name: "status",
+              value: formData.status,
+              ariaLabel: "Estado Operativo",
+              options: [
+                { value: "disponible", label: "Disponible en Server" },
+                { value: "en_uso", label: "En Uso / Asignado" },
+                { value: "mantenimiento", label: "En Mantenimiento" },
+                { value: "dado_de_baja", label: "Dado de Baja" }
+              ],
+              onChange: (val) => handleChange({ target: { name: "status", value: val } })
+            })
           )
         )
       ),
@@ -549,22 +547,21 @@ export default function MaterialFormView({ match }) {
             "div",
             { className: "form-group" },
             h("label", { htmlFor: "field-space" }, "Sector / Espacio Asignado"),
-            h(
-              "select",
-              {
-                id: "field-space",
-                name: "spaceId",
-                className: "server-select",
-                value: formData.spaceId,
-                onChange: handleChange
-              },
-              h("option", { value: "server-1" }, "Server Central / Recursos"),
-              h("option", { value: "lab-robotica" }, "Laboratorio de Robótica"),
-              h("option", { value: "lab-elect" }, "Laboratorio de Electrónica"),
-              h("option", { value: "lab-informatica" }, "Laboratorio de Informática"),
-              h("option", { value: "taller-mant" }, "Taller de Mantenimiento"),
-              h("option", { value: "salon-actos" }, "Salón de Actos / Aula Magna")
-            )
+            h(CustomSelect, {
+              id: "field-space",
+              name: "spaceId",
+              value: formData.spaceId,
+              ariaLabel: "Sector / Espacio Asignado",
+              options: [
+                { value: "server-1", label: "Server Central / Recursos" },
+                { value: "lab-robotica", label: "Laboratorio de Robótica" },
+                { value: "lab-elect", label: "Laboratorio de Electrónica" },
+                { value: "lab-informatica", label: "Laboratorio de Informática" },
+                { value: "taller-mant", label: "Taller de Mantenimiento" },
+                { value: "salon-actos", label: "Salón de Actos / Aula Magna" }
+              ],
+              onChange: (val) => handleChange({ target: { name: "spaceId", value: val } })
+            })
           )
         ),
         h(

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { h, ActionButton, IconoFigma } from "../../../layouts/site-layout.js";
 import { DashboardCard } from "../../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState } from "../../../components/common/state-handlers.js";
+import { CustomSelect } from "../../../components/common/custom-select.js";
 import { InventarioService } from "./inventario-service.js";
 import { InventarioFilters } from "./components/inventario-filters.js";
 import { InventarioTable } from "./components/inventario-table.js";
@@ -605,21 +606,22 @@ export default function InventarioListView() {
                   "div",
                   { className: "inventario-page-size-picker" },
                   h("span", { className: "text-muted text-xs" }, "Por pág:"),
-                  h(
-                    "select",
-                    {
-                      className: "select-filter select-filter--sm",
-                      value: pageSize,
-                      onChange: (e) => {
-                        setPageSize(Number(e.target.value));
-                        setCurrentPage(1);
-                      }
-                    },
-                    h("option", { value: 5 }, "5"),
-                    h("option", { value: 10 }, "10"),
-                    h("option", { value: 25 }, "25"),
-                    h("option", { value: 50 }, "50")
-                  )
+                  h(CustomSelect, {
+                    className: "pagination-custom-select",
+                    dropUp: true,
+                    value: String(pageSize),
+                    ariaLabel: "Cantidad de materiales por página",
+                    options: [
+                      { value: "5", label: "5 por pág." },
+                      { value: "10", label: "10 por pág." },
+                      { value: "25", label: "25 por pág." },
+                      { value: "50", label: "50 por pág." }
+                    ],
+                    onChange: (val) => {
+                      setPageSize(Number(val));
+                      setCurrentPage(1);
+                    }
+                  })
                 )
               )
             )

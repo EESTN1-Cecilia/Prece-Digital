@@ -737,42 +737,49 @@ export default function BoletinesListView() {
                   h(
                     "td",
                     { style: { textAlign: "center" } },
-                    esDocente
-                      ? h(
-                          "button",
-                          {
-                            type: "button",
-                            className: "boletin-btn-open",
-                            onClick: () => {
-                              setAlumnoSeleccionado(alumno);
-                              setPlanillaModalOpen(true);
-                            },
-                            title: `Cargar / Ver Planilla de Calificaciones de ${alumno.nombre} ${alumno.apellido}`
+                    h(
+                      "div",
+                      { style: { display: "inline-flex", alignItems: "center", gap: "8px", justifyContent: "center", flexWrap: "wrap" } },
+                      h(
+                        "button",
+                        {
+                          type: "button",
+                          className: "boletin-btn-open",
+                          onClick: () => {
+                            setPlanillaModalOpen(false);
+                            setAlumnoSeleccionado(alumno);
                           },
-                          h(
-                            "svg",
-                            { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                            h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
-                            h("path", { d: "M3 9h18M9 21V9" })
-                          ),
-                          "Planilla de Calificaciones"
-                        )
-                      : h(
-                          "button",
-                          {
-                            type: "button",
-                            className: "boletin-btn-open",
-                            onClick: () => setAlumnoSeleccionado(alumno),
-                            title: `Abrir Boletín Digital de ${alumno.nombre} ${alumno.apellido}`
+                          title: `Abrir Boletín Oficial de ${alumno.nombre} ${alumno.apellido}`
+                        },
+                        h(
+                          "svg",
+                          { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                          h("path", { d: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" }),
+                          h("path", { d: "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" })
+                        ),
+                        "Abrir Boletín"
+                      ),
+                      h(
+                        "button",
+                        {
+                          type: "button",
+                          className: "boletin-btn-open",
+                          style: { background: "#eff6ff", color: "#1d4ed8", borderColor: "#bfdbfe" },
+                          onClick: () => {
+                            setAlumnoSeleccionado(alumno);
+                            setPlanillaModalOpen(true);
                           },
-                          h(
-                            "svg",
-                            { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                            h("path", { d: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" }),
-                            h("path", { d: "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" })
-                          ),
-                          "Abrir Boletín"
-                        )
+                          title: `Cargar / Ver Planilla de Calificaciones de ${alumno.nombre} ${alumno.apellido}`
+                        },
+                        h(
+                          "svg",
+                          { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                          h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
+                          h("path", { d: "M3 9h18M9 21V9" })
+                        ),
+                        "Planilla"
+                      )
+                    )
                   )
                 );
               })
@@ -903,8 +910,8 @@ export default function BoletinesListView() {
         )
       : null,
 
-    // Modal de Planilla de Calificaciones Oficial PBA (para Docentes)
-    esDocente && planillaModalOpen
+    // Modal de Planilla de Calificaciones Oficial PBA
+    planillaModalOpen
       ? h(PlanillaCalificacionesModal, {
           abierto: planillaModalOpen,
           onCerrar: () => {
@@ -918,16 +925,16 @@ export default function BoletinesListView() {
             const c = selectedCurso !== "todos" ? selectedCurso : alumnoSeleccionado?.curso;
             const d = selectedDivision !== "todas" ? selectedDivision : alumnoSeleccionado?.division;
             return a.curso === c && String(a.division) === String(d);
-          })?.materia || asignacionesDocente?.[0]?.materia || "Matemática",
+          })?.materia || asignacionesDocente?.[0]?.materia || undefined,
           estudiantesIniciales: students,
           asignacionesDocente: asignacionesDocente,
-          esDocente: true,
+          esDocente: esDocente,
           profesorNombre: user?.nombreCompleto || (user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : "Docente Asignado")
         })
       : null,
 
-    // Modal de Boletín Digital Oficial (para Directores, Preceptores, Secretaría)
-    !esDocente && alumnoSeleccionado
+    // Modal de Boletín Digital Oficial
+    !planillaModalOpen && alumnoSeleccionado
       ? h(BoletinOficialModal, {
           abierto: Boolean(alumnoSeleccionado),
           onCerrar: () => setAlumnoSeleccionado(null),

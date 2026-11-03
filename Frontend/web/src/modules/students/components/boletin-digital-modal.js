@@ -30,6 +30,16 @@ function Contenido({ alumnoId, onCerrar }) {
     [alumnoId, anio]
   );
 
+  useEffect(() => {
+    const actualizar = () => recargar();
+    window.addEventListener("prece:boletin-updated", actualizar);
+    window.addEventListener("prece:calificaciones-updated", actualizar);
+    return () => {
+      window.removeEventListener("prece:boletin-updated", actualizar);
+      window.removeEventListener("prece:calificaciones-updated", actualizar);
+    };
+  }, [recargar]);
+
   function imprimir() {
     document.body.classList.add("pa-imprimiendo-boletin");
     const limpiar = () => {

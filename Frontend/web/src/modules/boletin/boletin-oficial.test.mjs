@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { anioDelAlumno, armarBoletinOficial, cicloDeAnio, cuerpoParaGuardar, planDelAnio, promedioGeneral, recalcularNota } from "./boletin-oficial-datos.js";
+import { anioDelAlumno, armarBoletinOficial, buscarNota, cicloDeAnio, cuerpoParaGuardar, planDelAnio, promedioGeneral, recalcularNota } from "./boletin-oficial-datos.js";
+import { agruparMaterias } from "./boletin-grupos.js";
 
 const alumno = { id: 7, apellido: "Perez", nombre: "Ana", dni: "99.000.007", curso: "2°", division: "1", turno: "Mañana", libro: "2026", folio: "07" };
 
@@ -57,4 +58,46 @@ test("el ciclo lectivo se deduce del año de estudio del alumno", () => {
   const tercero = { curso: "3°" };
   assert.equal(cicloDeAnio(3, tercero, 2026), 2026);
   assert.equal(cicloDeAnio(1, tercero, 2026), 2024);
+});
+
+test("buscarNota reconoce alias entre planilla y boletin (Matematicas / Matemática / Ciclo Superior)", () => {
+  const notas = {
+    "Matemática": { informe1: "8", informe2: "9" },
+    "Matemática III": { informe1: "7", informe2: "7" }
+  };
+  assert.equal(buscarNota(notas, "MATEMATICAS")?.informe1, "8");
+  assert.equal(buscarNota(notas, "MATEMÁTICA")?.informe2, "9");
+});
+
+test("agruparMaterias unifica alias y calcula la calificacion final a partir de 1C y 2C", () => {
+  const grupos = agruparMaterias({
+    alumno: { cursoDivision: "1° 1°" },
+    materias: [
+      {
+        materiaId: "mat",
+        materia: "Matemática",
+        docente: "María Villatoro",
+        periodos: {
+          c1: { resultado: { valor: "7", nota: 7, fecha: "2026-04-01" } },
+          c2: { resultado: null },
+          final: { resultado: null }
+        }
+      },
+      {
+        materiaId: "mat-matematicas",
+        materia: "Matematicas",
+        docente: "María Villatoro",
+        periodos: {
+          c1: { resultado: { valor: "9", nota: 9, fecha: "2026-06-15" } },
+          c2: { resultado: { valor: "8", nota: 8, fecha: "2026-11-15" } },
+          final: { resultado: null }
+        }
+      }
+    ]
+  });
+  assert.equal(grupos.length, 1);
+  assert.equal(grupos[0].materias.length, 1);
+  assert.equal(grupos[0].materias[0].periodos.c1.resultado.valor, "9");
+  assert.equal(grupos[0].materias[0].periodos.c2.resultado.valor, "8");
+  assert.equal(grupos[0].materias[0].periodos.final.resultado.valor, "8.5");
 });

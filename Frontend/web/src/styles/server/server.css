@@ -6,15 +6,20 @@
   /* Extiende .secretaria-dashboard */
 }
 
-.kpi-metric-card--red:hover,
+.kpi-metric-card--red {
+  --metric-color: #e11d48;
+  --metric-soft: #ffe4e6;
+  --metric-border: #fecdd3;
+  --metric-tint: #fff8f9;
+}
+
 .kpi-metric-card--red.kpi-metric-card--active {
-  background: #fff1f2;
-  border-color: #f43f5e;
-  box-shadow: 0 10px 24px -4px rgba(244, 63, 94, 0.2);
+  background-color: #fff8f9;
+  border-color: #fecdd3;
 }
 
 .kpi-metric-card__icon-box--red {
-  background: #ffe4e6;
+  background-color: #ffe4e6;
   color: #e11d48;
 }
 
