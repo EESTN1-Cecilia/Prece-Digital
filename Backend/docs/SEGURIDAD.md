@@ -32,7 +32,7 @@ Por IP, ventana de 60 s, configurable por entorno. Al superarlo responde 429 con
 
 | Grupo | Variable | Por defecto |
 | --- | --- | --- |
-| `/api/v1/auth/*` | `RATE_LIMIT_AUTH` | 300 |
+| Autenticación (login, refresh, logout) | `RATE_LIMIT_AUTH` | 300 |
 | Lecturas | `RATE_LIMIT_READ` | 3000 |
 | Escrituras | `RATE_LIMIT_WRITE` | 1000 |
 
