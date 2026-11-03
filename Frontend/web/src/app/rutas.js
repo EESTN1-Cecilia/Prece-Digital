@@ -188,7 +188,7 @@ export const RUTAS = [
   },
   {
     patron: "#/jefatura",
-    titulo: "Grilla de jefatura",
+    titulo: "Panel de jefatura",
     vista: JefaturaDashboardView,
     seccion: "General",
     icono: "academic",

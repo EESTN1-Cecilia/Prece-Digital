@@ -143,12 +143,13 @@ const ASIGNACIONES_DOCENTE_DEFAULT = [
   { id: "3-3", anio: 3, curso: "3°", division: "3", materia: "Matemática III", turno: "Tarde", orientacion: "Ciclo Básico" }
 ];
 
-export default function AsistenciasView({ modoDocente = false }) {
+export default function AsistenciasView({ modoDocente = false, grupoTaller = null, onVolver = null }) {
   const user = useUsuarioActual();
   const paginaRef = useRef(null);
 
   const esDocente =
     modoDocente ||
+    Boolean(grupoTaller) ||
     user?.rol === "docente" ||
     (Array.isArray(user?.roles) &&
       user.roles.includes("docente") &&
@@ -159,11 +160,21 @@ export default function AsistenciasView({ modoDocente = false }) {
   // Lista de cursos disponibles dinámicos
   /* Fuera del docente, la lista sale solo del backend (un preceptor recibe los
      cursos que le asigno la Direccion): nunca se arranca con el catalogo completo. */
-  const [cursos, setCursos] = useState(() => (esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : []));
+  /* Lista de un grupo de taller: un unico "curso" con la materia Taller · Grupo X.Y */
+  const cursoGrupo = useMemo(
+    () => (grupoTaller ? { id: grupoTaller.id, curso: grupoTaller.curso, division: grupoTaller.division, turno: grupoTaller.turno || "Mañana", materia: grupoTaller.materia, orientacion: "Ciclo Básico", preceptor: `Docente: ${grupoTaller.docentes || "A designar"}` } : null),
+    [grupoTaller?.id, grupoTaller?.curso, grupoTaller?.division, grupoTaller?.turno, grupoTaller?.materia, grupoTaller?.docentes]
+  );
+  const clavesAlumnos = grupoTaller?.alumnoIds ? grupoTaller.alumnoIds.join(",") : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const alumnosGrupo = useMemo(() => grupoTaller?.alumnoIds ?? null, [clavesAlumnos]);
+
+  const [cursos, setCursos] = useState(() => (cursoGrupo ? [cursoGrupo] : esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : []));
   const [cursosListos, setCursosListos] = useState(esDocente);
 
   // Estados de navegación y selección de curso/mes
   const [selectedCursoId, setSelectedCursoId] = useState(() => {
+    if (grupoTaller) return grupoTaller.id;
     const hash = typeof window !== "undefined" ? window.location.hash || "" : "";
     if (hash.includes("?")) {
       const q = new URLSearchParams(hash.split("?")[1]);
@@ -184,6 +195,12 @@ export default function AsistenciasView({ modoDocente = false }) {
   // Cargar lista dinámica de cursos según rol
   useEffect(() => {
     let montado = true;
+
+    if (cursoGrupo) {
+      setCursos([cursoGrupo]);
+      setSelectedCursoId(cursoGrupo.id);
+      return undefined;
+    }
 
     if (esDocente) {
       const asigs =
@@ -224,7 +241,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     return () => {
       montado = false;
     };
-  }, [esDocente, user]);
+  }, [esDocente, user, cursoGrupo]);
 
   // Leer parámetros de URL si cambian
   useEffect(() => {
@@ -303,7 +320,8 @@ export default function AsistenciasView({ modoDocente = false }) {
         selectedCursoId,
         selectedMes,
         selectedAnio,
-        materiaDocente
+        materiaDocente,
+        alumnosGrupo
       );
       setPlanilla(data);
       setPlanillaOriginal(JSON.parse(JSON.stringify(data)));
@@ -312,7 +330,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia, cursoPermitido, cursosListos]);
+  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia, cursoPermitido, cursosListos, alumnosGrupo]);
 
   useEffect(() => {
     cargarPlanilla();
@@ -620,7 +638,9 @@ export default function AsistenciasView({ modoDocente = false }) {
           type: "button",
           className: "btn-volver-atras",
           onClick: () => {
-            if (window.history.length > 1) {
+            if (onVolver) {
+              onVolver();
+            } else if (window.history.length > 1) {
               window.history.back();
             } else {
               window.location.hash = esDocente ? "#/inicio" : "#/cursos";
@@ -685,7 +705,7 @@ export default function AsistenciasView({ modoDocente = false }) {
       { className: "asistencias-controls-panel no-print" },
 
       // Selector jerárquico: primero año, después división y turno.
-      h(
+      grupoTaller ? null : h(
         "div",
         { className: "asistencias-course-picker" },
         h(

@@ -117,6 +117,42 @@ test("puede consultar alumnos pero no crearlos", async () => {
   assert.equal(alta.cuerpo.error.code, "FORBIDDEN");
 });
 
+test("guarda la division de talleres en el legajo de cada alumno", async () => {
+  const cuerpo = { anio: 1, division: "1", grupos: { A: "1.1", B: "1.3" }, asignaciones: { "alu-1": "A", "alu-5": "B", "alu-inexistente": "A" } };
+
+  assert.equal((await pedir("/api/v1/jefatura/talleres/division", { method: "PUT", body: cuerpo })).status, 401);
+
+  const guardado = await pedir("/api/v1/jefatura/talleres/division", { quien: "jefe_area", method: "PUT", body: cuerpo });
+  assert.equal(guardado.status, 200);
+  assert.equal(guardado.cuerpo.data.actualizados, 2);
+  assert.equal(guardado.cuerpo.data.ignorados, 1);
+
+  const listado = await pedir("/api/v1/students?curso=1&division=1&porPagina=50", { quien: "jefe_area" });
+  const porId = Object.fromEntries(listado.cuerpo.data.map((alumno) => [alumno.id, alumno.grupoTaller]));
+  assert.equal(porId["alu-1"], "1.1");
+  assert.equal(porId["alu-5"], "1.3");
+
+  /* Repetir el guardado no cambia nada. */
+  const repetido = await pedir("/api/v1/jefatura/talleres/division", { quien: "jefe_area", method: "PUT", body: cuerpo });
+  assert.equal(repetido.cuerpo.data.actualizados, 0);
+});
+
+test("la division de talleres rechaza datos invalidos", async () => {
+  const mal = await pedir("/api/v1/jefatura/talleres/division", {
+    quien: "jefe_area",
+    method: "PUT",
+    body: { anio: 1, division: "1", grupos: { A: "1.1", B: "1.1" }, asignaciones: { "alu-1": "C" } }
+  });
+  assert.equal(mal.status, 422);
+
+  const inexistente = await pedir("/api/v1/jefatura/talleres/division", {
+    quien: "jefe_area",
+    method: "PUT",
+    body: { anio: 9, division: "9", grupos: { A: "9.1", B: "9.3" }, asignaciones: {} }
+  });
+  assert.equal(inexistente.status, 422);
+});
+
 test("puede registrar observaciones (el backend fija el responsable)", async () => {
   const listado = await pedir("/api/v1/observations", { quien: "jefe_area" });
 
@@ -170,4 +206,68 @@ test("direccion conserva el acceso total: ningun permiso de jefatura lo afecta",
 
   assert.equal(usuarios.status, 200);
   assert.equal(grilla.status, 200);
+});
+
+test("direccion asigna profes a los grupos de taller y jefatura los lee", async () => {
+  const docente = { id: "usr-doc-2", nombre: "Prof. Maria Villatoro", email: "MVillatoro@prece.local" };
+  const guardado = await pedir("/api/v1/jefatura/talleres/docentes", {
+    quien: "director",
+    method: "PUT",
+    body: {
+      asignaciones: [
+        { grupo: "1.1", anio: 1, division: "1", docente },
+        { grupo: "1.3", anio: 1, division: "1", docente }
+      ]
+    }
+  });
+  assert.equal(guardado.status, 200);
+  assert.equal(guardado.cuerpo.meta.asignados, 2);
+
+  const lista = await pedir("/api/v1/jefatura/talleres/docentes", { quien: "jefe_area" });
+  assert.equal(lista.status, 200);
+  assert.deepEqual(lista.cuerpo.data.map((item) => item.grupo), ["1.1", "1.3"]);
+  assert.equal(lista.cuerpo.data[0].docente.email, "mvillatoro@prece.local");
+
+  const propios = await pedir("/api/v1/jefatura/talleres/docentes?docenteId=otro", { quien: "director" });
+  assert.equal(propios.cuerpo.data.length, 0);
+});
+
+test("quitar al profe de un grupo lo deja libre y jefatura no puede asignar", async () => {
+  const docente = { id: "usr-doc-3", nombre: "Prof. Lucia Rios", email: "lrios@prece.local" };
+  await pedir("/api/v1/jefatura/talleres/docentes", {
+    quien: "director",
+    method: "PUT",
+    body: { asignaciones: [{ grupo: "1.1", anio: 1, division: "1", docente }] }
+  });
+  const quitado = await pedir("/api/v1/jefatura/talleres/docentes", {
+    quien: "director",
+    method: "PUT",
+    body: { asignaciones: [{ grupo: "1.1", anio: 1, division: "1", docente: null }] }
+  });
+  assert.equal(quitado.status, 200);
+  assert.equal(quitado.cuerpo.meta.quitados, 1);
+  assert.equal(quitado.cuerpo.data.length, 0);
+
+  const denegado = await pedir("/api/v1/jefatura/talleres/docentes", {
+    quien: "jefe_area",
+    method: "PUT",
+    body: { asignaciones: [{ grupo: "1.1", anio: 1, division: "1", docente }] }
+  });
+  assert.equal(denegado.status, 403);
+});
+
+test("rechaza grupos mal escritos, divisiones inexistentes y docentes sin nombre", async () => {
+  const mal = await pedir("/api/v1/jefatura/talleres/docentes", {
+    quien: "director",
+    method: "PUT",
+    body: {
+      asignaciones: [
+        { grupo: "uno", anio: 1, division: "1", docente: null },
+        { grupo: "1.2", anio: 1, division: "99", docente: null },
+        { grupo: "1.4", anio: 1, division: "2", docente: { id: "x" } }
+      ]
+    }
+  });
+  assert.equal(mal.status, 422);
+  assert.equal((await pedir("/api/v1/jefatura/talleres/docentes", { quien: "director", method: "PUT", body: {} })).status, 422);
 });
