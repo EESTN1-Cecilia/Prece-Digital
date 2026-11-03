@@ -61,7 +61,7 @@ Revisado sin hallazgos: un preceptor recibe 403 en las 44 rutas con id de un alu
 ## Pendiente
 
 - **Campos inesperados:** el rechazo central cubre campos del servidor y claves de prototipo (`utils/read-body.mjs`). Otros campos desconocidos se ignoran en cada módulo, no se rechazan.
-- **Acceso de docentes:** queda acotado a los cursos de su rol y de sus asignaciones activas, sin distinguir materia ni año lectivo: una asignación activa de un ciclo anterior sigue dando acceso.
+- **Acceso de docentes:** queda acotado a los cursos de su rol, de las cátedras que asigna Dirección (`/api/v1/docentes/catedras`) y de sus asignaciones activas, sin distinguir materia ni año lectivo: una asignación activa de un ciclo anterior sigue dando acceso.
 - **Alcance por escuela:** `authorize` solo compara la escuela si el pedido la nombra. Con un id directo no se compara, y un director de otra escuela podría leer el recurso. Hay que cerrarlo antes de operar con más de una escuela.
 - **Base de datos:** `014_restricciones_integridad.sql` no se ejecutó contra un MySQL real. `DB_ENCRYPT` es `false` por defecto y en producción solo genera un aviso.
 - **Datos personales:** falta la matriz de campos por rol y endpoint.
@@ -70,4 +70,3 @@ Revisado sin hallazgos: un preceptor recibe 403 en las 44 rutas con id de un alu
 - **Rate limit:** es por proceso, no compartido entre instancias.
 - **Público sin token:** `/health`, `/api/v1/modules` y `/api/v1/roles`. Falta decidir si los dos catálogos deben seguir abiertos.
 - **Contraseñas de desarrollo:** siguen en `database/seeds/auth.seed.mjs` y `scripts/auth-smoke.mjs`. No usarlas fuera de desarrollo.
-- **Asignación de docentes desde el panel de Dirección:** se guarda en `localStorage` del navegador (`prece_asignaciones_profesores`) y no llega a la API. Un docente asignado solo por esa vía no tiene cursos en el backend y no ve alumnos. Hay que conectarla a la API antes de usar esa pantalla en producción.
