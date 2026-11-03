@@ -33,9 +33,21 @@ export async function readJsonBody(request) {
     return {};
   }
 
+  if (!/^application\/json\b/i.test(request.headers["content-type"] ?? "")) {
+    throw errorHttp(415, "UNSUPPORTED_MEDIA_TYPE", "El cuerpo de la solicitud debe enviarse como application/json.");
+  }
+
+  let cuerpo;
+
   try {
-    return JSON.parse(Buffer.concat(trozos).toString("utf8"));
+    cuerpo = JSON.parse(Buffer.concat(trozos).toString("utf8"));
   } catch {
     throw solicitudInvalida("El cuerpo de la solicitud debe ser JSON valido.");
   }
+
+  if (cuerpo === null || typeof cuerpo !== "object" || Array.isArray(cuerpo)) {
+    throw solicitudInvalida("El cuerpo de la solicitud debe ser un objeto JSON.");
+  }
+
+  return cuerpo;
 }

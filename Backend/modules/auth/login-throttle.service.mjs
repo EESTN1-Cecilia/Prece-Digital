@@ -8,6 +8,7 @@
 import { getStore } from "../../database/memory-store.mjs";
 import { appConfig } from "../../config/app.config.mjs";
 import { errorHttp } from "../../utils/api-error.mjs";
+import { obtenerIpCliente } from "../../utils/client-ip.mjs";
 
 const WINDOW_MS = appConfig.loginWindowMs;
 const LOCK_MS = appConfig.loginLockMs;
@@ -83,19 +84,7 @@ function markFailure(key, limit) {
   }
 }
 
-export function obtenerIpCliente(request) {
-  if (!request || typeof request.headers !== "object") {
-    return "desconocida";
-  }
-
-  const forwarded = request.headers["x-forwarded-for"];
-
-  if (typeof forwarded === "string" && forwarded.trim()) {
-    return sanitizeIp(forwarded.split(",")[0].trim());
-  }
-
-  return sanitizeIp(request.socket?.remoteAddress);
-}
+export { obtenerIpCliente };
 
 /* Si la cuenta o el origen estan bloqueados, responde 429 con el mismo mensaje
    generico. Debe llamarse antes de comparar la contrasena. */
