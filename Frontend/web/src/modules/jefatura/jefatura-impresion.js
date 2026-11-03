@@ -69,7 +69,7 @@ function seccionGrupo(datos, grupo, ahora) {
 
   return `<section class="pagina">
     <header class="membrete">
-      <img class="sello" src="${import.meta.env.BASE_URL}assets/tecnica-n1-monte-grande.png" alt="Escudo de la Escuela Técnica N.º 1">
+      <img class="sello" src="${import.meta.env?.BASE_URL ?? "/"}assets/tecnica-n1-monte-grande.png" alt="Escudo de la Escuela Técnica N.º 1">
       <div class="institucion">
         <p class="organismo">${escaparHtml(datos.organismo)}</p>
         <p class="escuela">${escaparHtml(datos.escuela)}</p>
