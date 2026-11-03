@@ -268,6 +268,6 @@ test("rechaza grupos mal escritos, divisiones inexistentes y docentes sin nombre
       ]
     }
   });
-  assert.equal(mal.status, 400);
-  assert.equal((await pedir("/api/v1/jefatura/talleres/docentes", { quien: "director", method: "PUT", body: {} })).status, 400);
+  assert.equal(mal.status, 422);
+  assert.equal((await pedir("/api/v1/jefatura/talleres/docentes", { quien: "director", method: "PUT", body: {} })).status, 422);
 });
