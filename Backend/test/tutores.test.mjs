@@ -228,7 +228,6 @@ test("registrar un tutor valido devuelve 201 con datos sanitizados", async () =>
       email: "carina.mansilla@mail.com",
       telefono: "11-6666-0101",
       isActive: false,
-      createdBy: "hacker",
       id: "tut-xx",
       password: "secreto"
     }

@@ -56,13 +56,14 @@ Corregido en esta revisión:
 | Sin headers de seguridad, sin límite general, sin control de método ni `Content-Type` | Agregados |
 | Login auditado como `create` y sin usuario | Acción `login` con el usuario |
 
-Revisado sin hallazgos: `npm audit` de producción sin vulnerabilidades; sin `.env`, claves ni certificados en el historial de Git; sin SQL armado por interpolación en la búsqueda sobre `modules/` y `database/`.
+Revisado sin hallazgos: un preceptor recibe 403 en las 44 rutas con id de un alumno que no tiene asignado; `003_usuario_aplicacion.sql` no usa roles administrativos; `npm audit` de producción sin vulnerabilidades; sin `.env`, claves ni certificados en el historial de Git; sin SQL armado por interpolación en la búsqueda sobre `modules/` y `database/`.
 
 ## Pendiente
 
-- **Campos inesperados:** no hay rechazo general. Cada módulo valida los suyos.
-- **Acceso por recurso:** existe por alcance y para preceptores, sin auditoría endpoint por endpoint.
-- **Base de datos:** solo 2 restricciones `CHECK` en `schema.sql`. `DB_ENCRYPT` es `false` por defecto. Falta revisar los permisos reales del usuario de la aplicación.
+- **Campos inesperados:** el rechazo central cubre campos del servidor y claves de prototipo (`utils/read-body.mjs`). Otros campos desconocidos se ignoran en cada módulo, no se rechazan.
+- **Acceso de docentes:** un docente puede leer datos, tutores y condiciones particulares de cualquier alumno, no solo de sus cursos. Falta decidir la regla.
+- **Alcance por escuela:** `authorize` solo compara la escuela si el pedido la nombra. Con un id directo no se compara, y un director de otra escuela podría leer el recurso. Hay que cerrarlo antes de operar con más de una escuela.
+- **Base de datos:** `014_restricciones_integridad.sql` no se ejecutó contra un MySQL real. `DB_ENCRYPT` es `false` por defecto y en producción solo genera un aviso.
 - **Datos personales:** falta la matriz de campos por rol y endpoint.
 - **Conservación de auditoría:** falta definir el plazo.
 - **Persistencia:** la mayoría de los módulos usa el store en memoria, sin transacciones reales ni datos tras reiniciar.

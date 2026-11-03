@@ -63,6 +63,17 @@ test("rechaza cuerpo sin JSON y cuerpo que no es objeto", async () => {
   assert.equal(lista.status, 400);
 });
 
+test("rechaza campos que define el servidor y claves de prototipo", async () => {
+  const enviar = (cuerpo) => fetch(`${base}/eco`, { method: "POST", headers: { "Content-Type": "application/json" }, body: cuerpo });
+
+  const reservado = await enviar('{"nombre":"Ana","createdBy":"otro"}');
+  assert.equal(reservado.status, 422);
+  assert.equal((await reservado.json()).error.details[0].field, "createdBy");
+
+  assert.equal((await enviar('{"a":{"__proto__":{"admin":true}}}')).status, 400);
+  assert.equal((await enviar('{"nombre":"Ana"}')).status, 200);
+});
+
 test("un Host invalido no tira el servidor", async () => {
   assert.ok((await pedidoCrudo({ headers: { Host: "a b" } })) < 500);
   assert.equal((await fetch(`${base}/ok`)).status, 200);

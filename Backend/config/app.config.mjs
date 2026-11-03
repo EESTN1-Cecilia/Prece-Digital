@@ -38,6 +38,11 @@ export function assertProductionConfig({ env = environment, corsOrigins = listaE
   if ((database.DB_CLIENT ?? "memoria").toLowerCase() === "sqlserver" && (!database.DB_USER || !database.DB_PASSWORD)) {
     throw new Error("Con DB_CLIENT=sqlserver en produccion DB_USER y DB_PASSWORD son obligatorios");
   }
+
+  /* Solo aviso: una base en el mismo host puede no tener TLS. */
+  if ((database.DB_CLIENT ?? "memoria").toLowerCase() === "sqlserver" && database.DB_ENCRYPT !== "true") {
+    console.warn("Aviso: DB_ENCRYPT no esta activo; la conexion con la base viaja sin cifrar");
+  }
 }
 
 /* Falla rapido si en produccion faltan los secretos: no se arranca sin claves. */
