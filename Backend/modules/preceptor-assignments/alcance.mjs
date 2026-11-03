@@ -8,6 +8,9 @@
 
 import { ROLES } from "../../config/permissions.config.mjs";
 import studentRepository from "../students/students.repository.mjs";
+import academicRepository from "../academic/academic.repository.mjs";
+import { DIVISIONES_CATALOGO } from "../students/catalogo.mjs";
+import teachersRepository from "../teachers/teachers.repository.mjs";
 import { errorHttp } from "../../utils/api-error.mjs";
 
 export function claveCurso(curso, division) {
@@ -20,15 +23,61 @@ export function cursosDelPreceptor(user) {
     .flatMap((asignacion) => (Array.isArray(asignacion.cursos) ? asignacion.cursos : []));
 }
 
-/* null = sin restriccion; Set de claves "curso-division" = solo esos cursos. */
+/* Cursos de un docente: los de su rol y los de sus asignaciones activas del modulo
+   docentes. Una asignacion sin division cubre todas las divisiones de ese anio. */
+export function clavesDelDocente(user) {
+  const claves = new Set();
+
+  for (const asignacion of user?.assignments ?? []) {
+    if (asignacion.role === ROLES.DOCENTE && asignacion.anio != null && asignacion.division != null) {
+      claves.add(claveCurso(asignacion.anio, asignacion.division));
+    }
+  }
+
+  const docente = teachersRepository.findDocenteByUserId(user?.id);
+
+  if (!docente) {
+    return claves;
+  }
+
+  const asignaciones = [
+    ...teachersRepository.listAsignacionesCurso({ docenteId: docente.id, estado: "activo" }),
+    ...teachersRepository.listAsignacionesMateria({ docenteId: docente.id, estado: "activo" })
+  ];
+
+  for (const { cursoId, divisionId } of asignaciones) {
+    const anio = academicRepository.findCursoById(cursoId)?.anio;
+
+    if (anio == null) {
+      continue;
+    }
+
+    const numero = divisionId ? /\d+/.exec(academicRepository.findDivisionById(divisionId)?.nombre ?? "")?.[0] : null;
+
+    if (numero) {
+      claves.add(claveCurso(anio, numero));
+    } else if (!divisionId) {
+      DIVISIONES_CATALOGO.filter((item) => item.anio === anio).forEach((item) => claves.add(claveCurso(anio, item.division)));
+    }
+  }
+
+  return claves;
+}
+
+/* null = sin restriccion; Set de claves "curso-division" = solo esos cursos.
+   Solo se acota a preceptores y docentes: otro rol institucional manda. */
 export function alcanceDe(user) {
   const roles = new Set((user?.assignments ?? []).map((asignacion) => asignacion.role));
+  const acotados = [ROLES.PRECEPTOR, ROLES.DOCENTE];
 
-  if (!roles.has(ROLES.PRECEPTOR) || [...roles].some((rol) => rol !== ROLES.PRECEPTOR)) {
+  if (roles.size === 0 || [...roles].some((rol) => !acotados.includes(rol))) {
     return null;
   }
 
-  return new Set(cursosDelPreceptor(user).map((item) => claveCurso(item.curso, item.division)));
+  return new Set([
+    ...cursosDelPreceptor(user).map((item) => claveCurso(item.curso, item.division)),
+    ...(roles.has(ROLES.DOCENTE) ? clavesDelDocente(user) : [])
+  ]);
 }
 
 export function alumnoEnAlcance(alcance, alumno) {

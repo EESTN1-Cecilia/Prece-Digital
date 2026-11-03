@@ -84,7 +84,7 @@ test("un docente no registra movimientos individuales ni masivos (403)", async (
     divisionNueva: "1"
   });
   assert.equal(promover.status, 403);
-  assert.equal(promover.cuerpo.error.code, "FORBIDDEN");
+  assert.equal(promover.cuerpo.error.code, "OUT_OF_SCOPE");
 
   const masivos = await pedir("POST", "/api/v1/movimientos-cursos/masivos", docente, {
     tipo: "promocion",

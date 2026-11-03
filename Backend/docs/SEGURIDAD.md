@@ -61,7 +61,7 @@ Revisado sin hallazgos: un preceptor recibe 403 en las 44 rutas con id de un alu
 ## Pendiente
 
 - **Campos inesperados:** el rechazo central cubre campos del servidor y claves de prototipo (`utils/read-body.mjs`). Otros campos desconocidos se ignoran en cada módulo, no se rechazan.
-- **Acceso de docentes:** un docente puede leer datos, tutores y condiciones particulares de cualquier alumno, no solo de sus cursos. Falta decidir la regla.
+- **Acceso de docentes:** queda acotado a los cursos de su rol y de sus asignaciones activas, sin distinguir materia ni año lectivo: una asignación activa de un ciclo anterior sigue dando acceso.
 - **Alcance por escuela:** `authorize` solo compara la escuela si el pedido la nombra. Con un id directo no se compara, y un director de otra escuela podría leer el recurso. Hay que cerrarlo antes de operar con más de una escuela.
 - **Base de datos:** `014_restricciones_integridad.sql` no se ejecutó contra un MySQL real. `DB_ENCRYPT` es `false` por defecto y en producción solo genera un aviso.
 - **Datos personales:** falta la matriz de campos por rol y endpoint.
