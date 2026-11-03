@@ -1,7 +1,8 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
-import { useUsuarioActual } from "../../estado/index.js";
+import { usePermisos, useUsuarioActual } from "../../estado/index.js";
+import { PERMISOS } from "../../utils/permisos.js";
 import { StudentsService } from "../students/students-service.js";
 import {
   DEFAULT_OBSERVATION_SECTORS,
@@ -60,7 +61,7 @@ function StatusBadge({ estado }) {
   return h("span", { className: `observation-status observation-status--${normalizarEstadoClase(estado)}` }, estado);
 }
 
-function ObservationCard({ observation, onView, onEdit }) {
+function ObservationCard({ observation, onView, onEdit, puedeEditar = true }) {
   return h(
     "article",
     { className: `student-observation student-observation--${observation.estado.toLowerCase()}` },
@@ -121,7 +122,7 @@ function ObservationCard({ observation, onView, onEdit }) {
           "div",
           { className: "student-observation__actions" },
           h("button", { type: "button", onClick: onView }, "Ver"),
-          h("button", { type: "button", onClick: onEdit }, "Editar")
+          puedeEditar ? h("button", { type: "button", onClick: onEdit }, "Editar") : null
         )
       )
     )
@@ -342,7 +343,8 @@ function StudentDetail({
   onFiltrosClear,
   tipos,
   estados,
-  onNewObservation
+  onNewObservation,
+  puedeCrear = true
 }) {
   return h(
     "section",
@@ -375,11 +377,9 @@ function StudentDetail({
           h("span", { className: "student-detail__observation-count" }, `${totalObservations} ${totalObservations === 1 ? "observación" : "observaciones"}`)
         )
       ),
-      h(
-        ActionButton,
-        { icon: "clipboard", onClick: onNewObservation },
-        "Nueva observación"
-      )
+      puedeCrear
+        ? h(ActionButton, { icon: "clipboard", onClick: onNewObservation }, "Nueva observación")
+        : null
     ),
     h(
       "section",
@@ -1180,6 +1180,13 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], regi
 
 export default function ObservacionesView() {
   const usuarioActual = useUsuarioActual();
+  const { puede } = usePermisos();
+  const puedeCrearObservacion = puede(PERMISOS.observacionesCrear);
+  /* El boton de volver lleva a jefatura a su tablero: #/inicio-secretaria pide
+     alumnosEditar y le daria acceso denegado. Para el resto no cambia nada. */
+  const esJefeArea = (usuarioActual.roles ?? []).some((rol) => (rol?.id ?? rol) === "jefe_area");
+  const volverDashboardHref = esJefeArea ? "#/jefatura" : "#/inicio-secretaria";
+  const volverDashboardLabel = esJefeArea ? "Volver al tablero de jefatura" : "Volver al dashboard de secretaría";
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [filtros, setFiltros] = useState(() => getSavedFilters());
   const [tipoHistorial, setTipoHistorial] = useState("Tipo de observación");
@@ -1397,7 +1404,8 @@ export default function ObservacionesView() {
         },
         tipos,
         estados,
-        onNewObservation: () => openObservationForm(alumnoSeleccionado)
+        onNewObservation: () => openObservationForm(alumnoSeleccionado),
+        puedeCrear: puedeCrearObservacion
       }),
       showObservationForm
         ? h(ObservationFormInline, {
@@ -1436,10 +1444,10 @@ export default function ObservacionesView() {
           type: "button",
           className: "btn-volver-atras",
           onClick: () => {
-            window.location.hash = "#/inicio-secretaria";
+            window.location.hash = volverDashboardHref;
           },
-          title: "Volver al dashboard de secretaría",
-          "aria-label": "Volver al dashboard de secretaría"
+          title: volverDashboardLabel,
+          "aria-label": volverDashboardLabel
         },
         h(
           "svg",
@@ -1467,7 +1475,9 @@ export default function ObservacionesView() {
         h("h2", null, "Observaciones"),
         h("p", null, "Última observación por alumno")
       ),
-      h(ActionButton, { icon: "clipboard", onClick: () => openObservationForm() }, "Nueva observación")
+      puedeCrearObservacion
+        ? h(ActionButton, { icon: "clipboard", onClick: () => openObservationForm() }, "Nueva observación")
+        : null
     ),
     h(ObservationFilters, {
       className: "observations-toolbar--main",
@@ -1500,7 +1510,8 @@ export default function ObservacionesView() {
             key: `${observation.id || observation.alumno}-${observation.fecha || Math.random()}`,
             observation,
             onView: () => setAlumnoSeleccionado(observation.alumno),
-            onEdit: () => setAlumnoSeleccionado(observation.alumno)
+            onEdit: () => setAlumnoSeleccionado(observation.alumno),
+            puedeEditar: puedeCrearObservacion
           })
         )
         : h("p", { className: "observations-empty" }, "Ninguna observacion")

@@ -151,7 +151,10 @@ export const RUTAS = [
     seccion: "General",
     icono: "academic",
     padre: "#/inicio",
-    permisos: [PERMISOS.usuariosLeer, PERMISOS.alumnosLeer],
+    /* El tablero arma sus metricas con /api/v1/users y /api/v1/dashboard/secretaria:
+       exigir usuarios.read evita que preceptoria, docencia o jefatura de area entren
+       a una pantalla de direccion (mismo criterio que #/inicio-director). */
+    permisos: [PERMISOS.usuariosLeer],
     enMenu: true
   },
   {
@@ -321,7 +324,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "activity",
     padre: "#/inicio",
-    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
+    roles: ["preceptor", "secretario", "secretaria", "director", "admin", "jefe_area"],
     permisos: [PERMISOS.observacionesLeer],
     enMenu: true
   },
@@ -395,7 +398,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "people",
     padre: "#/inicio",
-    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
+    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin", "jefe_area"],
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
