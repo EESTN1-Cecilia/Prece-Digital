@@ -67,8 +67,11 @@ test("la cuenta de jefatura entra y recibe los permisos del catalogo", async () 
   assert.ok(cuerpo.data.permisos.includes("planning.review"));
   assert.ok(cuerpo.data.permisos.includes("academics.read"));
   assert.ok(cuerpo.data.permisos.includes("observations.write"));
+  /* identity.update alcanza para el propio perfil; la administracion de
+     identidad (identity.manage) sigue reservada a direccion. */
+  assert.ok(cuerpo.data.permisos.includes("identity.update"));
+  assert.ok(!cuerpo.data.permisos.includes("identity.manage"));
   assert.ok(!cuerpo.data.permisos.includes("users.read"));
-  assert.ok(!cuerpo.data.permisos.includes("identity.update"));
   assert.ok(!cuerpo.data.permisos.includes("inventory.read"));
   assert.ok(!cuerpo.data.permisos.includes("grades.read"));
   assert.ok(!cuerpo.data.permisos.includes("audit.read"));

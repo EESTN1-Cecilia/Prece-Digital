@@ -76,7 +76,7 @@ const rutasDeclaradas = [
   { method: "GET", path: "/api/v1/authorization/roles", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRoles },
   { method: "GET", path: "/api/v1/authorization/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getPermissions },
   { method: "GET", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRolePermissions },
-  { method: "PUT", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: authorizationController.putRolePermissions },
+  { method: "PUT", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: authorizationController.putRolePermissions },
 
   { method: "POST", path: "/api/v1/auth/login", handler: authController.login },
   { method: "POST", path: "/api/v1/auth/refresh", handler: authController.refresh },
@@ -104,15 +104,17 @@ const rutasDeclaradas = [
 
   /* Cursos asignados a preceptores por la Direccion. */
   { method: "GET", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.USERS_READ)], handler: preceptorAssignmentsController.listar },
-  { method: "PUT", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: preceptorAssignmentsController.asignar },
-  { method: "POST", path: "/api/v1/preceptores/asignaciones/quitar", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: preceptorAssignmentsController.quitar },
+  { method: "PUT", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: preceptorAssignmentsController.asignar },
+  { method: "POST", path: "/api/v1/preceptores/asignaciones/quitar", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: preceptorAssignmentsController.quitar },
   { method: "GET", path: "/api/v1/preceptores/mis-cursos", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: preceptorAssignmentsController.misCursos },
   { method: "GET", path: "/api/v1/portal-alumnos/verificacion", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentPortalController.verificacion },
   { method: "GET", path: "/api/v1/users", middlewares: [verifyToken, required(P.USERS_READ)], handler: authController.listUsers },
   { method: "POST", path: "/api/v1/users", middlewares: [verifyToken, required(P.IDENTITY_CREATE)], handler: usersController.createUser },
   { method: "GET", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.USERS_READ)], handler: usersController.getUser },
+  /* identity.update alcanza para el propio perfil; el servicio restringe el
+     resto. Asignar roles (PUT siguiente) exige identity.manage. */
   { method: "PATCH", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.updateUser },
-  { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.replaceUserRoles },
+  { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.replaceUserRoles },
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
 
   { method: "GET", path: "/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: academicController.listAlumnosDeDivision },

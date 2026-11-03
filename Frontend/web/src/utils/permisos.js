@@ -13,9 +13,11 @@ export { permiso };
 export const PERMISOS = {
   usuariosLeer: permiso("users", "read"),
   usuariosCrear: permiso("identity", "create"),
-  usuariosEditar: permiso("identity", "update"),
+  /* Editar cuentas de terceros y administrar roles/permisos exige
+     identity.manage; identity.update solo alcanza para el propio perfil. */
+  usuariosEditar: permiso("identity", "manage"),
   rolesLeer: permiso("identity", "read"),
-  rolesEditar: permiso("identity", "update"),
+  rolesEditar: permiso("identity", "manage"),
   alumnosLeer: permiso("students", "read"),
   alumnosCrear: permiso("students", "write"),
   alumnosEditar: permiso("students", "write"),

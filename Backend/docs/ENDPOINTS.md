@@ -31,7 +31,7 @@ Total: 446 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/authorization/roles` | `identity.read` |
 | GET | `/api/v1/authorization/permissions` | `identity.read` |
 | GET | `/api/v1/authorization/roles/:codigo/permissions` | `identity.read` |
-| PUT | `/api/v1/authorization/roles/:codigo/permissions` | `identity.update` |
+| PUT | `/api/v1/authorization/roles/:codigo/permissions` | `identity.manage` |
 
 ## auth
 
@@ -87,8 +87,8 @@ Total: 446 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
 | GET | `/api/v1/preceptores/asignaciones` | `users.read` |
-| PUT | `/api/v1/preceptores/asignaciones` | `identity.update` |
-| POST | `/api/v1/preceptores/asignaciones/quitar` | `identity.update` |
+| PUT | `/api/v1/preceptores/asignaciones` | `identity.manage` |
+| POST | `/api/v1/preceptores/asignaciones/quitar` | `identity.manage` |
 | GET | `/api/v1/preceptores/mis-cursos` | `students.read` |
 
 ## portal-alumnos
@@ -105,7 +105,7 @@ Total: 446 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/users` | `identity.create` |
 | GET | `/api/v1/users/:userId` | `users.read` |
 | PATCH | `/api/v1/users/:userId` | `identity.update` |
-| PUT | `/api/v1/users/:userId/roles` | `identity.update` |
+| PUT | `/api/v1/users/:userId/roles` | `identity.manage` |
 | PATCH | `/api/v1/users/:userId/deactivate` | `users.deactivate` |
 
 ## schools

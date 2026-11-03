@@ -38,7 +38,9 @@ test("el catalogo compartido muestra el nombre visible Jefatura de Area", () => 
 });
 
 test("el rol conserva los permisos definidos en el backend", () => {
-  assert.equal(PERMISOS_JEFE.length, 40);
+  assert.equal(PERMISOS_JEFE.length, 41);
+  assert.ok(PERMISOS_JEFE.includes("identity.update"));
+  assert.ok(!PERMISOS_JEFE.includes("identity.manage"));
   assert.ok(PERMISOS_JEFE.includes("planning.review"));
   assert.ok(PERMISOS_JEFE.includes("planning.manage"));
   assert.ok(PERMISOS_JEFE.includes("observations.write"));
@@ -93,7 +95,7 @@ test("no abre tableros ni pantallas exclusivas de otros perfiles", () => {
 });
 
 test("no gestiona usuarios, roles ni permisos", () => {
-  for (const hash of ["#/usuarios", "#/usuarios/nuevo", "#/invitar", "#/roles"]) {
+  for (const hash of ["#/usuarios", "#/usuarios/nuevo", "#/usuarios/usr-1/editar", "#/invitar", "#/roles"]) {
     assert.equal(acceso(hash), ACCESO.denegado, `${hash} no deberia abrirse para jefe_area`);
   }
 });
