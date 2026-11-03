@@ -4,8 +4,9 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
-import { ROL_CATALOGO, ROLES } from "../../config/permissions.config.mjs";
+import { PERMISSIONS, ROL_CATALOGO, ROLES } from "../../config/permissions.config.mjs";
 import { conflicto, errorDeValidacion, errorHttp, noEncontrado } from "../../utils/api-error.mjs";
+import { evaluateAccess } from "./permission.service.mjs";
 import { revokeUserSessions } from "./token.service.mjs";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -148,6 +149,13 @@ function nombreVisible(usuario) {
   return [usuario.nombre, usuario.apellido].filter(Boolean).join(" ") || usuario.email;
 }
 
+/* Administrar identidades (editar a terceros, asignar roles, matriz de permisos
+   y asignaciones de alcance) exige identity.manage. identity.update, en cambio,
+   alcanza para que cada persona edite su propio perfil. */
+function gestionaIdentidad(actor) {
+  return Boolean(actor) && evaluateAccess(actor, { permission: PERMISSIONS.IDENTITY_MANAGE }).allowed;
+}
+
 export const usersService = {
   list(query = {}) {
     const q = String(query.q ?? "").trim().toLowerCase();
@@ -207,9 +215,24 @@ export const usersService = {
 
   update(actor, id, cuerpo = {}) {
     const usuario = existente(id);
+    const propio = Boolean(actor?.id) && actor.id === id;
+    const administra = gestionaIdentidad(actor);
+    const estado = cuerpo.estado;
+
+    /* Editar a otra persona exige identity.manage: identity.update solo
+       habilita el propio perfil. */
+    if (!administra && !propio) {
+      throw errorHttp(403, "FORBIDDEN", "Solo puede modificar su propia información personal.");
+    }
+
+    /* El rol, las asignaciones y el estado de la cuenta no se tocan desde la
+       edición de perfil: los administra la gestion de identidad. */
+    if (!administra && (estado !== undefined || cuerpo.roles !== undefined || cuerpo.assignments !== undefined)) {
+      throw errorHttp(403, "FORBIDDEN", "No puede cambiar el rol ni el estado de su propia cuenta.");
+    }
+
     const errores = [];
     const datos = datosPersonales(cuerpo, errores, { alta: false });
-    const estado = cuerpo.estado;
 
     if (estado !== undefined && !ESTADOS.includes(estado)) {
       errores.push({ field: "estado", message: "El estado debe ser activo o inactivo." });

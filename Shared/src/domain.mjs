@@ -48,7 +48,7 @@ export const roles = [
   { id: "secretario", name: "Secretaria", description: "Administracion academica y documentacion." },
   { id: "preceptor", name: "Preceptoria", description: "Seguimiento de estudiantes y asistencia." },
   { id: "docente", name: "Docente", description: "Clases, notas y asistencia de sus cursos." },
-  { id: "jefe_area", name: "Jefatura de Area", description: "Planificacion curricular y equipos docentes." },
+  { id: "jefe_area", name: "Jefatura de Área", description: "Planificación curricular y equipos docentes." },
   { id: "server", name: "Responsable de Server", description: "Infraestructura, espacios y operacion tecnica." },
   { id: "alumno", name: "Alumno", description: "Consulta su propia informacion academica. La cuenta se crea con el DNI del legajo." }
 ];

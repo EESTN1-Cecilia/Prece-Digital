@@ -440,6 +440,15 @@ export default function PerfilView() {
       usuario.roles.some((r) => (typeof r === "string" ? r : r.id || r.codigo || r.nombre || "").toLowerCase() === "docente")) ||
     String(rolPrincipal).toLowerCase().includes("docente");
 
+  /* Jefatura de Área no tiene pantallas de Cursos ni Inasistencias (son de
+     preceptoria/secretaria); esas entradas se ocultan en lugar de llevar a
+     acceso denegado. Puede consultar Observaciones y el listado de alumnos. */
+  const esJefeArea =
+    rolCodigos.includes("jefe_area") ||
+    usuario?.rol === "jefe_area" ||
+    (Array.isArray(usuario?.roles) &&
+      usuario.roles.some((r) => (typeof r === "string" ? r : r.id || r.codigo || r.nombre || "").toLowerCase() === "jefe_area"));
+
   const getDashboardHref = () => {
     if (esDocente) return "#/docente";
     if (rolCodigos.includes("secretario") || rolCodigos.includes("secretaria")) return "#/secretaria";
@@ -571,34 +580,38 @@ export default function PerfilView() {
                 !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Alumnos") : null
               )
             ),
-            h(
-              "li",
-              null,
-              h(
-                "a",
-                {
-                  href: esDocente ? "#/docente/cursos" : "#/cursos",
-                  className: "profile-sidebar__item",
-                  title: esDocente ? "Cursos a Cargo" : "Cursos"
-                },
-                h(IconCourses, { className: "profile-sidebar__item-icon" }),
-                !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Cursos") : null
-              )
-            ),
-            h(
-              "li",
-              null,
-              h(
-                "a",
-                {
-                  href: esDocente ? "#/docente/asistencias" : "#/preceptoria",
-                  className: "profile-sidebar__item",
-                  title: esDocente ? "Asistencia de Clase" : "Inasistencias"
-                },
-                h(IconAttendance, { className: "profile-sidebar__item-icon" }),
-                !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Inasistencias") : null
-              )
-            ),
+            esJefeArea
+              ? null
+              : h(
+                  "li",
+                  null,
+                  h(
+                    "a",
+                    {
+                      href: esDocente ? "#/docente/cursos" : "#/cursos",
+                      className: "profile-sidebar__item",
+                      title: esDocente ? "Cursos a Cargo" : "Cursos"
+                    },
+                    h(IconCourses, { className: "profile-sidebar__item-icon" }),
+                    !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Cursos") : null
+                  )
+                ),
+            esJefeArea
+              ? null
+              : h(
+                  "li",
+                  null,
+                  h(
+                    "a",
+                    {
+                      href: esDocente ? "#/docente/asistencias" : "#/preceptoria",
+                      className: "profile-sidebar__item",
+                      title: esDocente ? "Asistencia de Clase" : "Inasistencias"
+                    },
+                    h(IconAttendance, { className: "profile-sidebar__item-icon" }),
+                    !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Inasistencias") : null
+                  )
+                ),
             !esDocente
               ? h(
                   "li",

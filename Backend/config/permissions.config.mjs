@@ -30,6 +30,10 @@ export const PERMISSIONS = {
   IDENTITY_READ: "identity.read",
   IDENTITY_CREATE: "identity.create",
   IDENTITY_UPDATE: "identity.update",
+  /* Administracion de identidad: asignar roles, matriz de permisos y
+     asignaciones de alcance. identity.update, en cambio, alcanza para que
+     cada persona edite su propio perfil. */
+  IDENTITY_MANAGE: "identity.manage",
   STUDENTS_READ: "students.read",
   STUDENTS_WRITE: "students.write",
   OBSERVATIONS_READ: "observations.read",
@@ -221,6 +225,10 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.PLANNING_WRITE
   ],
   [ROLES.JEFE_AREA]: [
+    /* identity.update: solo el propio perfil. La administracion de identidad
+       (roles, matriz de permisos, asignaciones) exige identity.manage, que
+       este rol no tiene. */
+    PERMISSIONS.IDENTITY_UPDATE,
     PERMISSIONS.OBSERVATIONS_READ,
     PERMISSIONS.OBSERVATIONS_WRITE,
     PERMISSIONS.COURSE_CHANGES_READ,

@@ -7,7 +7,7 @@ import { pedir } from "../../services/http.js";
 import { roles as ROLES_CATALOGO } from "../../../../../Shared/src/domain.mjs";
 
 export const ROLES_DISPONIBLES = ROLES_CATALOGO
-  .filter((rol) => rol.id !== "jefe_area" && rol.id !== "server")
+  .filter((rol) => rol.id !== "server")
   .map((rol) => ({
     id: rol.id,
     nombre: rol.name,
@@ -17,14 +17,16 @@ export const ROLES_DISPONIBLES = ROLES_CATALOGO
       director: "award",
       secretario: "students",
       preceptor: "attendance",
-      docente: "academic"
+      docente: "academic",
+      jefe_area: "academic"
     }[rol.id] || "user",
     color: {
       admin: "#dc2626",
       director: "#b45309",
       secretario: "#0284c7",
       preceptor: "#7c3aed",
-      docente: "#16a34a"
+      docente: "#16a34a",
+      jefe_area: "#0f766e"
     }[rol.id] || "#64748b"
   }));
 

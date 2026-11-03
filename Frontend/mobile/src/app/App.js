@@ -7,6 +7,7 @@ import { ESTADO_ANONIMO, ESTADO_AUTENTICADO, ProveedorDeSesion, useSesion } from
 import PantallaNotificaciones from "../modules/notifications/PantallaNotificaciones.js";
 import { instalarAlmacenamientoSeguro } from "../services/adaptador-secure-store.js";
 import { ALTO_BOTON, COLORES, ESPACIOS, RADIOS, TIPOGRAFIA } from "../theme/tokens.js";
+import { nombresDeRol } from "../utils/roles.js";
 
 const h = React.createElement;
 
@@ -61,7 +62,7 @@ function SesionActual({ sesion, cerrarSesion, cerrando, vista, cambiarVista }) {
       h(
         Text,
         { style: styles.tarjetaSesionDetalle },
-        sesion.roles.length ? `Roles: ${sesion.roles.join(", ")}` : "Roles: sin identificar"
+        sesion.roles.length ? `Roles: ${nombresDeRol(sesion.roles).join(", ")}` : "Roles: sin identificar"
       ),
       h(
         View,

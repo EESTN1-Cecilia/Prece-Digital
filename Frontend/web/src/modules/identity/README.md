@@ -31,6 +31,10 @@ Formato de permiso: `<módulo>.<acción>` (por ejemplo `identity.create`), el mi
 backend. Módulos y roles salen de `Shared/src/domain.mjs`; los códigos que usa la interfaz
 están en `src/utils/permisos.js`.
 
+La gestión administrativa de cuentas usa `identity.manage` (edición de terceros, roles y
+matriz de permisos) y `identity.create` (alta). El perfil propio (`#/perfil`) usa
+`identity.update`, que el backend acepta únicamente sobre el usuario autenticado.
+
 ## Endpoints
 
 | Método y ruta | Uso |
@@ -44,8 +48,8 @@ están en `src/utils/permisos.js`.
 | `GET /api/v1/users` | listado; filtros `q`, `rol`, `estado` (la paginación es local) |
 | `GET /api/v1/users/:userId` | detalle |
 | `POST /api/v1/users` | alta; nombre, apellido, email, dni, roles. Devuelve `passwordTemporal` una sola vez |
-| `PATCH /api/v1/users/:userId` | edición y baja lógica: `{ "estado": "inactivo" }` |
-| `PUT /api/v1/users/:userId/roles` | cuerpo `{ "roles": ["preceptor"] }` |
+| `PATCH /api/v1/users/:userId` | edición de datos personales: el propio perfil con `identity.update`; a terceros y el estado exigen `identity.manage` |
+| `PUT /api/v1/users/:userId/roles` | cuerpo `{ "roles": ["preceptor"] }`; exige `identity.manage` |
 
 No hay datos de demostración: si el backend falla, la vista muestra el error.
 

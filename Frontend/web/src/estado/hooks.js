@@ -73,6 +73,7 @@ export function useNotificaciones() {
     const esDocente = codigosRoles.includes("docente") || codigosRoles.includes("profesor");
     const esPreceptor = codigosRoles.includes("preceptor");
     const esSecretario = codigosRoles.includes("secretario") || codigosRoles.includes("secretaria");
+    const esJefeArea = codigosRoles.includes("jefe_area");
     const esServer = codigosRoles.includes("server");
 
     return items.filter((item) => {
@@ -86,6 +87,7 @@ export function useNotificaciones() {
         if (item.destinatarioRol === "docente" && !esDocente) return false;
         if (item.destinatarioRol === "preceptor" && !esPreceptor) return false;
         if (item.destinatarioRol === "secretaria" && !esSecretario) return false;
+        if (item.destinatarioRol === "jefe_area" && !esJefeArea) return false;
         if (item.destinatarioRol === "server" && !esServer) return false;
       }
       return true;
