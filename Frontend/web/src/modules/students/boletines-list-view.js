@@ -5,8 +5,10 @@ import { LoadingState, EmptyState, ErrorState } from "../../components/common/st
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
-import { BoletinDigitalModal } from "./components/boletin-digital-modal.js";
+import { BoletinOficialModal } from "./components/boletin-oficial-modal.js";
+import { imprimirBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
 import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
+import { alumnoTieneNotas, useResumenCursos } from "../boletin/use-resumen-cursos.js";
 
 // Cursos de referencia para la cuenta docente institucional
 const ASIGNACIONES_DOCENTE_DEFAULT = [
@@ -65,6 +67,9 @@ export default function BoletinesListView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Quién ya tiene notas: sale del backend (misma fuente que la planilla y el portal del alumno)
+  const resumenesCursos = useResumenCursos(students);
+
   // Modal de boletín / planilla activo
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [planillaModalOpen, setPlanillaModalOpen] = useState(false);
@@ -78,6 +83,34 @@ export default function BoletinesListView() {
     window.addEventListener("prece:calificaciones-updated", onCalifsActualizadas);
     return () => window.removeEventListener("prece:calificaciones-updated", onCalifsActualizadas);
   }, []);
+
+  // Imprimir boletines de todos los alumnos que cumplen los filtros (no solo la página visible), dos por hoja Oficio
+  const [imprimiendo, setImprimiendo] = useState(false);
+  const [errorImpresion, setErrorImpresion] = useState("");
+  const imprimirBoletinesDelCurso = async () => {
+    if (imprimiendo) return;
+    setErrorImpresion("");
+    const ventana = window.open("", "_blank");
+    setImprimiendo(true);
+    try {
+      const res = await StudentsService.getTodosLosAlumnos({
+        q: debouncedStudentSearch,
+        curso: selectedCurso,
+        division: selectedDivision,
+        turno: selectedTurno,
+        estado: "activo",
+        sortBy: "apellido",
+        sortOrder: "asc"
+      });
+      if (!res.data.length) throw new Error("sin alumnos");
+      await imprimirBoletinesDeAlumnos(res.data, ventana);
+    } catch {
+      if (ventana) ventana.close();
+      setErrorImpresion("No se pudieron preparar los boletines. Revisá los filtros e intentá de nuevo.");
+    } finally {
+      setImprimiendo(false);
+    }
+  };
 
   // Parsear hash params (ej: #/boletines?curso=7°&div=3)
   useEffect(() => {
@@ -305,6 +338,13 @@ export default function BoletinesListView() {
     selectedDivision !== "todas" ||
     selectedTurno !== "todos";
 
+  const activeFilterLabels = [
+    debouncedStudentSearch ? `Búsqueda: ${debouncedStudentSearch}` : null,
+    selectedCurso !== "todos" ? `Año ${selectedCurso}` : null,
+    selectedDivision !== "todas" ? `División ${selectedDivision}` : null,
+    selectedTurno !== "todos" ? `Turno ${selectedTurno}` : null
+  ].filter(Boolean);
+
   return h(
     "section",
     { className: "welcome-panel boletines-panel" },
@@ -399,6 +439,34 @@ export default function BoletinesListView() {
     h(
       "div",
       { className: "boletines-toolbar" },
+      h(
+        "div",
+        { className: "boletines-toolbar__heading" },
+        h(
+          "div",
+          { className: "boletines-toolbar__heading-copy" },
+          h(IconoFigma, { className: "boletines-toolbar__heading-icon", nombre: "filter" }),
+          h(
+            "div",
+            null,
+            h("strong", null, "Buscar y filtrar boletines"),
+            h(
+              "span",
+              null,
+              loading
+                ? "Consultando la nómina…"
+                : `${pagination.total} ${pagination.total === 1 ? "alumno encontrado" : "alumnos encontrados"}`
+            )
+          )
+        ),
+        isFiltered
+          ? h(
+              "button",
+              { type: "button", className: "boletines-toolbar__clear", onClick: handleResetFilters },
+              "Limpiar filtros"
+            )
+          : null
+      ),
       // Buscador
       h(
         "div",
@@ -467,7 +535,17 @@ export default function BoletinesListView() {
             { value: "Tarde", label: "Tarde" }
           ]
         })
-      )
+      ),
+      isFiltered
+        ? h(
+            "div",
+            { className: "boletines-active-filters", "aria-label": "Filtros activos" },
+            h("span", { className: "boletines-active-filters__label" }, "Aplicados"),
+            activeFilterLabels.map((label) =>
+              h("span", { key: label, className: "boletines-active-filter" }, label)
+            )
+          )
+        : null
     ),
 
     // Banner informativo para el docente con sus cursos a cargo y acceso a la planilla completa
@@ -520,35 +598,6 @@ export default function BoletinesListView() {
         )
       : null,
 
-    // Estado de filtros activos
-    isFiltered
-      ? h(
-          "div",
-          { className: "alumnos-filter-status-bar" },
-          h(
-            "span",
-            { className: "filter-status-text" },
-            `Filtros activos: ${[
-              debouncedStudentSearch ? `Búsqueda: "${debouncedStudentSearch}"` : null,
-              selectedCurso !== "todos" ? `Año: ${selectedCurso}` : null,
-              selectedDivision !== "todas" ? `División: ${selectedDivision}` : null,
-              selectedTurno !== "todos" ? `Turno: ${selectedTurno}` : null
-            ]
-              .filter(Boolean)
-              .join(" • ")}`
-          ),
-          h(
-            "button",
-            {
-              type: "button",
-              className: "clear-all-filters-btn",
-              onClick: handleResetFilters
-            },
-            "Limpiar Filtros"
-          )
-        )
-      : null,
-
     // Estados de Carga, Error o Vacío
     loading ? h(LoadingState, { message: "Cargando nómina de estudiantes..." }) : null,
     error ? h(ErrorState, { message: error, onRetry: fetchStudents }) : null,
@@ -567,6 +616,53 @@ export default function BoletinesListView() {
               )
             : null
         })
+      : null,
+
+    // Resumen de resultados y acción masiva
+    !loading && !error && students.length > 0
+      ? h(
+          "div",
+          { className: "boletines-results-bar" },
+          h(
+            "div",
+            { className: "boletines-results-summary" },
+            h("span", { className: "boletines-results-icon", "aria-hidden": "true" }, "✓"),
+            h(
+              "div",
+              null,
+              h("strong", null, `${pagination.total} ${pagination.total === 1 ? "boletín" : "boletines"}`),
+              h("span", null, isFiltered ? "según los filtros aplicados" : "en la nómina activa")
+            )
+          )
+          ,
+          !esDocente
+            ? h(
+                "div",
+                { className: "boletines-print-actions" },
+                errorImpresion
+                  ? h("span", { role: "alert", className: "boletines-print-error" }, errorImpresion)
+                  : null,
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "boletines-print-btn",
+                    onClick: imprimirBoletinesDelCurso,
+                    disabled: imprimiendo,
+                    title: "Imprime los boletines de todos los alumnos filtrados: 2 por hoja Oficio apaisada"
+                  },
+                  h(
+                    "svg",
+                    { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", "aria-hidden": "true" },
+                    h("path", { d: "M6 9V2h12v7" }),
+                    h("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
+                    h("rect", { x: "6", y: "14", width: "12", height: "8" })
+                  ),
+                  imprimiendo ? "Preparando…" : "Imprimir boletines"
+                )
+              )
+            : null
+        )
       : null,
 
     // Tabla de Alumnos para Boletín
@@ -596,16 +692,19 @@ export default function BoletinesListView() {
               "tbody",
               null,
               students.map((alumno) => {
-                const tieneCalificaciones = Boolean(
-                  localStorage.getItem(`prece_student_${alumno.id}_boletin_calificaciones`)
-                );
+                const tieneCalificaciones = alumnoTieneNotas(resumenesCursos, alumno);
 
                 return h(
                   "tr",
                   { key: alumno.id, className: "boletines-row" },
                   h(
                     "td",
-                    null,
+                    { className: "boletin-identity-cell" },
+                    h(
+                      "span",
+                      { className: "boletin-table-avatar", "aria-hidden": "true" },
+                      `${alumno.apellido?.charAt(0) || ""}${alumno.nombre?.charAt(0) || ""}`
+                    ),
                     h("strong", { className: "boletin-alumno-name" }, `${alumno.apellido}, ${alumno.nombre}`)
                   ),
                   h("td", { className: "text-muted font-mono" }, alumno.dni),
@@ -829,7 +928,7 @@ export default function BoletinesListView() {
 
     // Modal de Boletín Digital Oficial (para Directores, Preceptores, Secretaría)
     !esDocente && alumnoSeleccionado
-      ? h(BoletinDigitalModal, {
+      ? h(BoletinOficialModal, {
           abierto: Boolean(alumnoSeleccionado),
           onCerrar: () => setAlumnoSeleccionado(null),
           alumno: alumnoSeleccionado

@@ -6,8 +6,10 @@ import { SecretariaService } from "../secretaria/secretaria-service.js";
 import { StudentsService, formatDni } from "../students/students-service.js";
 import { DirectorService } from "../director/director-service.js";
 import { CursoDistribucionGrafico } from "../../components/dashboard/curso-distribucion-grafico.js";
-import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
-import { BoletinDigitalModal } from "../students/components/boletin-digital-modal.js";
+import { PlanillaCalificacionesModal, obtenerClavesMateriaBoletin } from "../documents/planilla-calificaciones-modal.js";
+import { BoletinOficialModal } from "../students/components/boletin-oficial-modal.js";
+import { imprimirBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
+import { alumnoTieneNotas, materiaTieneNotas, useResumenCursos } from "../boletin/use-resumen-cursos.js";
 import { AlumnoMatrizModal } from "../students/alumno-matriz-wiew.js";
 
 // Helper SVG Icons
@@ -158,6 +160,8 @@ export default function DashboardView() {
 
   // Pestaña activa del tablero de preceptoría: 'inicio' | 'docentes' | 'asistencias' | 'alumnos' | 'cursos'
   const [pestanaActiva, setPestanaActiva] = useState("inicio");
+  const [imprimiendoBoletines, setImprimiendoBoletines] = useState(null); // null | { hecho, total }
+  const [errorBoletines, setErrorBoletines] = useState("");
 
   // Datos del sistema
   const [dataSecretaria, setDataSecretaria] = useState(null);
@@ -205,17 +209,25 @@ export default function DashboardView() {
         StudentsService.getDivisiones().catch(() => [])
       ]);
 
+      const divisionesVisibles = Array.isArray(divs) ? divs : [];
+      /* Un preceptor solo ve las cátedras de sus cursos asignados (las divisiones ya vienen recortadas). */
+      const soloPreceptor = (user?.roles ?? []).length > 0 && (user.roles ?? []).every((rol) => (rol?.id ?? rol) === "preceptor");
+      const clavesVisibles = new Set(divisionesVisibles.map((d) => `${String(d.anio ?? d.curso ?? "").replace(/\D/g, "")}-${String(d.division ?? d.numDivision ?? "").replace(/\D/g, "")}`));
+      const catedrasVisibles = (Array.isArray(catedras) ? catedras : []).filter(
+        (cat) => !soloPreceptor || clavesVisibles.has(`${String(cat.anio ?? "").replace(/\D/g, "")}-${String(cat.numDivision ?? cat.division ?? "").replace(/\D/g, "")}`)
+      );
+
       setDataSecretaria(resSec);
-      setCatedrasDocentes(Array.isArray(catedras) ? catedras : []);
+      setCatedrasDocentes(catedrasVisibles);
       setAlumnos(aluRes?.data || []);
-      setDivisiones(divs || []);
+      setDivisiones(divisionesVisibles);
       setLastUpdated(new Date());
     } catch (err) {
       setError(err.message || "Error al sincronizar la información del módulo de preceptoría.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     cargarDatos();
@@ -292,6 +304,27 @@ export default function DashboardView() {
       return true;
     });
   }, [alumnos, busquedaAlumno, filtroAnioAlumno, filtroDivAlumno, filtroTurnoAlumno]);
+
+  // Quién y qué materia ya tiene notas: sale del backend (misma fuente que la planilla y el portal del alumno)
+  const resumenesAlumnos = useResumenCursos(alumnos);
+  const resumenesCatedras = useResumenCursos(catedrasDocentes);
+
+  // Imprime los boletines de los alumnos que muestra la nómina (respeta los filtros): dos por hoja Oficio.
+  const imprimirBoletines = async () => {
+    const lista = alumnosFiltrados.filter((a) => a?.id != null);
+    if (lista.length === 0 || imprimiendoBoletines) return;
+    setErrorBoletines("");
+    const ventana = window.open("", "_blank"); // se abre dentro del clic para que el navegador no la bloquee
+    setImprimiendoBoletines({ hecho: 0, total: lista.length });
+    try {
+      await imprimirBoletinesDeAlumnos(lista, ventana);
+    } catch {
+      if (ventana) ventana.close();
+      setErrorBoletines("No se pudieron preparar los boletines. Intentá de nuevo.");
+    } finally {
+      setImprimiendoBoletines(null);
+    }
+  };
 
   // Totales para las tarjetas KPI superiores (Estilo Foto 1)
   const totalAlumnos = dataSecretaria?.resumenAlumnos?.total ?? (alumnos.length > 0 ? alumnos.length : 32);
@@ -911,8 +944,7 @@ export default function DashboardView() {
                       const cursoBadge = `${anioNum}° ${divNum}`;
 
                       // Verificamos si hay notas cargadas para esta materia
-                      const keyPlanilla = `prece_planilla_${anioNum}_${divNum}_${encodeURIComponent(asig.materia || "")}`;
-                      const tieneCalifs = Boolean(localStorage.getItem(keyPlanilla)) || Boolean(localStorage.getItem(`prece_calificaciones_${anioNum}_${divNum}_${asig.materia}`));
+                      const tieneCalifs = materiaTieneNotas(resumenesCatedras, anioNum, divNum, obtenerClavesMateriaBoletin(asig.materia, Number(anioNum) || 1));
 
                       return h(
                         "tr",
@@ -1120,7 +1152,23 @@ export default function DashboardView() {
               },
               "← Volver al Tablero Principal"
             ),
-            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${alumnosFiltrados.length} Alumnos en Padrón`)
+            h(
+              "div",
+              { style: { display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" } },
+              errorBoletines ? h("span", { role: "alert", style: { color: "#b91c1c", fontSize: "13px" } }, errorBoletines) : null,
+              h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${alumnosFiltrados.length} Alumnos en Padrón`),
+              h(
+                "button",
+                {
+                  type: "button",
+                  onClick: imprimirBoletines,
+                  disabled: Boolean(imprimiendoBoletines) || alumnosFiltrados.length === 0,
+                  title: "Imprime los boletines de todos los alumnos del curso filtrado: 2 por hoja Oficio apaisada",
+                  style: { background: "#1d4ed8", color: "#fff", border: "1px solid #1d4ed8", borderRadius: "999px", padding: "6px 16px", fontSize: "13px", fontWeight: 700, cursor: "pointer", opacity: imprimiendoBoletines || alumnosFiltrados.length === 0 ? 0.6 : 1 }
+                },
+                imprimiendoBoletines ? "Preparando…" : "Imprimir Boletines"
+              )
+            )
           ),
 
           h(
@@ -1240,9 +1288,7 @@ export default function DashboardView() {
                     "tbody",
                     null,
                     alumnosFiltrados.map((alumno) => {
-                      const tieneCalificaciones = Boolean(
-                        localStorage.getItem(`prece_student_${alumno.id}_boletin_calificaciones`)
-                      );
+                      const tieneCalificaciones = alumnoTieneNotas(resumenesAlumnos, alumno);
 
                       return h(
                         "tr",
@@ -1383,7 +1429,7 @@ export default function DashboardView() {
       : null,
 
     boletinModal.abierto && boletinModal.alumno
-      ? h(BoletinDigitalModal, {
+      ? h(BoletinOficialModal, {
           abierto: boletinModal.abierto,
           onCerrar: () => setBoletinModal({ abierto: false, alumno: null }),
           alumno: boletinModal.alumno

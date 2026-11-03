@@ -10,6 +10,7 @@ import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { seedAttendanceFollowups } from "../database/seeds/attendance-followups.seed.mjs";
 import attendanceFollowupsRepository from "../modules/attendance-followups/attendance-followups.repository.mjs";
 import { resetStore } from "../database/memory-store.mjs";
+import { asignarCursosAlPreceptorGeneral } from "./helpers.mjs";
 
 const PUERTO = 4006;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -56,6 +57,7 @@ before(async () => {
   await new Promise((listo) => servidor.listen(PUERTO, listo));
   director = await login("director@prece.local", "Director123!");
   preceptor = await login("preceptor@prece.local", "Preceptor123!");
+  await asignarCursosAlPreceptorGeneral();
   docente = await login("docente@prece.local", "Docente123!");
 });
 

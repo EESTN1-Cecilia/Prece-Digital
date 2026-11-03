@@ -66,8 +66,10 @@ export const AsistenciasService = {
    */
   async getCursosDisponibles() {
     try {
+      /* El backend ya devuelve solo los cursos que la sesion puede ver (un
+         preceptor, los que le asigno la Direccion): una lista vacia es valida. */
       const divisionesApi = await StudentsService.getDivisiones();
-      if (divisionesApi && divisionesApi.length > 0) {
+      if (Array.isArray(divisionesApi)) {
         return divisionesApi.map((d) => {
           const anioLimpio = String(d.anio || d.curso || "1").replace(/°/g, "").trim();
           const divLimpia = String(d.division || "1").replace(/°/g, "").trim();
@@ -83,9 +85,11 @@ export const AsistenciasService = {
         });
       }
     } catch (e) {
-      console.warn("Usando catálogo de cursos local.");
+      /* Sin respuesta del backend no se muestran cursos: el catalogo local
+         expondria cursos que la sesion quizas no tiene asignados. */
+      console.warn("No se pudo obtener la lista de cursos.");
     }
-    return CURSOS_CATALOGO_BASE;
+    return [];
   },
 
   /**

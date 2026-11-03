@@ -555,6 +555,14 @@ export function SiteLayout({ ruta, children }) {
     ruta?.startsWith("#/perfil") ||
     ruta?.startsWith("#/configuracion");
 
+  /* Portal del alumno: tiene su propio encabezado y navegacion
+     (modules/alumno-portal/portal-layout.js). */
+  const esPortalAlumno = ruta === "#/mi-perfil" || ruta?.startsWith("#/mi-perfil/");
+
+  if (esPortalAlumno) {
+    return h("div", { className: "page page--alumno" }, children);
+  }
+
   if (esPerfil) {
     return h(
       React.Fragment,
@@ -573,4 +581,3 @@ export function SiteLayout({ ruta, children }) {
     h(ModalDocumentosGlobal)
   );
 }
-

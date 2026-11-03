@@ -73,6 +73,7 @@ export async function listarNotificaciones(sesion = {}) {
   const esDocente = roles.includes("docente") || roles.includes("profesor");
   const esPreceptor = roles.includes("preceptor");
   const esSecretario = roles.includes("secretario") || roles.includes("secretaria");
+  const esJefeArea = roles.includes("jefe_area");
   const esServer = roles.includes("server");
 
   // 1. Consultar notificaciones dirigidas al usuario en el backend
@@ -95,6 +96,7 @@ export async function listarNotificaciones(sesion = {}) {
             if (item.destinatarioRol === "docente" && !esDocente) return false;
             if (item.destinatarioRol === "preceptor" && !esPreceptor) return false;
             if (item.destinatarioRol === "secretaria" && !esSecretario) return false;
+            if (item.destinatarioRol === "jefe_area" && !esJefeArea) return false;
             if (item.destinatarioRol === "server" && !esServer) return false;
           }
           return true;

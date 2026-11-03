@@ -22,7 +22,7 @@
      publica          se ve sin iniciar sesion y se dibuja con el layout del sitio
                       (encabezado y pie) en lugar del layout de la aplicacion */
 
-import DashboardView from "../modules/dashboard/dashboard-view.js";
+import PreceptorInicioView from "../modules/dashboard/preceptor-inicio-view.js";
 import DirectorDashboardView from "../modules/director/director-dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
@@ -39,6 +39,7 @@ import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
 import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
 import AsistenciasView from "../modules/attendance/asistencias-view.js";
 import NotificacionesView from "../modules/notifications/notificaciones-view.js";
+import CalendarioView from "../modules/calendario/calendario-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
@@ -49,6 +50,15 @@ import PerfilView from "../modules/identity/perfil-view.js";
 import InventarioListView from "../modules/server/inventario/inventario-list-view.js";
 import MaterialFormView from "../modules/server/inventario/material-form-view.js";
 import MaterialDetalleView from "../modules/server/inventario/material-detalle-view.js";
+import InicioAlumnoView from "../modules/alumno-portal/inicio-view.js";
+import BoletinAlumnoView from "../modules/alumno-portal/boletin-view.js";
+import AsistenciasAlumnoView from "../modules/alumno-portal/asistencias-view.js";
+import SituacionAlumnoView from "../modules/alumno-portal/situacion-view.js";
+import NovedadesAlumnoView from "../modules/alumno-portal/novedades-view.js";
+import ReportesAlumnoView from "../modules/alumno-portal/reportes-view.js";
+import PreviasAlumnoView from "../modules/alumno-portal/previas-view.js";
+import CuentaAlumnoView from "../modules/alumno-portal/cuenta-view.js";
+import { conPortal } from "../modules/alumno-portal/portal-layout.js";
 import { PERMISOS } from "../utils/permisos.js";
 import InicioView from "./inicio.js";
 
@@ -66,6 +76,66 @@ export const RUTAS = [
     propiedades: { titulo: "Activar Cuenta" },
     publica: true
   },
+  /* Portal del alumno: solo el rol alumno. Tiene su propio marco y navegacion
+     (modules/alumno-portal/portal-layout.js), por eso no entra en el menu del
+     personal. El alumno entra por el login general (#/login). El backend
+     vuelve a validar cada pedido. */
+  {
+    patron: "#/mi-perfil",
+    titulo: "Inicio",
+    vista: conPortal(InicioAlumnoView, "inicio"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
+  {
+    patron: "#/mi-perfil/boletin",
+    titulo: "Mi Boletín",
+    vista: conPortal(BoletinAlumnoView, "boletin"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
+  {
+    patron: "#/mi-perfil/asistencias",
+    titulo: "Mis Asistencias",
+    vista: conPortal(AsistenciasAlumnoView, "asistencias"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
+  {
+    patron: "#/mi-perfil/situacion-academica",
+    titulo: "Mi Situación Académica",
+    vista: conPortal(SituacionAlumnoView, "situacion"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
+  {
+    patron: "#/mi-perfil/novedades",
+    titulo: "Novedades",
+    vista: conPortal(NovedadesAlumnoView, "novedades"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
+  {
+    patron: "#/mi-perfil/reportes",
+    titulo: "Mis Reportes",
+    vista: conPortal(ReportesAlumnoView, "reportes"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
+  {
+    patron: "#/mi-perfil/previas",
+    titulo: "Mis Previas",
+    vista: conPortal(PreviasAlumnoView, "previas"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
+  {
+    patron: "#/mi-perfil/cuenta",
+    titulo: "Mi Cuenta",
+    vista: conPortal(CuentaAlumnoView, "cuenta"),
+    roles: ["alumno"],
+    portalAlumno: true
+  },
   {
     patron: "#/inicio",
     titulo: "Inicio",
@@ -81,7 +151,10 @@ export const RUTAS = [
     seccion: "General",
     icono: "academic",
     padre: "#/inicio",
-    permisos: [PERMISOS.usuariosLeer, PERMISOS.alumnosLeer],
+    /* El tablero arma sus metricas con /api/v1/users y /api/v1/dashboard/secretaria:
+       exigir usuarios.read evita que preceptoria, docencia o jefatura de area entren
+       a una pantalla de direccion (mismo criterio que #/inicio-director). */
+    permisos: [PERMISOS.usuariosLeer],
     enMenu: true
   },
   {
@@ -94,7 +167,7 @@ export const RUTAS = [
   {
     patron: "#/preceptoria",
     titulo: "Tablero de preceptoria",
-    vista: DashboardView,
+    vista: PreceptorInicioView,
     seccion: "General",
     icono: "attendance",
     padre: "#/inicio",
@@ -251,8 +324,17 @@ export const RUTAS = [
     seccion: "General",
     icono: "activity",
     padre: "#/inicio",
-    roles: ["preceptor", "secretario", "secretaria", "director", "admin"],
+    roles: ["preceptor", "secretario", "secretaria", "director", "admin", "jefe_area"],
     permisos: [PERMISOS.observacionesLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/calendario",
+    titulo: "Calendario",
+    vista: CalendarioView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio",
     enMenu: true
   },
   {
@@ -316,7 +398,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "people",
     padre: "#/inicio",
-    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin"],
+    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin", "jefe_area"],
     permisos: [PERMISOS.alumnosLeer],
     enMenu: true
   },
@@ -396,3 +478,9 @@ export const RUTAS = [
 /* Adonde vuelve alguien que llego a una pantalla que no puede ver. */
 export const RUTA_INICIO = "#/inicio";
 export const RUTA_LOGIN = "#/login";
+export const RUTA_INICIO_ALUMNO = "#/mi-perfil";
+
+/* Rutas del portal del alumno (marco propio, sin encabezado del personal). */
+export function esRutaPortalAlumno(hash = "") {
+  return hash === RUTA_INICIO_ALUMNO || hash.startsWith(`${RUTA_INICIO_ALUMNO}/`);
+}

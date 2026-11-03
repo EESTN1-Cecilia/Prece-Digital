@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
-import { useUsuarioActual } from "../../estado/index.js";
+import { usePermisos, useUsuarioActual } from "../../estado/index.js";
+import { PERMISOS } from "../../utils/permisos.js";
 import { StudentsService } from "../students/students-service.js";
 import {
   DEFAULT_OBSERVATION_SECTORS,
@@ -60,7 +61,7 @@ function StatusBadge({ estado }) {
   return h("span", { className: `observation-status observation-status--${normalizarEstadoClase(estado)}` }, estado);
 }
 
-function ObservationCard({ observation, onView, onEdit }) {
+function ObservationCard({ observation, onView, onEdit, puedeEditar = true }) {
   return h(
     "article",
     { className: `student-observation student-observation--${observation.estado.toLowerCase()}` },
@@ -121,7 +122,7 @@ function ObservationCard({ observation, onView, onEdit }) {
           "div",
           { className: "student-observation__actions" },
           h("button", { type: "button", onClick: onView }, "Ver"),
-          h("button", { type: "button", onClick: onEdit }, "Editar")
+          puedeEditar ? h("button", { type: "button", onClick: onEdit }, "Editar") : null
         )
       )
     )
@@ -323,6 +324,7 @@ function SearchableSelect({ label, value, options, onChange, placeholder, disabl
 function StudentDetail({
   alumno,
   observations,
+  totalObservations,
   onBack,
   tipoFiltro,
   estadoFiltro,
@@ -341,7 +343,8 @@ function StudentDetail({
   onFiltrosClear,
   tipos,
   estados,
-  onNewObservation
+  onNewObservation,
+  puedeCrear = true
 }) {
   return h(
     "section",
@@ -370,15 +373,13 @@ function StudentDetail({
         h(
           "p",
           null,
-          "División: 4°1° | Grupo: 1.0",
-          h("span", { className: "student-detail__observation-count" }, `${observations.length} ${observations.length === 1 ? "observación" : "observaciones"}`)
+          "Historial institucional del alumno",
+          h("span", { className: "student-detail__observation-count" }, `${totalObservations} ${totalObservations === 1 ? "observación" : "observaciones"}`)
         )
       ),
-      h(
-        ActionButton,
-        { icon: "clipboard", onClick: onNewObservation },
-        "Nueva observación"
-      )
+      puedeCrear
+        ? h(ActionButton, { icon: "clipboard", onClick: onNewObservation }, "Nueva observación")
+        : null
     ),
     h(
       "section",
@@ -389,7 +390,24 @@ function StudentDetail({
         h(
           "div",
           { className: "student-history__heading" },
-          h("h2", null, "Historial")
+          h("h2", null, "Historial"),
+          h(
+            "span",
+            { className: "student-history__count" },
+            observations.length === totalObservations
+              ? `${totalObservations} ${totalObservations === 1 ? "registro" : "registros"}`
+              : `${observations.length} de ${totalObservations} registros`
+          )
+        )
+      ),
+      h(
+        "div",
+        { className: "student-history__filter-panel" },
+        h(
+          "div",
+          { className: "student-history__filter-intro" },
+          h(IconoFigma, { className: "student-history__filter-icon", nombre: "filter" }),
+          h("span", null, "Filtrar historial")
         ),
         h(ObservationFilters, {
           filtros,
@@ -776,7 +794,7 @@ function DatePicker({ label, value, onChange }) {
   );
 }
 
-function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sectores, responsables, estados, showSearch = true, className = "" }) {
+function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sectores, responsables, estados, resultCount, showSearch = true, className = "" }) {
   const filtersConfig = [
     { key: "fechaDesde", label: "Fecha desde", type: "date" },
     { key: "fechaHasta", label: "Fecha hasta", type: "date" },
@@ -802,6 +820,36 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
     showSearch
       ? h(
         "div",
+        { className: "observations-toolbar__heading" },
+        h(
+          "div",
+          { className: "observations-toolbar__heading-copy" },
+          h(IconoFigma, { className: "observations-toolbar__heading-icon", nombre: "filter" }),
+          h(
+            "div",
+            null,
+            h("strong", null, "Buscar y filtrar"),
+            h(
+              "span",
+              null,
+              Number.isInteger(resultCount)
+                ? `${resultCount} ${resultCount === 1 ? "resultado" : "resultados"} · Combiná uno o más criterios.`
+                : "Combiná uno o más criterios para encontrar una observación."
+            )
+          )
+        ),
+        activeFilters.length
+          ? h(
+            "button",
+            { type: "button", className: "observations-toolbar__clear", onClick: onClearAll },
+            `Limpiar filtros (${activeFilters.length})`
+          )
+          : null
+      )
+      : null,
+    showSearch
+      ? h(
+        "div",
         { className: "search-input-wrapper observations-toolbar__search" },
         h(IconoFigma, { className: "search-input-icon", nombre: "search" }),
         h("input", {
@@ -809,7 +857,7 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
           className: "search-input",
           value: filtros.query,
           onChange: (event) => onChange("query", event.target.value),
-          placeholder: "Ingrese apellido, nombre o DNI....",
+          placeholder: "Buscar por apellido, nombre o DNI",
           "aria-label": "Buscar alumno"
         }),
       )
@@ -823,8 +871,8 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
           ? h(CustomSelect, {
             label,
             value: value || "",
-            placeholder: label,
-            options: [{ value: "", label }, ...options.map((option) => ({ value: option, label: option }))],
+            placeholder: showSearch ? "Todos" : label,
+            options: [{ value: "", label: showSearch ? "Todos" : label }, ...options.map((option) => ({ value: option, label: option }))],
             onChange: (nextValue) => onChange(key, nextValue)
           })
           : h("input", {
@@ -838,7 +886,14 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
         return h(
           "div",
           { className: `observations-toolbar__field${type === "select" ? "" : " observations-toolbar__date-field"}`, key },
-          type === "select" ? control : h(DatePicker, { label, value: value || "", onChange: (nextValue) => onChange(key, nextValue) })
+          type === "select"
+            ? h(
+              Fragment,
+              null,
+              showSearch ? h("span", { className: "observations-toolbar__field-label" }, label) : null,
+              control
+            )
+            : h(DatePicker, { label, value: value || "", onChange: (nextValue) => onChange(key, nextValue) })
         );
       })
     ),
@@ -867,15 +922,6 @@ function ObservationFilters({ filtros, onChange, onClear, onClearAll, tipos, sec
               )
             )
           ),
-          h(
-            "button",
-            {
-              type: "button",
-              className: "clear-all-filters-btn",
-              onClick: onClearAll
-            },
-            "Limpiar todos"
-          )
         )
       )
       : null
@@ -1134,6 +1180,13 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], regi
 
 export default function ObservacionesView() {
   const usuarioActual = useUsuarioActual();
+  const { puede } = usePermisos();
+  const puedeCrearObservacion = puede(PERMISOS.observacionesCrear);
+  /* El boton de volver lleva a jefatura a su tablero: #/inicio-secretaria pide
+     alumnosEditar y le daria acceso denegado. Para el resto no cambia nada. */
+  const esJefeArea = (usuarioActual.roles ?? []).some((rol) => (rol?.id ?? rol) === "jefe_area");
+  const volverDashboardHref = esJefeArea ? "#/jefatura" : "#/inicio-secretaria";
+  const volverDashboardLabel = esJefeArea ? "Volver al tablero de jefatura" : "Volver al dashboard de secretaría";
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [filtros, setFiltros] = useState(() => getSavedFilters());
   const [tipoHistorial, setTipoHistorial] = useState("Tipo de observación");
@@ -1294,6 +1347,7 @@ export default function ObservacionesView() {
       h(StudentDetail, {
         alumno: alumnoSeleccionado,
         observations: historial,
+      totalObservations: historialBase.length,
         onBack: () => setAlumnoSeleccionado(null),
         tipoFiltro: tipoHistorial,
         estadoFiltro: estadoHistorial,
@@ -1350,7 +1404,8 @@ export default function ObservacionesView() {
         },
         tipos,
         estados,
-        onNewObservation: () => openObservationForm(alumnoSeleccionado)
+        onNewObservation: () => openObservationForm(alumnoSeleccionado),
+        puedeCrear: puedeCrearObservacion
       }),
       showObservationForm
         ? h(ObservationFormInline, {
@@ -1389,10 +1444,10 @@ export default function ObservacionesView() {
           type: "button",
           className: "btn-volver-atras",
           onClick: () => {
-            window.location.hash = "#/inicio-secretaria";
+            window.location.hash = volverDashboardHref;
           },
-          title: "Volver al dashboard de secretaría",
-          "aria-label": "Volver al dashboard de secretaría"
+          title: volverDashboardLabel,
+          "aria-label": volverDashboardLabel
         },
         h(
           "svg",
@@ -1420,9 +1475,13 @@ export default function ObservacionesView() {
         h("h2", null, "Observaciones"),
         h("p", null, "Última observación por alumno")
       ),
-      h(ActionButton, { icon: "clipboard", onClick: () => openObservationForm() }, "Nueva observación")
+      puedeCrearObservacion
+        ? h(ActionButton, { icon: "clipboard", onClick: () => openObservationForm() }, "Nueva observación")
+        : null
     ),
     h(ObservationFilters, {
+      className: "observations-toolbar--main",
+      resultCount: observaciones.length,
       filtros,
       onChange: updateFiltro,
       onClear: clearFiltro,
@@ -1451,7 +1510,8 @@ export default function ObservacionesView() {
             key: `${observation.id || observation.alumno}-${observation.fecha || Math.random()}`,
             observation,
             onView: () => setAlumnoSeleccionado(observation.alumno),
-            onEdit: () => setAlumnoSeleccionado(observation.alumno)
+            onEdit: () => setAlumnoSeleccionado(observation.alumno),
+            puedeEditar: puedeCrearObservacion
           })
         )
         : h("p", { className: "observations-empty" }, "Ninguna observacion")

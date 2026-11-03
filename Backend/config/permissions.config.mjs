@@ -18,7 +18,8 @@ export const ROLES = {
   PRECEPTOR: "preceptor",
   DOCENTE: "docente",
   JEFE_AREA: "jefe_area",
-  SERVER: "server"
+  SERVER: "server",
+  ALUMNO: "alumno"
 };
 
 export const SCOPE_KEYS = ["schoolId", "courseId", "divisionId", "subjectId", "shiftId", "periodId"];
@@ -29,6 +30,10 @@ export const PERMISSIONS = {
   IDENTITY_READ: "identity.read",
   IDENTITY_CREATE: "identity.create",
   IDENTITY_UPDATE: "identity.update",
+  /* Administracion de identidad: asignar roles, matriz de permisos y
+     asignaciones de alcance. identity.update, en cambio, alcanza para que
+     cada persona edite su propio perfil. */
+  IDENTITY_MANAGE: "identity.manage",
   STUDENTS_READ: "students.read",
   STUDENTS_WRITE: "students.write",
   OBSERVATIONS_READ: "observations.read",
@@ -48,6 +53,9 @@ export const PERMISSIONS = {
   ATTENDANCE_FOLLOWUPS_WRITE: "attendance-followups.write",
   GRADES_READ: "grades.read",
   GRADES_WRITE: "grades.write",
+  /* Bloquear y habilitar los periodos de carga de notas (Direccion). */
+  GRADES_MANAGE: "grades.manage",
+  BOLETIN_OFICIAL_WRITE: "grades.boletin",
   SCHOOLS_READ: "schools.read",
   SCHOOLS_MANAGE: "schools.manage",
   DOCUMENTS_READ: "documents.read",
@@ -58,6 +66,7 @@ export const PERMISSIONS = {
   SCHEDULES_READ: "schedules.read",
   SCHEDULES_WRITE: "schedules.write",
   SCHEDULES_MANAGE: "schedules.manage",
+  SCHEDULES_CALENDAR: "schedules.calendar",
   TEACHERS_READ: "teachers.read",
   TEACHERS_WRITE: "teachers.write",
   TEACHERS_MANAGE: "teachers.manage",
@@ -100,15 +109,24 @@ export const PERMISSIONS = {
   PLANNING_MANAGE: "planning.manage",
   NOTIFICATIONS_MANAGE: "notifications.manage",
   AUDIT_READ: "audit.read",
-  AUDIT_EXPORT: "audit.export"
+  AUDIT_EXPORT: "audit.export",
+  /* Portal del alumno: solo lo usa el rol alumno, y siempre sobre su propio legajo
+     (el backend toma el alumno del token, nunca de la URL). */
+  STUDENT_PORTAL_READ: "student-portal.read",
+  STUDENT_PORTAL_UPDATE: "student-portal.update"
 };
 
-const ALL_PERMISSIONS = Object.values(PERMISSIONS);
+/* Los permisos del portal no se suman a admin y director: no tienen legajo de
+   alumno y el portal no expone datos de terceros. */
+const PERMISOS_PORTAL_ALUMNO = [PERMISSIONS.STUDENT_PORTAL_READ, PERMISSIONS.STUDENT_PORTAL_UPDATE];
+const ALL_PERMISSIONS = Object.values(PERMISSIONS).filter((permiso) => !PERMISOS_PORTAL_ALUMNO.includes(permiso));
 
 export const ROLE_PERMISSIONS = {
   [ROLES.ADMIN]: ALL_PERMISSIONS,
   [ROLES.DIRECTOR]: ALL_PERMISSIONS,
   [ROLES.SECRETARIO]: [
+    PERMISSIONS.BOLETIN_OFICIAL_WRITE,
+    PERMISSIONS.SCHEDULES_CALENDAR,
     PERMISSIONS.USERS_READ,
     PERMISSIONS.IDENTITY_READ,
     PERMISSIONS.OBSERVATIONS_READ,
@@ -143,6 +161,7 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.PLANNING_READ
   ],
   [ROLES.PRECEPTOR]: [
+    PERMISSIONS.BOLETIN_OFICIAL_WRITE,
     PERMISSIONS.STUDENTS_READ,
     PERMISSIONS.OBSERVATIONS_READ,
     PERMISSIONS.OBSERVATIONS_WRITE,
@@ -188,6 +207,7 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.ATTENDANCE_FOLLOWUPS_READ,
     PERMISSIONS.GRADES_READ,
     PERMISSIONS.GRADES_WRITE,
+    PERMISSIONS.BOLETIN_OFICIAL_WRITE,
     PERMISSIONS.SCHOOLS_READ,
     PERMISSIONS.DOCUMENTS_READ,
     PERMISSIONS.SCHEDULES_READ,
@@ -205,6 +225,10 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.PLANNING_WRITE
   ],
   [ROLES.JEFE_AREA]: [
+    /* identity.update: solo el propio perfil. La administracion de identidad
+       (roles, matriz de permisos, asignaciones) exige identity.manage, que
+       este rol no tiene. */
+    PERMISSIONS.IDENTITY_UPDATE,
     PERMISSIONS.OBSERVATIONS_READ,
     PERMISSIONS.OBSERVATIONS_WRITE,
     PERMISSIONS.COURSE_CHANGES_READ,
@@ -297,7 +321,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.PLANNING_WRITE,
     PERMISSIONS.PLANNING_REVIEW,
     PERMISSIONS.PLANNING_MANAGE
-  ]
+  ],
+  [ROLES.ALUMNO]: PERMISOS_PORTAL_ALUMNO
 };
 
 /* Permisos vigentes de un rol: los reemplazados en tiempo de ejecucion (si los hay)

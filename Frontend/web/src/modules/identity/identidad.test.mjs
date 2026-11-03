@@ -121,6 +121,13 @@ test("puede no autoriza sin permiso explicito", () => {
   assert.ok(!puede(null, PERMISOS.usuariosLeer));
 });
 
+test("la gestion de usuarios exige identity.manage, no alcanza identity.update", () => {
+  assert.equal(PERMISOS.usuariosEditar, "identity.manage");
+  assert.equal(PERMISOS.rolesEditar, "identity.manage");
+  assert.ok(!puede({ permisos: ["identity.update"] }, PERMISOS.usuariosEditar));
+  assert.ok(!puede({ permisos: ["identity.update"] }, PERMISOS.rolesEditar));
+});
+
 test("validarUsuario exige los campos obligatorios y valida formatos", () => {
   const errores = validarUsuario({ email: "sin-arroba", dni: "12.345.678" }, { esAlta: true });
 

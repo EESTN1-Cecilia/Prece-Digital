@@ -6,7 +6,6 @@ import { CustomSelect } from "../../components/common/custom-select.js";
 import { LoadingState, EmptyState } from "../../components/common/state-handlers.js";
 import {
   AsistenciasService,
-  CURSOS_DISPONIBLES,
   MESES_DEL_ANIO
 } from "./asistencias-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
@@ -146,7 +145,6 @@ const ASIGNACIONES_DOCENTE_DEFAULT = [
 
 export default function AsistenciasView({ modoDocente = false }) {
   const user = useUsuarioActual();
-  const tabsRef = useRef(null);
   const paginaRef = useRef(null);
 
   const esDocente =
@@ -158,15 +156,11 @@ export default function AsistenciasView({ modoDocente = false }) {
       !user.roles.includes("admin") &&
       !user.roles.includes("director"));
 
-  // Desplazamiento horizontal suave con las flechas
-  const handleScrollTabs = (delta) => {
-    if (tabsRef.current) {
-      tabsRef.current.scrollBy({ left: delta, behavior: "smooth" });
-    }
-  };
-
   // Lista de cursos disponibles dinámicos
-  const [cursos, setCursos] = useState(() => (esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : CURSOS_DISPONIBLES));
+  /* Fuera del docente, la lista sale solo del backend (un preceptor recibe los
+     cursos que le asigno la Direccion): nunca se arranca con el catalogo completo. */
+  const [cursos, setCursos] = useState(() => (esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : []));
+  const [cursosListos, setCursosListos] = useState(esDocente);
 
   // Estados de navegación y selección de curso/mes
   const [selectedCursoId, setSelectedCursoId] = useState(() => {
@@ -220,9 +214,12 @@ export default function AsistenciasView({ modoDocente = false }) {
     }
 
     AsistenciasService.getCursosDisponibles().then((lista) => {
-      if (montado && lista && lista.length > 0) {
-        setCursos(lista);
-      }
+      if (!montado) return;
+      const propios = Array.isArray(lista) ? lista : [];
+      setCursos(propios);
+      setCursosListos(true);
+      /* Si el curso pedido (URL o "1-1" por defecto) no es de la sesion, se pasa al primero propio. */
+      setSelectedCursoId((actual) => (propios.some((c) => c.id === actual) ? actual : propios[0]?.id ?? null));
     });
     return () => {
       montado = false;
@@ -266,10 +263,40 @@ export default function AsistenciasView({ modoDocente = false }) {
     );
   }, [cursos, selectedCursoId, esDocente, user]);
 
+  const obtenerAnioCurso = useCallback((curso) => {
+    const valor = curso?.anio ?? curso?.curso ?? curso?.id?.split("-")[0] ?? "";
+    return Number(String(valor).replace(/\D/g, "")) || 1;
+  }, []);
+
+  const aniosDisponibles = useMemo(
+    () => [...new Set(cursos.map(obtenerAnioCurso))].sort((a, b) => a - b),
+    [cursos, obtenerAnioCurso]
+  );
+  const anioCursoActual = obtenerAnioCurso(cursoActual);
+  const cursosDelAnio = useMemo(
+    () => cursos.filter((curso) => obtenerAnioCurso(curso) === anioCursoActual),
+    [cursos, anioCursoActual, obtenerAnioCurso]
+  );
+
+  const seleccionarAnio = (anio) => {
+    const cursosDelNuevoAnio = cursos.filter((curso) => obtenerAnioCurso(curso) === anio);
+    const mismaDivision = cursosDelNuevoAnio.find((curso) => String(curso.division) === String(cursoActual.division));
+    setSelectedCursoId((mismaDivision || cursosDelNuevoAnio[0])?.id ?? selectedCursoId);
+  };
+
   // Cargar planilla al cambiar de curso o mes (con materia si es docente)
+  const cursoPermitido = esDocente || cursos.some((c) => c.id === selectedCursoId);
+
   const cargarPlanilla = useCallback(async () => {
     setLoading(true);
     setSaveSuccess(false);
+    /* Nunca se abre la planilla de un curso que la sesion no tiene asignado. */
+    if (!cursoPermitido) {
+      setPlanilla(null);
+      setPlanillaOriginal(null);
+      setLoading(!cursosListos);
+      return;
+    }
     try {
       const materiaDocente = esDocente ? (cursoActual.materia || "Matemática") : null;
       const data = await AsistenciasService.getPlanilla(
@@ -285,7 +312,7 @@ export default function AsistenciasView({ modoDocente = false }) {
     } finally {
       setLoading(false);
     }
-  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia]);
+  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia, cursoPermitido, cursosListos]);
 
   useEffect(() => {
     cargarPlanilla();
@@ -569,6 +596,14 @@ export default function AsistenciasView({ modoDocente = false }) {
 
   const mesInfo = MESES_DEL_ANIO.find((m) => m.id === selectedMes) || MESES_DEL_ANIO[6];
 
+  if (!esDocente && cursosListos && cursos.length === 0) {
+    return h(
+      "section",
+      { className: "asistencias-page secretaria-dashboard" },
+      h(EmptyState, { mensaje: "Todavía no tenés cursos asignados. La Dirección debe asignártelos para ver sus asistencias." })
+    );
+  }
+
   return h(
     "section",
     { className: "asistencias-page secretaria-dashboard", ref: paginaRef },
@@ -649,68 +684,61 @@ export default function AsistenciasView({ modoDocente = false }) {
       "div",
       { className: "asistencias-controls-panel no-print" },
 
-      // Selector de Cursos por Botones / Tabs con Flechas en los Extremos
+      // Selector jerárquico: primero año, después división y turno.
       h(
         "div",
-        { className: "asistencias-cursos-tabs-wrapper" },
-        h("span", { className: "asistencias-section-label" }, "CURSOS Y DIVISIONES:"),
+        { className: "asistencias-course-picker" },
         h(
           "div",
-          { className: "asistencias-cursos-carousel" },
-          // Botón Flecha Izquierda
-          h(
-            "button",
-            {
-              type: "button",
-              className: "btn-tab-scroll btn-tab-scroll-prev",
-              onClick: () => handleScrollTabs(-240),
-              "aria-label": "Desplazar cursos a la izquierda",
-              title: "Cursos anteriores"
-            },
-            h(
-              "svg",
-              { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round", width: 16, height: 16 },
-              h("polyline", { points: "15 18 9 12 15 6" })
-            )
-          ),
-
-          // Contenedor scrollable de cursos
+          { className: "asistencias-course-picker__header" },
+          h("span", { className: "asistencias-section-label" }, "SELECCIONAR CURSO"),
+          h("span", { className: "asistencias-course-picker__count" }, `${cursos.length} ${cursos.length === 1 ? "curso disponible" : "cursos disponibles"}`)
+        ),
+        h(
+          "div",
+          { className: "asistencias-course-picker__row" },
+          h("span", { className: "asistencias-course-picker__row-label" }, "Año"),
           h(
             "div",
-            { className: "asistencias-cursos-tabs", ref: tabsRef },
-            cursos.map((c) => {
-              const isActive = c.id === selectedCursoId;
+            { className: "asistencias-year-options", role: "group", "aria-label": "Seleccionar año" },
+            aniosDisponibles.map((anio) =>
+              h(
+                "button",
+                {
+                  key: anio,
+                  type: "button",
+                  className: `asistencia-year-option ${anio === anioCursoActual ? "active" : ""}`,
+                  onClick: () => seleccionarAnio(anio),
+                  "aria-pressed": anio === anioCursoActual
+                },
+                `${anio}° año`
+              )
+            )
+          )
+        ),
+        h(
+          "div",
+          { className: "asistencias-course-picker__row" },
+          h("span", { className: "asistencias-course-picker__row-label" }, "División"),
+          h(
+            "div",
+            { className: "asistencias-division-options", role: "group", "aria-label": `Divisiones de ${anioCursoActual}° año` },
+            cursosDelAnio.map((curso) => {
+              const isActive = curso.id === selectedCursoId;
               return h(
                 "button",
                 {
-                  key: c.id,
+                  key: curso.id,
                   type: "button",
-                  className: `asistencia-curso-pill ${isActive ? "active" : ""}`,
-                  onClick: () => setSelectedCursoId(c.id),
-                  title: `${c.curso} Año - División ${c.division}° (${c.turno})`
+                  className: `asistencia-division-option ${isActive ? "active" : ""}`,
+                  onClick: () => setSelectedCursoId(curso.id),
+                  "aria-pressed": isActive
                 },
-                h("strong", null, `${c.curso} ${c.division}°`),
-                h("span", { className: "pill-turno" }, c.turno.charAt(0))
+                h("strong", null, `${curso.division}ª división`),
+                h("span", null, `Turno ${curso.turno}`)
               );
             })
           ),
-
-          // Botón Flecha Derecha
-          h(
-            "button",
-            {
-              type: "button",
-              className: "btn-tab-scroll btn-tab-scroll-next",
-              onClick: () => handleScrollTabs(240),
-              "aria-label": "Desplazar cursos a la derecha",
-              title: "Cursos siguientes"
-            },
-            h(
-              "svg",
-              { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", strokeLinecap: "round", strokeLinejoin: "round", width: 16, height: 16 },
-              h("polyline", { points: "9 18 15 12 9 6" })
-            )
-          )
         )
       ),
 
@@ -800,6 +828,8 @@ export default function AsistenciasView({ modoDocente = false }) {
 
       loading
         ? h(LoadingState, { mensaje: "Cargando nómina y registro de asistencias del curso..." })
+        : !planilla
+        ? h(EmptyState, { mensaje: "Ese curso no está asignado a tu perfil." })
         : h(
             "div",
             { className: "planilla-table-scroll-container" },

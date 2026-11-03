@@ -14,8 +14,8 @@ Login propio con JWT, refresh tokens, control de permisos por rol y alcance, y b
 | GET | `/api/v1/users` | Bearer + `users.read` | Lista usuarios (filtros `q`, `rol`, `estado`) |
 | POST | `/api/v1/users` | Bearer + `identity.create` | Alta con contraseña temporal |
 | GET | `/api/v1/users/:userId` | Bearer + `users.read` | Detalle |
-| PATCH | `/api/v1/users/:userId` | Bearer + `identity.update` | Datos y estado (`activo`/`inactivo`) |
-| PUT | `/api/v1/users/:userId/roles` | Bearer + `identity.update` | Reemplaza los roles |
+| PATCH | `/api/v1/users/:userId` | Bearer + `identity.update` | Datos personales del propio perfil; editar a otra persona o cambiar estado exige `identity.manage` |
+| PUT | `/api/v1/users/:userId/roles` | Bearer + `identity.manage` | Reemplaza los roles |
 | PATCH | `/api/v1/users/:userId/deactivate` | Bearer + `users.deactivate` | Baja lógica de la cuenta |
 
 ## Estrategia de autenticación
@@ -77,6 +77,17 @@ Un permiso se escribe `modulo.accion`. Las acciones canónicas del catálogo son
 `users.deactivate`. El acceso se verifica con el middleware `authorize({ permission,
 roles, context })` antes de ejecutar el controlador.
 
+En identidad la administración está separada del perfil propio:
+
+- `identity.update` permite editar los datos personales **del propio perfil**
+  (`PATCH /users/:userId`, solo si el `:userId` es el usuario autenticado).
+- `identity.manage` es la administración de identidad: editar datos de terceros,
+  asignar roles (`PUT /users/:userId/roles`), reemplazar la matriz de permisos
+  (`PUT /authorization/roles/:codigo/permissions`) y asignar cursos a preceptores
+  (`/preceptores/asignaciones`).
+- `identity.create` habilita el alta de cuentas (`POST /users`), siempre con roles
+  del catálogo; el cliente nunca envía permisos.
+
 | Resultado | Respuesta |
 | --- | --- |
 | Sin token o token inválido | `401` |
@@ -85,6 +96,7 @@ roles, context })` antes de ejecutar el controlador.
 
 `GET /auth/me` y `GET /auth/permissions` devuelven roles, permisos y un resumen por
 módulo calculados en el backend; el cliente nunca envía roles ni permisos. Un usuario
-no puede desactivar ni modificar su propia cuenta. Incorporar un rol nuevo es agregar
-su entrada en `ROL_CATALOGO` y su lista en `ROLE_PERMISSIONS`: no se toca ningún
-controlador ni middleware.
+no puede desactivar su propia cuenta, y la edición de sus datos personales requiere
+`identity.update`; los roles y el estado quedan reservados a `identity.manage`. Incorporar
+un rol nuevo es agregar su entrada en `ROL_CATALOGO` y su lista en
+`ROLE_PERMISSIONS`: no se toca ningún controlador ni middleware.

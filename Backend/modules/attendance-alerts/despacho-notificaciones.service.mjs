@@ -1,3 +1,4 @@
+import studentRepository from "../students/students.repository.mjs";
 import notificationsRepository from "../notifications/notifications.repository.mjs";
 import attendanceAlertsRepository from "./attendance-alerts.repository.mjs";
 
@@ -32,7 +33,8 @@ function construirMensaje({ alumno, alerta }) {
 }
 
 export function destinatariosDe(alerta) {
-  return attendanceAlertsRepository.findPreceptoresDe(alerta.escuelaId).map((usuario) => usuario.id);
+  const alumno = alerta.alumnoId ? studentRepository.findById(alerta.alumnoId) : null;
+  return attendanceAlertsRepository.findPreceptoresDe(alerta.escuelaId, alumno).map((usuario) => usuario.id);
 }
 
 /* Arma el evento que el sistema general de notificaciones va a consumir. */

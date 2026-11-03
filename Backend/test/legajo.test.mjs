@@ -7,6 +7,7 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { resetStore } from "../database/memory-store.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
+import { asignarCursosAlPreceptorGeneral } from "./helpers.mjs";
 
 const PUERTO = 4012;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -36,6 +37,7 @@ beforeEach(async () => {
   await seedDesarrollo();
   tokens.secretario = await login("secretario@prece.local", "Secretaria123!");
   tokens.preceptor = await login("preceptor@prece.local", "Preceptor123!");
+  await asignarCursosAlPreceptorGeneral();
   tokens.docente = await login("docente@prece.local", "Docente123!");
 });
 
@@ -145,7 +147,9 @@ test("tablero de secretaria con datos reales y alertas descartables", async () =
 test("directorio de divisiones y busqueda libre del listado", async () => {
   const divisiones = await pedir("GET", "/api/v1/students/divisions", "preceptor");
   assert.equal(divisiones.status, 200);
-  assert.equal(divisiones.cuerpo.data.length, 31);
+  /* El preceptor ve solo los cursos que le asigno la Direccion (todos menos 2° 2° y 5° 3°). */
+  assert.equal(divisiones.cuerpo.data.length, 29);
+  assert.equal((await pedir("GET", "/api/v1/students/divisions", "secretario")).cuerpo.data.length, 31);
   /* la promocion del seed de course-changes (alu-17) suma un activo a 4-1 */
   assert.equal(divisiones.cuerpo.data.find((division) => division.id === "4-1").activos, 5);
   assert.ok(divisiones.cuerpo.data.some((division) => division.id === "6-2"));

@@ -25,6 +25,8 @@ import * as spacesController from "../modules/spaces/spaces.controller.mjs";
 import * as schedulesController from "../modules/schedules/schedules.controller.mjs";
 import * as teachersController from "../modules/teachers/teachers.controller.mjs";
 import * as gradesController from "../modules/grades/grades.controller.mjs";
+import * as calendarioController from "../modules/calendario/calendario.controller.mjs";
+import * as boletinOficialController from "../modules/boletin-oficial/boletin-oficial.controller.mjs";
 import * as absencesController from "../modules/absences/absences.controller.mjs";
 import * as absenceEventsController from "../modules/absence-events/absence-events.controller.mjs";
 import * as groupsController from "../modules/groups/groups.controller.mjs";
@@ -49,6 +51,10 @@ import * as academicRecordsController from "../modules/academic-records/academic
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
+import * as studentPortalController from "../modules/student-portal/student-portal.controller.mjs";
+import { alumnoAutenticado, cuentaConfigurada } from "../modules/student-portal/student-portal.middleware.mjs";
+import * as preceptorAssignmentsController from "../modules/preceptor-assignments/preceptor-assignments.controller.mjs";
+import { alcancePreceptor, alcancePreceptorRegistro } from "../middlewares/alcance-preceptor.middleware.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
 
 /* Exige un permiso existente: un typo en P.ALGO rompe el arranque en lugar de
@@ -61,7 +67,7 @@ function required(permission) {
   return authorize({ permission });
 }
 
-export const apiRoutes = [
+const rutasDeclaradas = [
   { method: "GET", path: "/health", handler: healthCheck },
   { method: "GET", path: "/api/v1/modules", handler: listModules },
   { method: "GET", path: "/api/v1/roles", handler: listRoles },
@@ -70,18 +76,45 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/authorization/roles", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRoles },
   { method: "GET", path: "/api/v1/authorization/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getPermissions },
   { method: "GET", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRolePermissions },
-  { method: "PUT", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: authorizationController.putRolePermissions },
+  { method: "PUT", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: authorizationController.putRolePermissions },
 
   { method: "POST", path: "/api/v1/auth/login", handler: authController.login },
   { method: "POST", path: "/api/v1/auth/refresh", handler: authController.refresh },
   { method: "POST", path: "/api/v1/auth/logout", handler: authController.logout },
   { method: "GET", path: "/api/v1/auth/me", middlewares: [verifyToken], handler: authController.me },
   { method: "GET", path: "/api/v1/auth/permissions", middlewares: [verifyToken], handler: authController.permissions },
+
+  /* Portal del alumno. Ninguna ruta recibe un id de alumno: el legajo sale
+     siempre de la cuenta del token (alumnoAutenticado). La informacion
+     academica exige ademas haber cambiado la clave inicial (cuentaConfigurada).
+     El alumno inicia sesion con el login general (/api/v1/auth/login).
+     Ver modules/student-portal/README.md. */
+  { method: "GET", path: "/api/v1/alumno/cuenta", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado], handler: studentPortalController.obtenerCuenta },
+  { method: "POST", path: "/api/v1/alumno/cuenta/configuracion", middlewares: [verifyToken, required(P.STUDENT_PORTAL_UPDATE), alumnoAutenticado], handler: studentPortalController.configurarCuenta },
+  { method: "PATCH", path: "/api/v1/alumno/cuenta/password", middlewares: [verifyToken, required(P.STUDENT_PORTAL_UPDATE), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.cambiarPassword },
+  { method: "PATCH", path: "/api/v1/alumno/cuenta/usuario", middlewares: [verifyToken, required(P.STUDENT_PORTAL_UPDATE), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.cambiarUsuario },
+  { method: "GET", path: "/api/v1/alumno/perfil", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.perfil },
+  { method: "GET", path: "/api/v1/alumno/boletin", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.boletin },
+  { method: "GET", path: "/api/v1/alumno/asistencias", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.asistencias },
+  { method: "GET", path: "/api/v1/alumno/situacion-academica", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.situacionAcademica },
+  { method: "GET", path: "/api/v1/alumno/previas", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.previas },
+  /* Boletin de un alumno para el personal: es el MISMO calculo que ve el alumno
+     en /api/v1/alumno/boletin. Un preceptor solo puede pedir alumnos de sus cursos. */
+  { method: "GET", path: "/api/v1/alumnos/:alumnoId/boletin", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentPortalController.boletinDeAlumno },
+
+  /* Cursos asignados a preceptores por la Direccion. */
+  { method: "GET", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.USERS_READ)], handler: preceptorAssignmentsController.listar },
+  { method: "PUT", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: preceptorAssignmentsController.asignar },
+  { method: "POST", path: "/api/v1/preceptores/asignaciones/quitar", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: preceptorAssignmentsController.quitar },
+  { method: "GET", path: "/api/v1/preceptores/mis-cursos", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: preceptorAssignmentsController.misCursos },
+  { method: "GET", path: "/api/v1/portal-alumnos/verificacion", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentPortalController.verificacion },
   { method: "GET", path: "/api/v1/users", middlewares: [verifyToken, required(P.USERS_READ)], handler: authController.listUsers },
   { method: "POST", path: "/api/v1/users", middlewares: [verifyToken, required(P.IDENTITY_CREATE)], handler: usersController.createUser },
   { method: "GET", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.USERS_READ)], handler: usersController.getUser },
+  /* identity.update alcanza para el propio perfil; el servicio restringe el
+     resto. Asignar roles (PUT siguiente) exige identity.manage. */
   { method: "PATCH", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.updateUser },
-  { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.replaceUserRoles },
+  { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.replaceUserRoles },
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
 
   { method: "GET", path: "/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: academicController.listAlumnosDeDivision },
@@ -221,6 +254,24 @@ export const apiRoutes = [
   /* Calificaciones: los literales (catalogos) y las consultas por alumno/docente
      van antes que /calificaciones/:calificacionId porque el router gana con la
      primera coincidencia. */
+  /* Boletin oficial y planilla del docente: mismas calificaciones que ve el alumno en su portal. */
+  { method: "GET", path: "/api/v1/calendario/eventos", middlewares: [verifyToken], handler: calendarioController.listar },
+  { method: "GET", path: "/api/v1/calendario/avisos", middlewares: [verifyToken], handler: calendarioController.avisos },
+  { method: "GET", path: "/api/v1/calendario/estado", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.estado },
+  { method: "GET", path: "/api/v1/calendario/eventos/:id/historial", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.historial },
+  { method: "POST", path: "/api/v1/calendario/actualizar", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.actualizarDesdeFuentes },
+  { method: "POST", path: "/api/v1/calendario/eventos", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.crear },
+  { method: "POST", path: "/api/v1/calendario/eventos/:id/verificar", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.verificar },
+  { method: "PUT", path: "/api/v1/calendario/eventos/:id", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.actualizar },
+  { method: "DELETE", path: "/api/v1/calendario/eventos/:id", middlewares: [verifyToken, required(P.SCHEDULES_CALENDAR)], handler: calendarioController.eliminar },
+  { method: "GET", path: "/api/v1/boletin-oficial/resumen", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.resumenDeCurso },
+  { method: "GET", path: "/api/v1/boletin-oficial/alumnos", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.listar },
+  { method: "GET", path: "/api/v1/boletin-oficial/alumnos/:alumnoId", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: boletinOficialController.obtener },
+  { method: "PUT", path: "/api/v1/boletin-oficial/alumnos/:alumnoId", middlewares: [verifyToken, required(P.BOLETIN_OFICIAL_WRITE)], handler: boletinOficialController.guardar },
+  /* Periodos de carga: cualquier usuario autenticado consulta el estado (la
+     planilla lo usa para bloquear columnas); solo la Direccion lo cambia. */
+  { method: "GET", path: "/api/v1/calificaciones/periodos", middlewares: [verifyToken], handler: gradesController.getPeriodosCarga },
+  { method: "PUT", path: "/api/v1/calificaciones/periodos/:anio", middlewares: [verifyToken, required(P.GRADES_MANAGE)], handler: gradesController.updatePeriodosCarga },
   { method: "GET", path: "/api/v1/calificaciones/catalogos", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.getCatalogos },
   { method: "POST", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_WRITE)], handler: gradesController.createCalificacion },
   { method: "GET", path: "/api/v1/calificaciones", middlewares: [verifyToken, required(P.GRADES_READ)], handler: gradesController.listCalificaciones },
@@ -579,6 +630,15 @@ export const apiRoutes = [
   { method: "GET", path: "/api/v1/audit/report", middlewares: [verifyToken, required(P.AUDIT_READ)], handler: auditController.report },
   { method: "GET", path: "/api/v1/audit/export", middlewares: [verifyToken, required(P.AUDIT_EXPORT)], handler: auditarAccion({ tabla: "auditoria", accion: "export" })(auditController.exportCsv) }
 ];
+
+/* Alcance del preceptor en TODAS las rutas protegidas: justo despues de
+   verifyToken, antes de cualquier handler (ver middlewares/alcance-preceptor). */
+export const apiRoutes = rutasDeclaradas.map((ruta) => {
+  const middlewares = ruta.middlewares ?? [];
+  const indice = middlewares.indexOf(verifyToken);
+  if (indice === -1) return ruta;
+  return { ...ruta, middlewares: [...middlewares.slice(0, indice + 1), alcancePreceptor, alcancePreceptorRegistro, ...middlewares.slice(indice + 1)] };
+});
 
 function tokenize(path) {
   return path.split("/").filter(Boolean);

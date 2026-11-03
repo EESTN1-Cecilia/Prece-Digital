@@ -25,6 +25,7 @@ import {
   normalizarTexto
 } from "./catalogo.mjs";
 import gradesRepository from "./grades.repository.mjs";
+import { exigirPeriodoHabilitado } from "./periodos-carga.service.mjs";
 
 const POR_PAGINA_MAXIMO = 100;
 const POR_PAGINA_DEFECTO = 20;
@@ -571,6 +572,8 @@ const gradesService = {
       throw errorDeValidacion(errores);
     }
 
+    exigirPeriodoHabilitado(user, { anio, cuatrimestre, tipoEvaluacion, periodo });
+
     let docenteId = null;
     let asignacionMateriaId = null;
 
@@ -845,6 +848,15 @@ const gradesService = {
       return { statusCode: 200, body: { data: publicCalificacion(actual) } };
     }
 
+    /* Ni el periodo de origen ni el de destino pueden estar bloqueados. */
+    exigirPeriodoHabilitado(user, actual);
+    exigirPeriodoHabilitado(user, {
+      anio: nuevoAnio,
+      cuatrimestre: nuevoCuatrimestre,
+      tipoEvaluacion: nuevoTipo,
+      periodo: periodo !== undefined ? periodo : actual.periodo
+    });
+
     cambios.actualizadoPor = actorDel(user);
     const actualizado = gradesRepository.updateCalificacion(id, cambios, snapshotCalificacion(actual));
     gradesRepository.registrarAuditoria({
@@ -878,6 +890,8 @@ const gradesService = {
         anio: actual.anio
       });
     }
+
+    exigirPeriodoHabilitado(user, actual);
 
     const actualizado = gradesRepository.deactivateCalificacion(id);
     gradesRepository.registrarAuditoria({

@@ -3,7 +3,59 @@
    ========================================================================== */
 
 .jefatura-dashboard {
-  gap: 18px;
+  gap: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   Contraste de las secciones
+   El panel del tablero es blanco: las tarjetas quedaban casi del mismo tono.
+   Se marcan borde, sombra y cabecera de cada seccion para separarlas.
+   -------------------------------------------------------------------------- */
+
+.jefatura-dashboard .dashboard-card {
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 6px 18px -8px rgba(15, 23, 42, 0.2);
+}
+
+.jefatura-dashboard .dashboard-card__header {
+  background: #eef2f7;
+  border-bottom: 1.5px solid #cbd5e1;
+}
+
+.jefatura-dashboard .dashboard-card__header--clickable:hover {
+  background: #e2e9f1;
+}
+
+.jefatura-dashboard .dashboard-card__title {
+  font-weight: 800;
+}
+
+.jefatura-dashboard .dashboard-card__badge {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-weight: 700;
+}
+
+/* Seleccion de curso/grupo: es la seccion principal, lleva acento azul. */
+.jefatura-dashboard .dashboard-card--highlight {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 22px -10px rgba(37, 99, 235, 0.35);
+}
+
+.jefatura-dashboard .dashboard-card--highlight .dashboard-card__header {
+  background: #e0ecff;
+  border-bottom-color: #93c5fd;
+}
+
+.jefatura-dashboard .jefatura-kpi {
+  border-color: #cbd5e1;
+  border-top: 4px solid #0f766e;
+  box-shadow: 0 4px 14px -8px rgba(15, 23, 42, 0.22);
+}
+
+.jefatura-dashboard .jefatura-kpi .kpi-metric-card__label {
+  color: #475569;
 }
 
 .jefatura-hero .dashboard-hero-badge {
@@ -33,10 +85,10 @@
 }
 
 .jefatura-course-summary__item {
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 12px;
-  background: #f8fafc;
+  background: #f1f5f9;
 }
 
 .jefatura-course-summary__item span,
@@ -67,12 +119,19 @@
   width: 100%;
   min-height: 42px;
   margin-top: 6px;
-  border: 1px solid rgba(15, 23, 42, 0.14);
+  border: 1.5px solid #cbd5e1;
   border-radius: 8px;
   background: #fff;
   color: #0f172a;
   font: inherit;
   padding: 0 12px;
+}
+
+.jefatura-field select:focus,
+.jefatura-field input:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 1px;
+  border-color: #2563eb;
 }
 
 .jefatura-clear-btn,
@@ -94,7 +153,7 @@
 
 .jefatura-grid-wrap {
   overflow-x: auto;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
 }
 
@@ -105,25 +164,30 @@
   background: #fff;
 }
 
-.jefatura-grid-table th {
-  background: #f1f5f9;
-  color: #334155;
+.jefatura-dashboard .jefatura-grid-table th {
+  background: #e2e8f0;
+  color: #1e293b;
   font-size: 0.78rem;
   letter-spacing: 0;
   text-transform: uppercase;
   text-align: left;
   padding: 12px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  border-bottom: 1.5px solid #cbd5e1;
 }
 
-.jefatura-grid-table td {
+.jefatura-dashboard .jefatura-grid-table td {
   padding: 12px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid #e2e8f0;
   color: #0f172a;
   vertical-align: top;
 }
 
-.jefatura-grid-table tr.has-absence td {
+.jefatura-dashboard .jefatura-grid-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.jefatura-dashboard .jefatura-grid-table tr.has-absence td,
+.jefatura-dashboard .jefatura-grid-table tbody tr.has-absence:nth-child(even) td {
   background: #fff7ed;
 }
 
@@ -153,11 +217,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  border: 1px solid #cbd5e1;
   border-left: 5px solid #94a3b8;
   border-radius: 8px;
   background: #fff;
   padding: 12px;
+  box-shadow: 0 2px 8px -5px rgba(15, 23, 42, 0.25);
 }
 
 .jefatura-room strong,
@@ -193,6 +258,7 @@
 .jefatura-room__status {
   border-radius: 999px;
   background: #f1f5f9;
+  border: 1px solid #cbd5e1;
   color: #0f172a !important;
   font-weight: 800;
   padding: 6px 10px;

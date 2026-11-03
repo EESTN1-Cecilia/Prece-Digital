@@ -10,6 +10,10 @@ function clone(value) {
   return { ...value };
 }
 
+function claveMateria(texto) {
+  return String(texto ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
+}
+
 const academicRepository = {
   init() {
     const store = getStore();
@@ -81,6 +85,31 @@ const academicRepository = {
     for (const item of lista) {
       getStore().academicSubjectsRef.set(item.id, { ...item });
     }
+  },
+
+  /* Busca una materia por nombre sin distinguir tildes ni mayusculas. */
+  findSubjectRefByName(nombre) {
+    this.init();
+    const buscada = claveMateria(nombre);
+    for (const item of getStore().academicSubjectsRef.values()) {
+      if (claveMateria(item.nombre) === buscada) return clone(item);
+    }
+    return null;
+  },
+
+  /* Materia por nombre; si no existe se crea. Asi la planilla y el boletin
+     nombran las materias del plan de estudios y el portal del alumno las ve
+     con el mismo nombre. */
+  ensureSubjectRef(nombre) {
+    this.init();
+    const existente = this.findSubjectRefByName(nombre);
+    if (existente) return existente;
+
+    const limpio = String(nombre ?? "").replace(/\s+/g, " ").trim();
+    const id = `mat-${claveMateria(limpio).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+    const nueva = { id, nombre: limpio.charAt(0).toUpperCase() + limpio.slice(1).toLowerCase() };
+    getStore().academicSubjectsRef.set(id, nueva);
+    return clone(nueva);
   },
 
   findSubjectRefById(id) {

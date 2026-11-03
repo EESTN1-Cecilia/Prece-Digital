@@ -1,3 +1,4 @@
+import { filtrarPorCurso } from "../preceptor-assignments/alcance.mjs";
 import inasistenciasRepository from "./inasistencias.repository.mjs";
 import {
   MOTIVOS,
@@ -421,7 +422,7 @@ export function listarInasistencias({ url, user }) {
   }
 
   const registros = ordenarRegistros(
-    inasistenciasRepository.list({ escuelaId: escuelaDel(user), ...filtros }),
+    filtrarPorCurso(user, inasistenciasRepository.list({ escuelaId: escuelaDel(user), ...filtros })),
     opciones.orden
   );
   const total = registros.length;
@@ -484,7 +485,7 @@ export function estadisticas({ url, user }) {
     throw errorDeValidacion(errores);
   }
 
-  const registros = inasistenciasRepository.list({ escuelaId: escuelaDel(user), ...filtros });
+  const registros = filtrarPorCurso(user, inasistenciasRepository.list({ escuelaId: escuelaDel(user), ...filtros }));
   const totales = calcularTotales(registros);
 
   return {

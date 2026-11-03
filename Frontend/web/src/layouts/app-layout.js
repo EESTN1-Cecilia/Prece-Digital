@@ -11,6 +11,7 @@ import React, { useEffect, useState } from "react";
 import { Sidebar } from "./sidebar.js";
 import { EncabezadoApp, Migas } from "./encabezado-app.js";
 import { ModalDocumentosGlobal } from "./site-layout.js";
+import { AvisosCalendario } from "../modules/calendario/avisos-calendario.js";
 
 const h = React.createElement;
 
@@ -48,6 +49,7 @@ export function AppLayout({ ruta, children }) {
         children
       )
     ),
-    h(ModalDocumentosGlobal)
+    h(ModalDocumentosGlobal),
+    h(AvisosCalendario, { ruta })
   );
 }

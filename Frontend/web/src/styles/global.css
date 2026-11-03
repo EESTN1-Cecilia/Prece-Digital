@@ -23,6 +23,7 @@
 @import "./director/director.css";
 @import "./secretaria/secretaria.css";
 @import "./preceptoria/preceptoria.css";
+@import "./calendario/calendario.css";
 
 /* ==========================================================================
    4. MÓDULO DE ALUMNOS & PERFILES
@@ -63,3 +64,8 @@
    ========================================================================== */
 @import "./notificaciones/notificaciones.css";
 @import "./not-found/not-found.css";
+
+/* ==========================================================================
+   9. PORTAL DEL ALUMNO
+   ========================================================================== */
+@import "./alumno-portal/portal.css";

@@ -13,7 +13,7 @@ export function StudentAttendanceSummary({ inasistencias, defaultExpanded = true
     total = 0,
     justificadas = 0,
     injustificadas = 0,
-    porcentajeAsistencia = 95,
+    porcentajeAsistencia = null,
     inasistenciasRelevantes = 0,
     periodo = "Ciclo Lectivo 2026",
     alertaInasistencias = false,
@@ -22,6 +22,21 @@ export function StudentAttendanceSummary({ inasistencias, defaultExpanded = true
 
   const esAlertaCritica = total >= 20;
   const esAlertaMedia = total >= umbralAlerta || alertaInasistencias;
+  const porcentajeNumerico = Number(porcentajeAsistencia);
+  const tienePorcentaje =
+    porcentajeAsistencia !== null &&
+    porcentajeAsistencia !== "" &&
+    Number.isFinite(porcentajeNumerico);
+  const porcentajeSeguro = tienePorcentaje
+    ? Math.min(100, Math.max(0, porcentajeNumerico))
+    : 0;
+  const estadoPorcentaje = !tienePorcentaje
+    ? "percentage--neutral"
+    : porcentajeSeguro < 75
+    ? "percentage--danger"
+    : porcentajeSeguro < 85
+    ? "percentage--warning"
+    : "percentage--success";
 
   return h(
     "div",
@@ -136,24 +151,28 @@ export function StudentAttendanceSummary({ inasistencias, defaultExpanded = true
                 h(
                   "div",
                   {
-                    className: `percentage-circle ${
-                      porcentajeAsistencia < 75
-                        ? "percentage--danger"
-                        : porcentajeAsistencia < 85
-                        ? "percentage--warning"
-                        : "percentage--success"
-                    }`
+                    className: `percentage-circle ${estadoPorcentaje}`
                   },
-                  h("span", { className: "percentage-number" }, `${porcentajeAsistencia}%`),
-                  h("span", { className: "percentage-sub" }, "Asistencia")
+                  h(
+                    "span",
+                    { className: "percentage-number" },
+                    tienePorcentaje ? `${porcentajeSeguro}%` : "—"
+                  ),
+                  h(
+                    "span",
+                    { className: "percentage-sub" },
+                    tienePorcentaje ? "Asistencia" : "Sin datos"
+                  )
                 )
               ),
               h(
                 "div",
                 { className: "percentage-progress-bar-wrap" },
                 h("div", {
-                  className: "percentage-progress-bar-fill",
-                  style: { width: `${Math.min(100, Math.max(0, porcentajeAsistencia))}%` }
+                  className: `percentage-progress-bar-fill ${
+                    tienePorcentaje ? "" : "percentage-progress-bar-fill--empty"
+                  }`,
+                  style: { width: `${porcentajeSeguro}%` }
                 })
               )
             ),

@@ -603,21 +603,8 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
     const filtrados = (personal || []).filter((p) =>
       p.roles?.some((r) => r.id === "preceptor")
     );
-    // Si no hay suficientes registrados con rol preceptor, agregamos catálogo institucional
-    const fallback = [
-      { id: "usr-preceptor-1", nombreCompleto: "Preceptor 1° A", email: "preceptor@prece.local" },
-      { id: "usr-preceptor-2", nombreCompleto: "Carlos Ramos", email: "cramos@prece.local" },
-      { id: "usr-preceptor-3", nombreCompleto: "Lucía Giménez", email: "lgimenez@prece.local" },
-      { id: "usr-preceptor-4", nombreCompleto: "Mariano Benítez", email: "mbenitez@prece.local" },
-      { id: "usr-preceptor-5", nombreCompleto: "Valeria Morales", email: "vmorales@prece.local" }
-    ];
-
+    // Solo preceptores reales (usuarios con rol preceptor del backend)
     const combinados = [...filtrados];
-    for (const f of fallback) {
-      if (!combinados.some((c) => sonMismoDocente(c, f))) {
-        combinados.push(f);
-      }
-    }
 
     if (division?.preceptor) {
       const match = combinados.find((c) => sonMismoDocente(c, division.preceptor));
@@ -649,7 +636,7 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
         setNombrePersonalizado(division.preceptor.nombre || "");
         setEmailPersonalizado(division.preceptor.email || "");
       } else {
-        pId = preceptoresDisponibles[0]?.id || "usr-preceptor-1";
+        pId = preceptoresDisponibles[0]?.id || "";
         setPreceptorSeleccionado(pId);
         setNombrePersonalizado("");
         setEmailPersonalizado("");
@@ -795,7 +782,9 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
           const encontrado = preceptoresDisponibles.find((p) => p.id === preceptorSeleccionado);
           datosPreceptor = encontrado
             ? { id: encontrado.id, nombreCompleto: encontrado.nombreCompleto, email: encontrado.email }
-            : { id: "usr-preceptor-1", nombreCompleto: "Preceptor Designado", email: "preceptor@prece.local" };
+            : null;
+          /* Solo se asignan preceptores registrados: el backend valida el id. */
+          if (!datosPreceptor) throw new Error("Elegí un preceptor registrado en el sistema.");
         }
 
         await alGuardar(idsSeleccionados, datosPreceptor, idsAQuitar);
@@ -2206,14 +2195,6 @@ export function calcularMetricasAsignaciones(personal = [], divisionesPreceptore
     .filter((p) => p.roles?.some((r) => r.id === "preceptor"))
     .forEach(agregarPreceptor);
 
-  const fallbackPrec = [
-    { id: "usr-preceptor-1", nombre: "Preceptor 1° A", email: "preceptor@prece.local" },
-    { id: "usr-preceptor-2", nombre: "Carlos Ramos", email: "cramos@prece.local" },
-    { id: "usr-preceptor-3", nombre: "Lucía Giménez", email: "lgimenez@prece.local" },
-    { id: "usr-preceptor-4", nombre: "Mariano Benítez", email: "mbenitez@prece.local" },
-    { id: "usr-preceptor-5", nombre: "Valeria Morales", email: "vmorales@prece.local" }
-  ];
-  fallbackPrec.forEach(agregarPreceptor);
   (divisionesPreceptores || []).forEach((d) => {
     if (d.preceptor) agregarPreceptor(d.preceptor);
   });
@@ -2484,16 +2465,6 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
     (personal || [])
       .filter((p) => p.roles?.some((r) => r.id === "preceptor"))
       .forEach(agregarSiNoExiste);
-
-    // 2. Fallback institucional
-    const fallback = [
-      { id: "usr-preceptor-1", nombre: "Preceptor 1° A", email: "preceptor@prece.local", avatar: "P" },
-      { id: "usr-preceptor-2", nombre: "Carlos Ramos", email: "cramos@prece.local", avatar: "C" },
-      { id: "usr-preceptor-3", nombre: "Lucía Giménez", email: "lgimenez@prece.local", avatar: "L" },
-      { id: "usr-preceptor-4", nombre: "Mariano Benítez", email: "mbenitez@prece.local", avatar: "M" },
-      { id: "usr-preceptor-5", nombre: "Valeria Morales", email: "vmorales@prece.local", avatar: "V" }
-    ];
-    fallback.forEach(agregarSiNoExiste);
 
     // 3. Cualquier preceptor asignado en divisiones
     divisionesPreceptores.forEach((d) => {

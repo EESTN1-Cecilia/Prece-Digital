@@ -1,5 +1,5 @@
 import React from "react";
-import DashboardView from "../modules/dashboard/dashboard-view.js";
+import PreceptorInicioView from "../modules/dashboard/preceptor-inicio-view.js";
 import DirectorDashboardView from "../modules/director/director-dashboard-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
@@ -21,5 +21,5 @@ export default function InicioView() {
   if (rol === "secretaria" || rol === "secretario") return h(SecretariaDashboardView);
   if (rol === "jefe_area") return h(JefaturaDashboardView);
   if (rol === "docente") return h(DocenteDashboardView);
-  return h(DashboardView);
+  return h(PreceptorInicioView);
 }

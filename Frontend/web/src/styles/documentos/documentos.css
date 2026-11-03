@@ -1021,3 +1021,22 @@
   }
 }
 
+
+/* Aviso de períodos de carga bloqueados por la Dirección */
+.doc-planilla-aviso-bloqueo {
+  margin: 0 16px 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.doc-planilla-cell-input:disabled,
+.doc-planilla-cell-select:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}

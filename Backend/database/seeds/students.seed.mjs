@@ -100,9 +100,10 @@ export function seedAlumnosLocales() {
   const alumnos = JSON.parse(readFileSync(NOMINA_LOCAL, "utf8"));
   let cargados = 0;
 
-  alumnos.forEach(({ apellido, nombre, curso, division, genero }, indice) => {
+  alumnos.forEach(({ apellido, nombre, curso, division, genero, dni: dniReal }, indice) => {
     const id = `alu-local-${indice + 1}`;
-    const dni = `99${String(indice + 1).padStart(6, "0")}`;
+    // Con `dni` en la nómina (ej. un alumno de prueba para entrar al portal) el DNI no es provisorio
+    const dni = dniReal ? String(dniReal) : `99${String(indice + 1).padStart(6, "0")}`;
     if (studentRepository.findById(id) || studentRepository.findByDni(dni)) {
       return;
     }
@@ -114,6 +115,7 @@ export function seedAlumnosLocales() {
       apellido,
       nombre,
       dni,
+      dniProvisorio: !dniReal,
       genero: genero ?? null,
       curso: Number(curso),
       division: String(division),

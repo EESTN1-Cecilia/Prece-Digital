@@ -76,7 +76,7 @@ test("con identity.read devuelve el catalogo de roles de Shared/src/domain.mjs",
   assert.equal(status, 200);
   assert.deepEqual(
     cuerpo.data.map((rol) => rol.id),
-    ["admin", "director", "secretario", "preceptor", "docente", "jefe_area", "server"]
+    ["admin", "director", "secretario", "preceptor", "docente", "jefe_area", "server", "alumno"]
   );
 });
 
@@ -160,4 +160,19 @@ test("el catalogo de permisos se expone con modulo y accion", async () => {
   assert.equal(status, 200);
   assert.ok(cuerpo.data.every((permiso) => permiso.id === `${permiso.modulo}.${permiso.accion}`));
   assert.ok(cuerpo.data.some((permiso) => permiso.id === "academic-records.read"));
+});
+
+test("el preceptor solo ve los cursos que le asigno la Direccion", async () => {
+  const divisiones = await pedir("/api/v1/students/divisions", { quien: "preceptor" });
+  assert.equal(divisiones.status, 200);
+  assert.deepEqual(divisiones.cuerpo.data.map((division) => division.id), ["1-1"]);
+
+  const misCursos = await pedir("/api/v1/preceptores/mis-cursos", { quien: "preceptor" });
+  assert.deepEqual(misCursos.cuerpo.data.map((curso) => curso.id), ["1-1"]);
+
+  const alumnos = await pedir("/api/v1/students?porPagina=100", { quien: "preceptor" });
+  assert.ok(alumnos.cuerpo.data.every((alumno) => alumno.curso === "1°" && String(alumno.division) === "1"));
+
+  const ajeno = await pedir("/api/v1/students?curso=2&division=1", { quien: "preceptor" });
+  assert.equal(ajeno.status, 403);
 });
