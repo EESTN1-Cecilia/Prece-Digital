@@ -44,6 +44,14 @@ test("el docente ve a sus alumnos y no a los de otros cursos", async () => {
   }
 });
 
+test("el anio lectivo de una respuesta no se confunde con el curso", async () => {
+  const propios = await pedir(`/api/v1/boletin-oficial/resumen?anio=2026&curso=${propio.curso}&division=${propio.division}`);
+  assert.equal(propios.status, 200);
+
+  const ajenos = await pedir(`/api/v1/boletin-oficial/resumen?anio=2026&curso=${ajeno.curso}&division=${ajeno.division}`);
+  assert.equal(ajenos.status, 403);
+});
+
 test("un listado no incluye alumnos ajenos", async () => {
   const texto = await (await pedir("/api/v1/students?limit=1000")).text();
   assert.ok(!texto.includes(`"id": "${ajeno.id}"`));

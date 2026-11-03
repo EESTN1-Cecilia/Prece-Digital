@@ -127,9 +127,10 @@ function veredicto(alcance, registro) {
     }
   }
 
-  const curso = numeroDe(registro.anio ?? registro.curso ?? registro.anioCurso);
+  const curso = numeroDe(registro.curso ?? registro.anioCurso ?? registro.anio);
   const division = divisionDe(registro.division ?? registro.numDivision);
-  if (curso != null && division != null) return alcance.has(claveCurso(curso, division));
+  /* anio tambien puede ser el ciclo lectivo (2026): eso no identifica un curso. */
+  if (curso != null && curso < 100 && division != null) return alcance.has(claveCurso(curso, division));
 
   return null;
 }

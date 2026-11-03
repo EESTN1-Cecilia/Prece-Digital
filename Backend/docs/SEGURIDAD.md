@@ -70,3 +70,4 @@ Revisado sin hallazgos: un preceptor recibe 403 en las 44 rutas con id de un alu
 - **Rate limit:** es por proceso, no compartido entre instancias.
 - **Público sin token:** `/health`, `/api/v1/modules` y `/api/v1/roles`. Falta decidir si los dos catálogos deben seguir abiertos.
 - **Contraseñas de desarrollo:** siguen en `database/seeds/auth.seed.mjs` y `scripts/auth-smoke.mjs`. No usarlas fuera de desarrollo.
+- **Asignación de docentes desde el panel de Dirección:** se guarda en `localStorage` del navegador (`prece_asignaciones_profesores`) y no llega a la API. Un docente asignado solo por esa vía no tiene cursos en el backend y no ve alumnos. Hay que conectarla a la API antes de usar esa pantalla en producción.
