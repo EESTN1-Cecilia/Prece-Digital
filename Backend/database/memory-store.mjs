@@ -8,7 +8,8 @@ const store = {
   errorLogs: new Map(),
   rolePermissions: new Map(),
   devices: new Map(),
-  tallerDocentes: new Map()
+  tallerDocentes: new Map(),
+  catedras: []
 };
 
 export function getStore() {

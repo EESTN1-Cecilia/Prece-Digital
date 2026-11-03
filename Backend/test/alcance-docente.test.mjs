@@ -3,10 +3,10 @@
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
-import { resetStore } from "../database/memory-store.mjs";
+import { getStore, resetStore } from "../database/memory-store.mjs";
 import { userRepository } from "../database/repositories/user.repository.mjs";
 import { signAccessToken } from "../modules/auth/token.service.mjs";
-import { alcanceDe, claveCurso } from "../modules/preceptor-assignments/alcance.mjs";
+import { alcanceDe, claveCurso, recortarRespuesta } from "../modules/preceptor-assignments/alcance.mjs";
 import studentRepository from "../modules/students/students.repository.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { createApp } from "../src/app.mjs";
@@ -55,6 +55,24 @@ test("el anio lectivo de una respuesta no se confunde con el curso", async () =>
 test("un listado no incluye alumnos ajenos", async () => {
   const texto = await (await pedir("/api/v1/students?limit=1000")).text();
   assert.ok(!texto.includes(`"id": "${ajeno.id}"`));
+});
+
+test("un docente de taller alcanza el curso de su grupo", () => {
+  const id = "usr-taller";
+  getStore().tallerDocentes.set("x", { anio: 5, division: "3", docente: { id } });
+  assert.ok(alcanceDe({ id, assignments: [{ role: "docente" }] }).has("5-3"));
+  getStore().tallerDocentes.delete("x");
+});
+
+test("una respuesta de otra escuela se rechaza o se filtra", () => {
+  const usuario = { id: "x", assignments: [{ role: "director", schoolId: "esc-1" }] };
+  assert.throws(() => recortarRespuesta(usuario, { data: { id: 1, escuelaId: "esc-2" } }), { code: "OUT_OF_SCOPE" });
+
+  const lista = recortarRespuesta(usuario, { data: [{ id: 1, escuelaId: "esc-1" }, { id: 2, schoolId: "esc-2" }] });
+  assert.deepEqual(lista.data.map((r) => r.id), [1]);
+
+  const global = { id: "y", assignments: [{ role: "admin" }] };
+  assert.equal(recortarRespuesta(global, { data: { escuelaId: "esc-2" } }).data.escuelaId, "esc-2");
 });
 
 test("un docente sin cursos no ve a nadie y otro rol institucional no se acota", () => {

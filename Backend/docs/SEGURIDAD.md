@@ -58,14 +58,26 @@ Corregido en esta revisión:
 
 Revisado sin hallazgos: un preceptor recibe 403 en las 44 rutas con id de un alumno que no tiene asignado; `003_usuario_aplicacion.sql` no usa roles administrativos; `npm audit` de producción sin vulnerabilidades; sin `.env`, claves ni certificados en el historial de Git; sin SQL armado por interpolación en la búsqueda sobre `modules/` y `database/`.
 
+## Acceso a datos personales por rol
+
+Lectura según `config/permissions.config.mjs`. Admin y director leen todo; el portal del alumno solo lee lo propio.
+
+| Rol | Alumnos y tutores | Observaciones y condiciones | Asistencia | Notas | Alcance |
+| --- | --- | --- | --- | --- | --- |
+| Secretaría | Sí | Sí | Según permisos | Según permisos | Toda su escuela |
+| Jefatura de área | Sí | Sí | Según permisos | Según permisos | Toda su escuela |
+| Preceptor | Sí | Sí | Sí | Según permisos | Cursos asignados |
+| Docente | Sí | Sí | Sí | Sí | Cursos asignados, cátedras y talleres |
+
+Una respuesta con `escuelaId` o `schoolId` de otra escuela responde 403 o se filtra del listado (`recortarRespuesta`). Las consultas SQL del portal son parametrizadas.
+
 ## Pendiente
 
 - **Campos inesperados:** el rechazo central cubre campos del servidor y claves de prototipo (`utils/read-body.mjs`). Otros campos desconocidos se ignoran en cada módulo, no se rechazan.
 - **Acceso de docentes:** queda acotado a los cursos de su rol, de las cátedras que asigna Dirección (`/api/v1/docentes/catedras`) y de sus asignaciones activas, sin distinguir materia ni año lectivo: una asignación activa de un ciclo anterior sigue dando acceso.
-- **Alcance por escuela:** `authorize` solo compara la escuela si el pedido la nombra. Con un id directo no se compara, y un director de otra escuela podría leer el recurso. Hay que cerrarlo antes de operar con más de una escuela.
 - **Base de datos:** `014_restricciones_integridad.sql` no se ejecutó contra un MySQL real. `DB_ENCRYPT` es `false` por defecto y en producción solo genera un aviso.
-- **Datos personales:** falta la matriz de campos por rol y endpoint.
-- **Conservación de auditoría:** falta definir el plazo.
+- **Datos personales:** falta recortar campos por rol dentro de cada respuesta: un rol con lectura recibe el registro completo.
+- **Conservación de auditoría:** la API no permite borrar registros. Plazo propuesto: 5 años, a confirmar por la escuela.
 - **Persistencia:** la mayoría de los módulos usa el store en memoria, sin transacciones reales ni datos tras reiniciar.
 - **Rate limit:** es por proceso, no compartido entre instancias.
 - **Público sin token:** `/health`, `/api/v1/modules` y `/api/v1/roles`. Falta decidir si los dos catálogos deben seguir abiertos.

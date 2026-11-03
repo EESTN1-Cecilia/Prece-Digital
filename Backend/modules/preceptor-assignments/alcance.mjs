@@ -7,6 +7,7 @@
    un rol con alcance institucional (director, secretario, ...), manda ese. */
 
 import { ROLES } from "../../config/permissions.config.mjs";
+import { getStore } from "../../database/memory-store.mjs";
 import studentRepository from "../students/students.repository.mjs";
 import academicRepository from "../academic/academic.repository.mjs";
 import { DIVISIONES_CATALOGO } from "../students/catalogo.mjs";
@@ -31,6 +32,13 @@ export function clavesDelDocente(user) {
   for (const asignacion of user?.assignments ?? []) {
     if (asignacion.role === ROLES.DOCENTE && asignacion.anio != null && asignacion.division != null) {
       claves.add(claveCurso(asignacion.anio, asignacion.division));
+    }
+  }
+
+  /* Grupos de taller que la Direccion le asigno. */
+  for (const taller of getStore().tallerDocentes.values()) {
+    if (taller.docente?.id === user?.id) {
+      claves.add(claveCurso(taller.anio, taller.division));
     }
   }
 
@@ -159,12 +167,37 @@ function recortar(alcance, valor, profundidad) {
   return salida;
 }
 
+/* Escuelas del usuario; null si alguna asignacion no esta atada a una escuela. */
+function escuelasDe(user) {
+  const asignaciones = user?.assignments ?? [];
+  if (asignaciones.length === 0 || asignaciones.some((asignacion) => !asignacion.schoolId)) return null;
+  return new Set(asignaciones.map((asignacion) => String(asignacion.schoolId)));
+}
+
+function deOtraEscuela(escuelas, registro) {
+  const escuela = registro && typeof registro === "object" ? registro.escuelaId ?? registro.schoolId : null;
+  return escuela != null && !escuelas.has(String(escuela));
+}
+
 export function recortarRespuesta(user, payload) {
-  const alcance = alcanceDe(user);
-  if (!alcance || payload == null || typeof payload !== "object") return payload;
+  if (payload == null || typeof payload !== "object") return payload;
 
   const cuerpo = Object.hasOwn(payload, "statusCode") && Object.hasOwn(payload, "body") ? payload.body : payload;
   const dato = cuerpo && typeof cuerpo === "object" && !Array.isArray(cuerpo) && cuerpo.data && !Array.isArray(cuerpo.data) ? cuerpo.data : null;
+
+  /* Un id directo no nombra la escuela en el pedido: authorize no puede compararla. */
+  const escuelas = escuelasDe(user);
+  if (escuelas) {
+    if (deOtraEscuela(escuelas, dato)) {
+      throw errorHttp(403, "OUT_OF_SCOPE", "Ese registro no pertenece a tu escuela.");
+    }
+    if (Array.isArray(cuerpo?.data)) {
+      cuerpo.data = cuerpo.data.filter((registro) => !deOtraEscuela(escuelas, registro));
+    }
+  }
+
+  const alcance = alcanceDe(user);
+  if (!alcance) return payload;
 
   /* Un registro suelto de otro curso (GET por id) es un 403, no una lista vacia. */
   if (dato && veredicto(alcance, dato) === false) {
