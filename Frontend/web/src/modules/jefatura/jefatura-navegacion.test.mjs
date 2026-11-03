@@ -103,9 +103,9 @@ test("no gestiona usuarios, roles ni permisos", () => {
 test("el menu solo ofrece las secciones que puede abrir", () => {
   assert.deepEqual(
     rutasVisibles(RUTAS, jefe).map((ruta) => ruta.titulo),
-    ["Inicio", "Grilla de jefatura", "Observaciones", "Calendario", "Alumnos"]
+    ["Inicio", "Panel de jefatura", "Observaciones", "Calendario", "Alumnos"]
   );
-  assert.ok(visibleEnMenu("Grilla de jefatura"));
+  assert.ok(visibleEnMenu("Panel de jefatura"));
   assert.ok(!visibleEnMenu("Tablero de Dirección"));
   assert.ok(!visibleEnMenu("Usuarios"));
   assert.ok(!visibleEnMenu("Inventario"));

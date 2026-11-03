@@ -14,6 +14,21 @@ No tiene datos propios: lee de los módulos que ya son la fuente oficial (studen
 - Ninguna ruta recibe un id de alumno: el legajo sale siempre de la cuenta del token (`alumnoAutenticado`). Si el legajo se da de baja, la cuenta deja de ver información.
 - Los DNI generados por la carga masiva cuando la planilla no los trae quedan marcados como provisorios (`dniProvisorio`) y no sirven como credencial hasta que secretaría cargue el documento real.
 
+## Alumno de prueba (desarrollo)
+
+Al arrancar la API fuera de producción (`src/server.mjs`) se agrega un alumno con DNI real para probar el portal. La nómina cargada desde `alumnos.local.json` trae DNI provisorios (99xxxxxx) que no sirven como credencial, y los alumnos de demostración (`alu-1`, `alu-2`...) quedan dados de baja al cargarla.
+
+| Dato | Valor |
+| --- | --- |
+| Usuario | `alumno.demo@alumno.prece.local` (también `40000001`) |
+| Contraseña | `40000001` |
+| Legajo | `alu-demo`, 1° año División 1, regular |
+
+- La cuenta se crea en el primer ingreso, como las demás. Sin notas ni asistencias cargadas, así que el boletín sale vacío.
+- Suma un alumno al curso 1°1 (la nómina real queda en 864 con él). Se desactiva arrancando la API con `ALUMNO_DEMO=false`.
+- Si el login responde "Demasiados intentos de inicio de sesion", es el límite de intentos fallidos: se libera al reiniciar la API.
+- No existe en producción: ahí el servidor solo carga los usuarios de `auth.seed.mjs`.
+
 ## Endpoints
 
 | Operación | Método y ruta | Permiso |

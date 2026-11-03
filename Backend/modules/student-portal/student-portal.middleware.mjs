@@ -1,3 +1,4 @@
+import { requiereCambioInicial } from "./politica-clave.mjs";
 /* Guardias del portal del alumno. Van despues de verifyToken y authorize:
 
      middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada]
@@ -32,7 +33,7 @@ export async function alumnoAutenticado(ctx) {
 }
 
 export async function cuentaConfigurada(ctx) {
-  if (ctx.user?.mustChangePassword) {
+  if (requiereCambioInicial(ctx.user)) {
     throw errorHttp(403, "PASSWORD_CHANGE_REQUIRED", "Antes de ver tu información tenés que cambiar la contraseña inicial.");
   }
 }
