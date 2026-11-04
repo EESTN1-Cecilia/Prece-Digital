@@ -54,6 +54,7 @@ import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs
 import * as studentPortalController from "../modules/student-portal/student-portal.controller.mjs";
 import { alumnoAutenticado, cuentaConfigurada } from "../modules/student-portal/student-portal.middleware.mjs";
 import { catedrasService } from "../modules/teachers/catedras.service.mjs";
+import suplenciasService from "../modules/preceptor-assignments/suplencias.service.mjs";
 import * as preceptorAssignmentsController from "../modules/preceptor-assignments/preceptor-assignments.controller.mjs";
 import { alcancePreceptor, alcancePreceptorRegistro } from "../middlewares/alcance-preceptor.middleware.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
@@ -106,6 +107,11 @@ const rutasDeclaradas = [
   /* Catedras asignadas a docentes por la Direccion. */
   { method: "GET", path: "/api/v1/docentes/catedras", middlewares: [verifyToken, required(P.USERS_READ)], handler: () => ({ data: catedrasService.listar() }) },
   { method: "PUT", path: "/api/v1/docentes/catedras", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: ({ body }) => ({ data: catedrasService.reemplazar(body) }) },
+
+  /* Suplencias de preceptores. */
+  { method: "GET", path: "/api/v1/preceptores/suplencias", middlewares: [verifyToken, required(P.USERS_READ)], handler: ({ url }) => ({ data: suplenciasService.listar(Object.fromEntries(url.searchParams.entries())) }) },
+  { method: "POST", path: "/api/v1/preceptores/suplencias", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: ({ body, user }) => ({ statusCode: 201, body: { data: suplenciasService.crear(body, user) } }) },
+  { method: "POST", path: "/api/v1/preceptores/suplencias/:suplenciaId/finalizar", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: ({ params, user }) => ({ data: suplenciasService.finalizar(params.suplenciaId, user) }) },
 
   /* Cursos asignados a preceptores por la Direccion. */
   { method: "GET", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.USERS_READ)], handler: preceptorAssignmentsController.listar },

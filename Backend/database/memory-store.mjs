@@ -9,7 +9,8 @@ const store = {
   rolePermissions: new Map(),
   devices: new Map(),
   tallerDocentes: new Map(),
-  catedras: []
+  catedras: [],
+  suplencias: []
 };
 
 export function getStore() {

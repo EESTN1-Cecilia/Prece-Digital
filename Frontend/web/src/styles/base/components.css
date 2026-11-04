@@ -2173,6 +2173,11 @@ input[type="date"].form-input:focus {
   background: #ffffff;
 }
 
+/* La lista del CustomSelect se despliega fuera del control. */
+.ui-campo__control--select {
+  overflow: visible;
+}
+
 .ui-campo__control input,
 .ui-campo__control select,
 .ui-campo__control textarea {

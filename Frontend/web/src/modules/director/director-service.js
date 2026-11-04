@@ -546,6 +546,22 @@ export const DirectorService = {
     });
   },
 
+  async listarSuplencias() {
+    return pedir("/api/v1/preceptores/suplencias");
+  },
+
+  async crearSuplencia(datos) {
+    return pedir("/api/v1/preceptores/suplencias", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(datos)
+    });
+  },
+
+  async finalizarSuplencia(id) {
+    return pedir(`/api/v1/preceptores/suplencias/${encodeURIComponent(id)}/finalizar`, { method: "POST" });
+  },
+
   /**
    * Obtiene el listado de materias y cátedras con sus profesores asignados.
    */

@@ -8,6 +8,8 @@
 
 import { ROLES } from "../../config/permissions.config.mjs";
 import { getStore } from "../../database/memory-store.mjs";
+import { userRepository } from "../../database/repositories/user.repository.mjs";
+import { hoyEnBuenosAires } from "../calendario/calendario.fechas.mjs";
 import studentRepository from "../students/students.repository.mjs";
 import academicRepository from "../academic/academic.repository.mjs";
 import { DIVISIONES_CATALOGO } from "../students/catalogo.mjs";
@@ -22,6 +24,24 @@ export function cursosDelPreceptor(user) {
   return (user?.assignments ?? [])
     .filter((asignacion) => asignacion.role === ROLES.PRECEPTOR)
     .flatMap((asignacion) => (Array.isArray(asignacion.cursos) ? asignacion.cursos : []));
+}
+
+/* Cursos que cubre hoy por suplencias. Si el titular dejo un curso, deja de cubrirlo. */
+export function clavesDeSuplencia(user) {
+  const hoy = hoyEnBuenosAires();
+  const claves = new Set();
+
+  for (const suplencia of getStore().suplencias) {
+    if (suplencia.suplenteId !== user?.id || suplencia.finalizadaEn || hoy < suplencia.desde || hoy > suplencia.hasta) {
+      continue;
+    }
+
+    const titular = userRepository.findById(suplencia.titularId, { includeInactive: true });
+    const delTitular = new Set(cursosDelPreceptor(titular).map((curso) => claveCurso(curso.curso, curso.division)));
+    suplencia.divisiones.filter((id) => delTitular.has(id)).forEach((id) => claves.add(id));
+  }
+
+  return claves;
 }
 
 /* Cursos de un docente: los de su rol y los de sus asignaciones activas del modulo
@@ -84,6 +104,7 @@ export function alcanceDe(user) {
 
   return new Set([
     ...cursosDelPreceptor(user).map((item) => claveCurso(item.curso, item.division)),
+    ...(roles.has(ROLES.PRECEPTOR) ? clavesDeSuplencia(user) : []),
     ...(roles.has(ROLES.DOCENTE) ? clavesDelDocente(user) : [])
   ]);
 }

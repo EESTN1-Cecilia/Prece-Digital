@@ -4,6 +4,7 @@ import { h } from "../../../layouts/site-layout.js";
 import { DirectorService } from "../director-service.js";
 import { CustomSelect } from "../../../components/common/custom-select.js";
 import AsignacionesTalleres from "./asignaciones-talleres.js";
+import AsignacionesSuplencias from "./asignaciones-suplencias.js";
 
 // Íconos auxiliares SVG
 function IconCheckShield({ className = "w-5 h-5", width = "20", height = "20" }) {
@@ -2285,6 +2286,7 @@ export function calcularMetricasAsignaciones(personal = [], divisionesPreceptore
 export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaInicial = "preceptores" }) {
   // Subpestaña interna: 'preceptores' | 'profesores'
   const [subPestana, setSubPestana] = useState(subpestanaInicial || "preceptores");
+  const [suplenciasVigentes, setSuplenciasVigentes] = useState(0);
 
   useEffect(() => {
     if (subpestanaInicial) {
@@ -2719,7 +2721,8 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
       [
         { id: "preceptores", label: "Preceptores", icon: IconUsers, count: preceptoresAsignadosCount },
         { id: "profesores", label: "Docentes", icon: IconGraduationCap, count: profesoresAsignadosCount },
-        { id: "talleres", label: "Grupos de taller", icon: IconUsers, count: talleresAsignados }
+        { id: "talleres", label: "Grupos de taller", icon: IconUsers, count: talleresAsignados },
+        { id: "suplencias", label: "Suplencias", icon: IconUsers, count: suplenciasVigentes }
       ].map((tab) =>
         h(
           "button",
@@ -3803,6 +3806,14 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
             h("div", { className: "asignaciones-card-title-wrap" }, h("h2", { className: "asignaciones-card-title" }, "Asignación de Grupos de Taller a Profes"))
           ),
           h(AsignacionesTalleres, { personal, onMostrarToast, onContar: setTalleresAsignados })
+        )
+      : null,
+
+    subPestana === "suplencias"
+      ? h(
+          "div",
+          { className: "asignaciones-card" },
+          h(AsignacionesSuplencias, { personal, divisiones: divisionesPreceptores, onMostrarToast, onContar: setSuplenciasVigentes })
         )
       : null,
 
