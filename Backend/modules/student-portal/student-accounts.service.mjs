@@ -1,3 +1,4 @@
+import { requiereCambioInicial } from "./politica-clave.mjs";
 /* Cuentas de alumno: primer ingreso con DNI, configuracion obligatoria de
    credenciales y "Mi Cuenta".
 
@@ -66,7 +67,7 @@ function sesionDeAlumno(usuario, accessToken, refreshToken) {
     roles,
     permisos: permissionsForRole(ROLES.ALUMNO),
     alcances: ["schoolId", "studentId"],
-    debeCambiarPassword: Boolean(usuario.mustChangePassword)
+    debeCambiarPassword: requiereCambioInicial(usuario)
   };
 }
 
@@ -76,7 +77,7 @@ function cuentaPublica(usuario, alumno) {
     dni: alumno?.dni ?? null,
     nombre: alumno?.nombre ?? usuario.nombre ?? null,
     apellido: alumno?.apellido ?? usuario.apellido ?? null,
-    debeCambiarPassword: Boolean(usuario.mustChangePassword),
+    debeCambiarPassword: requiereCambioInicial(usuario),
     configurada: !usuario.mustChangePassword,
     passwordActualizadaEn: usuario.passwordChangedAt ?? null,
     ultimoIngreso: usuario.lastLoginAt ?? null,

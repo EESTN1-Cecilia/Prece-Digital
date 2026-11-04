@@ -5,6 +5,9 @@
    no contra datos de ejemplo propios: los valores esperados se obtienen de los
    repositorios oficiales de cada modulo. */
 
+/* En desarrollo el cambio de clave inicial es opcional (politica-clave.mjs); aca se exige como en produccion. */
+process.env.ALUMNO_CAMBIO_CLAVE_OBLIGATORIO = "true";
+
 import assert from "node:assert/strict";
 import test, { after, before, beforeEach } from "node:test";
 import { createApp } from "../src/app.mjs";

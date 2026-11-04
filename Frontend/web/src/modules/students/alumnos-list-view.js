@@ -178,7 +178,7 @@ export default function AlumnosListView() {
 
   return h(
     "section",
-    { className: "welcome-panel alumnos-panel" },
+    { className: "welcome-panel alumnos-panel alumnos-list-panel" },
 
     // Barra superior con botones institucionales y retorno
     h(
@@ -540,6 +540,7 @@ export default function AlumnosListView() {
                       renderSortIndicator("curso")
                     ),
                     h("th", null, "Turno"),
+                    h("th", null, "Taller"),
                     h("th", null, "Condición"),
                     h(
                       "th",
@@ -574,6 +575,7 @@ export default function AlumnosListView() {
                         h("span", { className: "curso-badge" }, `${alumno.curso} ${alumno.division}`)
                       ),
                       h("td", null, alumno.turno || "-"),
+                      h("td", null, alumno.grupoTaller ? h("span", { className: "curso-badge" }, `Grupo ${alumno.grupoTaller}`) : "-"),
                       h(
                         "td",
                         null,
@@ -682,6 +684,12 @@ export default function AlumnosListView() {
                       { className: "student-mini-card__info-row" },
                       h("span", { className: "info-label" }, "Turno:"),
                       h("span", null, alumno.turno || "-")
+                    ),
+                    h(
+                      "div",
+                      { className: "student-mini-card__info-row" },
+                      h("span", { className: "info-label" }, "Taller:"),
+                      h("span", null, alumno.grupoTaller ? `Grupo ${alumno.grupoTaller}` : "-")
                     )
                   ),
                   h(

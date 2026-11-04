@@ -3,10 +3,12 @@ import { apiRoutes } from "../routes/index.mjs";
 import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
 import { seedAlumnosLocales } from "../database/seeds/students.seed.mjs";
+import studentRepository from "../modules/students/students.repository.mjs";
 import calendarioService from "../modules/calendario/calendario.service.mjs";
 import { seedAcademiaLocal } from "../database/seeds/alumnos-locales-academia.seed.mjs";
 import { seedDatosAlumnos } from "../database/seeds/alumnos-datos.seed.mjs";
 import { createApp } from "./app.mjs";
+import { buscarDivision } from "../modules/students/catalogo.mjs";
 import repositorioPortalAlumno from "../modules/student-portal/repositorio.mjs";
 
 const port = appConfig.apiPort;
@@ -21,6 +23,36 @@ async function startServer() {
     const locales = seedAlumnosLocales();
     if (locales > 0) {
       console.log(`Nomina local: ${locales} alumnos cargados desde alumnos.local.json`);
+      /* Con la nomina real cargada, los alumnos ficticios de desarrollo (alu-1, alu-2...)
+         quedan dados de baja: asi los listados, cursos y tableros muestran solo la nomina
+         de la escuela. Es baja logica: los datos que los referencian se conservan. */
+      const ficticios = studentRepository.all().filter((alumno) => /^alu-\d+$/.test(alumno.id) && alumno.isActive !== false);
+      ficticios.forEach((alumno) => studentRepository.deactivate(alumno.id));
+      if (ficticios.length > 0) console.log(`Nomina local: ${ficticios.length} alumnos de demostracion dados de baja`);
+    }
+    /* Cuenta de prueba para entrar al portal del alumno (#/login). La nomina real trae DNI
+       provisorios, que no sirven como credencial, asi que se agrega un alumno con DNI propio.
+       Ingreso: usuario alumno.demo@alumno.prece.local (o 40000001) y contraseña 40000001.
+       Se desactiva con ALUMNO_DEMO=false. */
+    if (process.env.ALUMNO_DEMO !== "false" && !studentRepository.findByDni("40000001")) {
+      const { turno, orientacion } = buscarDivision(1, "1") ?? {};
+      studentRepository.create({
+        id: "alu-demo",
+        escuelaId: "esc-1",
+        apellido: "Demo",
+        nombre: "Alumno",
+        dni: "40000001",
+        grupoTaller: "1.3",
+        genero: "masculino",
+        curso: 1,
+        division: "1",
+        turno,
+        orientacion,
+        condicion: "regular",
+        fechaNacimiento: "2013-01-01",
+        fechaAlta: `${new Date().getFullYear()}-03-01`
+      });
+      console.log("Alumno de prueba: alumno.demo@alumno.prece.local / 40000001");
     }
     const { notas, ausencias, previas } = seedAcademiaLocal();
     if (notas > 0) {

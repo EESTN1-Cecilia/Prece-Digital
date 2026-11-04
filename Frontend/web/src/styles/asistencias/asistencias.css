@@ -1255,3 +1255,14 @@ body.asistencias-imprimiendo .firma-subtext {
   }
 }
 
+
+@media screen {
+  .page:has(> .asistencias-page) {
+    /* La onda sobresale 43 px del encabezado. */
+    padding-top: 78px;
+  }
+
+  .page > .asistencias-page {
+    margin-top: 0;
+  }
+}

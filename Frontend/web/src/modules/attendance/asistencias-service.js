@@ -96,7 +96,7 @@ export const AsistenciasService = {
    * Obtiene la planilla de asistencias para el curso, mes y año cargando los alumnos reales del padrón.
    * Si se especifica materia (rol docente), almacena y recupera el registro específico de dicha asignatura.
    */
-  async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null) {
+  async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null, soloAlumnosIds = null) {
     const rawMateria = materia ? String(materia).trim().toLowerCase().replace(/\s+/g, "_") : "";
     const normMateria = materia
       ? String(materia).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, "_")
@@ -135,7 +135,10 @@ export const AsistenciasService = {
           return (a.nombre || "").localeCompare(b.nombre || "");
         });
 
-        alumnos = ordenados.map((a, idx) => ({
+        /* Lista de un grupo de taller: solo los alumnos de ese grupo, numerados de nuevo */
+        const delGrupo = Array.isArray(soloAlumnosIds) ? ordenados.filter((a) => soloAlumnosIds.includes(a.id)) : ordenados;
+
+        alumnos = delGrupo.map((a, idx) => ({
           id: a.id,
           orden: idx + 1,
           genero: (a.genero || "").toLowerCase().startsWith("f") ? "F" : "M",

@@ -74,7 +74,9 @@ export function PlanillaCalificacionesModal({
   estudiantesIniciales = null,
   asignacionesDocente = null,
   esDocente = false,
-  profesorNombre = null
+  profesorNombre = null,
+  soloAlumnosIds = null,
+  tituloMateria = null
 }) {
   const user = useUsuarioActual();
 
@@ -193,7 +195,11 @@ export function PlanillaCalificacionesModal({
 
   const cursoStr = asignacionActual.curso || `${anioNum}°`;
   const divisionStr = String(asignacionActual.division || "1").replace(/\D/g, "") || "1";
-  const materiaStr = asignacionActual.materia || materiaInicial || "Matemática";
+  const materiaStr = tituloMateria
+    ? materiaInicial || asignacionActual.materia || "Matemática"
+    : asignacionActual.materia || materiaInicial || "Matemática";
+  // Texto que se muestra y se exporta (p. ej. "Taller · Grupo 1.1"); las notas se guardan con materiaStr
+  const materiaMostrada = tituloMateria || materiaStr;
 
   // Estados de datos
   const [estudiantes, setEstudiantes] = useState([]);
@@ -328,6 +334,9 @@ export function PlanillaCalificacionesModal({
         rawList = (estudiantesIniciales || []).filter(coincide);
       }
 
+      // Planilla de un grupo de taller: solo los alumnos de ese grupo
+      if (soloAlumnosIds) rawList = rawList.filter((alu) => soloAlumnosIds.includes(alu.id));
+
       // Si alumnoInicial pertenece a este curso y división y no está en la lista, incluirlo
       if (alumnoInicial) {
         const cInit = Number(String(alumnoInicial.curso || "").replace(/\D/g, ""));
@@ -382,6 +391,7 @@ export function PlanillaCalificacionesModal({
     divisionStr,
     estudiantesIniciales,
     alumnoInicial,
+    soloAlumnosIds,
     notasDeRegistro,
     cicloLectivo
   ]);
@@ -551,7 +561,7 @@ export function PlanillaCalificacionesModal({
     try {
       await descargar({
         anioLectivo: fecha.anio,
-        materia: materiaStr,
+        materia: materiaMostrada,
         curso: cursoStr,
         division: divisionStr,
         turno: turnoStr,
@@ -624,7 +634,7 @@ export function PlanillaCalificacionesModal({
                   label: `${asig.curso || `${asig.anio}°`} ${asig.division}° · ${asig.materia || "Materia"}`
                 }))
               })
-            : h("span", { className: "matriz-toolbar__badge" }, `Curso: ${cursoStr} ${divisionStr}° · ${materiaStr}`)
+            : h("span", { className: "matriz-toolbar__badge" }, `Curso: ${cursoStr} ${divisionStr}° · ${materiaMostrada}`)
         ),
 
         h(
@@ -764,7 +774,7 @@ export function PlanillaCalificacionesModal({
             h(
               "div",
               { className: "doc-planilla-meta-grid" },
-              h("div", null, h("strong", null, "MATERIA: "), h("span", { className: "doc-field-underlined font-bold" }, materiaStr)),
+              h("div", null, h("strong", null, "MATERIA: "), h("span", { className: "doc-field-underlined font-bold" }, materiaMostrada)),
               h("div", null, h("strong", null, "AÑO: "), h("span", { className: "doc-field-underlined" }, cursoStr)),
               h("div", null, h("strong", null, "SECCIÓN / DIV: "), h("span", { className: "doc-field-underlined" }, `${divisionStr}°`)),
               h("div", null, h("strong", null, "TURNO: "), h("span", { className: "doc-field-underlined" }, turnoStr)),

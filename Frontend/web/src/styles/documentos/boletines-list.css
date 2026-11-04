@@ -484,3 +484,14 @@
     align-items: stretch;
   }
 }
+
+@media screen {
+  .page:has(> .boletines-panel) {
+    /* La onda sobresale 43 px del encabezado. */
+    padding-top: 78px;
+  }
+
+  .page > .boletines-panel {
+    margin-top: 0;
+  }
+}
