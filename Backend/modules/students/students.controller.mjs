@@ -52,8 +52,12 @@ export function modificarAlumno({ params, body, user }) {
   return studentService.update(params.studentId, body, user);
 }
 
-export function desactivarAlumno({ params, user }) {
-  return studentService.deactivate(params.studentId, user);
+export function desactivarAlumno({ params, body, user }) {
+  return studentService.deactivate(params.studentId, user, body);
+}
+
+export function activarAlumno({ params, body, user }) {
+  return studentService.activate(params.studentId, user, body);
 }
 
 /* ---------------- Legajo: resumen, perfil, pases, constancias ---------------- */

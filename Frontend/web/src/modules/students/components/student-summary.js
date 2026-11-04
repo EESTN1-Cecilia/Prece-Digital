@@ -8,7 +8,10 @@ import { StudentAlertList } from "./student-alert-list.js";
 import { StudentProfileLink } from "./student-profile-link.js";
 import { StatusBadge, ConditionBadge } from "./student-badges.js";
 import { BoletinDigitalModal } from "./boletin-digital-modal.js";
+import { StudentStatusSwitch } from "./student-status-switch.js";
+import { CambiarEstadoAlumnoModal } from "./cambiar-estado-alumno-modal.js";
 import { obtenerLibroFolioLegajo } from "../students-service.js";
+import { useUsuarioActual } from "../../../estado/index.js";
 
 /**
  * StudentSummary: Componente contenedor principal para la Ficha Resumida del Alumno
@@ -21,7 +24,20 @@ export function StudentSummary({
 }) {
   if (!resumen) return null;
 
+  const usuarioActual = useUsuarioActual();
+  const esSecretaria =
+    usuarioActual?.rol === "secretaria" ||
+    usuarioActual?.roles?.includes("secretario") ||
+    usuarioActual?.roles?.includes("admin") ||
+    usuarioActual?.roles?.includes("director") ||
+    usuarioActual?.permisos?.includes("students.write");
+
   const [boletinOpen, setBoletinOpen] = useState(false);
+  const [modalEstadoOpen, setModalEstadoOpen] = useState(false);
+  const [estadoLocal, setEstadoLocal] = useState(null);
+  const [fechaBajaLocal, setFechaBajaLocal] = useState(null);
+  const [motivoBajaLocal, setMotivoBajaLocal] = useState(null);
+  const [mensajeFeedback, setMensajeFeedback] = useState(null);
   const [, setVersion] = useState(0);
 
   useEffect(() => {
@@ -29,6 +45,18 @@ export function StudentSummary({
     window.addEventListener("prece:libro-folio-updated", handleUpdate);
     return () => window.removeEventListener("prece:libro-folio-updated", handleUpdate);
   }, []);
+
+  useEffect(() => {
+    const handleStatusUpdate = (e) => {
+      if (e?.detail?.studentId === resumen?.datosPersonales?.id) {
+        setEstadoLocal(e.detail.estado);
+        if (e.detail.fecha) setFechaBajaLocal(e.detail.fecha);
+        if (e.detail.motivo) setMotivoBajaLocal(e.detail.motivo);
+      }
+    };
+    window.addEventListener("prece:student-status-changed", handleStatusUpdate);
+    return () => window.removeEventListener("prece:student-status-changed", handleStatusUpdate);
+  }, [resumen?.datosPersonales?.id]);
 
   const {
     datosPersonales = {},
@@ -67,9 +95,34 @@ export function StudentSummary({
     }
   };
 
+  const estadoEfectivo = estadoLocal || informacionEscolar.estado || "Activo";
+  const esInactivo =
+    estadoEfectivo.toLowerCase() === "inactivo" ||
+    (estadoLocal === null && informacionEscolar.isActive === false);
+  const fechaBajaEfectiva = fechaBajaLocal || informacionEscolar.fechaBaja;
+  const motivoBajaEfectivo = motivoBajaLocal || informacionEscolar.motivoBaja;
+
   return h(
     "div",
     { className: "student-summary-container" },
+
+    // Notificación flotante de confirmación de cambio de estado
+    mensajeFeedback
+      ? h(
+          "div",
+          { className: "student-summary-feedback-alert" },
+          h(
+            "svg",
+            { width: "16", height: "16", viewBox: "0 0 20 20", fill: "currentColor" },
+            h("path", {
+              fillRule: "evenodd",
+              d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z",
+              clipRule: "evenodd"
+            })
+          ),
+          h("span", null, mensajeFeedback)
+        )
+      : null,
 
     // 1. Barra superior de navegación y acciones
     h(
@@ -172,9 +225,13 @@ export function StudentSummary({
               "div",
               { className: "student-hero-title-row" },
               h("h1", { className: "student-hero-name" }, displayNombreCompleto),
-              h(StatusBadge, {
-                status: informacionEscolar.estado,
-                label: informacionEscolar.estado
+              h(StudentStatusSwitch, {
+                estado: estadoEfectivo,
+                isActive: !esInactivo,
+                esSecretaria,
+                fechaBaja: fechaBajaEfectiva,
+                motivoBaja: motivoBajaEfectivo,
+                onClick: () => setModalEstadoOpen(true)
               }),
               h(ConditionBadge, { condicion: informacionEscolar.condicion })
             ),
@@ -197,6 +254,31 @@ export function StudentSummary({
                     "span",
                     { className: "hero-pill orientation" },
                     informacionEscolar.orientacion
+                  )
+                : null,
+              esInactivo
+                ? h(
+                    "span",
+                    {
+                      className: "hero-pill hero-pill--inactivo",
+                      title: `Baja escolar registrada. Fecha: ${fechaBajaEfectiva || "No indicada"}${motivoBajaEfectivo ? ` · Motivo: ${motivoBajaEfectivo}` : ""}`
+                    },
+                    h(
+                      "svg",
+                      {
+                        className: "hero-pill-icon",
+                        width: "12",
+                        height: "12",
+                        viewBox: "0 0 20 20",
+                        fill: "currentColor"
+                      },
+                      h("path", {
+                        fillRule: "evenodd",
+                        d: "M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z",
+                        clipRule: "evenodd"
+                      })
+                    ),
+                    `Baja escolar: ${fechaBajaEfectiva || "Registrada"}${motivoBajaEfectivo ? ` (${motivoBajaEfectivo})` : ""}`
                   )
                 : null
             )
@@ -271,6 +353,37 @@ export function StudentSummary({
           abierto: boletinOpen,
           onCerrar: () => setBoletinOpen(false),
           alumno: resumen
+        })
+      : null,
+
+    // Modal de Cambio de Estado del Alumno (Secretaría)
+    modalEstadoOpen
+      ? h(CambiarEstadoAlumnoModal, {
+          abierto: modalEstadoOpen,
+          onCerrar: () => setModalEstadoOpen(false),
+          alumno: {
+            ...resumen,
+            datosPersonales,
+            informacionEscolar: {
+              ...informacionEscolar,
+              estado: estadoEfectivo,
+              isActive: !esInactivo,
+              fechaBaja: fechaBajaEfectiva,
+              motivoBaja: motivoBajaEfectivo
+            }
+          },
+          onEstadoCambiado: ({ estado, fecha, motivo }) => {
+            setEstadoLocal(estado);
+            setFechaBajaLocal(fecha);
+            setMotivoBajaLocal(motivo);
+            setMensajeFeedback(
+              estado === "Inactivo"
+                ? `El alumno fue pasado a Inactivo correctamente con fecha de egreso ${fecha}.`
+                : `El alumno fue reactivado exitosamente con fecha ${fecha}.`
+            );
+            setTimeout(() => setMensajeFeedback(null), 6000);
+            if (onRefresh) onRefresh();
+          }
         })
       : null
   );

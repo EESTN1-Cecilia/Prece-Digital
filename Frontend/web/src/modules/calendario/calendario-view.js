@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { h } from "../../layouts/site-layout.js";
 import { Boton, Cargando, Confirmacion, Modal } from "../../components/ui/index.js";
+import { CustomSelect } from "../../components/common/custom-select.js";
 import { usePermisos } from "../../estado/hooks.js";
 import { PERMISOS } from "../../utils/permisos.js";
 import { CalendarioService } from "./calendario-service.js";
@@ -59,12 +60,23 @@ function FormularioEvento({ valor, onCambio, errores }) {
     campo("titulo", "Título", { maxLength: 160, required: true }),
     campo("fechaInicio", "Fecha de inicio", { type: "date", required: true }),
     campo("fechaFin", "Fecha de fin (opcional)", { type: "date" }),
-    h("label", { className: "cal-campo" }, h("span", null, "Categoría"),
-      h("select", { value: valor.categoria, onChange: (x) => onCambio({ ...valor, categoria: x.target.value }) },
-        Object.entries(CATEGORIAS).map(([k, v]) => h("option", { key: k, value: k }, v)))),
-    h("label", { className: "cal-campo" }, h("span", null, "Corresponde a"),
-      h("select", { value: valor.ambito, onChange: (x) => onCambio({ ...valor, ambito: x.target.value }) },
-        h("option", { value: "institucional" }, AMBITOS.institucional), h("option", { value: "docente" }, AMBITOS.docente))),
+    h("div", { className: "cal-campo" }, h("span", null, "Categoría"),
+      h(CustomSelect, {
+        value: valor.categoria,
+        options: Object.entries(CATEGORIAS).map(([k, v]) => ({ value: k, label: v })),
+        onChange: (val) => onCambio({ ...valor, categoria: val }),
+        ariaLabel: "Categoría"
+      })),
+    h("div", { className: "cal-campo" }, h("span", null, "Corresponde a"),
+      h(CustomSelect, {
+        value: valor.ambito,
+        options: [
+          { value: "institucional", label: AMBITOS.institucional },
+          { value: "docente", label: AMBITOS.docente }
+        ],
+        onChange: (val) => onCambio({ ...valor, ambito: val }),
+        ariaLabel: "Corresponde a"
+      })),
     campo("descripcion", "Descripción", { maxLength: 600 }),
     campo("urlReferencia", "Enlace de referencia (https, opcional)", { type: "url" }),
     errores?._general ? h("p", { className: "cal-campo__error" }, errores._general) : null);
@@ -138,8 +150,20 @@ export default function CalendarioView() {
     h("div", { className: "cal__barra" },
       h("div", { className: "cal__mes" },
         h("button", { type: "button", className: "cal__nav", "aria-label": "Mes anterior", onClick: () => moverMes(-1) }, "‹"),
-        h("select", { "aria-label": "Mes", value: vista.mes, onChange: (x) => setVista({ ...vista, mes: Number(x.target.value) }) }, MESES.map((m, i) => h("option", { key: m, value: i + 1 }, m))),
-        h("select", { "aria-label": "Año", value: vista.anio, onChange: (x) => setVista({ ...vista, anio: Number(x.target.value) }) }, anios.map((a) => h("option", { key: a, value: a }, a))),
+        h(CustomSelect, {
+          className: "cal__mes-select",
+          ariaLabel: "Mes",
+          value: String(vista.mes),
+          options: MESES.map((m, i) => ({ value: String(i + 1), label: m })),
+          onChange: (val) => setVista({ ...vista, mes: Number(val) })
+        }),
+        h(CustomSelect, {
+          className: "cal__anio-select",
+          ariaLabel: "Año",
+          value: String(vista.anio),
+          options: anios.map((a) => ({ value: String(a), label: String(a) })),
+          onChange: (val) => setVista({ ...vista, anio: Number(val) })
+        }),
         h("button", { type: "button", className: "cal__nav", "aria-label": "Mes siguiente", onClick: () => moverMes(1) }, "›"),
         h(Boton, { variante: "texto", tamano: "chico", onClick: () => { setVista(partesDe(hoy)); setSeleccion(hoy); } }, "Hoy")),
       h("div", { className: "cal__filtros", role: "group", "aria-label": "Tipo de fechas" },

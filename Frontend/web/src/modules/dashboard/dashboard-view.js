@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, Fragment } from "reac
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
+import { CustomSelect } from "../../components/common/custom-select.js";
 import { SecretariaService } from "../secretaria/secretaria-service.js";
 import { StudentsService, formatDni } from "../students/students-service.js";
 import { DirectorService } from "../director/director-service.js";
@@ -852,44 +853,37 @@ export default function DashboardView() {
                 onChange: (e) => setBusquedaDocente(e.target.value)
               })
             ),
-            h(
-              "select",
-              {
-                className: "preceptoria-select-filter",
-                value: filtroAnioDocente,
-                onChange: (e) => setFiltroAnioDocente(e.target.value),
-                "aria-label": "Filtrar por año"
-              },
-              h("option", { value: "todos" }, "Todos los Años"),
-              [1, 2, 3, 4, 5, 6, 7].map((num) =>
-                h("option", { key: num, value: String(num) }, `${num}° Año`)
-              )
-            ),
-            h(
-              "select",
-              {
-                className: "preceptoria-select-filter",
-                value: filtroDivDocente,
-                onChange: (e) => setFiltroDivDocente(e.target.value),
-                "aria-label": "Filtrar por división"
-              },
-              h("option", { value: "todas" }, "Todas las Div."),
-              [1, 2, 3, 4, 5, 6].map((num) =>
-                h("option", { key: num, value: String(num) }, `${num}° División`)
-              )
-            ),
-            h(
-              "select",
-              {
-                className: "preceptoria-select-filter",
-                value: filtroTurnoDocente,
-                onChange: (e) => setFiltroTurnoDocente(e.target.value),
-                "aria-label": "Filtrar por turno"
-              },
-              h("option", { value: "todos" }, "Todos los Turnos"),
-              h("option", { value: "mañana" }, "Mañana"),
-              h("option", { value: "tarde" }, "Tarde")
-            ),
+            h(CustomSelect, {
+              className: "preceptoria-select-filter",
+              value: filtroAnioDocente,
+              onChange: (val) => setFiltroAnioDocente(val),
+              ariaLabel: "Filtrar por año",
+              options: [
+                { value: "todos", label: "Todos los Años" },
+                ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({ value: String(num), label: `${num}° Año` }))
+              ]
+            }),
+            h(CustomSelect, {
+              className: "preceptoria-select-filter",
+              value: filtroDivDocente,
+              onChange: (val) => setFiltroDivDocente(val),
+              ariaLabel: "Filtrar por división",
+              options: [
+                { value: "todas", label: "Todas las Div." },
+                ...[1, 2, 3, 4, 5, 6].map((num) => ({ value: String(num), label: `${num}° División` }))
+              ]
+            }),
+            h(CustomSelect, {
+              className: "preceptoria-select-filter",
+              value: filtroTurnoDocente,
+              onChange: (val) => setFiltroTurnoDocente(val),
+              ariaLabel: "Filtrar por turno",
+              options: [
+                { value: "todos", label: "Todos los Turnos" },
+                { value: "mañana", label: "Mañana" },
+                { value: "tarde", label: "Tarde" }
+              ]
+            }),
             busquedaDocente || filtroAnioDocente !== "todos" || filtroDivDocente !== "todas" || filtroTurnoDocente !== "todos"
               ? h(
                   "button",
@@ -1052,17 +1046,17 @@ export default function DashboardView() {
             h(
               "div",
               { className: "preceptoria-top-actions" },
-              h(
-                "select",
-                {
-                  className: "preceptoria-select-filter",
-                  value: filtroTurnoAsistencias,
-                  onChange: (e) => setFiltroTurnoAsistencias(e.target.value)
-                },
-                h("option", { value: "todos" }, "Todos los Turnos"),
-                h("option", { value: "mañana" }, "Turno Mañana"),
-                h("option", { value: "tarde" }, "Turno Tarde")
-              ),
+              h(CustomSelect, {
+                className: "preceptoria-select-filter",
+                value: filtroTurnoAsistencias,
+                onChange: (val) => setFiltroTurnoAsistencias(val),
+                ariaLabel: "Filtrar por turno de asistencia",
+                options: [
+                  { value: "todos", label: "Todos los Turnos" },
+                  { value: "mañana", label: "Turno Mañana" },
+                  { value: "tarde", label: "Turno Tarde" }
+                ]
+              }),
               h(
                 "a",
                 {
@@ -1207,41 +1201,37 @@ export default function DashboardView() {
                 onChange: (e) => setBusquedaAlumno(e.target.value)
               })
             ),
-            h(
-              "select",
-              {
-                className: "preceptoria-select-filter",
-                value: filtroAnioAlumno,
-                onChange: (e) => setFiltroAnioAlumno(e.target.value)
-              },
-              h("option", { value: "todos" }, "Todos los Años"),
-              [1, 2, 3, 4, 5, 6, 7].map((num) =>
-                h("option", { key: num, value: String(num) }, `${num}° Año`)
-              )
-            ),
-            h(
-              "select",
-              {
-                className: "preceptoria-select-filter",
-                value: filtroDivAlumno,
-                onChange: (e) => setFiltroDivAlumno(e.target.value)
-              },
-              h("option", { value: "todas" }, "Todas las Div."),
-              [1, 2, 3, 4, 5, 6].map((num) =>
-                h("option", { key: num, value: String(num) }, `${num}° División`)
-              )
-            ),
-            h(
-              "select",
-              {
-                className: "preceptoria-select-filter",
-                value: filtroTurnoAlumno,
-                onChange: (e) => setFiltroTurnoAlumno(e.target.value)
-              },
-              h("option", { value: "todos" }, "Todos los Turnos"),
-              h("option", { value: "mañana" }, "Mañana"),
-              h("option", { value: "tarde" }, "Tarde")
-            ),
+            h(CustomSelect, {
+              className: "preceptoria-select-filter",
+              value: filtroAnioAlumno,
+              onChange: (val) => setFiltroAnioAlumno(val),
+              ariaLabel: "Filtrar alumnos por año",
+              options: [
+                { value: "todos", label: "Todos los Años" },
+                ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({ value: String(num), label: `${num}° Año` }))
+              ]
+            }),
+            h(CustomSelect, {
+              className: "preceptoria-select-filter",
+              value: filtroDivAlumno,
+              onChange: (val) => setFiltroDivAlumno(val),
+              ariaLabel: "Filtrar alumnos por división",
+              options: [
+                { value: "todas", label: "Todas las Div." },
+                ...[1, 2, 3, 4, 5, 6].map((num) => ({ value: String(num), label: `${num}° División` }))
+              ]
+            }),
+            h(CustomSelect, {
+              className: "preceptoria-select-filter",
+              value: filtroTurnoAlumno,
+              onChange: (val) => setFiltroTurnoAlumno(val),
+              ariaLabel: "Filtrar alumnos por turno",
+              options: [
+                { value: "todos", label: "Todos los Turnos" },
+                { value: "mañana", label: "Mañana" },
+                { value: "tarde", label: "Tarde" }
+              ]
+            }),
             busquedaAlumno || filtroAnioAlumno !== "todos" || filtroDivAlumno !== "todas" || filtroTurnoAlumno !== "todos"
               ? h(
                   "button",

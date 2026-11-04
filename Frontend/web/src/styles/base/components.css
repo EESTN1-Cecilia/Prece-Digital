@@ -44,9 +44,32 @@
 .student-edit-field-box .custom-select-wrapper,
 .form-group .custom-select-wrapper,
 .modal-form-grid .custom-select-wrapper,
+.ui-campo__control--select .custom-select-wrapper,
+.jefatura-field .custom-select-wrapper,
+.cal-campo .custom-select-wrapper,
 .form-field-group .searchable-select {
   display: block;
   width: 100%;
+}
+
+.preceptoria-select-filter.custom-select-wrapper {
+  width: auto;
+  min-width: 165px;
+}
+
+.cal__mes-select.custom-select-wrapper {
+  width: auto;
+  min-width: 145px;
+}
+
+.cal__anio-select.custom-select-wrapper {
+  width: auto;
+  min-width: 96px;
+}
+
+.profile-field-inline-select.custom-select-wrapper {
+  flex: 1;
+  min-width: 150px;
 }
 
 .form-field-group .custom-select__trigger,

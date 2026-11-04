@@ -2,6 +2,7 @@ import React, { Fragment, useCallback, useEffect, useMemo, useState } from "reac
 import { h } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState, StatusBadge } from "../../components/common/state-handlers.js";
+import { CustomSelect } from "../../components/common/custom-select.js";
 import { JefaturaService } from "./jefatura-service.js";
 
 const DIAS = [
@@ -54,12 +55,18 @@ function estadoLabel(estado) {
   return mapa[estado] ?? estado ?? "Sin estado";
 }
 
-function SelectField({ label, value, onChange, children }) {
+function SelectField({ label, value, onChange, options = [], disabled = false }) {
   return h(
-    "label",
+    "div",
     { className: "jefatura-field" },
     h("span", null, label),
-    h("select", { value, onChange: (event) => onChange(event.target.value) }, children)
+    h(CustomSelect, {
+      value: value ?? "",
+      options,
+      disabled,
+      ariaLabel: label,
+      onChange: (val) => onChange(val)
+    })
   );
 }
 
@@ -73,22 +80,25 @@ function TextField({ label, value, onChange, placeholder }) {
 }
 
 function CourseSelector({ cursos, value, onChange, loading }) {
+  const options = loading
+    ? [{ value: "", label: "Cargando cursos..." }]
+    : cursos.length === 0
+    ? [{ value: "", label: "Sin cursos disponibles" }]
+    : cursos.map((curso) => ({
+        value: curso.id,
+        label: `${curso.curso} · ${curso.turno}${curso.estado ? ` · ${curso.estado}` : ""}`
+      }));
+
   return h(
     "div",
     { className: "jefatura-course-selector" },
-    h(
-      SelectField,
-      { label: "Curso / grupo", value: value ?? "", onChange },
-      loading ? h("option", { value: "" }, "Cargando cursos...") : null,
-      !loading && cursos.length === 0 ? h("option", { value: "" }, "Sin cursos disponibles") : null,
-      cursos.map((curso) =>
-        h(
-          "option",
-          { key: curso.id, value: curso.id },
-          `${curso.curso} · ${curso.turno}${curso.estado ? ` · ${curso.estado}` : ""}`
-        )
-      )
-    )
+    h(SelectField, {
+      label: "Curso / grupo",
+      value: value ?? "",
+      onChange,
+      options,
+      disabled: loading || cursos.length === 0
+    })
   );
 }
 
@@ -124,17 +134,21 @@ function GridFilters({ filtros, setFiltro, limpiar, opciones }) {
   return h(
     "div",
     { className: "jefatura-filters" },
-    h(
-      SelectField,
-      { label: "Día", value: filtros.dia, onChange: (value) => setFiltro("dia", value) },
-      DIAS.map((dia) => h("option", { key: dia.id, value: dia.id }, dia.label))
-    ),
-    h(
-      SelectField,
-      { label: "Turno", value: filtros.turno, onChange: (value) => setFiltro("turno", value) },
-      h("option", { value: "todos" }, "Todos"),
-      (opciones.turnos ?? []).map((turno) => h("option", { key: turno, value: turno }, turno))
-    ),
+    h(SelectField, {
+      label: "Día",
+      value: filtros.dia,
+      onChange: (value) => setFiltro("dia", value),
+      options: DIAS.map((dia) => ({ value: dia.id, label: dia.label }))
+    }),
+    h(SelectField, {
+      label: "Turno",
+      value: filtros.turno,
+      onChange: (value) => setFiltro("turno", value),
+      options: [
+        { value: "todos", label: "Todos" },
+        ...(opciones.turnos ?? []).map((turno) => ({ value: turno, label: turno }))
+      ]
+    }),
     h(TextField, {
       label: "Docente",
       value: filtros.docente,
@@ -153,22 +167,28 @@ function GridFilters({ filtros, setFiltro, limpiar, opciones }) {
       placeholder: "Aula, taller o código",
       onChange: (value) => setFiltro("espacio", value)
     }),
-    h(
-      SelectField,
-      { label: "Estado", value: filtros.estado, onChange: (value) => setFiltro("estado", value) },
-      h("option", { value: "todos" }, "Todos"),
-      h("option", { value: "programada" }, "Programada"),
-      h("option", { value: "con_ausencia" }, "Con ausencia"),
-      h("option", { value: "pendiente" }, "Ausencia pendiente"),
-      h("option", { value: "aprobada" }, "Ausencia justificada")
-    ),
-    h(
-      SelectField,
-      { label: "Ausencias", value: filtros.ausencias, onChange: (value) => setFiltro("ausencias", value) },
-      h("option", { value: "todas" }, "Todas"),
-      h("option", { value: "con" }, "Con ausencia"),
-      h("option", { value: "sin" }, "Sin ausencia")
-    ),
+    h(SelectField, {
+      label: "Estado",
+      value: filtros.estado,
+      onChange: (value) => setFiltro("estado", value),
+      options: [
+        { value: "todos", label: "Todos" },
+        { value: "programada", label: "Programada" },
+        { value: "con_ausencia", label: "Con ausencia" },
+        { value: "pendiente", label: "Ausencia pendiente" },
+        { value: "aprobada", label: "Ausencia justificada" }
+      ]
+    }),
+    h(SelectField, {
+      label: "Ausencias",
+      value: filtros.ausencias,
+      onChange: (value) => setFiltro("ausencias", value),
+      options: [
+        { value: "todas", label: "Todas" },
+        { value: "con", label: "Con ausencia" },
+        { value: "sin", label: "Sin ausencia" }
+      ]
+    }),
     h(
       "button",
       { type: "button", className: "jefatura-clear-btn", onClick: limpiar },

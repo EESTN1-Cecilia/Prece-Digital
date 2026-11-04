@@ -11,6 +11,7 @@ import { descargarPlanillaXlsx } from "./planilla-xlsx.js";
 import { BoletinOficialService } from "../boletin/boletin-oficial-service.js";
 import { buscarNota, recalcularNota } from "../boletin/boletin-oficial-datos.js";
 import { PeriodosCargaService, bloqueosDe, enumerar } from "../grades/periodos-carga.js";
+import { CustomSelect } from "../../components/common/custom-select.js";
 
 // Cursos de referencia por defecto para docentes si no vienen en la sesión
 const ASIGNACIONES_DEFAULT = [
@@ -97,41 +98,94 @@ export function PlanillaCalificacionesModal({
     };
   }, [abierto]);
 
-  // Lista de asignaciones activas
+  // Lista de asignaciones activas (docente o todas las materias del curso para personal directivo/secretaría/preceptoría)
   const asignacionesDisponibles = useMemo(() => {
-    if (asignacionesDocente && asignacionesDocente.length > 0) return asignacionesDocente;
-    if (user?.assignments && user.assignments.length > 0) return user.assignments;
+    const baseDocente = (
+      asignacionesDocente && asignacionesDocente.length > 0
+        ? asignacionesDocente
+        : (user?.assignments || []).filter((a) => Boolean(a.materia || a.curso || a.anio))
+    ).filter((a) => Boolean(a.materia || a.curso || a.anio));
+
+    const cRef = String(alumnoInicial?.curso || cursoInicial || "").trim();
+    const dRef = String(alumnoInicial?.division || divisionInicial || "").replace(/\D/g, "");
+    const anioRef = Number(cRef.replace(/\D/g, "")) || 1;
+    const divRef = dRef || "1";
+
+    const materiasDelCurso = (anio, div, orientacion = "") => {
+      const plan = PLANES_BOLETIN[anio] || PLANES_BOLETIN[1] || {};
+      const claveOri = String(orientacion || "").toUpperCase().includes("INFORM") ? "informatica" : "programacion";
+      const lista = [
+        ...(plan.formacionGeneral || []),
+        ...(plan.tcoEspecifica || plan.orientaciones?.[claveOri] || [])
+      ];
+      return lista.map((mat) => ({
+        anio,
+        curso: `${anio}°`,
+        division: String(div),
+        materia: mat
+      }));
+    };
+
+    if (baseDocente.length > 0) {
+      if (!esDocente && cRef) {
+        const tieneCurso = baseDocente.some(
+          (a) => Number(String(a.anio || a.curso || "").replace(/\D/g, "")) === anioRef && String(a.division).replace(/\D/g, "") === divRef
+        );
+        if (!tieneCurso) {
+          return [...materiasDelCurso(anioRef, divRef, alumnoInicial?.orientacion), ...baseDocente];
+        }
+      }
+      return baseDocente;
+    }
+
+    if (cRef) {
+      return materiasDelCurso(anioRef, divRef, alumnoInicial?.orientacion);
+    }
+
     return ASIGNACIONES_DEFAULT;
-  }, [asignacionesDocente, user?.assignments]);
+  }, [asignacionesDocente, user?.assignments, alumnoInicial, cursoInicial, divisionInicial, esDocente]);
+
+  const claveAsignacion = (a) =>
+    `${a.curso || `${a.anio || 1}°`}-${String(a.division || "1").replace(/\D/g, "") || "1"}-${a.materia || "Matemática"}`;
 
   // Determinar la asignación inicial
   const asignacionDefault = useMemo(() => {
-    if (alumnoInicial) {
-      const cAlu = String(alumnoInicial.curso || "").trim();
-      const dAlu = String(alumnoInicial.division || "").trim();
-      const match = asignacionesDisponibles.find(
-        (a) => (a.curso === cAlu || `${a.anio}°` === cAlu) && String(a.division) === dAlu
+    const buscarMatch = (cBuscado, dBuscado) => {
+      const cNum = Number(String(cBuscado || "").replace(/\D/g, ""));
+      const dStr = String(dBuscado || "").replace(/\D/g, "");
+      const delCurso = asignacionesDisponibles.filter(
+        (a) => Number(String(a.anio || a.curso || "").replace(/\D/g, "")) === cNum && String(a.division || "").replace(/\D/g, "") === dStr
       );
+      if (delCurso.length === 0) return null;
+      if (materiaInicial) {
+        const porMateria = delCurso.find(
+          (a) => String(a.materia || "").toUpperCase() === String(materiaInicial).toUpperCase()
+        );
+        if (porMateria) return porMateria;
+      }
+      return delCurso[0];
+    };
+
+    if (alumnoInicial) {
+      const match = buscarMatch(alumnoInicial.curso, alumnoInicial.division);
       if (match) return match;
     }
     if (cursoInicial && divisionInicial) {
-      const match = asignacionesDisponibles.find(
-        (a) => (a.curso === cursoInicial || `${a.anio}°` === cursoInicial) && String(a.division) === String(divisionInicial)
-      );
+      const match = buscarMatch(cursoInicial, divisionInicial);
       if (match) return match;
     }
     return asignacionesDisponibles[0] || { anio: 1, curso: "1°", division: "1", materia: "Matemática I" };
-  }, [alumnoInicial, cursoInicial, divisionInicial, asignacionesDisponibles]);
+  }, [alumnoInicial, cursoInicial, divisionInicial, materiaInicial, asignacionesDisponibles]);
 
   // Estados de selección de curso, división y materia
-  const [selectedAsigKey, setSelectedAsigKey] = useState(() => {
-    return `${asignacionDefault.curso || `${asignacionDefault.anio}°`}-${asignacionDefault.division}`;
-  });
+  const [selectedAsigKey, setSelectedAsigKey] = useState(() => claveAsignacion(asignacionDefault));
+
+  useEffect(() => {
+    setSelectedAsigKey(claveAsignacion(asignacionDefault));
+  }, [asignacionDefault]);
 
   const asignacionActual = useMemo(() => {
-    const found = asignacionesDisponibles.find(
-      (a) => `${a.curso || `${a.anio}°`}-${a.division}` === selectedAsigKey
-    );
+    const found = asignacionesDisponibles.find((a) => claveAsignacion(a) === selectedAsigKey);
     return found || asignacionDefault;
   }, [selectedAsigKey, asignacionesDisponibles, asignacionDefault]);
 
@@ -141,7 +195,9 @@ export function PlanillaCalificacionesModal({
 
   const cursoStr = asignacionActual.curso || `${anioNum}°`;
   const divisionStr = String(asignacionActual.division || "1").replace(/\D/g, "") || "1";
-  const materiaStr = materiaInicial || asignacionActual.materia || "Matemática";
+  const materiaStr = tituloMateria
+    ? materiaInicial || asignacionActual.materia || "Matemática"
+    : asignacionActual.materia || materiaInicial || "Matemática";
   // Texto que se muestra y se exporta (p. ej. "Taller · Grupo 1.1"); las notas se guardan con materiaStr
   const materiaMostrada = tituloMateria || materiaStr;
 
@@ -218,8 +274,11 @@ export function PlanillaCalificacionesModal({
       entrada = entrada ?? {};
       detalle = detalle ?? {};
 
-      const c1 = entrada.informe1 || "";
-      const c2 = entrada.informe2 || "";
+      const rawC1 = String(entrada.informe1 || "").trim();
+      const rawC2 = String(entrada.informe2 || "").trim();
+      const esConcepto = (v) => ["TEA", "TEP", "TED"].includes(v.toUpperCase());
+      const c1 = esConcepto(rawC1) ? "" : rawC1;
+      const c2 = esConcepto(rawC2) ? "" : rawC2;
       const dic = entrada.diciembre || "-";
       const feb = entrada.febrero || "-";
       const final = recalcularNota({ informe1: c1, informe2: c2, diciembre: entrada.diciembre || "", febrero: entrada.febrero || "" }).definitiva;
@@ -230,14 +289,18 @@ export function PlanillaCalificacionesModal({
       const p4 = detalle.p4 || "";
       const f1 = Number(detalle.f1) || 0;
       const f2 = Number(detalle.f2) || 0;
-      let v1 = detalle.v1 || "";
-      let v2 = detalle.v2 || "";
+      let v1 = detalle.v1 || (esConcepto(rawC1) ? rawC1.toUpperCase() : "");
+      let v2 = detalle.v2 || (esConcepto(rawC2) ? rawC2.toUpperCase() : "");
 
       // Sugerir valoraciones iniciales si hay nota
       if (c1 && !v1) v1 = parseFloat(c1) >= 7 ? "TEA" : "TEP";
       if (c2 && !v2) v2 = parseFloat(c2) >= 7 ? "TEA" : "TEP";
 
-      return { p1, p2, v1, c1, f1, p3, p4, v2, c2, f2, dic, feb, final };
+      const clavesPrevias = Object.keys(registro?.notas || {}).filter((k) =>
+        claves.some((c) => k.toUpperCase() === c.toUpperCase())
+      );
+
+      return { p1, p2, v1, c1, f1, p3, p4, v2, c2, f2, dic, feb, final, clavesPrevias };
     },
     [anioNum, materiaStr]
   );
@@ -312,8 +375,7 @@ export function PlanillaCalificacionesModal({
           nombre: alu.nombre || "",
           dni: alu.dni || "",
           isSelected: Boolean(alumnoInicial) && (alumnoInicial.id === alu.id || alumnoInicial.dni === alu.dni),
-          // Con un alumno seleccionado, el resto de la planilla queda en solo lectura
-          bloqueado: Boolean(alumnoInicial) && !(alumnoInicial.id === alu.id || alumnoInicial.dni === alu.dni),
+          bloqueado: false,
           ...notas
         };
       });
@@ -421,12 +483,31 @@ export function PlanillaCalificacionesModal({
       const vacio = (valor) => (valor === "-" ? "" : String(valor ?? "").trim());
 
       for (const st of aGuardar) {
+        const notasPayload = {
+          informe1: vacio(st.c1) || vacio(st.v1),
+          informe2: vacio(st.c2) || vacio(st.v2),
+          diciembre: vacio(st.dic),
+          febrero: vacio(st.feb)
+        };
+        const detallePayload = { p1: st.p1, p2: st.p2, v1: st.v1, f1: st.f1, p3: st.p3, p4: st.p4, v2: st.v2, f2: st.f2 };
+
         await BoletinOficialService.guardarMateria(st.id, {
           ciclo: cicloLectivo,
           materia: materiaOficial,
-          notas: { informe1: vacio(st.c1), informe2: vacio(st.c2), diciembre: vacio(st.dic), febrero: vacio(st.feb) },
-          detalle: { p1: st.p1, p2: st.p2, v1: st.v1, f1: st.f1, p3: st.p3, p4: st.p4, v2: st.v2, f2: st.f2 }
+          notas: notasPayload,
+          detalle: detallePayload
         });
+
+        for (const clavePrevia of st.clavesPrevias || []) {
+          if (clavePrevia !== materiaOficial) {
+            await BoletinOficialService.guardarMateria(st.id, {
+              ciclo: cicloLectivo,
+              materia: clavePrevia,
+              notas: notasPayload,
+              detalle: detallePayload
+            });
+          }
+        }
       }
 
       // Disparar eventos globales para actualizar otras vistas (listados de boletines, tableros)
@@ -543,23 +624,16 @@ export function PlanillaCalificacionesModal({
 
           // Selector de curso/materia para el docente si tiene más de una asignación
           asignacionesDisponibles.length > 1
-            ? h(
-                "select",
-                {
-                  className: "doc-planilla-course-select",
-                  value: selectedAsigKey,
-                  onChange: (e) => setSelectedAsigKey(e.target.value),
-                  title: "Cambiar curso y materia asignada"
-                },
-                asignacionesDisponibles.map((asig) => {
-                  const key = `${asig.curso || `${asig.anio}°`}-${asig.division}`;
-                  return h(
-                    "option",
-                    { key, value: key },
-                    `${asig.curso || `${asig.anio}°`} ${asig.division}° · ${asig.materia || "Materia"}`
-                  );
-                })
-              )
+            ? h(CustomSelect, {
+                className: "doc-planilla-course-select",
+                value: selectedAsigKey,
+                onChange: (val) => setSelectedAsigKey(val),
+                ariaLabel: "Cambiar curso y materia asignada",
+                options: asignacionesDisponibles.map((asig) => ({
+                  value: claveAsignacion(asig),
+                  label: `${asig.curso || `${asig.anio}°`} ${asig.division}° · ${asig.materia || "Materia"}`
+                }))
+              })
             : h("span", { className: "matriz-toolbar__badge" }, `Curso: ${cursoStr} ${divisionStr}° · ${materiaMostrada}`)
         ),
 
@@ -608,7 +682,7 @@ export function PlanillaCalificacionesModal({
             "button",
             {
               type: "button",
-              className: "matriz-btn matriz-btn--secondary",
+              className: "matriz-btn matriz-btn--excel",
               onClick: handleExportarExcel,
               title: "Descargar planilla en Excel (.xlsx)"
             },
@@ -627,7 +701,7 @@ export function PlanillaCalificacionesModal({
             "button",
             {
               type: "button",
-              className: "matriz-btn matriz-btn--secondary",
+              className: "matriz-btn matriz-btn--pdf",
               onClick: handleExportarPdf,
               title: "Descargar planilla en PDF (Oficio, vertical)"
             },
@@ -734,16 +808,28 @@ export function PlanillaCalificacionesModal({
             h(
               "div",
               { className: "doc-planilla-stats-box" },
-              ...resumenCurso(metricas).flatMap((grupo) =>
-                grupo.celdas.map(([nombre, valor]) =>
+              ...resumenCurso(metricas).map((grupo) =>
+                h(
+                  "div",
+                  {
+                    key: grupo.titulo,
+                    className: `doc-stat-group${grupo.celdas.length === 1 ? " doc-stat-group--compact" : ""}`
+                  },
+                  h("div", { className: "doc-stat-group__header" }, grupo.titulo),
                   h(
                     "div",
-                    {
-                      key: `${grupo.titulo}-${nombre}`,
-                      className: `doc-stat-item${nombre === "Aprobados" ? " text-success" : nombre === "Desaprobados" ? " text-danger" : ""}`
-                    },
-                    h("span", null, grupo.celdas.length === 1 ? "TOTAL ESTUDIANTES:" : `${grupo.titulo.replace("CUATRIMESTRE", "CUAT.")} · ${nombre.toUpperCase()}:`),
-                    h("strong", null, valor)
+                    { className: "doc-stat-group__cells" },
+                    ...grupo.celdas.map(([nombre, valor]) =>
+                      h(
+                        "div",
+                        {
+                          key: `${grupo.titulo}-${nombre}`,
+                          className: `doc-stat-item${nombre === "Aprobados" ? " doc-stat-item--success" : nombre === "Desaprobados" ? " doc-stat-item--danger" : ""}`
+                        },
+                        h("span", { className: "doc-stat-item__label" }, nombre.toUpperCase()),
+                        h("strong", { className: "doc-stat-item__value" }, valor)
+                      )
+                    )
                   )
                 )
               )
@@ -871,19 +957,19 @@ export function PlanillaCalificacionesModal({
                       h(
                         "td",
                         { style: { padding: "2px" } },
-                        h(
-                          "select",
-                          {
-                            className: "doc-planilla-cell-select",
-                            disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre1,
-                            value: e.v1 || "-",
-                            onChange: (ev) => handleCellChange(e.id, "v1", ev.target.value === "-" ? "" : ev.target.value)
-                          },
-                          h("option", { value: "-" }, "-"),
-                          h("option", { value: "TEA" }, "TEA"),
-                          h("option", { value: "TEP" }, "TEP"),
-                          h("option", { value: "TED" }, "TED")
-                        )
+                        h(CustomSelect, {
+                          className: "doc-planilla-cell-select",
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre1,
+                          value: e.v1 || "-",
+                          ariaLabel: `Valoración preliminar 1°C de ${e.apellido}`,
+                          options: [
+                            { value: "-", label: "-" },
+                            { value: "TEA", label: "TEA" },
+                            { value: "TEP", label: "TEP" },
+                            { value: "TED", label: "TED" }
+                          ],
+                          onChange: (val) => handleCellChange(e.id, "v1", val === "-" ? "" : val)
+                        })
                       ),
 
                       // 1er Cuatrimestre: Calif. 1C
@@ -938,19 +1024,19 @@ export function PlanillaCalificacionesModal({
                       h(
                         "td",
                         { style: { padding: "2px" } },
-                        h(
-                          "select",
-                          {
-                            className: "doc-planilla-cell-select",
-                            disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre2,
-                            value: e.v2 || "-",
-                            onChange: (ev) => handleCellChange(e.id, "v2", ev.target.value === "-" ? "" : ev.target.value)
-                          },
-                          h("option", { value: "-" }, "-"),
-                          h("option", { value: "TEA" }, "TEA"),
-                          h("option", { value: "TEP" }, "TEP"),
-                          h("option", { value: "TED" }, "TED")
-                        )
+                        h(CustomSelect, {
+                          className: "doc-planilla-cell-select",
+                          disabled: Boolean(e.bloqueado) || bloqueo.cuatrimestre2,
+                          value: e.v2 || "-",
+                          ariaLabel: `Valoración preliminar 2°C de ${e.apellido}`,
+                          options: [
+                            { value: "-", label: "-" },
+                            { value: "TEA", label: "TEA" },
+                            { value: "TEP", label: "TEP" },
+                            { value: "TED", label: "TED" }
+                          ],
+                          onChange: (val) => handleCellChange(e.id, "v2", val === "-" ? "" : val)
+                        })
                       ),
 
                       // 2do Cuatrimestre: Calif. 2C

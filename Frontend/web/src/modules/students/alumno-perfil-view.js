@@ -108,6 +108,13 @@ export default function AlumnoPerfilView({ id, ruta }) {
 
   useEffect(() => {
     fetchProfile();
+    const recargar = () => fetchProfile(true);
+    window.addEventListener("prece:calificaciones-updated", recargar);
+    window.addEventListener("prece:boletin-updated", recargar);
+    return () => {
+      window.removeEventListener("prece:calificaciones-updated", recargar);
+      window.removeEventListener("prece:boletin-updated", recargar);
+    };
   }, [studentId]);
 
   // Manejo de Acción: Generar Constancia

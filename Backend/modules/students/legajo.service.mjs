@@ -20,6 +20,7 @@ import { vistaAlumno } from "./students.service.mjs";
 import tutorsRepository from "../tutors/tutors.repository.mjs";
 import inasistenciasRepository from "../inasistencias/inasistencias.repository.mjs";
 import academicRecordsRepository from "../academic-records/academic-records.repository.mjs";
+import boletinOficialService from "../boletin-oficial/boletin-oficial.service.mjs";
 import observationsRepository from "../observations/observations.repository.mjs";
 import { vistaObservacion } from "../observations/observations.service.mjs";
 import { permisosDelUsuario } from "../auth/permission.service.mjs";
@@ -116,22 +117,99 @@ const ESTADO_MATERIA_TEXTO = {
   libre: "Libre"
 };
 
-function materiaParaPerfil(situacion, alumno) {
+function normalizarNombreMateria(nombre) {
+  return String(nombre ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\b(CICLO SUPERIOR|I|II|III|IV|V|VI|VII)\b/g, "")
+    .replace(/\bMATEMATICAS\b/g, "MATEMATICA")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
+}
+
+function calcularValoresNota(nota = {}) {
+  const c1 = String(nota.informe1 ?? "").trim() || null;
+  const c2 = String(nota.informe2 ?? "").trim() || null;
+  const dic = String(nota.diciembre ?? "").trim() || null;
+  const feb = String(nota.febrero ?? "").trim() || null;
+  const n1 = parseFloat(String(c1 ?? "").replace(",", "."));
+  const n2 = parseFloat(String(c2 ?? "").replace(",", "."));
+  const promedio = !Number.isNaN(n1) && !Number.isNaN(n2) ? Math.round(((n1 + n2) / 2) * 100) / 100 : null;
+  const definitiva = feb || dic || (promedio !== null ? String(promedio) : null);
+  return {
+    calificaciones: {
+      primerCuatrimestre: c1,
+      segundoCuatrimestre: c2,
+      definitiva
+    },
+    promedio
+  };
+}
+
+function materiaParaPerfil(situacion, alumno, notasBoletin = {}) {
+  const nombre = situacion.materia?.nombre ?? situacion.materiaId;
+  const raiz = normalizarNombreMateria(nombre);
+  const claveNota = Object.keys(notasBoletin).find((k) => normalizarNombreMateria(k) === raiz);
+  const calc = calcularValoresNota(claveNota ? notasBoletin[claveNota] : {});
+
   return {
     id: situacion.id,
-    nombre: situacion.materia?.nombre ?? situacion.materiaId,
+    nombre,
     curso: cursoTexto(alumno),
     division: alumno.division,
     anio: situacion.anio,
     docente: null,
     periodo: situacion.cuatrimestre ? `${situacion.cuatrimestre}° cuatrimestre ${situacion.anio}` : `Anual ${situacion.anio}`,
-    calificaciones: { primerCuatrimestre: null, segundoCuatrimestre: null, definitiva: null },
-    promedio: null,
+    calificaciones: calc.calificaciones,
+    promedio: calc.promedio,
     tipo: situacion.tipo,
     estado: ESTADO_MATERIA_TEXTO[situacion.estado] ?? situacion.estado,
     instanciasPendientes: situacion.tipo === "pendiente" && situacion.estado !== "aprobada" ? ["Mesa de examen"] : [],
     observaciones: situacion.observaciones ?? null
   };
+}
+
+function armarMateriasPerfil(situaciones, alumno) {
+  const ciclo = anioLectivo();
+  let notasBoletin = {};
+  try {
+    notasBoletin = boletinOficialService.obtener(alumno.id, ciclo)?.notas ?? {};
+  } catch {
+    notasBoletin = {};
+  }
+
+  const base = situaciones
+    .filter((situacion) => situacion.anio === ciclo || situacion.tipo !== "cursada")
+    .map((situacion) => materiaParaPerfil(situacion, alumno, situacion.anio === ciclo ? notasBoletin : {}));
+
+  const raicesCubiertas = new Set(base.map((m) => normalizarNombreMateria(m.nombre)));
+
+  for (const [nombreMat, nota] of Object.entries(notasBoletin)) {
+    const raiz = normalizarNombreMateria(nombreMat);
+    if (!raiz || raicesCubiertas.has(raiz)) continue;
+    raicesCubiertas.add(raiz);
+    const calc = calcularValoresNota(nota);
+    const defNum = parseFloat(String(calc.calificaciones.definitiva ?? "").replace(",", "."));
+    const estado = !Number.isNaN(defNum) ? (defNum >= 7 ? "Aprobada" : defNum >= 4 ? "Regular" : "Desaprobada") : "En curso";
+    base.push({
+      id: `bol-${alumno.id}-${raiz.toLowerCase().replace(/\s+/g, "-")}`,
+      nombre: nombreMat,
+      curso: cursoTexto(alumno),
+      division: alumno.division,
+      anio: ciclo,
+      docente: null,
+      periodo: `Anual ${ciclo}`,
+      calificaciones: calc.calificaciones,
+      promedio: calc.promedio,
+      tipo: "cursada",
+      estado,
+      instanciasPendientes: [],
+      observaciones: null
+    });
+  }
+
+  return base;
 }
 
 function libroMatriz(situaciones, alumno) {
@@ -282,6 +360,11 @@ const legajoService = {
           turnoTaller: turnoTaller(alumno.turno),
           condicion: capitalizar(alumno.condicion),
           estado: alumno.isActive ? "Activo" : "Inactivo",
+          isActive: Boolean(alumno.isActive),
+          fechaBaja: alumno.fechaBaja ?? null,
+          motivoBaja: alumno.motivoBaja ?? null,
+          fechaAlta: alumno.fechaAlta ?? null,
+          motivoAlta: alumno.motivoAlta ?? null,
           anioLectivo: anioLectivo(),
           orientacion: alumno.orientacion ?? "Ciclo Básico"
         },
@@ -336,7 +419,7 @@ const legajoService = {
           estadoPromocion: academico.situacionPromocion,
           observacionesAcademicas: null
         },
-        materias: situaciones.filter((situacion) => situacion.anio === anioLectivo() || situacion.tipo !== "cursada").map((situacion) => materiaParaPerfil(situacion, alumno)),
+        materias: armarMateriasPerfil(situaciones, alumno),
         inasistencias: { resumen: { ...inasistenciasSinDatos(), situacionActual: "Sin registros de asistencia" }, detalle: [] },
         observaciones: observationsRepository.listObservations({ alumnoId: alumno.id }).map(vistaObservacion),
         condicionesParticulares: { salud: [], pedagogicas: [] },

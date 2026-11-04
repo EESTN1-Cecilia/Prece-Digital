@@ -353,6 +353,28 @@
   background: #475569;
 }
 
+.matriz-btn--excel {
+  background: #16a34a;
+  color: #ffffff;
+  border: 1px solid #22c55e;
+}
+
+.matriz-btn--excel:hover {
+  background: #15803d;
+  border-color: #16a34a;
+}
+
+.matriz-btn--pdf {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #ef4444;
+}
+
+.matriz-btn--pdf:hover {
+  background: #b91c1c;
+  border-color: #dc2626;
+}
+
 .matriz-btn--active {
   background: #16a34a;
   color: #ffffff;

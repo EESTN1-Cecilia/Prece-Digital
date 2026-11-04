@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { h, IconoFigma } from "../../../../layouts/site-layout.js";
+import { CustomSelect } from "../../../../components/common/custom-select.js";
 
 /**
  * Ícono de lápiz en formato SVG vectorial (sin emojis).
@@ -176,22 +177,14 @@ function ProfileFieldItem({
         "div",
         { className: "profile-field-inline-editor" },
         type === "select"
-          ? h(
-              "select",
-              {
-                className: "profile-field-inline-select",
-                value: inputValue,
-                onChange: (e) => setInputValue(e.target.value),
-                onKeyDown: handleKeyDown,
-                disabled: saving,
-                autoFocus: true
-              },
-              (options || []).map((opt) => {
-                const optVal = typeof opt === "object" ? opt.value : opt;
-                const optLabel = typeof opt === "object" ? opt.label : opt;
-                return h("option", { key: optVal, value: optVal }, optLabel);
-              })
-            )
+          ? h(CustomSelect, {
+              className: "profile-field-inline-select",
+              value: inputValue,
+              options: options || [],
+              disabled: saving,
+              ariaLabel: label,
+              onChange: (val) => setInputValue(val)
+            })
           : type === "textarea"
           ? h("textarea", {
               className: "profile-field-inline-textarea",

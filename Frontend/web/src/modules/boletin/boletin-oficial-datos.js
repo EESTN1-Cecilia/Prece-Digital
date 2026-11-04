@@ -20,6 +20,15 @@ export const PERIODOS_PENDIENTES = [
 
 const quitarAcentos = (texto) => String(texto ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "");
 const normalizar = (texto) => quitarAcentos(texto).toUpperCase().replace(/\s+/g, " ").trim();
+const normalizarClaveMateria = (texto) =>
+  normalizar(texto)
+    .replace(/\b(CICLO SUPERIOR|I|II|III|IV|V|VI|VII)\b/g, "")
+    .replace(/\bMATEMATICAS\b/g, "MATEMATICA")
+    .replace(/\bED\.?\s*FISICA\b/g, "EDUCACION FISICA")
+    .replace(/\bCIENCIAS SOCIALES\b/g, "CONSTRUCCION DE CIUDADANIA")
+    .replace(/\bLENGUA Y LITERATURA\b|\bLENGUA\b/g, "PRACTICAS DEL LENGUAJE")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
 
 export function anioDelAlumno(alumno) {
   const digito = String(alumno?.curso ?? "").match(/[1-7]/);
@@ -85,7 +94,11 @@ export function buscarNota(calificaciones, materia) {
   if (calificaciones[materia]) return calificaciones[materia];
   const buscada = normalizar(materia);
   const clave = Object.keys(calificaciones).find((k) => normalizar(k) === buscada);
-  return clave ? calificaciones[clave] : null;
+  if (clave) return calificaciones[clave];
+  const raizBuscada = normalizarClaveMateria(materia);
+  if (!raizBuscada) return null;
+  const claveAlias = Object.keys(calificaciones).find((k) => normalizarClaveMateria(k) === raizBuscada);
+  return claveAlias ? calificaciones[claveAlias] : null;
 }
 
 /* Arma el boletin de un alumno para un año: plan + notas del backend (`registro`). */

@@ -1,6 +1,7 @@
 /* Piezas visuales compartidas por las pantallas del portal del alumno. */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { CustomSelect } from "../../components/common/custom-select.js";
 
 export const h = React.createElement;
 
@@ -150,14 +151,16 @@ export function Vacio({ titulo, descripcion }) {
 export function SelectorCiclo({ anios = [], valor, onCambiar }) {
   if (anios.length <= 1) return null;
   return h(
-    "label",
+    "div",
     { className: "pa-selector" },
-    h("span", null, "Ciclo lectivo"),
-    h(
-      "select",
-      { value: valor ?? "", onChange: (evento) => onCambiar(Number(evento.target.value)) },
-      anios.map((anio) => h("option", { key: anio, value: anio }, anio))
-    )
+    h("span", { className: "pa-selector__label" }, "Ciclo lectivo"),
+    h(CustomSelect, {
+      className: "pa-selector__combobox",
+      value: valor != null ? String(valor) : "",
+      options: anios.map((anio) => ({ value: String(anio), label: String(anio) })),
+      onChange: (val) => onCambiar(Number(val)),
+      ariaLabel: "Ciclo lectivo"
+    })
   );
 }
 

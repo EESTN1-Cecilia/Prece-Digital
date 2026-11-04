@@ -1,4 +1,5 @@
 import { h } from "../../../../layouts/site-layout.js";
+import { CustomSelect } from "../../../../components/common/custom-select.js";
 
 export function InventarioPagination({
   currentPage = 1,
@@ -27,20 +28,21 @@ export function InventarioPagination({
       h(
         "div",
         { className: "inventario-pagination__size" },
-        h("label", { htmlFor: "page-size-select" }, "Por página:"),
-        h(
-          "select",
-          {
-            id: "page-size-select",
-            className: "custom-select-native",
-            value: pageSize,
-            onChange: (e) => onPageSizeChange(Number(e.target.value))
-          },
-          h("option", { value: 5 }, "5"),
-          h("option", { value: 10 }, "10"),
-          h("option", { value: 25 }, "25"),
-          h("option", { value: 50 }, "50")
-        )
+        h("span", { className: "inventario-pagination__size-label" }, "Por página:"),
+        h(CustomSelect, {
+          id: "page-size-select",
+          className: "pagination-custom-select",
+          dropUp: true,
+          value: String(pageSize),
+          ariaLabel: "Cantidad de materiales por página",
+          options: [
+            { value: "5", label: "5 por pág." },
+            { value: "10", label: "10 por pág." },
+            { value: "25", label: "25 por pág." },
+            { value: "50", label: "50 por pág." }
+          ],
+          onChange: (val) => onPageSizeChange(Number(val))
+        })
       ),
       h(
         "div",
