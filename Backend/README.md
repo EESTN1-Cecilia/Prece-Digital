@@ -30,6 +30,10 @@ Fuera de producción la API arranca con datos de todos los módulos (`database/s
 | `docente@prece.local` | `Docente123!` | docente |
 | `jefearea@prece.local` | `JefeArea123!` | jefe_area |
 | `server@prece.local` | `Server123!` | server |
+| `secretaria@prece.local` | `Secretaria123!` | secretario |
+| `cramos@prece.local` | `Preceptor123!` | preceptor (cursos 2-2 y 5-3) |
+| `alumno.demo@alumno.prece.local` | `40000001` | alumno (portal del alumno) |
+| `inactivo@prece.local` | `Inactivo123!` | docente desactivado (para probar el rechazo de login) |
 
 ## Estructura
 
