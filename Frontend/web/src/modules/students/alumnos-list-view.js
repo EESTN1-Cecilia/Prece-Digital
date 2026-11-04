@@ -178,7 +178,7 @@ export default function AlumnosListView() {
 
   return h(
     "section",
-    { className: "welcome-panel alumnos-panel" },
+    { className: "welcome-panel alumnos-panel alumnos-list-panel" },
 
     // Barra superior con botones institucionales y retorno
     h(

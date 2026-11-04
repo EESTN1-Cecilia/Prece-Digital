@@ -54,6 +54,6 @@ test("los nombres se escapan y la nomina va numerada", () => {
 
 test("un grupo sin cronograma ni alumnos muestra avisos", () => {
   const html = armarDocumento(datos, "B");
-  assert.match(html, /no figura en la planilla/);
+  assert.match(html, /Sin cronograma/);
   assert.match(html, /no tiene alumnos asignados/);
 });
