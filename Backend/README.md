@@ -37,7 +37,7 @@ Fuera de producción la API arranca con datos de todos los módulos (`database/s
 config/        app.config (entorno) y permissions.config (roles -> permisos)
 controllers/   controladores transversales (health, catálogo, autorización)
 database/      memory-store, repositorios transversales, seeds, schema.sql (modelo objetivo)
-docs/          ENDPOINTS.md (generado)
+docs/          ENDPOINTS.md (generado), SEGURIDAD.md
 middlewares/   auth (verifyToken), authorize, cors, errores, not-found
 modules/       un módulo por dominio: <x>.controller -> <x>.service -> <x>.repository
 routes/        index.mjs: registro único de rutas

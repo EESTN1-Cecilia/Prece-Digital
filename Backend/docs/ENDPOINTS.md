@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 449 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 451 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -81,6 +81,14 @@ Total: 449 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia` | `attendance-followups.read` |
 | GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/ultima` | `attendance-followups.read` |
 | GET | `/api/v1/alumnos/:alumnoId/seguimiento-inasistencia/resumen` | `attendance-followups.read` |
+
+## docentes
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/docentes/catedras` | `users.read` |
+| PUT | `/api/v1/docentes/catedras` | `identity.manage` |
+| GET | `/api/v1/docentes/:docenteId/calificaciones` | `grades.read` |
 
 ## preceptores
 
@@ -333,12 +341,6 @@ Total: 449 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/calificaciones/:calificacionId` | `grades.read` |
 | PATCH | `/api/v1/calificaciones/:calificacionId` | `grades.write` |
 | DELETE | `/api/v1/calificaciones/:calificacionId` | `grades.write` |
-
-## docentes
-
-| Metodo | Ruta | Permiso |
-| --- | --- | --- |
-| GET | `/api/v1/docentes/:docenteId/calificaciones` | `grades.read` |
 
 ## buildings
 

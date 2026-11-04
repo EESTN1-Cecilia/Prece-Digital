@@ -23,6 +23,25 @@ async function hashPassword(plain) {
   return hash;
 }
 
+/* Produccion nunca recibe los usuarios de desarrollo, cuyas contrasenias estan en
+   este archivo: solo un administrador inicial definido por variables de entorno. */
+export async function seedProductionAdmin({ email = process.env.BOOTSTRAP_ADMIN_EMAIL, password = process.env.BOOTSTRAP_ADMIN_PASSWORD } = {}) {
+  if (userRepository.list({ includeInactive: true }).length > 0) {
+    return;
+  }
+
+  if (!email || !password || password.length < 12) {
+    throw new Error("En produccion BOOTSTRAP_ADMIN_EMAIL y BOOTSTRAP_ADMIN_PASSWORD (12 caracteres o mas) son obligatorios");
+  }
+
+  userRepository.create({
+    email,
+    passwordHash: await bcrypt.hash(password, 10),
+    displayName: "Administrador",
+    assignments: [{ role: ROLES.ADMIN }]
+  });
+}
+
 export async function seedAuthData() {
   if (userRepository.list({ includeInactive: true }).length > 0) {
     return;

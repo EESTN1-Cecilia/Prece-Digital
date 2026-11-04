@@ -1,6 +1,7 @@
 /* Gestion de cuentas de usuario (modulo Identidad): alta, consulta, edicion,
    cambio de estado y roles. Las cuentas nunca se borran: la baja es logica. */
 
+import { sincronizarDocentes } from "../teachers/catedras.service.mjs";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
@@ -279,6 +280,8 @@ export const usersService = {
     const actualizado = userRepository.update(id, {
       assignments: roles.map((role) => (schoolId ? { role, schoolId } : { role }))
     });
+
+    sincronizarDocentes();
 
     /* Los roles viajan en el access token: se cierran las sesiones abiertas para
        que el cambio aplique en el proximo inicio de sesion. */

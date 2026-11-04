@@ -549,12 +549,33 @@ export const DirectorService = {
   /**
    * Obtiene el listado de materias y cátedras con sus profesores asignados.
    */
+  async guardarCatedras(catedras) {
+    return pedir("/api/v1/docentes/catedras", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ catedras })
+    });
+  },
+
   async listarAsignacionesProfesores() {
     const STORAGE_KEY = "prece_asignaciones_profesores";
-    try {
-      const guardado = localStorage.getItem(STORAGE_KEY);
-      if (guardado) {
-        const parsed = JSON.parse(guardado);
+    /* Fuente unica: el backend. El alcance de cada docente sale de aca. */
+    let parsed = await pedir("/api/v1/docentes/catedras");
+
+    /* Lo que quedo guardado en este navegador antes de usar la API se sube una vez. */
+    if (parsed.length === 0) {
+      try {
+        const guardado = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+        if (guardado.length > 0) {
+          parsed = await this.guardarCatedras(guardado);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {
+        // Storage ilegible o rechazado: se sigue con la grilla inicial
+      }
+    }
+
+    if (parsed.length > 0) {
         return parsed.map((item) => {
           let mod = item.modulos;
           if (mod === undefined || mod === null) {
@@ -570,9 +591,6 @@ export const DirectorService = {
               : (item.cargaHoraria || `${mod} mód. semanales`)
           };
         });
-      }
-    } catch {
-      // Ignorar error de storage
     }
 
     const iniciales = [
@@ -965,12 +983,6 @@ export const DirectorService = {
       }
     ];
 
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
-    } catch {
-      // Silencioso
-    }
-
     return iniciales;
   },
 
@@ -978,7 +990,6 @@ export const DirectorService = {
    * Guarda o reasigna un profesor a una materia/cátedra específica.
    */
   async guardarAsignacionProfesor(catedraId, profesorData) {
-    const STORAGE_KEY = "prece_asignaciones_profesores";
     const lista = await this.listarAsignacionesProfesores();
     const ids = Array.isArray(catedraId) ? catedraId : [catedraId];
     const actualizada = lista.map((item) => {
@@ -1006,20 +1017,13 @@ export const DirectorService = {
       return item;
     });
 
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
-    } catch {
-      // Silencioso
-    }
-
-    return actualizada;
+    return this.guardarCatedras(actualizada);
   },
 
   /**
    * Quita la asignación de profesor de una materia/cátedra.
    */
   async quitarAsignacionProfesor(catedraId) {
-    const STORAGE_KEY = "prece_asignaciones_profesores";
     const lista = await this.listarAsignacionesProfesores();
     const ids = Array.isArray(catedraId) ? catedraId : [catedraId];
     const actualizada = lista.map((item) => {
@@ -1033,20 +1037,13 @@ export const DirectorService = {
       return item;
     });
 
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
-    } catch {
-      // Silencioso
-    }
-
-    return actualizada;
+    return this.guardarCatedras(actualizada);
   },
 
   /**
    * Agrega una nueva cátedra/materia a la grilla de asignaciones.
    */
   async crearAsignacionProfesor(datos) {
-    const STORAGE_KEY = "prece_asignaciones_profesores";
     const lista = await this.listarAsignacionesProfesores();
     const nuevo = {
       id: `cat-${Date.now()}`,
@@ -1068,13 +1065,7 @@ export const DirectorService = {
     };
 
     const actualizada = [nuevo, ...lista];
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
-    } catch {
-      // Silencioso
-    }
-
-    return actualizada;
+    return this.guardarCatedras(actualizada);
   }
 };
 

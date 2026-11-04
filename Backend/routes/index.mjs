@@ -53,6 +53,7 @@ import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
 import * as studentPortalController from "../modules/student-portal/student-portal.controller.mjs";
 import { alumnoAutenticado, cuentaConfigurada } from "../modules/student-portal/student-portal.middleware.mjs";
+import { catedrasService } from "../modules/teachers/catedras.service.mjs";
 import * as preceptorAssignmentsController from "../modules/preceptor-assignments/preceptor-assignments.controller.mjs";
 import { alcancePreceptor, alcancePreceptorRegistro } from "../middlewares/alcance-preceptor.middleware.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
@@ -101,6 +102,10 @@ const rutasDeclaradas = [
   /* Boletin de un alumno para el personal: es el MISMO calculo que ve el alumno
      en /api/v1/alumno/boletin. Un preceptor solo puede pedir alumnos de sus cursos. */
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/boletin", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentPortalController.boletinDeAlumno },
+
+  /* Catedras asignadas a docentes por la Direccion. */
+  { method: "GET", path: "/api/v1/docentes/catedras", middlewares: [verifyToken, required(P.USERS_READ)], handler: () => ({ data: catedrasService.listar() }) },
+  { method: "PUT", path: "/api/v1/docentes/catedras", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: ({ body }) => ({ data: catedrasService.reemplazar(body) }) },
 
   /* Cursos asignados a preceptores por la Direccion. */
   { method: "GET", path: "/api/v1/preceptores/asignaciones", middlewares: [verifyToken, required(P.USERS_READ)], handler: preceptorAssignmentsController.listar },

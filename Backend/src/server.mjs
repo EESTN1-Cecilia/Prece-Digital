@@ -1,6 +1,6 @@
 import { appConfig } from "../config/app.config.mjs";
 import { apiRoutes } from "../routes/index.mjs";
-import { seedAuthData } from "../database/seeds/auth.seed.mjs";
+import { seedProductionAdmin } from "../database/seeds/auth.seed.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
 import { seedAlumnosLocales } from "../database/seeds/students.seed.mjs";
 import studentRepository from "../modules/students/students.repository.mjs";
@@ -17,7 +17,7 @@ async function startServer() {
   /* La API persiste en memoria: fuera de produccion arranca con los datos de
      desarrollo de todos los modulos para que el frontend tenga con que trabajar. */
   if (appConfig.env === "production") {
-    await seedAuthData();
+    await seedProductionAdmin();
   } else {
     await seedDesarrollo();
     const locales = seedAlumnosLocales();
