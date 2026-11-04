@@ -399,7 +399,7 @@ function Header({ esLogin }) {
         "div",
         { className: "site-header__right" },
         !esLogin ? h(HeaderNotificationsMenu) : null,
-        h(UserAvatarMenu)
+        !esLogin ? h(UserAvatarMenu) : null
       )
     )
   );
