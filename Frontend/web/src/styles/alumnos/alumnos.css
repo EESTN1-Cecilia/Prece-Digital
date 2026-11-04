@@ -8,6 +8,11 @@
   will-change: opacity, transform;
 }
 
+/* Cursos: separa el panel de la ola del encabezado (minimo 30px). */
+.cursos-panel {
+  margin-top: 30px;
+}
+
 .alumnos-top-nav {
   display: flex;
   justify-content: space-between;
@@ -2216,4 +2221,9 @@ input.form-control:focus,
   .alumnos-bottom-actions .action-button {
     width: 100%;
   }
+}
+
+.page:has(> :is(.cursos-panel, .alumnos-list-panel)) {
+  /* La onda sobresale 43 px del encabezado. */
+  padding-top: 78px;
 }
