@@ -91,7 +91,7 @@ test("observaciones: alta validada, responsable del token y listado", async () =
   assert.equal(alta.cuerpo.data.alumno, "Gómez Ruiz, Carla");
   assert.notEqual(alta.cuerpo.data.responsable, "Alguien inventado");
 
-  const delAlumno = await pedir("GET", "/api/v1/students/alu-2/observations", "docente");
+  const delAlumno = await pedir("GET", "/api/v1/students/alu-2/observations", "secretario");
   const todas = await pedir("GET", "/api/v1/observations", "secretario");
   assert.ok(delAlumno.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));
   assert.ok(todas.cuerpo.data.some((observacion) => observacion.id === alta.cuerpo.data.id));

@@ -24,11 +24,7 @@ export function authorize({ permission, roles, skipScope = false } = {}) {
     const access = evaluateAccess(ctx.user, { permission, roles, context, skipScope });
 
     if (!access.allowed) {
-      throw errorHttp(403, "FORBIDDEN", "No tiene permiso para esta acción en el alcance solicitado", {
-        permission,
-        roles,
-        context
-      });
+      throw errorHttp(403, "FORBIDDEN", "No tiene permiso para esta acción en el alcance solicitado");
     }
 
     ctx.access = access;

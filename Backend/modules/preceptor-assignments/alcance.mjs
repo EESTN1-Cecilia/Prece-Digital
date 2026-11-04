@@ -7,7 +7,11 @@
    un rol con alcance institucional (director, secretario, ...), manda ese. */
 
 import { ROLES } from "../../config/permissions.config.mjs";
+import { getStore } from "../../database/memory-store.mjs";
 import studentRepository from "../students/students.repository.mjs";
+import academicRepository from "../academic/academic.repository.mjs";
+import { DIVISIONES_CATALOGO } from "../students/catalogo.mjs";
+import teachersRepository from "../teachers/teachers.repository.mjs";
 import { errorHttp } from "../../utils/api-error.mjs";
 
 export function claveCurso(curso, division) {
@@ -20,15 +24,68 @@ export function cursosDelPreceptor(user) {
     .flatMap((asignacion) => (Array.isArray(asignacion.cursos) ? asignacion.cursos : []));
 }
 
-/* null = sin restriccion; Set de claves "curso-division" = solo esos cursos. */
+/* Cursos de un docente: los de su rol y los de sus asignaciones activas del modulo
+   docentes. Una asignacion sin division cubre todas las divisiones de ese anio. */
+export function clavesDelDocente(user) {
+  const claves = new Set();
+
+  for (const asignacion of user?.assignments ?? []) {
+    if (asignacion.role === ROLES.DOCENTE && asignacion.anio != null && asignacion.division != null) {
+      claves.add(claveCurso(asignacion.anio, asignacion.division));
+    }
+  }
+
+  /* Grupos de taller que la Direccion le asigno. */
+  for (const taller of getStore().tallerDocentes.values()) {
+    if (taller.docente?.id === user?.id) {
+      claves.add(claveCurso(taller.anio, taller.division));
+    }
+  }
+
+  const docente = teachersRepository.findDocenteByUserId(user?.id);
+
+  if (!docente) {
+    return claves;
+  }
+
+  const asignaciones = [
+    ...teachersRepository.listAsignacionesCurso({ docenteId: docente.id, estado: "activo" }),
+    ...teachersRepository.listAsignacionesMateria({ docenteId: docente.id, estado: "activo" })
+  ];
+
+  for (const { cursoId, divisionId } of asignaciones) {
+    const anio = academicRepository.findCursoById(cursoId)?.anio;
+
+    if (anio == null) {
+      continue;
+    }
+
+    const numero = divisionId ? /\d+/.exec(academicRepository.findDivisionById(divisionId)?.nombre ?? "")?.[0] : null;
+
+    if (numero) {
+      claves.add(claveCurso(anio, numero));
+    } else if (!divisionId) {
+      DIVISIONES_CATALOGO.filter((item) => item.anio === anio).forEach((item) => claves.add(claveCurso(anio, item.division)));
+    }
+  }
+
+  return claves;
+}
+
+/* null = sin restriccion; Set de claves "curso-division" = solo esos cursos.
+   Solo se acota a preceptores y docentes: otro rol institucional manda. */
 export function alcanceDe(user) {
   const roles = new Set((user?.assignments ?? []).map((asignacion) => asignacion.role));
+  const acotados = [ROLES.PRECEPTOR, ROLES.DOCENTE];
 
-  if (!roles.has(ROLES.PRECEPTOR) || [...roles].some((rol) => rol !== ROLES.PRECEPTOR)) {
+  if (roles.size === 0 || [...roles].some((rol) => !acotados.includes(rol))) {
     return null;
   }
 
-  return new Set(cursosDelPreceptor(user).map((item) => claveCurso(item.curso, item.division)));
+  return new Set([
+    ...cursosDelPreceptor(user).map((item) => claveCurso(item.curso, item.division)),
+    ...(roles.has(ROLES.DOCENTE) ? clavesDelDocente(user) : [])
+  ]);
 }
 
 export function alumnoEnAlcance(alcance, alumno) {
@@ -78,9 +135,10 @@ function veredicto(alcance, registro) {
     }
   }
 
-  const curso = numeroDe(registro.anio ?? registro.curso ?? registro.anioCurso);
+  const curso = numeroDe(registro.curso ?? registro.anioCurso ?? registro.anio);
   const division = divisionDe(registro.division ?? registro.numDivision);
-  if (curso != null && division != null) return alcance.has(claveCurso(curso, division));
+  /* anio tambien puede ser el ciclo lectivo (2026): eso no identifica un curso. */
+  if (curso != null && curso < 100 && division != null) return alcance.has(claveCurso(curso, division));
 
   return null;
 }
@@ -109,12 +167,37 @@ function recortar(alcance, valor, profundidad) {
   return salida;
 }
 
+/* Escuelas del usuario; null si alguna asignacion no esta atada a una escuela. */
+function escuelasDe(user) {
+  const asignaciones = user?.assignments ?? [];
+  if (asignaciones.length === 0 || asignaciones.some((asignacion) => !asignacion.schoolId)) return null;
+  return new Set(asignaciones.map((asignacion) => String(asignacion.schoolId)));
+}
+
+function deOtraEscuela(escuelas, registro) {
+  const escuela = registro && typeof registro === "object" ? registro.escuelaId ?? registro.schoolId : null;
+  return escuela != null && !escuelas.has(String(escuela));
+}
+
 export function recortarRespuesta(user, payload) {
-  const alcance = alcanceDe(user);
-  if (!alcance || payload == null || typeof payload !== "object") return payload;
+  if (payload == null || typeof payload !== "object") return payload;
 
   const cuerpo = Object.hasOwn(payload, "statusCode") && Object.hasOwn(payload, "body") ? payload.body : payload;
   const dato = cuerpo && typeof cuerpo === "object" && !Array.isArray(cuerpo) && cuerpo.data && !Array.isArray(cuerpo.data) ? cuerpo.data : null;
+
+  /* Un id directo no nombra la escuela en el pedido: authorize no puede compararla. */
+  const escuelas = escuelasDe(user);
+  if (escuelas) {
+    if (deOtraEscuela(escuelas, dato)) {
+      throw errorHttp(403, "OUT_OF_SCOPE", "Ese registro no pertenece a tu escuela.");
+    }
+    if (Array.isArray(cuerpo?.data)) {
+      cuerpo.data = cuerpo.data.filter((registro) => !deOtraEscuela(escuelas, registro));
+    }
+  }
+
+  const alcance = alcanceDe(user);
+  if (!alcance) return payload;
 
   /* Un registro suelto de otro curso (GET por id) es un 403, no una lista vacia. */
   if (dato && veredicto(alcance, dato) === false) {

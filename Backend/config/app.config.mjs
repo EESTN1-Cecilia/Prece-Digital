@@ -21,8 +21,33 @@ export function assertValidSecrets({ env = environment, jwtAccessSecret, jwtRefr
   }
 }
 
+function listaEnv(nombre) {
+  return (process.env[nombre] ?? "").split(",").map((valor) => valor.trim()).filter(Boolean);
+}
+
+/* En produccion la configuracion insegura impide arrancar. */
+export function assertProductionConfig({ env = environment, corsOrigins = listaEnv("CORS_ORIGINS"), database = process.env } = {}) {
+  if (env !== "production") {
+    return;
+  }
+
+  if (corsOrigins.length === 0 || corsOrigins.includes("*")) {
+    throw new Error("En produccion CORS_ORIGINS debe listar los origenes autorizados, sin *");
+  }
+
+  if ((database.DB_CLIENT ?? "memoria").toLowerCase() === "sqlserver" && (!database.DB_USER || !database.DB_PASSWORD)) {
+    throw new Error("Con DB_CLIENT=sqlserver en produccion DB_USER y DB_PASSWORD son obligatorios");
+  }
+
+  /* Solo aviso: una base en el mismo host puede no tener TLS. */
+  if ((database.DB_CLIENT ?? "memoria").toLowerCase() === "sqlserver" && database.DB_ENCRYPT !== "true") {
+    console.warn("Aviso: DB_ENCRYPT no esta activo; la conexion con la base viaja sin cifrar");
+  }
+}
+
 /* Falla rapido si en produccion faltan los secretos: no se arranca sin claves. */
 assertValidSecrets({ env: environment });
+assertProductionConfig({ env: environment });
 
 function parseIntEnv(valor, defecto) {
   const numero = Number.parseInt(process.env[valor] ?? String(defecto), 10);
@@ -40,6 +65,16 @@ export const appConfig = {
   loginMaxIpAttempts: parseIntEnv("LOGIN_MAX_IP_ATTEMPTS", 20),
   loginWindowMs: parseIntEnv("LOGIN_WINDOW_MS", 15 * 60 * 1000),
   loginLockMs: parseIntEnv("LOGIN_LOCK_MS", 15 * 60 * 1000),
+  corsOrigins: listaEnv("CORS_ORIGINS"),
+  trustProxy: process.env.TRUST_PROXY === "true",
+  /* Solicitudes por IP y por ventana. Una escuela suele salir por una sola IP,
+     por eso los limites son holgados. */
+  rateLimit: {
+    ventanaMs: parseIntEnv("RATE_LIMIT_WINDOW_MS", 60 * 1000),
+    auth: parseIntEnv("RATE_LIMIT_AUTH", 300),
+    lectura: parseIntEnv("RATE_LIMIT_READ", 3000),
+    escritura: parseIntEnv("RATE_LIMIT_WRITE", 1000)
+  },
   /* Base de datos. Mientras DB_CLIENT no sea "sqlserver" la API sigue en el
      store en memoria. Ver database/sqlserver/README.md. */
   database: {

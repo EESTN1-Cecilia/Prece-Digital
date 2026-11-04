@@ -83,7 +83,7 @@ test("un docente sin permiso de escritura no registra ni modifica (403)", async 
     numeroFolio: "99"
   });
   assert.equal(crear.status, 403);
-  assert.equal(crear.cuerpo.error.code, "FORBIDDEN");
+  assert.equal(crear.cuerpo.error.code, "OUT_OF_SCOPE");
 
   const modificar = await pedir("PATCH", "/api/v1/book-registry/lm-1", docente, { numeroLibro: "99" });
   assert.equal(modificar.status, 403);

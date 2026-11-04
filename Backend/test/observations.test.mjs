@@ -184,11 +184,11 @@ test("historial y resumen del alumno", async () => {
 });
 
 test("alumno sin observaciones responde vacio", async () => {
-  const listado = await pedir("GET", "/api/v1/students/alu-2/observations", "docente");
+  const listado = await pedir("GET", "/api/v1/students/alu-2/observations", "secretario");
   assert.equal(listado.status, 200);
   assert.deepEqual(listado.cuerpo.data, []);
 
-  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/observaciones/resumen", "docente");
+  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/observaciones/resumen", "secretario");
   assert.equal(resumen.cuerpo.data.tieneObservaciones, false);
   assert.equal(resumen.cuerpo.data.total, 0);
 });

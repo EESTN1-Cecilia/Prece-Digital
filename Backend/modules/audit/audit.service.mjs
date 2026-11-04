@@ -12,6 +12,7 @@
 
 import auditRepository from "./audit.repository.mjs";
 import { noEncontrado, solicitudInvalida } from "../../utils/api-error.mjs";
+import { obtenerIpCliente } from "../../utils/client-ip.mjs";
 
 const CAMPOS_SENSIBLES = [
   "password",
@@ -66,12 +67,7 @@ export function sanitizarDatos(valor) {
 }
 
 export function obtenerIp(request) {
-  const encabezado = request?.headers?.["x-forwarded-for"];
-  if (encabezado) {
-    return String(encabezado).split(",")[0].trim();
-  }
-
-  return request?.socket?.remoteAddress ?? request?.connection?.remoteAddress ?? null;
+  return obtenerIpCliente(request);
 }
 
 function obtenerUsuarioId(peticion) {
@@ -252,7 +248,8 @@ const auditService = {
       DELETE: "delete"
     };
 
-    const accion = accionPorMetodo[metodo];
+    /* El login todavia no tiene usuario en el contexto: sale de la respuesta. */
+    const accion = ruta === "/api/v1/auth/login" ? "login" : ruta === "/api/v1/auth/logout" ? "logout" : accionPorMetodo[metodo];
 
     if (!accion) {
       return null;
@@ -267,7 +264,7 @@ const auditService = {
     /* La auditoría automática no interrumpe el request: si falla, solo se omite. */
     try {
       return auditService.registrar({
-        usuarioId: obtenerUsuarioId(peticion),
+        usuarioId: obtenerUsuarioId(peticion) ?? (accion === "login" ? resultado?.body?.id ?? null : null),
         escuelaId: cuerpo.schoolId ?? peticion?.params?.schoolId ?? null,
         accion,
         tabla: peticion.auditTabla ?? tablaDesdeRuta(rutaFinal),

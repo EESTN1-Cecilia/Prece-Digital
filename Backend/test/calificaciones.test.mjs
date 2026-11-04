@@ -210,7 +210,7 @@ test("el docente no puede cargar fuera de sus asignaciones (403)", async () => {
   });
 
   assert.equal(status, 403);
-  assert.equal(cuerpo.error.code, "FORBIDDEN");
+  assert.equal(cuerpo.error.code, "OUT_OF_SCOPE");
 });
 
 test("el docente no puede modificar ni anular calificaciones de otra materia (403)", async () => {

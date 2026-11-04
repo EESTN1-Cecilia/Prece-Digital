@@ -199,14 +199,14 @@ test("historial y resumen del alumno", async () => {
 });
 
 test("listar las condiciones de un alumno por su id y alumno sin condiciones", async () => {
-  const delAlumno = await pedir("GET", "/api/v1/students/alu-3/particular-conditions", "docente");
+  const delAlumno = await pedir("GET", "/api/v1/students/alu-3/particular-conditions", "secretario");
   assert.equal(delAlumno.status, 200);
   assert.equal(delAlumno.cuerpo.data.length, 1);
 
-  const sinCondiciones = await pedir("GET", "/api/v1/students/alu-2/particular-conditions", "docente");
+  const sinCondiciones = await pedir("GET", "/api/v1/students/alu-2/particular-conditions", "secretario");
   assert.deepEqual(sinCondiciones.cuerpo.data, []);
 
-  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/condiciones/resumen", "docente");
+  const resumen = await pedir("GET", "/api/v1/alumnos/alu-2/condiciones/resumen", "secretario");
   assert.equal(resumen.cuerpo.data.tieneCondiciones, false);
   assert.equal(resumen.cuerpo.data.total, 0);
 });
