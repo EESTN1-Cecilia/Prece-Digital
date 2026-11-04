@@ -14,6 +14,7 @@ Shared/             dominio compartido (módulos, roles, permisos) y scripts del
 .github/            CI, CODEOWNERS y plantilla de PR
 ```
 
+
 ## Instalación
 
 Desde la raíz (instala todos los workspaces con un solo `package-lock.json`):
