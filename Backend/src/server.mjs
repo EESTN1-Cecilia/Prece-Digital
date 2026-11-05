@@ -7,6 +7,8 @@ import studentRepository from "../modules/students/students.repository.mjs";
 import calendarioService from "../modules/calendario/calendario.service.mjs";
 import { seedAcademiaLocal } from "../database/seeds/alumnos-locales-academia.seed.mjs";
 import { seedDatosAlumnos } from "../database/seeds/alumnos-datos.seed.mjs";
+import { seedDocentesTalleres } from "../database/seeds/docentes-talleres.seed.mjs";
+import { seedAlumnosTalleres } from "../database/seeds/alumnos-talleres.seed.mjs";
 import { createApp } from "./app.mjs";
 import { buscarDivision } from "../modules/students/catalogo.mjs";
 import repositorioPortalAlumno from "../modules/student-portal/repositorio.mjs";
@@ -60,6 +62,10 @@ async function startServer() {
     }
     const datos = seedDatosAlumnos();
     console.log(`Datos de alumnos: ${datos.notas} notas, ${datos.previas} previas y ${datos.inasistencias} inasistencias en ${datos.alumnos} alumnos; ${datos.datosPersonales} legajos completados y ${datos.tutores} tutores`);
+    seedDocentesTalleres();
+    console.log("Talleres de jefatura asignados (menos 3 cursos de prueba)");
+    const alumnosAsignados = seedAlumnosTalleres();
+    console.log(`Alumnos asignados a grupos de taller: ${alumnosAsignados} (pendientes: 1°3, 1°4 y 1°6)`);
   }
 
   const nuevosEventos = calendarioService.cargarIniciales();

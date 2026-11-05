@@ -229,7 +229,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "academic",
     padre: "#/inicio",
-    roles: ["jefe_area", "admin"],
+    roles: ["jefe_area", "director", "admin"],
     permisos: [PERMISOS.academicosLeer, PERMISOS.horariosLeer],
     todosLosPermisos: true,
     enMenu: true

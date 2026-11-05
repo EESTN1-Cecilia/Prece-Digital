@@ -9,6 +9,7 @@ import { EditarRolesModal } from "./components/editar-roles-modal.js";
 import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.js";
 import { PeriodosCargaSection } from "./components/periodos-carga-section.js";
 import { AsignacionesSection, calcularMetricasAsignaciones } from "./components/asignaciones-section.js";
+import { InformesSection } from "./components/informes-section.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { fecha } from "../../utils/formato.js";
 
@@ -159,14 +160,15 @@ export default function DirectorDashboardView() {
   const [resumen, setResumen] = useState(null);
   const [personal, setPersonal] = useState([]);
   const [pedidos, setPedidos] = useState([]);
+  const [informes, setInformes] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'supervision' | 'carga-notas' | 'pedidos' | 'alertas'
+  const [pestanaActiva, setPestanaActiva] = useState("general"); // 'general' | 'personal' | 'asignaciones' | 'carga-notas' | 'informes' | 'pedidos' | 'alertas'
   const [modoAsistencia, setModoAsistencia] = useState("porcentaje"); // 'porcentaje' | 'cantidad'
   const [modoAlumnos, setModoAlumnos] = useState("cantidad"); // 'cantidad' | 'porcentaje'
 
-  // Opciones de visualización (deshabilitar Server, Jefatura y Habilitar Pedidos sin borrar código)
+  // Opciones de visualización (habilitar Jefatura; Server y Pedidos según configuración)
   const MOSTRAR_SERVER = false;
-  const MOSTRAR_JEFATURA = false;
+  const MOSTRAR_JEFATURA = true;
   const MOSTRAR_HABILITAR_PEDIDOS = false;
 
   // Asignaciones para Tablero General
@@ -189,18 +191,20 @@ export default function DirectorDashboardView() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const [resumenData, personalData, pedidosData, precData, profData] = await Promise.all([
+      const [resumenData, personalData, pedidosData, precData, profData, informesData] = await Promise.all([
         DirectorService.getDashboardConsolidado(),
         DirectorService.listarPerfiles(),
         DirectorService.listarPedidos(),
         DirectorService.listarAsignacionesPreceptores(),
-        DirectorService.listarAsignacionesProfesores()
+        DirectorService.listarAsignacionesProfesores(),
+        DirectorService.listarInformes()
       ]);
       setResumen(resumenData);
       setPersonal(personalData);
       setPedidos(pedidosData);
       setDivisionesPreceptores(precData || []);
       setCatedrasProfesores(profData || []);
+      setInformes(informesData || []);
     } catch {
       // Ignorar fallback silencioso
     } finally {
@@ -258,6 +262,33 @@ export default function DirectorDashboardView() {
   const handlePerfilCreado = (nuevo) => {
     mostrarToast(`Perfil de ${nuevo.displayName || nuevo.nombre} creado con éxito.`);
     cargarDatos();
+  };
+
+  const handleCrearInforme = async (datos) => {
+    const creado = await DirectorService.crearInforme({
+      ...datos,
+      autor: usuario.nombre || "Dirección General"
+    });
+    setInformes((prev) => [creado, ...prev.filter((item) => item.id !== creado.id)]);
+    try {
+      window.dispatchEvent(new CustomEvent("prece:informes-actualizados", { detail: creado }));
+    } catch {}
+    const etiquetaDest =
+      datos.destinatarios === "alumnos"
+        ? "los alumnos"
+        : datos.destinatarios === "preceptores"
+          ? "los preceptores"
+          : "alumnos y preceptores";
+    mostrarToast(`Informe enviado correctamente a ${etiquetaDest}.`);
+  };
+
+  const handleEliminarInforme = async (informeId) => {
+    await DirectorService.eliminarInforme(informeId);
+    setInformes((prev) => prev.filter((item) => item.id !== informeId));
+    try {
+      window.dispatchEvent(new CustomEvent("prece:informes-actualizados", { detail: { id: informeId, eliminado: true } }));
+    } catch {}
+    mostrarToast("Informe eliminado.");
   };
 
   const handleRolesActualizados = (usuarioId, nuevosRoles) => {
@@ -556,8 +587,8 @@ export default function DirectorDashboardView() {
           { id: "general", label: "Tablero General", icon: IconChart },
           { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
           { id: "asignaciones", label: "Asignaciones", icon: IconSchool },
-          { id: "supervision", label: "Supervisión de Áreas", icon: IconSchool },
           { id: "carga-notas", label: "Carga de Notas", icon: IconClipboard },
+          { id: "informes", label: `Informes (${informes.length})`, icon: IconClipboard },
           ...(MOSTRAR_HABILITAR_PEDIDOS
             ? [
               {
@@ -985,59 +1016,22 @@ export default function DirectorDashboardView() {
                 h("span", { className: "director-kpi-link-btn" }, "Gestionar asignaciones →")
               )
             )
-          ),
+          )
+        )
+        : null,
 
-          // Accesos Rápidos de Supervisión Directiva (si Server o Jefatura estuviesen activos)
-          (MOSTRAR_SERVER || MOSTRAR_JEFATURA)
-            ? h(
-              "div",
-              { className: "director-supervision-cards-grid" },
-              MOSTRAR_SERVER
-                ? h(
-                  "div",
-                  { className: "director-access-box" },
-                  h(
-                    "div",
-                    { className: "director-access-box__header" },
-                    h("div", { className: "director-access-icon-wrap director-access-icon-wrap--srv" }, h(IconServer, { width: "20", height: "20", className: "text-emerald-600" })),
-                    h("h3", { className: "director-access-title" }, "Server")
-                  ),
-                  h("p", { className: "director-access-desc" }, "Control de stock de materiales, equipamiento técnico, reservas de laboratorios y solicitudes."),
-                  h(
-                    "div",
-                    { className: "director-access-actions" },
-                    h(
-                      "a",
-                      { href: "#/server", className: "director-btn-navy" },
-                      "Ir a Server"
-                    )
-                  )
-                )
-                : null,
-              MOSTRAR_JEFATURA
-                ? h(
-                  "div",
-                  { className: "director-access-box" },
-                  h(
-                    "div",
-                    { className: "director-access-box__header" },
-                    h("div", { className: "director-access-icon-wrap director-access-icon-wrap--jef" }, h(IconWrench, { width: "20", height: "20", className: "text-amber-600" })),
-                    h("h3", { className: "director-access-title" }, "Jefatura de Área y Talleres")
-                  ),
-                  h("p", { className: "director-access-desc" }, "Grilla horaria de talleres, distribución de espacios y seguimiento de materias técnicas."),
-                  h(
-                    "div",
-                    { className: "director-access-actions" },
-                    h(
-                      "a",
-                      { href: "#/jefatura", className: "director-btn-navy" },
-                      "Ir a Jefatura"
-                    )
-                  )
-                )
-                : null
-            )
-            : null
+      // =========================================================================
+      // PESTAÑA DE INFORMES: ENVÍO Y GESTIÓN DE COMUNICADOS DE DIRECCIÓN
+      // =========================================================================
+      !cargando && pestanaActiva === "informes"
+        ? h(
+          "div",
+          { className: "director-section-content" },
+          h(InformesSection, {
+            informes,
+            alEnviar: handleCrearInforme,
+            alEliminar: handleEliminarInforme
+          })
         )
         : null,
 
@@ -1286,441 +1280,6 @@ export default function DirectorDashboardView() {
           onMostrarToast: mostrarToast,
           subpestanaInicial: subpestanaAsignaciones
         })
-        : null,
-
-      // =========================================================================
-      // PESTAÑA 3: SUPERVISIÓN DE ÁREAS
-      // =========================================================================
-      // =========================================================================
-      // PESTAÑA 3: SUPERVISIÓN DE ÁREAS (SECRETARÍA, PRECEPTORÍA Y CUERPO DOCENTE)
-      // =========================================================================
-      !cargando && pestanaActiva === "supervision"
-        ? (() => {
-            const matriculaTotal = resumen?.alumnos?.totalActivos ?? 840;
-            const divisionesTotales = resumen?.alumnos?.divisiones ?? 32;
-            const alumnosRiesgo = resumen?.alumnos?.alumnosEnRiesgo ?? 12;
-            const tasaAsistencia = resumen?.asistencia?.tasaGeneral ?? 94.2;
-            const alertasConsecutivas = resumen?.asistencia?.alertasConsecutivas ?? 3;
-            const presentesHoy = resumen?.asistencia?.presentesHoy ?? 791;
-            const totalPreceptores = metricasAsignaciones?.preceptores?.total || resumen?.personal?.porRol?.preceptor || 8;
-            const preceptoresAsignados = metricasAsignaciones?.preceptores?.asignados || totalPreceptores;
-
-            const docentesLista = personal.filter((p) => p.roles?.some((r) => r.id === "docente" || r.id === "profesor"));
-            const totalDocentes = docentesLista.length > 0 ? docentesLista.length : (resumen?.personal?.porRol?.docente || 24);
-            const totalMaterias = resumen?.academico?.totalMaterias ?? 68;
-            const modulosTotales = catedrasProfesores.reduce((acc, c) => acc + (parseInt(c.modulos, 10) || 4), 0) || 384;
-
-            return h(
-              "div",
-              { className: "director-section-content" },
-              h(
-                "div",
-                { className: "director-supervision-wrapper" },
-
-                // 1. Banner Superior de Supervisión
-                h(
-                  "div",
-                  { className: "director-supervision-header" },
-                  h(
-                    "div",
-                    { className: "director-supervision-header__info" },
-                    h(
-                      "h3",
-                      { className: "director-supervision-header__title" },
-                      h(IconSchool, { className: "text-blue-600", width: "20", height: "20" }),
-                      "Centro de Supervisión de Áreas Institucionales"
-                    ),
-                    h(
-                      "p",
-                      { className: "director-supervision-header__desc" },
-                      "Monitoreo ejecutivo en tiempo real de Secretaría Académica, Preceptoría y el Cuerpo Docente."
-                    )
-                  ),
-                  h(
-                    "div",
-                    { className: "director-supervision-header__badges" },
-                    h("span", { className: "director-supervision-pill director-supervision-pill--blue" }, "Ciclo Lectivo 2026"),
-                    h("span", { className: "director-supervision-pill director-supervision-pill--active" }, "● 3 Áreas Activas")
-                  )
-                ),
-
-                // 2. Grilla de las 3 Áreas (Secretaría, Preceptoría y Docentes)
-                h(
-                  "div",
-                  { className: "director-supervision-cards-grid" },
-
-                  // TARJETA 1: SECRETARÍA ACADÉMICA
-                  h(
-                    "div",
-                    { className: "director-supervision-card director-supervision-card--secretaria" },
-                    h("div", { className: "director-supervision-card__bar director-supervision-card__bar--secretaria" }),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__header" },
-                      h(
-                        "div",
-                        { className: "director-supervision-card__title-box" },
-                        h(
-                          "div",
-                          { className: "director-supervision-card__icon-wrap director-supervision-card__icon-wrap--secretaria" },
-                          h(IconUsers, { width: "20", height: "20" })
-                        ),
-                        h(
-                          "div",
-                          null,
-                          h("h4", { className: "director-supervision-card__title" }, "Secretaría Académica"),
-                          h("p", { className: "director-supervision-card__subtitle" }, "Matrícula escolar y legajos")
-                        )
-                      ),
-                      h("span", { className: "director-supervision-card__badge director-supervision-card__badge--secretaria" }, "Matrícula Activa")
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__body" },
-                      h(
-                        "div",
-                        { className: "director-supervision-metrics-2x2" },
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Matrícula Total"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-slate-800" }, matriculaTotal),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "Estudiantes activos")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Cursos Totales"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-blue-600" }, `${divisionesTotales} div.`),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "1° a 7° Año")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Alumnos en Riesgo"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-rose-600" }, `${alumnosRiesgo} casos`),
-                          h("span", { className: "director-supervision-metric-tile__sub text-rose-500" }, "Seguimiento activo")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Turnos"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-slate-800" }, "3 Turnos"),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "Mañ. / Tard. / Taller")
-                        )
-                      ),
-                      h(
-                        "div",
-                        { className: "director-supervision-progress-row" },
-                        h(
-                          "div",
-                          { className: "director-supervision-progress-label" },
-                          h("span", null, "Regularidad de Legajos"),
-                          h("strong", { className: "text-blue-700" }, "98.5%")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-progress-bar" },
-                          h("div", {
-                            className: "director-supervision-progress-fill director-supervision-progress-fill--blue",
-                            style: { width: "98.5%" }
-                          })
-                        )
-                      )
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__footer" },
-                      h(
-                        "a",
-                        { href: "#/secretaria", className: "director-supervision-btn-primary director-supervision-btn-primary--secretaria" },
-                        "Abrir Tablero de Secretaría ➔"
-                      ),
-                      h(
-                        "div",
-                        { className: "director-supervision-secondary-links" },
-                        h("a", { href: "#/alumnos", className: "director-supervision-link" }, "Ver Legajos"),
-                        h("a", { href: "#/inscribir-alumno", className: "director-supervision-link" }, "Inscripciones"),
-                        h("a", { href: "#/pases", className: "director-supervision-link" }, "Pases")
-                      )
-                    )
-                  ),
-
-                  // TARJETA 2: PRECEPTORÍA Y TURNOS
-                  h(
-                    "div",
-                    { className: "director-supervision-card director-supervision-card--preceptoria" },
-                    h("div", { className: "director-supervision-card__bar director-supervision-card__bar--preceptoria" }),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__header" },
-                      h(
-                        "div",
-                        { className: "director-supervision-card__title-box" },
-                        h(
-                          "div",
-                          { className: "director-supervision-card__icon-wrap director-supervision-card__icon-wrap--preceptoria" },
-                          h(IconClipboard, { width: "20", height: "20" })
-                        ),
-                        h(
-                          "div",
-                          null,
-                          h("h4", { className: "director-supervision-card__title" }, "Preceptoría y Turnos"),
-                          h("p", { className: "director-supervision-card__subtitle" }, "Asistencia diaria y convivencia")
-                        )
-                      ),
-                      h("span", { className: "director-supervision-card__badge director-supervision-card__badge--preceptoria" }, "Turno Activo")
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__body" },
-                      h(
-                        "div",
-                        { className: "director-supervision-metrics-2x2" },
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Asistencia General"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-purple-700" }, `${tasaAsistencia}%`),
-                          h("span", { className: "director-supervision-metric-tile__sub text-emerald-600" }, "+1.2% este mes")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Preceptores"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-slate-800" }, `${preceptoresAsignados} Asignados`),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "100% cursos cubiertos")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Inasistencias Críticas"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-amber-600" }, `${alertasConsecutivas} casos`),
-                          h("span", { className: "director-supervision-metric-tile__sub text-amber-600" }, "Reiteradas")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Presentes Hoy"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-slate-800" }, presentesHoy),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "En establecimientos")
-                        )
-                      ),
-                      h(
-                        "div",
-                        { className: "director-supervision-progress-row" },
-                        h(
-                          "div",
-                          { className: "director-supervision-progress-label" },
-                          h("span", null, "Cobertura de Preceptoría"),
-                          h("strong", { className: "text-purple-700" }, "100%")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-progress-bar" },
-                          h("div", {
-                            className: "director-supervision-progress-fill director-supervision-progress-fill--purple",
-                            style: { width: "100%" }
-                          })
-                        )
-                      )
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__footer" },
-                      h(
-                        "a",
-                        { href: "#/preceptoria", className: "director-supervision-btn-primary director-supervision-btn-primary--preceptoria" },
-                        "Abrir Tablero de Preceptoría ➔"
-                      ),
-                      h(
-                        "div",
-                        { className: "director-supervision-secondary-links" },
-                        h("a", { href: "#/preceptoria/observaciones", className: "director-supervision-link" }, "Observaciones"),
-                        h("a", { href: "#/asistencias", className: "director-supervision-link" }, "Partes de Aula"),
-                        h(
-                          "button",
-                          {
-                            type: "button",
-                            className: "director-supervision-link",
-                            onClick: () => {
-                              setPestanaActiva("asignaciones");
-                              setSubpestanaAsignaciones("preceptores");
-                            }
-                          },
-                          "Asignaciones"
-                        )
-                      )
-                    )
-                  ),
-
-                  // TARJETA 3: SUPERVISIÓN DE CUERPO DOCENTE Y CÁTEDRAS (NUEVO)
-                  h(
-                    "div",
-                    { className: "director-supervision-card director-supervision-card--docente" },
-                    h("div", { className: "director-supervision-card__bar director-supervision-card__bar--docente" }),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__header" },
-                      h(
-                        "div",
-                        { className: "director-supervision-card__title-box" },
-                        h(
-                          "div",
-                          { className: "director-supervision-card__icon-wrap director-supervision-card__icon-wrap--docente" },
-                          h(IconBook, { width: "20", height: "20" })
-                        ),
-                        h(
-                          "div",
-                          null,
-                          h("h4", { className: "director-supervision-card__title" }, "Cuerpo Docente y Cátedras"),
-                          h("p", { className: "director-supervision-card__subtitle" }, "Carga horaria, revista y asignaciones")
-                        )
-                      ),
-                      h("span", { className: "director-supervision-card__badge director-supervision-card__badge--docente" }, "Gestión Pedagógica")
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__body" },
-                      h(
-                        "div",
-                        { className: "director-supervision-metrics-2x2" },
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Docentes en Planta"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-emerald-700" }, `${totalDocentes} Prof.`),
-                          h("span", { className: "director-supervision-metric-tile__sub text-emerald-600" }, "Activos en cátedras")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Materias y Cátedras"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-slate-800" }, `${totalMaterias} Materias`),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "Diseño curricular")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Módulos Semanales"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-blue-700" }, `${modulosTotales} mód.`),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "Horas asignadas")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-metric-tile" },
-                          h("span", { className: "director-supervision-metric-tile__label" }, "Situación Revista"),
-                          h("strong", { className: "director-supervision-metric-tile__val text-slate-800" }, "78% Titular"),
-                          h("span", { className: "director-supervision-metric-tile__sub" }, "15% Prov. · 7% Supl.")
-                        )
-                      ),
-                      h(
-                        "div",
-                        { className: "director-supervision-progress-row" },
-                        h(
-                          "div",
-                          { className: "director-supervision-progress-label" },
-                          h("span", null, "Cobertura Curricular"),
-                          h("strong", { className: "text-emerald-700" }, "98.2%")
-                        ),
-                        h(
-                          "div",
-                          { className: "director-supervision-progress-bar" },
-                          h("div", {
-                            className: "director-supervision-progress-fill director-supervision-progress-fill--green",
-                            style: { width: "98.2%" }
-                          })
-                        )
-                      )
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-card__footer" },
-                      h(
-                        "button",
-                        {
-                          type: "button",
-                          className: "director-supervision-btn-primary director-supervision-btn-primary--docente",
-                          onClick: () => {
-                            setPestanaActiva("asignaciones");
-                            setSubpestanaAsignaciones("profesores");
-                          }
-                        },
-                        "Gestionar Asignaciones Docentes ➔"
-                      ),
-                      h(
-                        "div",
-                        { className: "director-supervision-secondary-links" },
-                        h("a", { href: "#/docente", className: "director-supervision-link" }, "Tablero Docente"),
-                        h("a", { href: "#/boletines", className: "director-supervision-link" }, "Calificaciones"),
-                        h("a", { href: "#/docente/asistencias", className: "director-supervision-link" }, "Asistencias")
-                      )
-                    )
-                  )
-                ),
-
-                // 3. Tira Inferior de Indicadores Ejecutivos Consolidados
-                h(
-                  "div",
-                  { className: "director-supervision-summary-strip" },
-                  h(
-                    "div",
-                    { className: "director-supervision-summary-strip__header" },
-                    h("h4", { className: "director-supervision-summary-strip__title" }, "Estado Operativo Institucional Consolidado"),
-                    h("span", { className: "director-supervision-pill director-supervision-pill--blue" }, "Supervisión Directiva en Tiempo Real")
-                  ),
-                  h(
-                    "div",
-                    { className: "director-supervision-summary-strip__grid" },
-                    h(
-                      "div",
-                      { className: "director-supervision-summary-item" },
-                      h("div", { className: "director-supervision-summary-item__icon bg-blue-50 text-blue-600" }, "🎓"),
-                      h(
-                        "div",
-                        { className: "director-supervision-summary-item__info" },
-                        h("span", { className: "director-supervision-summary-item__val" }, "91.4%"),
-                        h("span", { className: "director-supervision-summary-item__label" }, "Aprobación General")
-                      )
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-summary-item" },
-                      h("div", { className: "director-supervision-summary-item__icon bg-purple-50 text-purple-600" }, "👥"),
-                      h(
-                        "div",
-                        { className: "director-supervision-summary-item__info" },
-                        h("span", { className: "director-supervision-summary-item__val" }, `${tasaAsistencia}%`),
-                        h("span", { className: "director-supervision-summary-item__label" }, "Presentismo Escolar")
-                      )
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-summary-item" },
-                      h("div", { className: "director-supervision-summary-item__icon bg-emerald-50 text-emerald-600" }, "📚"),
-                      h(
-                        "div",
-                        { className: "director-supervision-summary-item__info" },
-                        h("span", { className: "director-supervision-summary-item__val" }, `${modulosTotales} mód.`),
-                        h("span", { className: "director-supervision-summary-item__label" }, "Cátedras Dictadas")
-                      )
-                    ),
-                    h(
-                      "div",
-                      { className: "director-supervision-summary-item" },
-                      h("div", { className: "director-supervision-summary-item__icon bg-amber-50 text-amber-600" }, "🛡️"),
-                      h(
-                        "div",
-                        { className: "director-supervision-summary-item__info" },
-                        h("span", { className: "director-supervision-summary-item__val" }, `${alertasConsecutivas} alertas`),
-                        h("span", { className: "director-supervision-summary-item__label" }, "Seguimiento Prioritario")
-                      )
-                    )
-                  )
-                )
-              )
-            );
-          })()
         : null,
 
       // =========================================================================

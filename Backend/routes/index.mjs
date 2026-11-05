@@ -51,6 +51,7 @@ import * as academicRecordsController from "../modules/academic-records/academic
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
+import * as informesDireccionController from "../modules/director/informes-direccion.controller.mjs";
 import * as studentPortalController from "../modules/student-portal/student-portal.controller.mjs";
 import { alumnoAutenticado, cuentaConfigurada } from "../modules/student-portal/student-portal.middleware.mjs";
 import { catedrasService } from "../modules/teachers/catedras.service.mjs";
@@ -168,6 +169,11 @@ const rutasDeclaradas = [
   { method: "GET", path: "/api/v1/jefatura/grilla", middlewares: [verifyToken, required(P.SCHEDULES_READ)], handler: jefaturaController.getGrilla },
   { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
+
+  /* Informes y comunicados emitidos por Dirección */
+  { method: "GET", path: "/api/v1/informes-direccion", middlewares: [verifyToken], handler: informesDireccionController.listar },
+  { method: "POST", path: "/api/v1/informes-direccion", middlewares: [verifyToken], handler: informesDireccionController.crear },
+  { method: "DELETE", path: "/api/v1/informes-direccion/:informeId", middlewares: [verifyToken], handler: informesDireccionController.eliminar },
 
   /* Condiciones particulares de alumnos. Los literales (catalogos) van antes que
      los parametros porque el router gana con la primera coincidencia. */

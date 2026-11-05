@@ -111,3 +111,16 @@ test("el menu solo ofrece las secciones que puede abrir", () => {
   assert.ok(!visibleEnMenu("Inventario"));
   assert.ok(!visibleEnMenu("Tablero de secretaria"));
 });
+
+test("direccion puede acceder al panel de jefatura y verlo en el menu", () => {
+  const director = {
+    cargando: false,
+    autenticado: true,
+    permisos: permissionsForRole("director"),
+    roles: [{ id: "director", nombre: "Dirección" }]
+  };
+  const accesoDirector = decidirAcceso(resolverRuta("#/jefatura", RUTAS), director).tipo;
+  assert.equal(accesoDirector, ACCESO.permitido, "el director debe tener acceso permitido a #/jefatura");
+  const titulos = rutasVisibles(RUTAS, director).map((r) => r.titulo);
+  assert.ok(titulos.includes("Panel de jefatura"), "el director debe ver Panel de jefatura en sus opciones");
+});
