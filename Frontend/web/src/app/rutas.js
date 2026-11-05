@@ -42,6 +42,7 @@ import NotificacionesView from "../modules/notifications/notificaciones-view.js"
 import CalendarioView from "../modules/calendario/calendario-view.js";
 import LoginView from "../modules/auth/login-view.js";
 import InviteView from "../modules/auth/invite-view.js";
+import RecuperarView from "../modules/auth/recuperar-view.js";
 import UsuariosView from "../modules/identity/usuarios-view.js";
 import UsuarioDetalleView from "../modules/identity/usuario-detalle-view.js";
 import UsuarioFormularioView from "../modules/identity/usuario-formulario-view.js";
@@ -61,8 +62,37 @@ import CuentaAlumnoView from "../modules/alumno-portal/cuenta-view.js";
 import { conPortal } from "../modules/alumno-portal/portal-layout.js";
 import { PERMISOS } from "../utils/permisos.js";
 import InicioView from "./inicio.js";
+import PaginaInstitucionalView from "../modules/institucional/pagina-institucional-view.js";
 
 export const RUTAS = [
+  {
+    patron: "#/nosotros",
+    titulo: "Sobre Nosotros",
+    vista: PaginaInstitucionalView,
+    propiedades: { pagina: "nosotros" },
+    publica: true
+  },
+  {
+    patron: "#/soporte",
+    titulo: "Soporte",
+    vista: PaginaInstitucionalView,
+    propiedades: { pagina: "soporte" },
+    publica: true
+  },
+  {
+    patron: "#/privacidad",
+    titulo: "Privacidad",
+    vista: PaginaInstitucionalView,
+    propiedades: { pagina: "privacidad" },
+    publica: true
+  },
+  {
+    patron: "#/contacto",
+    titulo: "Contacto",
+    vista: PaginaInstitucionalView,
+    propiedades: { pagina: "contacto" },
+    publica: true
+  },
   {
     patron: "#/login",
     titulo: "Iniciar sesion",
@@ -74,6 +104,12 @@ export const RUTAS = [
     titulo: "Activar cuenta",
     vista: LoginView,
     propiedades: { titulo: "Activar Cuenta" },
+    publica: true
+  },
+  {
+    patron: "#/recuperar",
+    titulo: "Recuperar contraseña",
+    vista: RecuperarView,
     publica: true
   },
   /* Portal del alumno: solo el rol alumno. Tiene su propio marco y navegacion

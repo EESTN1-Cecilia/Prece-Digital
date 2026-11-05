@@ -16,6 +16,54 @@ export const TIPOS = [
   { id: "sistema", nombre: "Sistema" }
 ];
 
+/* Estado de lectura y descarte guardado en el navegador, por usuario.
+   Las alertas por rol se arman en el cliente y el backend no las conoce: sin esto,
+   al recargar la pagina volvian a aparecer como no leidas. */
+const CLAVE_ESTADO_LOCAL = "prece_notificaciones_estado";
+let usuarioActivo = "anonimo";
+let idsConocidos = [];
+
+function leerEstadoLocal() {
+  try {
+    const crudo = JSON.parse(localStorage.getItem(`${CLAVE_ESTADO_LOCAL}:${usuarioActivo}`) ?? "null");
+    return {
+      leidas: crudo?.leidas && typeof crudo.leidas === "object" ? crudo.leidas : {},
+      descartadas: Array.isArray(crudo?.descartadas) ? crudo.descartadas : []
+    };
+  } catch {
+    return { leidas: {}, descartadas: [] };
+  }
+}
+
+function guardarEstadoLocal(estado) {
+  try {
+    localStorage.setItem(`${CLAVE_ESTADO_LOCAL}:${usuarioActivo}`, JSON.stringify(estado));
+  } catch {
+    // Sin almacenamiento disponible: el estado vale solo para esta pagina.
+  }
+}
+
+export function recordarNotificacionLeida(id, leida = true) {
+  if (id === null || id === undefined) return;
+  const estado = leerEstadoLocal();
+  estado.leidas[String(id)] = Boolean(leida);
+  guardarEstadoLocal(estado);
+}
+
+function recordarTodasLeidas() {
+  const estado = leerEstadoLocal();
+  idsConocidos.forEach((id) => {
+    estado.leidas[String(id)] = true;
+  });
+  guardarEstadoLocal(estado);
+}
+
+function recordarDescartada(id) {
+  const estado = leerEstadoLocal();
+  if (!estado.descartadas.includes(String(id))) estado.descartadas.push(String(id));
+  guardarEstadoLocal(estado);
+}
+
 function primero(objeto, claves) {
   for (const clave of claves) {
     const valor = objeto?.[clave];
@@ -68,6 +116,8 @@ export async function listarNotificaciones(sesion = {}) {
       // Ignorar fallback storage
     }
   }
+
+  usuarioActivo = String(usuario?.id ?? usuario?.email ?? "anonimo");
 
   const esDirector = roles.includes("director") || roles.includes("admin");
   const esDocente = roles.includes("docente") || roles.includes("profesor");
@@ -285,18 +335,28 @@ export async function listarNotificaciones(sesion = {}) {
     }
   }
 
+  // Aplicar lo que la persona ya leyo o descarto (sobrevive a recargar la pagina)
+  const local = leerEstadoLocal();
+  items = items
+    .filter((item) => !local.descartadas.includes(String(item.id)))
+    .map((item) => (String(item.id) in local.leidas ? { ...item, leida: local.leidas[String(item.id)] } : item));
+  idsConocidos = items.map((item) => item.id);
+
   return { data: items, origen: "api" };
 }
 
 export function marcarNotificacionLeida(id) {
+  recordarNotificacionLeida(id, true);
   return pedir(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }).catch(() => true);
 }
 
 export function marcarTodasLasNotificacionesLeidas() {
+  recordarTodasLeidas();
   return pedir("/api/v1/notifications/read-all", { method: "POST" }).catch(() => true);
 }
 
 export async function descartarNotificacionApi(id) {
+  recordarDescartada(id);
   try {
     await pedir(`/api/v1/alerts/${encodeURIComponent(id)}/dismiss`, { method: "POST" });
   } catch {

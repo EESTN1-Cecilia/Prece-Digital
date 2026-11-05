@@ -173,6 +173,7 @@ export const MATERIAS_ORIENTACION = {
 };
 
 const NUMEROS_A_LETRAS = {
+  0: "CERO",
   1: "UNO",
   2: "DOS",
   3: "TRES",
@@ -185,11 +186,31 @@ const NUMEROS_A_LETRAS = {
   10: "DIEZ"
 };
 
+const NOTA_MAXIMA = 10;
+
+/* Calificacion: solo numeros entre 0 y 10, con hasta 2 decimales ("8", "8.5",
+   "8,66"). Si lo tipeado no es valido (letras, mas de 10) se conserva el valor
+   anterior, asi no se puede escribir 11, 10.01 ni texto. */
+export function sanitizarCalificacion(nuevo, anterior = "") {
+  const texto = String(nuevo ?? "").replace(",", ".");
+  if (texto === "") return "";
+  if (!/^\d{0,2}(\.\d{0,2})?$/.test(texto)) return anterior;
+  const num = parseFloat(texto);
+  if (!isNaN(num) && num > NOTA_MAXIMA) return anterior;
+  return texto;
+}
+
+/* Año: solo digitos, hasta 4. */
+export function sanitizarAnio(nuevo) {
+  return String(nuevo ?? "").replace(/\D/g, "").slice(0, 4);
+}
+
 export function convertirNotaALetras(valor) {
   if (valor === undefined || valor === null || valor === "") return "";
   const str = String(valor).trim().replace(",", ".");
-  const num = parseFloat(str);
-  if (isNaN(num)) return valor;
+  let num = parseFloat(str);
+  if (isNaN(num)) return "";
+  num = Math.min(Math.max(num, 0), NOTA_MAXIMA);
 
   const parteEntera = Math.floor(num);
   const parteDecimal = Math.round((num - parteEntera) * 100);
@@ -705,7 +726,15 @@ export function AlumnoMatrizModal({
   const handleFilaChange = (anioClave, index, campo, nuevoValor) => {
     setMatriz((prev) => {
       const anioFilas = [...prev[anioClave]];
-      const fila = { ...anioFilas[index], [campo]: nuevoValor };
+      const anterior = anioFilas[index];
+
+      if (campo === "calificacion") {
+        nuevoValor = sanitizarCalificacion(nuevoValor, anterior.calificacion);
+      } else if (campo === "anio") {
+        nuevoValor = sanitizarAnio(nuevoValor);
+      }
+
+      const fila = { ...anterior, [campo]: nuevoValor };
 
       if (campo === "calificacion") {
         fila.calificacionTexto = convertirNotaALetras(nuevoValor);
@@ -1114,6 +1143,9 @@ export function AlumnoMatrizModal({
                               modoEdicion
                                 ? h("input", {
                                     type: "text",
+                                    inputMode: "decimal",
+                                    maxLength: 5,
+                                    "aria-label": "Calificación (0 a 10)",
                                     className: "matriz-input-inline",
                                     value: fila.calificacion,
                                     onChange: (e) =>
@@ -1157,6 +1189,9 @@ export function AlumnoMatrizModal({
                               modoEdicion
                                 ? h("input", {
                                     type: "text",
+                                    inputMode: "numeric",
+                                    maxLength: 4,
+                                    "aria-label": "Año",
                                     className: "matriz-input-inline matriz-input-anio",
                                     value: fila.anio,
                                     onChange: (e) =>
