@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import { ROLES_DISPONIBLES, DirectorService } from "../director-service.js";
@@ -131,6 +131,10 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   const [errorGlobal, setErrorGlobal] = useState(null);
   const [creadoExitoso, setCreadoExitoso] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  /* El fondo solo cierra el modal si el clic EMPEZO y TERMINO sobre el fondo. Si se
+     arrastra el mouse desde un campo hacia afuera (por ejemplo al seleccionar
+     texto), el navegador igual dispara "click" sobre el fondo y se perdia todo. */
+  const clicEmpezoEnFondo = useRef(false);
 
   // Bloquea el scroll de la pagina mientras el modal esta abierto
   useEffect(() => {
@@ -250,7 +254,21 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
 
   const contenido = h(
     "div",
-    { className: "director-modal-backdrop", onClick: (e) => e.target === e.currentTarget && handleCerrarModal() },
+    {
+      className: "director-modal-backdrop",
+      onMouseDown: (e) => {
+        clicEmpezoEnFondo.current = e.target === e.currentTarget;
+      },
+      onClick: (e) => {
+        const empezoEnFondo = clicEmpezoEnFondo.current;
+        clicEmpezoEnFondo.current = false;
+        /* Con datos cargados sin guardar, el fondo no cierra: solo Cancelar o la X. */
+        const hayDatosSinGuardar = !creadoExitoso && JSON.stringify(form) !== JSON.stringify(FORMULARIO_INICIAL);
+        if (e.target === e.currentTarget && empezoEnFondo && !hayDatosSinGuardar) {
+          handleCerrarModal();
+        }
+      }
+    },
     h(
       "div",
       {
@@ -432,10 +450,14 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
                     h("label", { className: "director-form-label" }, "DNI (sin puntos) *"),
                     h("input", {
                       type: "text",
+                      inputMode: "numeric",
+                      autoComplete: "off",
+                      maxLength: 9,
                       className: `director-form-input ${errores.dni ? "director-form-input--error" : ""}`,
                       placeholder: "Ej: 32456789",
                       value: form.dni,
-                      onChange: (e) => handleChange("dni", e.target.value)
+                      /* El DNI admite solo digitos: se descartan letras, puntos y espacios al escribir o pegar. */
+                      onChange: (e) => handleChange("dni", e.target.value.replace(/\D/g, "").slice(0, 9))
                     }),
                     errores.dni ? h("span", { className: "director-form-error" }, errores.dni) : null
                   )

@@ -824,6 +824,51 @@
   .site-footer {
     display: none !important;
   }
+
+  /* Constancias, certificados y solicitud de pases: se imprime solo la hoja.
+     Se saca de la impresion el resto de la aplicacion (display:none, no
+     visibility, para que no ocupe hojas en blanco) y se libera el modal de su
+     alto fijo y su scroll. */
+  body:has(.doc-paper-sheet) > *:not(:has(.doc-paper-sheet)) {
+    display: none !important;
+  }
+  body:has(.doc-paper-sheet),
+  html:has(.doc-paper-sheet) {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body:has(.doc-paper-sheet) .matriz-modal-backdrop {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    background: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  body:has(.doc-paper-sheet) .matriz-modal-container,
+  body:has(.doc-paper-sheet) .doc-modal-paper-wrap,
+  body:has(.doc-paper-sheet) .matriz-scroll-area {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    animation: none !important;
+  }
+  body:has(.doc-paper-sheet) .doc-paper-sheet {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 }
 
 /* ==========================================================================

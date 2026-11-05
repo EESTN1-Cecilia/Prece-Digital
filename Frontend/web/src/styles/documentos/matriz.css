@@ -924,7 +924,12 @@
     size: A4 portrait;
     margin: 6mm 8mm;
   }
-  html, body {
+  /* Estas reglas son globales para toda impresion: se aplican solo cuando el
+     libro matriz esta abierto. Antes ocultaban TODO el body con visibility, que
+     deja el espacio ocupado y producia hojas en blanco al imprimir constancias
+     y solicitudes de pase. */
+  html:has(.matriz-document-sheet),
+  body:has(.matriz-document-sheet) {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
@@ -933,11 +938,8 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  body * {
-    visibility: hidden;
-  }
-  .matriz-document-sheet, .matriz-document-sheet * {
-    visibility: visible;
+  body:has(.matriz-document-sheet) > *:not(:has(.matriz-document-sheet)) {
+    display: none !important;
   }
   .matriz-document-sheet {
     position: absolute;

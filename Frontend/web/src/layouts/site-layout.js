@@ -5,6 +5,10 @@ import { fecha } from "../utils/formato.js";
 
 export const h = React.createElement;
 
+/* Perfil oficial de Prece Digital en Instagram. Si cambia el usuario, se
+   actualiza solo aca. */
+export const URL_INSTAGRAM = "https://www.instagram.com/precedigital/";
+
 export function IconoFigma({ nombre, className }) {
   return h("img", { className, src: `/assets/icons/${nombre}.svg`, alt: "", "aria-hidden": "true" });
 }
@@ -376,6 +380,10 @@ function HeaderNotificationsMenu() {
 }
 
 function Header({ esLogin }) {
+  const sesion = useSesion();
+  /* Menu de notificaciones y de usuario ("Cerrar sesion"): solo con sesion iniciada
+     y fuera de las pantallas de acceso. */
+  const mostrarSesion = !esLogin && Boolean(sesion?.autenticado);
   return h(
     "header",
     { className: "site-header" },
@@ -398,8 +406,8 @@ function Header({ esLogin }) {
       h(
         "div",
         { className: "site-header__right" },
-        !esLogin ? h(HeaderNotificationsMenu) : null,
-        !esLogin ? h(UserAvatarMenu) : null
+        mostrarSesion ? h(HeaderNotificationsMenu) : null,
+        mostrarSesion ? h(UserAvatarMenu) : null
       )
     )
   );
@@ -444,13 +452,13 @@ function Footer({ esLogin, onOpenDocumento }) {
   const linksNavegacion = esLogin
     ? [
         ["Inicio", "#/inicio"],
-        ["Sobre Nosotros", "#nosotros"]
+        ["Sobre Nosotros", "#/nosotros"]
       ]
     : [
         ["Inicio", "#/inicio"],
         ["Alumnos", "#/alumnos"],
         ["Observaciones", "#/preceptoria/observaciones"],
-        ["Sobre Nosotros", "#nosotros"]
+        ["Sobre Nosotros", "#/nosotros"]
       ];
 
   return h(
@@ -478,7 +486,15 @@ function Footer({ esLogin, onOpenDocumento }) {
           ].map(([name, label]) =>
             h(
               "a",
-              { key: name, href: `#${name}`, "aria-label": label },
+              name === "instagram"
+                ? {
+                    key: name,
+                    href: URL_INSTAGRAM,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    "aria-label": `${label} de Prece Digital`
+                  }
+                : { key: name, href: `#${name}`, "aria-label": label },
               h(IconoFigma, { nombre: name })
             )
           )
@@ -509,9 +525,9 @@ function Footer({ esLogin, onOpenDocumento }) {
         h(FooterLinks, {
           title: "Ayuda",
           links: [
-            ["Soporte", "#soporte"],
-            ["Privacidad", "#privacidad"],
-            ["Contacto", "#contacto"]
+            ["Soporte", "#/soporte"],
+            ["Privacidad", "#/privacidad"],
+            ["Contacto", "#/contacto"]
           ]
         })
       )
@@ -546,8 +562,10 @@ export function SiteLayout({ ruta, children }) {
   const esLogin =
     ruta === "#/login" ||
     ruta === "#/activar" ||
+    ruta === "#/recuperar" ||
     ruta?.startsWith("#/login") ||
-    ruta?.startsWith("#/activar");
+    ruta?.startsWith("#/activar") ||
+    ruta?.startsWith("#/recuperar");
 
   const esPerfil =
     ruta === "#/perfil" ||

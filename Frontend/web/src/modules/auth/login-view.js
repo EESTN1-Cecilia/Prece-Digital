@@ -260,7 +260,7 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
         h(
           "div",
           { className: "login-links-row" },
-          h("a", { href: "#recuperar", className: "login-action-link" }, "¿Olvidaste tu contraseña?"),
+          h("a", { href: "#/recuperar", className: "login-action-link" }, "¿Olvidaste tu contraseña?"),
           h(
             "a",
             {
