@@ -9,7 +9,7 @@ import { userRepository } from "../../database/repositories/user.repository.mjs"
 import { ROLES } from "../../config/permissions.config.mjs";
 import { DIVISIONES_CATALOGO } from "../students/catalogo.mjs";
 import { errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
-import { claveCurso, cursosDelPreceptor } from "./alcance.mjs";
+import { claveCurso, clavesDeSuplencia, cursosDelPreceptor } from "./alcance.mjs";
 
 const capitalizar = (texto) => (texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : texto);
 
@@ -113,7 +113,7 @@ const preceptorAssignmentsService = {
 
   /* Cursos del preceptor autenticado (identidad tomada del token). */
   misCursos(user) {
-    const propios = new Set(cursosDelPreceptor(user).map((curso) => claveCurso(curso.curso, curso.division)));
+    const propios = new Set([...cursosDelPreceptor(user).map((curso) => claveCurso(curso.curso, curso.division)), ...clavesDeSuplencia(user)]);
     return DIVISIONES_CATALOGO.filter((item) => propios.has(claveCurso(item.anio, item.division))).map((item) => vistaDivision(item, { usuario: user }));
   }
 };
