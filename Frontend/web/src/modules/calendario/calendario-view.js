@@ -126,8 +126,7 @@ export default function CalendarioView() {
       if (editando.id) await CalendarioService.editar(editando.id, cuerpo); else await CalendarioService.crear(cuerpo);
       setEditando(null); setMensaje("Fecha guardada."); await cargar();
     } catch (fallo) {
-      const mapa = {}; (fallo.campos ?? []).forEach((c) => { mapa[c.field ?? c.campo] = c.message ?? c.mensaje; });
-      setErrores(Object.keys(mapa).length ? mapa : { _general: fallo.mensaje ?? "No se pudo guardar." });
+      setErrores(fallo.campos ?? { _general: fallo.mensaje ?? "No se pudo guardar." });
     } finally { setOcupado(false); }
   };
   const moverMes = (d) => setVista(sumarMeses(vista.anio, vista.mes, d));
