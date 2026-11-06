@@ -52,8 +52,6 @@ const ALUMNOS = [
   ["Silva", "Thiago", "23331111", 7, "2", "regular", null],
   ["Pereyra", "Zoe", "22220000", 5, "4", "regular", null],
   ["Acosta", "Simon", "21110000", 1, "2", "regular", null],
-  ["Pérez", "Lucas", "40999001", 1, "3", "regular", "2013-04-10"],
-  ["Duarte", "Agustín", "40999003", 1, "4", "regular", "2013-06-20"],
   ["Luna", "Brisa", "20009999", 3, "1", "regular", null]
 ];
 
