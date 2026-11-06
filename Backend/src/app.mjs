@@ -64,7 +64,7 @@ export function createApp(rutas) {
       ctx.params = route.params;
 
       if (METHODS_WITH_BODY.has(request.method)) {
-        ctx.body = await readJsonBody(request);
+        ctx.body = await readJsonBody(request, { maxBytes: route.maxBodyBytes });
       }
 
       for (const middleware of route.middlewares) {

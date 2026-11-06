@@ -18,7 +18,9 @@ const CAMPOS_DEL_SERVIDOR = [
   "approvedBy", "rejectedBy", "decidedBy", "ownerId", "requesterId"
 ];
 
-export async function readJsonBody(request) {
+/* `maxBytes` permite que una ruta puntual (por ejemplo, la que recibe adjuntos en
+   base64) declare un limite mayor en routes/index.mjs sin subir el de toda la API. */
+export async function readJsonBody(request, { maxBytes = MAX_BODY_BYTES } = {}) {
   const trozos = [];
   let total = 0;
 
@@ -26,7 +28,7 @@ export async function readJsonBody(request) {
     for await (const trozo of request) {
       total += trozo.length;
 
-      if (total > MAX_BODY_BYTES) {
+      if (total > maxBytes) {
         throw errorHttp(413, "PAYLOAD_TOO_LARGE", "El cuerpo de la solicitud supera el limite permitido.");
       }
 

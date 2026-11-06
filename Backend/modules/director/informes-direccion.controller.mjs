@@ -2,6 +2,7 @@ import * as service from "./informes-direccion.service.mjs";
 
 const query = (url) => Object.fromEntries(url.searchParams.entries());
 
+/* Personal (director, preceptores, etc.): ver informes-direccion.middleware.mjs. */
 export function listar({ url }) {
   return {
     statusCode: 200,
@@ -23,3 +24,24 @@ export function eliminar({ params }) {
   };
 }
 
+export function archivo({ params }) {
+  return {
+    statusCode: 200,
+    body: { data: service.obtenerArchivo(params.informeId) }
+  };
+}
+
+/* Portal del alumno: solo lo dirigido a alumnos. */
+export function listarParaAlumno() {
+  return {
+    statusCode: 200,
+    body: { data: service.listarParaAlumnos() }
+  };
+}
+
+export function archivoParaAlumno({ params }) {
+  return {
+    statusCode: 200,
+    body: { data: service.obtenerArchivo(params.informeId, { destinatario: "alumnos" }) }
+  };
+}

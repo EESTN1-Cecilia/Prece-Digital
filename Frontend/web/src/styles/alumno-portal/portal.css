@@ -1447,3 +1447,29 @@ a.pa-indicador:hover {
   outline: 2px solid #79232e;
   outline-offset: 3px;
 }
+
+/* Adjunto de un comunicado dentro del modal: nombre + boton de descarga. */
+.pa-aviso-modal__adjunto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.pa-aviso-modal__adjunto button:disabled { opacity: 0.6; cursor: progress; }
+
+.pa-aviso-modal .pa-aviso-modal__error {
+  margin-top: 10px;
+  color: var(--pa-peligro, #a3261b);
+  font-size: 0.85rem;
+}

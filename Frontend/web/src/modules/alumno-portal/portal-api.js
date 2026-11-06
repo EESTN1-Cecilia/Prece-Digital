@@ -10,6 +10,8 @@
      GET   /api/v1/alumno/asistencias?anio=
      GET   /api/v1/alumno/situacion-academica
      GET   /api/v1/alumno/previas
+     GET   /api/v1/alumno/novedades
+     GET   /api/v1/alumno/novedades/:informeId/archivo
 
    El ingreso es el login general (POST /api/v1/auth/login). No hay datos de
    ejemplo: lo que no devuelve el backend no se muestra. */
@@ -40,6 +42,12 @@ export const obtenerBoletin = (anio) => pedir(conAnio("/api/v1/alumno/boletin", 
 export const obtenerAsistencias = (anio) => pedir(conAnio("/api/v1/alumno/asistencias", anio));
 export const obtenerSituacion = () => pedir("/api/v1/alumno/situacion-academica");
 export const obtenerPrevias = () => pedir("/api/v1/alumno/previas");
+
+/* Informes y comunicados que Dirección dirigió a alumnos. La lista no trae el
+   contenido de los adjuntos: se piden aparte, de a uno, al descargarlos. */
+export const obtenerNovedades = () => pedir("/api/v1/alumno/novedades");
+export const obtenerArchivoNovedad = (informeId) =>
+  pedir(`/api/v1/alumno/novedades/${encodeURIComponent(informeId)}/archivo`, { tiempoLimite: 60000 });
 
 /* Reglas de la contraseña, iguales a las del backend (que es quien decide). */
 export function requisitosPassword(password, { dni, usuario } = {}) {
