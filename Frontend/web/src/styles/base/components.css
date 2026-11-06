@@ -226,6 +226,8 @@
   height: 16px;
   color: #64748b;
   flex-shrink: 0;
+  cursor: pointer;
+  pointer-events: auto;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
 }
 
@@ -748,6 +750,17 @@
   background: #ffffff;
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18), 0 6px 12px rgba(15, 23, 42, 0.08);
   padding: 14px;
+}
+
+.observation-calendar--dropup {
+  top: auto;
+  bottom: calc(100% + 8px);
+  box-shadow: 0 -16px 36px rgba(15, 23, 42, 0.18), 0 -6px 12px rgba(15, 23, 42, 0.08);
+}
+
+.observation-calendar--align-right {
+  left: auto;
+  right: 0;
 }
 
 .observation-calendar__header,

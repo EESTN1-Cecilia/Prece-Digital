@@ -440,7 +440,7 @@ function PanelCalificador({ division, grupos, ordenados, asignacion, docentesGru
   );
 }
 
-function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
+function DetalleCurso({ division, grupos, escuela, docentesGrupo, onAsignacionGuardada }) {
   const [alumnos, setAlumnos] = useState(null);
   const [error, setError] = useState(null);
   const [config, setConfig] = useState({ modo: "equilibrado", corte: null, manual: {} });
@@ -550,6 +550,18 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
       });
       setGuardadoApi(Object.fromEntries(ordenados.map((alumno) => [alumno.id, codigoDe(asignacionAGuardar[alumno.id])])));
       setSync({ estado: "ok", mensaje: null });
+
+      const detalleEvento = {
+        clave: division.clave,
+        anio: division.anio,
+        division: division.division
+      };
+      if (typeof onAsignacionGuardada === "function") {
+        onAsignacionGuardada(detalleEvento);
+      }
+      try {
+        window.dispatchEvent(new CustomEvent("prece:talleres-asignados", { detail: detalleEvento }));
+      } catch {}
     } catch (err) {
       const texto = err?.mensaje || err?.message || "";
       setSync({
@@ -559,7 +571,7 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
           : texto || "No se pudo guardar la división en el sistema."
       });
     }
-  }, [division.anio, division.division, grupos, ordenados, asignacion]);
+  }, [division.anio, division.division, division.clave, grupos, ordenados, asignacion, onAsignacionGuardada]);
 
   /* Agrupa cambios seguidos y vuelve a intentar tras una escritura anterior. */
   useEffect(() => {
@@ -840,11 +852,17 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
 
 /* ---------- Vista ---------- */
 
-export default function JefaturaTalleresView({ escuela = "E.E.S.T. N°1 Cecilia Berdichevski" } = {}) {
+export default function JefaturaTalleresView({ escuela = "E.E.S.T. N°1 Cecilia Berdichevski", cursoSeleccionado = null, onVolver = null, onAsignacionGuardada = null } = {}) {
   const [divisiones, setDivisiones] = useState(null);
   const [error, setError] = useState(null);
-  const [seleccion, setSeleccion] = useState(null);
+  const [seleccion, setSeleccion] = useState(cursoSeleccionado);
   const [docentesGrupo, setDocentesGrupo] = useState({});
+
+  useEffect(() => {
+    if (cursoSeleccionado) {
+      setSeleccion(cursoSeleccionado);
+    }
+  }, [cursoSeleccionado]);
 
   /* Profes que la direccion asigno a cada grupo; si falla, se usan los de la planilla de horarios. */
   useEffect(() => {
@@ -896,7 +914,7 @@ export default function JefaturaTalleresView({ escuela = "E.E.S.T. N°1 Cecilia 
   return h(
     "div",
     { className: "jf-talleres" },
-    h("button", { type: "button", className: "jf-volver", onClick: () => setSeleccion(null) }, "← Volver a los cursos"),
-    h(DetalleCurso, { key: division.clave, division, grupos, escuela, docentesGrupo })
+    h("button", { type: "button", className: "jf-volver", onClick: () => { setSeleccion(null); if (onVolver) onVolver(); } }, "← Volver a los cursos"),
+    h(DetalleCurso, { key: division.clave, division, grupos, escuela, docentesGrupo, onAsignacionGuardada })
   );
 }

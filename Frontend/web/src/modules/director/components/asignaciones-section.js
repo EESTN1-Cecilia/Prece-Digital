@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import { DirectorService } from "../director-service.js";
 import { CustomSelect } from "../../../components/common/custom-select.js";
+import { CustomDatePicker } from "../../../components/common/custom-datepicker.js";
 import AsignacionesTalleres from "./asignaciones-talleres.js";
 import AsignacionesSuplencias from "./asignaciones-suplencias.js";
 
@@ -1181,20 +1182,26 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
         if (esAsignado && c.situacion) {
           mapConfig[c.id] = {
             situacion: c.situacion,
-            modulos: parseInt(c.modulos ?? c.horasSemanales ?? 0, 10) || 0
+            modulos: parseInt(c.modulos ?? c.horasSemanales ?? 0, 10) || 0,
+            docenteSuplido: c.docenteSuplido || "",
+            fechaDesde: c.fechaDesde || "",
+            fechaHasta: c.fechaHasta || ""
           };
         } else {
-          mapConfig[c.id] = { situacion: "", modulos: 0 };
+          mapConfig[c.id] = { situacion: "", modulos: 0, docenteSuplido: "", fechaDesde: "", fechaHasta: "" };
         }
       });
       if (catedra.id && catedra.id !== "cat-nuevo") {
         if (esCatedraAsignada && catedra.situacion) {
           mapConfig[catedra.id] = {
             situacion: catedra.situacion,
-            modulos: parseInt(catedra.modulos ?? catedra.horasSemanales ?? 0, 10) || 0
+            modulos: parseInt(catedra.modulos ?? catedra.horasSemanales ?? 0, 10) || 0,
+            docenteSuplido: catedra.docenteSuplido || "",
+            fechaDesde: catedra.fechaDesde || "",
+            fechaHasta: catedra.fechaHasta || ""
           };
         } else {
-          mapConfig[catedra.id] = { situacion: "", modulos: 0 };
+          mapConfig[catedra.id] = { situacion: "", modulos: 0, docenteSuplido: "", fechaDesde: "", fechaHasta: "" };
         }
       }
       setConfigMaterias(mapConfig);
@@ -1233,18 +1240,29 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
     }
   };
 
-  // Opciones para el CustomSelect de profesores
+  // Opciones para el CustomSelect de profesores (solo docentes del personal)
   const opcionesProfesores = useMemo(() => {
-    const list = profesoresDisponibles.map((p) => ({
+    return profesoresDisponibles.map((p) => ({
       value: p.id,
       label: `${p.nombreCompleto} (${p.email})`
     }));
-    list.push({
-      value: "otro",
-      label: "➕ Asignar otro docente / nuevo nombre..."
+  }, [profesoresDisponibles]);
+
+  // Opciones para el selector de profesor titular a reemplazar en caso de suplencia
+  const opcionesProfesoresSuplencia = useMemo(() => {
+    const list = [
+      { value: "", label: "Seleccionar profesor reemplazado..." }
+    ];
+    (profesoresDisponibles || []).forEach((p) => {
+      if (p.id !== profesorSeleccionado) {
+        list.push({
+          value: p.nombreCompleto || p.nombre || p.id,
+          label: `${p.nombreCompleto || p.nombre || "Profesor"} (${p.email || ""})`
+        });
+      }
     });
     return list;
-  }, [profesoresDisponibles]);
+  }, [profesoresDisponibles, profesorSeleccionado]);
 
   // Opciones para el filtro de materia dentro del modal
   const opcionesMateriasModal = useMemo(() => {
@@ -1305,7 +1323,7 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
   // Funciones de gestión individual de cada materia
   const obtenerConfig = (cursoId) => {
     if (configMaterias[cursoId]) return configMaterias[cursoId];
-    return { situacion: "", modulos: 0 };
+    return { situacion: "", modulos: 0, docenteSuplido: "", fechaDesde: "", fechaHasta: "" };
   };
 
   const actualizarConfigMateria = (cursoId, campo, valor) => {
@@ -1418,7 +1436,7 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
         if (!cfgActual || (!cfgActual.situacion && cfgActual.modulos === 0)) {
           return {
             ...cfgPrev,
-            [id]: { situacion: "", modulos: 0 }
+            [id]: { situacion: "", modulos: 0, docenteSuplido: "", fechaDesde: "", fechaHasta: "" }
           };
         }
         return cfgPrev;
@@ -1584,7 +1602,10 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
             situacion: cfg.situacion || "titular",
             modulos: mod,
             horasSemanales: mod,
-            cargaHoraria: `${mod} mód. semanales`
+            cargaHoraria: `${mod} mód. semanales`,
+            docenteSuplido: cfg.situacion === "suplente" ? (cfg.docenteSuplido || "") : "",
+            fechaDesde: cfg.situacion === "suplente" ? (cfg.fechaDesde || "") : "",
+            fechaHasta: cfg.situacion === "suplente" ? (cfg.fechaHasta || "") : ""
           };
         });
 
@@ -2041,6 +2062,61 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                               )
                             ),
 
+                            // Si es suplente: selector del docente reemplazado + fechas Desde y Hasta
+                            cfg.situacion === "suplente"
+                              ? h(
+                                  "div",
+                                  { className: "asignaciones-suplente-panel" },
+                                  h(
+                                    "div",
+                                    { className: "asignaciones-materia-ctrl-group" },
+                                    h("span", { className: "asignaciones-materia-ctrl-label" }, "Profesor al que reemplaza (Titular):"),
+                                    h(CustomSelect, {
+                                      id: `select-prof-reemplazado-${c.id}`,
+                                      value: cfg.docenteSuplido || "",
+                                      options: opcionesProfesoresSuplencia,
+                                      onChange: (val) => actualizarConfigMateria(c.id, "docenteSuplido", val),
+                                      placeholder: "Seleccione al profesor reemplazado...",
+                                      isSearchable: true,
+                                      className: "w-full"
+                                    })
+                                  ),
+                                  h(
+                                    "div",
+                                    { className: "asignaciones-suplente-fechas-grid" },
+                                    h(
+                                      "div",
+                                      { className: "asignaciones-suplente-fecha-item" },
+                                      h("span", { className: "asignaciones-materia-ctrl-label" }, "Desde:"),
+                                      h(CustomDatePicker, {
+                                        id: `fecha-desde-${c.id}`,
+                                        value: cfg.fechaDesde || "",
+                                        onChange: (val) => actualizarConfigMateria(c.id, "fechaDesde", val),
+                                        minYear: 2000,
+                                        maxYear: 2050,
+                                        dropUp: true,
+                                        placeholder: "dd/mm/aaaa"
+                                      })
+                                    ),
+                                    h(
+                                      "div",
+                                      { className: "asignaciones-suplente-fecha-item" },
+                                      h("span", { className: "asignaciones-materia-ctrl-label" }, "Hasta:"),
+                                      h(CustomDatePicker, {
+                                        id: `fecha-hasta-${c.id}`,
+                                        value: cfg.fechaHasta || "",
+                                        onChange: (val) => actualizarConfigMateria(c.id, "fechaHasta", val),
+                                        minYear: 2000,
+                                        maxYear: 2050,
+                                        dropUp: true,
+                                        alignRight: true,
+                                        placeholder: "dd/mm/aaaa"
+                                      })
+                                    )
+                                  )
+                                )
+                              : null,
+
                             // Módulos semanales para esta materia (límite 10, no 50; atajos del 1 al 8)
                             h(
                               "div",
@@ -2314,6 +2390,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
   const [filtroMateriaProfesores, setFiltroMateriaProfesores] = useState("todas");
   const [catedraParaAsignar, setCatedraParaAsignar] = useState(null);
   const [modoVistaProfesores, setModoVistaProfesores] = useState("tabla"); // "tabla" | "tarjetas"
+  const [modoVistaTalleres, setModoVistaTalleres] = useState("tabla"); // "tabla" | "tarjetas"
   const [talleresAsignados, setTalleresAsignados] = useState(0);
 
   // Estados de expansión de división ("Ver más") en tablas
@@ -2721,8 +2798,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
       [
         { id: "preceptores", label: "Preceptores", icon: IconUsers, count: preceptoresAsignadosCount },
         { id: "profesores", label: "Docentes", icon: IconGraduationCap, count: profesoresAsignadosCount },
-        { id: "talleres", label: "Grupos de taller", icon: IconUsers, count: talleresAsignados },
-        { id: "suplencias", label: "Suplencias", icon: IconUsers, count: suplenciasVigentes }
+        { id: "talleres", label: "Grupos de taller", icon: IconUsers, count: talleresAsignados }
       ].map((tab) =>
         h(
           "button",
@@ -3803,17 +3879,50 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
           h(
             "div",
             { className: "asignaciones-card-header" },
-            h("div", { className: "asignaciones-card-title-wrap" }, h("h2", { className: "asignaciones-card-title" }, "Asignación de Grupos de Taller a Profes"))
+            h(
+              "div",
+              { className: "asignaciones-card-title-wrap" },
+              h(
+                "div",
+                { className: "asignaciones-header-icon-box asignaciones-header-icon-box--green" },
+                h(IconCheckSquare, { className: "w-5 h-5 text-emerald-600", width: "22", height: "22" })
+              ),
+              h("h2", { className: "asignaciones-card-title" }, "Asignacion de Grupos de Taller y Docentes"),
+              h(
+                "div",
+                { className: "asignaciones-view-switcher" },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: `asignaciones-view-btn ${modoVistaTalleres === "tabla" ? "asignaciones-view-btn--active" : ""}`,
+                    onClick: () => setModoVistaTalleres("tabla"),
+                    title: "Ver como lista / tabla",
+                    "aria-label": "Ver como lista"
+                  },
+                  h(IconList, { width: "16", height: "16" })
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: `asignaciones-view-btn ${modoVistaTalleres === "tarjetas" ? "asignaciones-view-btn--active" : ""}`,
+                    onClick: () => setModoVistaTalleres("tarjetas"),
+                    title: "Ver como tarjetas",
+                    "aria-label": "Ver como tarjetas"
+                  },
+                  h(IconGrid, { width: "16", height: "16" })
+                )
+              )
+            ),
+            renderSubtabs()
           ),
-          h(AsignacionesTalleres, { personal, onMostrarToast, onContar: setTalleresAsignados })
-        )
-      : null,
-
-    subPestana === "suplencias"
-      ? h(
-          "div",
-          { className: "asignaciones-card" },
-          h(AsignacionesSuplencias, { personal, divisiones: divisionesPreceptores, onMostrarToast, onContar: setSuplenciasVigentes })
+          h(AsignacionesTalleres, {
+            personal,
+            modoVista: modoVistaTalleres,
+            onMostrarToast,
+            onContar: setTalleresAsignados
+          })
         )
       : null,
 

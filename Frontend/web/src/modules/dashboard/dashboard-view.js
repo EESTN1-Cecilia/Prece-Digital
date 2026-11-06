@@ -150,6 +150,13 @@ function formatearFechaHora(d) {
   return `${dia}/${mes}/${anio}, ${horas}:${minutos}:${segundos} ${ampm}`;
 }
 
+function formatearFechaVisual(fechaIso) {
+  if (!fechaIso || typeof fechaIso !== "string") return fechaIso || "";
+  const partes = fechaIso.slice(0, 10).split("-");
+  if (partes.length !== 3) return fechaIso;
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
 export default function DashboardView() {
   const user = useUsuarioActual();
 
@@ -169,6 +176,7 @@ export default function DashboardView() {
   const [catedrasDocentes, setCatedrasDocentes] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
   const [divisiones, setDivisiones] = useState([]);
+  const [informesDireccion, setInformesDireccion] = useState([]);
 
   // Filtros para la sección "Docentes y Materias" (Estilo Foto 2)
   const [busquedaDocente, setBusquedaDocente] = useState("");
@@ -203,11 +211,12 @@ export default function DashboardView() {
     setLoading(true);
     setError(null);
     try {
-      const [resSec, catedras, aluRes, divs] = await Promise.all([
+      const [resSec, catedras, aluRes, divs, informesDir] = await Promise.all([
         SecretariaService.getDashboardData().catch(() => null),
         DirectorService.listarAsignacionesProfesores().catch(() => []),
         StudentsService.getAlumnos({ limit: 100 }).catch(() => ({ data: [] })),
-        StudentsService.getDivisiones().catch(() => [])
+        StudentsService.getDivisiones().catch(() => []),
+        DirectorService.listarInformes({ destinatario: "preceptores" }).catch(() => [])
       ]);
 
       const divisionesVisibles = Array.isArray(divs) ? divs : [];
@@ -222,6 +231,7 @@ export default function DashboardView() {
       setCatedrasDocentes(catedrasVisibles);
       setAlumnos(aluRes?.data || []);
       setDivisiones(divisionesVisibles);
+      setInformesDireccion(Array.isArray(informesDir) ? informesDir : []);
       setLastUpdated(new Date());
     } catch (err) {
       setError(err.message || "Error al sincronizar la información del módulo de preceptoría.");
@@ -233,6 +243,16 @@ export default function DashboardView() {
   useEffect(() => {
     cargarDatos();
   }, [cargarDatos]);
+
+  useEffect(() => {
+    const handleActualizacionInformes = () => {
+      DirectorService.listarInformes({ destinatario: "preceptores" })
+        .then((items) => setInformesDireccion(Array.isArray(items) ? items : []))
+        .catch(() => {});
+    };
+    window.addEventListener("prece:informes-actualizados", handleActualizacionInformes);
+    return () => window.removeEventListener("prece:informes-actualizados", handleActualizacionInformes);
+  }, []);
 
   // Escucha evento global para abrir libro matriz si fuera necesario
   useEffect(() => {
@@ -461,6 +481,67 @@ export default function DashboardView() {
       ? h(
           Fragment,
           null,
+
+          // 1. Comunicados e Informes de Dirección para Preceptoría
+          informesDireccion.length > 0
+            ? h(
+                "section",
+                { className: "preceptoria-informes-section", "aria-label": "Informes de Dirección" },
+                h(
+                  "div",
+                  { className: "preceptoria-informes-header" },
+                  h(
+                    "h2",
+                    { className: "preceptoria-informes-title" },
+                    h(IconClipboard, { width: "18", height: "18", className: "text-indigo-600" }),
+                    "Informes y Comunicados de Dirección"
+                  ),
+                  h(
+                    "span",
+                    { className: "preceptoria-informes-badge" },
+                    `${informesDireccion.length} ${informesDireccion.length === 1 ? "comunicado oficial" : "comunicados oficiales"}`
+                  )
+                ),
+                h(
+                  "div",
+                  { className: "preceptoria-informes-grid" },
+                  informesDireccion.map((inf) => {
+                    const fechaFormateada = inf.fecha ? formatearFechaVisual(inf.fecha) : "";
+                    const esAmbos = inf.destinatarios === "ambos";
+
+                    return h(
+                      "article",
+                      { key: inf.id || inf.titulo, className: "preceptoria-informe-card" },
+                      h(
+                        "div",
+                        { className: "preceptoria-informe-card__top" },
+                        h(
+                          "span",
+                          { className: `preceptoria-informe-dest-pill ${esAmbos ? "preceptoria-informe-dest-pill--ambos" : ""}` },
+                          esAmbos ? "Para: Alumnos y Preceptores" : "Para: Preceptoría"
+                        ),
+                        fechaFormateada ? h("span", { className: "preceptoria-informe-date" }, `Fecha: ${fechaFormateada}`) : null
+                      ),
+                      h("h3", { className: "preceptoria-informe-title" }, inf.titulo || "Informe de Dirección"),
+                      h("p", { className: "preceptoria-informe-text" }, inf.texto),
+                      inf.archivo?.nombre
+                        ? h(
+                            "div",
+                            { className: "preceptoria-informe-attachment" },
+                            h(IconBook, { width: "13", height: "13" }),
+                            h("span", null, `Archivo adjunto: ${inf.archivo.nombre}`)
+                          )
+                        : null,
+                      h(
+                        "div",
+                        { className: "preceptoria-informe-footer" },
+                        `Emitido por: ${inf.autor || "Dirección General"}`
+                      )
+                    );
+                  })
+                )
+              )
+            : null,
 
           // 2. Métricas Propias de Preceptoría (4 Tarjetas Modernas)
           h(

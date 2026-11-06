@@ -10,7 +10,8 @@ const store = {
   devices: new Map(),
   tallerDocentes: new Map(),
   catedras: [],
-  suplencias: []
+  suplencias: [],
+  informesDireccion: []
 };
 
 export function getStore() {

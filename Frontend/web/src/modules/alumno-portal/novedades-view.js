@@ -1,11 +1,12 @@
 import { flushSync } from "react-dom";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 /* Novedades: lo ultimo que se registro en el ciclo (calificaciones e
    inasistencias), ordenado por fecha. No tiene datos propios: sale de los
    mismos endpoints que Mi Boletin y Mis Asistencias. */
 
 import { h, Cargando, Encabezado, ErrorCarga, EstadoBadge, Icono, Vacio, fechaCorta, useDatos } from "./componentes.js";
 import { obtenerAsistencias, obtenerBoletin } from "./portal-api.js";
+import { DirectorService } from "../director/director-service.js";
 
 const PERIODOS = [["c1", "1° cuatrimestre"], ["c2", "2° cuatrimestre"], ["final", "Calificación final"]];
 const ETIQUETA_MARCA = { tep: "TEP", ted: "TED", debajo_de_6: "Menor a 6" };
@@ -62,13 +63,53 @@ export default function NovedadesAlumnoView() {
   const [aviso, setAviso] = useState(null);
   const [pagina, setPagina] = useState(0);
   const [areaFiltro, setAreaFiltro] = useState("");
-  const publicaciones = areaFiltro
-    ? PUBLICACIONES.filter(([area]) => area === areaFiltro)
-    : PUBLICACIONES;
-  const totalPaginas = Math.ceil(publicaciones.length / PUBLICACIONES_POR_PAGINA);
+  const [informesDireccion, setInformesDireccion] = useState([]);
+
+  useEffect(() => {
+    let cancelado = false;
+    const cargar = () => {
+      DirectorService.listarInformes({ destinatario: "alumnos" })
+        .then((items) => {
+          if (!cancelado && Array.isArray(items)) {
+            setInformesDireccion(items);
+          }
+        })
+        .catch(() => {});
+    };
+    cargar();
+    window.addEventListener("prece:informes-actualizados", cargar);
+    return () => {
+      cancelado = true;
+      window.removeEventListener("prece:informes-actualizados", cargar);
+    };
+  }, []);
+
+  const publicaciones = useMemo(() => {
+    const dinamicas = informesDireccion.map((inf) => ({
+      id: inf.id,
+      area: "Dirección",
+      categoria: "Comunicado Oficial",
+      titulo: inf.titulo || "Informe de Dirección",
+      texto: inf.texto || "",
+      fecha: inf.fecha || null,
+      archivo: inf.archivo || null
+    }));
+    const base = PUBLICACIONES.map(([area, categoria, titulo, texto], idx) => ({
+      id: `base-${idx}`,
+      area,
+      categoria,
+      titulo,
+      texto,
+      fecha: null,
+      archivo: null
+    }));
+    const todas = [...dinamicas, ...base];
+    return areaFiltro ? todas.filter((item) => item.area === areaFiltro) : todas;
+  }, [informesDireccion, areaFiltro]);
+
+  const totalPaginas = Math.max(1, Math.ceil(publicaciones.length / PUBLICACIONES_POR_PAGINA));
   const inicio = pagina * PUBLICACIONES_POR_PAGINA;
   const { cargando, error, datos, recargar } = useDatos(cargarNovedades, []);
-
 
   return h(
     "div",
@@ -78,24 +119,28 @@ export default function NovedadesAlumnoView() {
       h("section", { className: "pa-cartelera__panel", "aria-labelledby": "pa-publicaciones" },
         h("header", { className: "pa-cartelera__cabecera" },
           h("h2", { id: "pa-publicaciones" }, "Cartelera escolar"),
-          h("span", null, "Contenido de demostración")
+          h("span", null, "Avisos institucionales")
         ),
-        publicaciones.slice(inicio, inicio + PUBLICACIONES_POR_PAGINA).map(([area, categoria, titulo, texto], indice) =>
-          h("article", { className: indice === 0 ? "pa-publicacion pa-publicacion--destacada" : "pa-publicacion", "data-area": area, key: titulo },
+        publicaciones.slice(inicio, inicio + PUBLICACIONES_POR_PAGINA).map((pub, indice) =>
+          h("article", { className: indice === 0 && pagina === 0 ? "pa-publicacion pa-publicacion--destacada" : "pa-publicacion", "data-area": pub.area, key: pub.id || pub.titulo },
             h("div", { className: "pa-publicacion__metadatos" },
-              h("span", { className: "pa-publicacion__categoria" }, area),
-              h("span", null, categoria)
+              h("span", { className: "pa-publicacion__categoria" }, pub.area),
+              h("span", null, pub.categoria),
+              pub.fecha ? h("span", { style: { marginLeft: "auto", fontSize: "11.5px", color: "rgba(255,255,255,0.85)" } }, fechaCorta(pub.fecha)) : null
             ),
             h("h3", null, h("button", {
               type: "button",
               className: "pa-publicacion__abrir",
               "aria-haspopup": "dialog",
               onClick: () => {
-                flushSync(() => setAviso({ area, categoria, titulo, texto }));
+                flushSync(() => setAviso(pub));
                 modal.current.showModal();
               }
-            }, titulo)),
-            h("p", null, texto),
+            }, pub.titulo)),
+            h("p", null, pub.texto),
+            pub.archivo?.nombre
+              ? h("p", { style: { fontSize: "12px", color: "#64748b", margin: "4px 0" } }, `📎 Archivo adjunto: ${pub.archivo.nombre}`)
+              : null,
             h("span", { className: "pa-publicacion__leer", "aria-hidden": true }, "Leer comunicado →")
           )
         ),
@@ -116,7 +161,7 @@ export default function NovedadesAlumnoView() {
             }
           },
             h("option", { value: "" }, "Todas las áreas"),
-            [...new Set(PUBLICACIONES.map(([area]) => area))].map((area) =>
+            ["Dirección", "Jefatura de Área", "Preceptoría"].map((area) =>
               h("option", { key: area, value: area }, area)
             )
           )
@@ -140,7 +185,11 @@ export default function NovedadesAlumnoView() {
         h("button", { type: "button", autoFocus: true, onClick: () => modal.current.close() }, "Cerrar")
       ),
       h("h2", { id: "pa-aviso-titulo" }, aviso.titulo),
-      h("p", null, aviso.texto)
+      aviso.fecha ? h("p", { style: { fontSize: "12px", color: "#64748b", fontWeight: 600 } }, `Fecha de emisión: ${fechaCorta(aviso.fecha)}`) : null,
+      h("p", null, aviso.texto),
+      aviso.archivo?.nombre
+        ? h("p", { style: { fontSize: "12px", color: "#475569", fontWeight: 600, background: "#f8fafc", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" } }, `📎 Archivo adjunto: ${aviso.archivo.nombre}`)
+        : null
     )),
     h("details", { className: "pa-cartelera__panel pa-cartelera__actividad" },
       h("summary", null, "Mi actividad académica"),

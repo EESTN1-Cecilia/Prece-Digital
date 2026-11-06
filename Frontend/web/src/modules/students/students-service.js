@@ -273,6 +273,11 @@ export const StudentsService = {
     return { data: todos, pagination: { total: todos.length, page: 1, limit: todos.length, totalPages: 1 } };
   },
 
+  /* Alias de compatibilidad para consultar alumnos */
+  getStudents(params = {}) {
+    return this.getTodosLosAlumnos(params);
+  },
+
   /* Directorio de cursos: divisiones de la escuela con cantidad de alumnos. */
   async getDivisiones() {
     const divisiones = await pedir("/api/v1/students/divisions");

@@ -64,10 +64,13 @@ export function CustomDatePicker({
   className = "",
   id,
   name,
-  minYear = 1950,
-  maxYear = 2040
+  minYear = 2000,
+  maxYear = 2050,
+  dropUp = false,
+  alignRight = false
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDroppingUp, setIsDroppingUp] = useState(Boolean(dropUp));
   const [openSelector, setOpenSelector] = useState(null); // "month" | "year" | null
   const [viewDate, setViewDate] = useState(() => parseDateValue(value));
   const [typedValue, setTypedValue] = useState(() => (value ? formatDateValue(value) : ""));
@@ -149,6 +152,13 @@ export function CustomDatePicker({
   const toggleCalendar = () => {
     if (disabled) return;
     if (!isOpen) {
+      if (dropUp) {
+        setIsDroppingUp(true);
+      } else if (containerRef.current && typeof window !== "undefined") {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setIsDroppingUp(spaceBelow < 340 && rect.top > 280);
+      }
       window.dispatchEvent(new CustomEvent("prece-date-picker:open", { detail: instanceId }));
       setDraftValue(value || "");
       if (value) {
@@ -160,10 +170,14 @@ export function CustomDatePicker({
   };
 
   const moveMonth = (amount) => {
-    setViewDate(new Date(year, month + amount, 1));
+    const nextDate = new Date(year, month + amount, 1);
+    if (nextDate.getFullYear() >= minYear && nextDate.getFullYear() <= maxYear) {
+      setViewDate(nextDate);
+    }
   };
 
   const selectDay = (date) => {
+    if (!date || date.getFullYear() < minYear || date.getFullYear() > maxYear) return;
     const isoString = toDateValue(date);
     setTypedValue(formatDateValue(isoString));
     if (onChange) onChange(isoString);
@@ -176,16 +190,27 @@ export function CustomDatePicker({
     setTypedValue(formatted);
     const parsed = parseTypedDate(formatted);
     if (parsed) {
-      if (onChange) onChange(parsed);
-      setViewDate(parseDateValue(parsed));
+      const parsedYear = Number(parsed.slice(0, 4));
+      if (parsedYear >= minYear && parsedYear <= maxYear) {
+        if (onChange) onChange(parsed);
+        setViewDate(parseDateValue(parsed));
+      }
     } else if (formatted === "") {
       if (onChange) onChange("");
     }
   };
 
   const handleInputBlur = () => {
-    if (typedValue && typedValue !== "dd/mm/aaaa" && !parseTypedDate(typedValue)) {
-      setTypedValue(value ? formatDateValue(value) : "");
+    if (typedValue && typedValue !== "dd/mm/aaaa") {
+      const parsed = parseTypedDate(typedValue);
+      if (!parsed) {
+        setTypedValue(value ? formatDateValue(value) : "");
+      } else {
+        const parsedYear = Number(parsed.slice(0, 4));
+        if (parsedYear < minYear || parsedYear > maxYear) {
+          setTypedValue(value ? formatDateValue(value) : "");
+        }
+      }
     }
   };
 
@@ -198,7 +223,9 @@ export function CustomDatePicker({
 
   const selectToday = () => {
     const today = new Date();
-    selectDay(today);
+    if (today.getFullYear() >= minYear && today.getFullYear() <= maxYear) {
+      selectDay(today);
+    }
   };
 
   return h(
@@ -256,7 +283,7 @@ export function CustomDatePicker({
     isOpen && !disabled
       ? h(
           "div",
-          { className: "observation-calendar" },
+          { className: `observation-calendar ${isDroppingUp || dropUp ? "observation-calendar--dropup" : ""} ${alignRight ? "observation-calendar--align-right" : ""}`.trim() },
           // Header
           h(
             "div",

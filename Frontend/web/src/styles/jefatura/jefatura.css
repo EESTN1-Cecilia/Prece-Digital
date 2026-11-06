@@ -1480,6 +1480,203 @@
   font-size: 0.875rem;
 }
 
+.jf-aviso-incompletas {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: var(--jf-radio, 16px);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  box-shadow: 0 1px 3px rgba(180, 83, 9, 0.08);
+  margin-bottom: 24px;
+}
+
+.jf-aviso-incompletas__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.jf-aviso-incompletas__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jf-aviso-incompletas__texto strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.jf-aviso-incompletas__texto p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #78350f;
+}
+
+/* Banner de Notificación Superior en Jefatura */
+.jf-aviso-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 22px;
+  margin-bottom: 22px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fcd34d;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.12);
+  animation: jf-fadeIn 0.3s ease;
+}
+
+.jf-aviso-top__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #fde68a;
+  color: #b45309;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.15);
+}
+
+.jf-aviso-top__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.jf-aviso-top__linea-superior {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.jf-aviso-top__titulo {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #92400e;
+  letter-spacing: -0.01em;
+}
+
+.jf-aviso-top__contador {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: #f59e0b;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.jf-aviso-top__descripcion {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #78350f;
+  line-height: 1.4;
+}
+
+.jf-aviso-top__cursos-lista {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.jf-aviso-top__curso-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #78350f;
+  background: #ffffff;
+  border: 1.5px solid #d97706;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(180, 83, 9, 0.12);
+  transition: all 0.16s ease;
+}
+
+.jf-aviso-top__curso-pill--clickable {
+  cursor: pointer;
+  user-select: none;
+  font-family: inherit;
+}
+
+.jf-aviso-top__curso-pill--clickable:hover {
+  background: #fffbeb;
+  border-color: #b45309;
+  color: #92400e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(180, 83, 9, 0.22);
+}
+
+.jf-aviso-top__curso-pill--clickable:active {
+  transform: translateY(0);
+}
+
+.jf-aviso-top__boton-accion {
+  align-self: center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: #ffffff;
+  background: #d97706;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
+  transition: all 0.18s ease;
+}
+
+.jf-aviso-top__boton-accion:hover {
+  background: #b45309;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(180, 83, 9, 0.3);
+}
+
+.jf-aviso-top__boton-accion:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.35);
+}
+
+@keyframes jf-fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .jf-aviso-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .jf-aviso-top__boton-accion {
+    align-self: stretch;
+    justify-content: center;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .jf-encabezado::before {
     content: ""; position: absolute; right: -70px; bottom: -120px; width: 300px; height: 300px; border-radius: 50%; pointer-events: none;
