@@ -14,6 +14,13 @@ import {
   DIVISIONES_CATALOGO,
   buscarDivision
 } from "./catalogo.mjs";
+import {
+  esCuilValido,
+  esDatoGeograficoValido,
+  esDniValido,
+  esLugarNacimientoValido,
+  esNombrePersona
+} from "../../../Shared/src/validators/personas.mjs";
 
 const POR_PAGINA_MAXIMO = 100;
 const POR_PAGINA_DEFECTO = 20;
@@ -24,10 +31,13 @@ const CAMPOS_EDITABLES = [
   "nombre",
   "apellido",
   "dni",
+  "cuil",
   "fechaNacimiento",
   "genero",
+  "pais",
   "nacionalidad",
   "provincia",
+  "distrito",
   "localidad",
   "codigoPostal",
   "direccion",
@@ -43,9 +53,6 @@ const CAMPOS_EDITABLES = [
 
 const CAMPOS_TEXTO = [
   "genero",
-  "nacionalidad",
-  "provincia",
-  "localidad",
   "codigoPostal",
   "direccion"
 ];
@@ -100,11 +107,14 @@ function vista(registro) {
     apellido: registro.apellido,
     nombreCompleto: `${registro.apellido}, ${registro.nombre}`,
     dni: registro.dni,
+    cuil: registro.cuil ?? null,
     edad: edadDe(registro.fechaNacimiento),
     fechaNacimiento: registro.fechaNacimiento,
     genero: registro.genero,
+    pais: registro.pais ?? null,
     nacionalidad: registro.nacionalidad,
     provincia: registro.provincia,
+    distrito: registro.distrito ?? null,
     localidad: registro.localidad,
     codigoPostal: registro.codigoPostal,
     direccion: registro.direccion,
@@ -118,7 +128,9 @@ function vista(registro) {
     condicion: registro.condicion,
     tallerId: registro.tallerId ?? null,
     grupoTaller: registro.grupoTaller ?? null,
-    estado: registro.isActive ? "activo" : "inactivo",
+    estado: registro.isActive
+      ? (studentRepository.tienePasePendiente(registro.id) ? "pase pendiente" : "activo")
+      : "inactivo",
     isActive: Boolean(registro.isActive),
     fechaAlta: registro.fechaAlta,
     fechaBaja: registro.fechaBaja,
@@ -151,17 +163,48 @@ function sanitizarEntrada(datos, { creacion }, errores) {
     }
   }
 
-  if (salida.nombre !== undefined) salida.nombre = texto(salida.nombre);
-  if (salida.apellido !== undefined) salida.apellido = texto(salida.apellido);
+  for (const campo of ["nombre", "apellido"]) {
+    if (salida[campo] !== undefined) {
+      const valor = String(salida[campo] ?? "").trim();
+      if (!esNombrePersona(valor)) {
+        errores.push({ field: campo, message: `${campo === "nombre" ? "El nombre" : "El apellido"} solo puede contener letras y separadores válidos.` });
+      }
+      salida[campo] = valor;
+    }
+  }
 
   if (salida.dni !== undefined) {
     const dni = String(salida.dni).trim();
     if (!esRequerido(salida.dni) && !creacion) {
       salida.dni = null;
-    } else if (!DNI_RE.test(dni)) {
+    } else if (!DNI_RE.test(dni) || !esDniValido(dni)) {
       errores.push({ field: "dni", message: "El DNI debe contener entre 7 y 9 digitos." });
     } else {
       salida.dni = dni;
+    }
+  }
+
+  if (salida.cuil !== undefined) {
+    const cuil = String(salida.cuil ?? "").trim();
+    if (cuil === "") {
+      salida.cuil = null;
+    } else {
+      const digitos = cuil.replaceAll("-", "");
+      if (!/^(?:\d{11}|\d{2}-\d{8}-\d)$/.test(cuil) || !esCuilValido(digitos)) {
+        errores.push({ field: "cuil", message: "El CUIL debe tener 11 dígitos y un número verificador válido." });
+      } else {
+        salida.cuil = digitos;
+      }
+    }
+  }
+
+  for (const campo of ["pais", "nacionalidad", "provincia", "distrito", "localidad"]) {
+    if (salida[campo] !== undefined) {
+      const valor = salida[campo] == null ? null : String(salida[campo]).trim();
+      if (valor !== null && !esDatoGeograficoValido(valor)) {
+        errores.push({ field: campo, message: `El campo ${campo} contiene caracteres no válidos.` });
+      }
+      salida[campo] = valor === "" ? null : valor;
     }
   }
 
@@ -225,7 +268,13 @@ function sanitizarEntrada(datos, { creacion }, errores) {
       const contacto = {};
 
       for (const campo of ["nombre", "apellido", "parentesco"]) {
-        if (salida.contacto[campo] !== undefined) contacto[campo] = texto(salida.contacto[campo]);
+        if (salida.contacto[campo] !== undefined) {
+          const valor = String(salida.contacto[campo] ?? "").trim();
+          contacto[campo] = valor === "" ? null : valor;
+          if (["nombre", "apellido"].includes(campo) && valor && !esNombrePersona(valor)) {
+            errores.push({ field: `contacto.${campo}`, message: `El ${campo} del responsable solo puede contener letras y separadores válidos.` });
+          }
+        }
       }
       if (salida.contacto.telefono !== undefined) contacto.telefono = texto(salida.contacto.telefono, 30);
       if (salida.contacto.email !== undefined) {
@@ -242,6 +291,23 @@ function sanitizarEntrada(datos, { creacion }, errores) {
   }
 
   return salida;
+}
+
+function validarLugarNacimiento(datos, errores, { requerido = false } = {}) {
+  const campos = ["pais", "provincia", "distrito", "localidad"];
+  const tieneDatos = campos.some((campo) => datos[campo] !== undefined && datos[campo] !== null && String(datos[campo]).trim() !== "");
+  if (!tieneDatos) return;
+
+  const faltantes = campos.filter((campo) => !datos[campo]);
+  if (requerido) {
+    for (const campo of faltantes) {
+      errores.push({ field: campo, message: `Debe indicar ${campo} para completar el lugar de nacimiento.` });
+    }
+  }
+
+  if (campos.every((campo) => datos[campo]) && !esLugarNacimientoValido(datos)) {
+    errores.push({ field: "provincia", message: "La provincia no corresponde al país seleccionado." });
+  }
 }
 
 /* Valida curso y division juntos, y que existan en el catalogo de la escuela.
@@ -297,6 +363,7 @@ const studentService = {
   create(datos, user) {
     const errores = [];
     const entrada = sanitizarEntrada(datos, { creacion: true }, errores);
+    validarLugarNacimiento(entrada, errores, { requerido: true });
     const cursoDivision = resolverCursoDivision(entrada, errores);
 
     if (errores.length > 0) {
@@ -485,7 +552,7 @@ const studentService = {
       errores.push({ field: "orden", message: "El orden solicitado no esta permitido." });
     }
 
-    const estado = query.estado ?? "activo";
+    const estado = String(query.estado ?? "activo").trim().toLowerCase();
     if (!ESTADOS_VALIDOS.includes(estado)) {
       errores.push({ field: "estado", message: "El estado debe ser activo, inactivo o todos." });
     }
@@ -571,15 +638,20 @@ const studentService = {
   update(id, datos, user) {
     const errores = [];
     const entrada = sanitizarEntrada(datos, { creacion: false }, errores);
+    const antes = studentRepository.findById(id);
+    if (!antes) {
+      throw noEncontrado("El alumno solicitado");
+    }
+
+    const actualizaLugarNacimiento = ["pais", "provincia", "distrito", "localidad"]
+      .some((campo) => entrada[campo] !== undefined);
+    if (actualizaLugarNacimiento) {
+      validarLugarNacimiento({ ...antes, ...entrada }, errores);
+    }
     const cursoDivision = resolverCursoDivision(entrada, errores);
 
     if (errores.length > 0) {
       throw errorDeValidacion(errores);
-    }
-
-    const antes = studentRepository.findById(id);
-    if (!antes) {
-      throw noEncontrado("El alumno solicitado");
     }
 
     if (entrada.dni && entrada.dni !== antes.dni) {

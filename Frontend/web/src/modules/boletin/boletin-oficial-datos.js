@@ -59,6 +59,13 @@ const numero = (valor) => {
   const n = parseFloat(String(valor ?? "").replace(",", "."));
   return Number.isNaN(n) ? null : n;
 };
+export function esNotaValida(valor) {
+  const texto = String(valor ?? "").trim();
+  if (!texto) return true;
+  if (["TEA", "TEP", "TED"].includes(texto.toUpperCase())) return true;
+  const normalizado = texto.replace(",", ".");
+  return /^\d+(?:\.\d{1,2})?$/.test(normalizado) && Number(normalizado) >= 1 && Number(normalizado) <= 10;
+}
 const formato = (n) => String(Number(n.toFixed(2)));
 
 /* Promedio anual y calificacion definitiva a partir de lo que se edita. */

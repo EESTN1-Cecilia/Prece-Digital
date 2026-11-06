@@ -5,6 +5,7 @@ import attendanceFollowupsRepository from "../modules/attendance-followups/atten
 import attendanceAlertsRepository from "../modules/attendance-alerts/attendance-alerts.repository.mjs";
 import inasistenciasRepository from "../modules/inasistencias/inasistencias.repository.mjs";
 import { alcanceDe, alumnoEnAlcance, claveCurso } from "../modules/preceptor-assignments/alcance.mjs";
+import { ROLES } from "../config/permissions.config.mjs";
 import { errorHttp } from "../utils/api-error.mjs";
 
 /* Va despues de verifyToken en TODAS las rutas protegidas (routes/index.mjs).
@@ -13,9 +14,20 @@ import { errorHttp } from "../utils/api-error.mjs";
    o cuerpo. Los listados sin filtro se recortan en cada servicio. */
 
 const CAMPOS_ALUMNO = ["studentId", "alumnoId", "estudianteId"];
+const RUTAS_OBSERVACIONES = [
+  /^\/api\/v1\/observations(?:\/|$)/,
+  /^\/api\/v1\/students\/[^/]+\/observations(?:\/|$)/,
+  /^\/api\/v1\/alumnos\/[^/]+\/observaciones(?:\/|$)/
+];
+const MENSAJE_SIN_CURSOS = "Necesitás tener al menos un curso asignado para acceder a las observaciones.";
 
 function fueraDeAlcance() {
   return errorHttp(403, "OUT_OF_SCOPE", "Ese curso o alumno no está asignado a tu perfil.");
+}
+
+function esPreceptorDeAlcanceLimitado(user) {
+  const roles = new Set((user?.assignments ?? []).map((asignacion) => asignacion.role));
+  return roles.has(ROLES.PRECEPTOR) && [...roles].every((rol) => [ROLES.PRECEPTOR, ROLES.DOCENTE].includes(rol));
 }
 
 export async function alcancePreceptor(ctx) {
@@ -23,6 +35,29 @@ export async function alcancePreceptor(ctx) {
 
   if (!alcance) {
     return;
+  }
+
+  const pathname = ctx.url.pathname;
+  const metodo = ctx.request.method;
+  const esPreceptor = esPreceptorDeAlcanceLimitado(ctx.user);
+
+  if (esPreceptor && RUTAS_OBSERVACIONES.some((patron) => patron.test(pathname)) && alcance.size === 0) {
+    throw errorHttp(403, "PRECEPTOR_NO_ASSIGNED_COURSES", MENSAJE_SIN_CURSOS);
+  }
+
+  if (esPreceptor && metodo === "POST" && ["/api/v1/students", "/api/v1/students/bulk"].includes(pathname)) {
+    throw errorHttp(403, "PRECEPTOR_CANNOT_CREATE_STUDENTS", "El rol Preceptor no puede cargar alumnos.");
+  }
+
+  if (
+    esPreceptor &&
+    metodo !== "GET" &&
+    (
+      /^\/api\/v1\/(?:cursos|divisiones)(?:\/|$)/.test(pathname) ||
+      ["/api/v1/preceptores/asignaciones", "/api/v1/preceptores/asignaciones/quitar"].includes(pathname)
+    )
+  ) {
+    throw errorHttp(403, "PRECEPTOR_ASSIGNMENTS_MANAGED_BY_DIRECTOR", "La estructura y asignación de cursos debe gestionarla Dirección.");
   }
 
   const query = Object.fromEntries(ctx.url.searchParams.entries());

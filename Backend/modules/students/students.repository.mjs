@@ -59,14 +59,17 @@ const studentRepository = {
       nombre: datos.nombre,
       apellido: datos.apellido,
       dni: datos.dni,
+      cuil: datos.cuil ?? null,
       /* true cuando el DNI no es real (nomina importada sin documento): ese
          alumno no puede usar el DNI como credencial hasta que secretaria cargue
          el documento verdadero. */
       dniProvisorio: datos.dniProvisorio === true,
       fechaNacimiento: datos.fechaNacimiento ?? null,
       genero: datos.genero ?? null,
+      pais: datos.pais ?? null,
       nacionalidad: datos.nacionalidad ?? null,
       provincia: datos.provincia ?? null,
+      distrito: datos.distrito ?? null,
       localidad: datos.localidad ?? null,
       codigoPostal: datos.codigoPostal ?? null,
       direccion: datos.direccion ?? null,
@@ -117,8 +120,10 @@ const studentRepository = {
   },
 
   cumple(registro, criterios) {
-    if (criterios.estado === "activo" && !registro.isActive) return false;
+    const tienePasePendiente = this.tienePasePendiente(registro.id);
+    if (criterios.estado === "activo" && (!registro.isActive || tienePasePendiente)) return false;
     if (criterios.estado === "inactivo" && registro.isActive) return false;
+    if (criterios.estado === "pase pendiente" && (!registro.isActive || !tienePasePendiente)) return false;
     if (criterios.dni && registro.dni !== criterios.dni) return false;
     if (criterios.apellido && !registro.apellido.toLowerCase().includes(criterios.apellido)) return false;
     if (criterios.nombre && !registro.nombre.toLowerCase().includes(criterios.nombre)) return false;
@@ -214,6 +219,14 @@ const studentRepository = {
     return [...getStore().studentTransfers.values()]
       .filter((registro) => !alumnoId || registro.alumnoId === alumnoId)
       .map((registro) => ({ ...registro }));
+  },
+
+  tienePasePendiente(alumnoId) {
+    this.init();
+    return [...getStore().studentTransfers.values()].some((registro) =>
+      registro.alumnoId === alumnoId &&
+      ["iniciado", "pendiente"].includes(String(registro.estado ?? "").trim().toLowerCase())
+    );
   },
 
   /* ---------------- Constancias ---------------- */

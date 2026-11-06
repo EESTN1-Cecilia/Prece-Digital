@@ -21,6 +21,13 @@ const jefe = {
   roles: [{ id: "jefe_area", nombre: "Jefatura de Área" }]
 };
 
+const preceptorConPermisoDeAlta = {
+  cargando: false,
+  autenticado: true,
+  permisos: [...permissionsForRole("preceptor"), "students.write"],
+  roles: [{ id: "preceptor", nombre: "Preceptor" }]
+};
+
 function acceso(hash) {
   return decidirAcceso(resolverRuta(hash, RUTAS), jefe).tipo;
 }
@@ -38,7 +45,7 @@ test("el catalogo compartido muestra el nombre visible Jefatura de Area", () => 
 });
 
 test("el rol conserva los permisos definidos en el backend", () => {
-  assert.equal(PERMISOS_JEFE.length, 41);
+  assert.equal(PERMISOS_JEFE.length, 42);
   assert.ok(PERMISOS_JEFE.includes("identity.update"));
   assert.ok(!PERMISOS_JEFE.includes("identity.manage"));
   assert.ok(PERMISOS_JEFE.includes("planning.review"));
@@ -46,6 +53,7 @@ test("el rol conserva los permisos definidos en el backend", () => {
   assert.ok(PERMISOS_JEFE.includes("observations.write"));
   assert.ok(PERMISOS_JEFE.includes("students.read"));
   assert.ok(PERMISOS_JEFE.includes("academics.read"));
+  assert.ok(PERMISOS_JEFE.includes("notifications.update"));
 });
 
 test("abre su tablero, el inicio, el perfil y las pantallas generales", () => {
@@ -67,6 +75,16 @@ test("puede consultar alumnos y legajos (students.read)", () => {
 
 test("puede leer y registrar observaciones", () => {
   assert.equal(acceso("#/preceptoria/observaciones"), ACCESO.permitido);
+});
+
+test("Preceptor no puede abrir la carga de alumnos por URL aunque tenga students.write", () => {
+  for (const hash of ["#/alumnos/cargar", "#/alumnos/nuevo"]) {
+    assert.equal(
+      decidirAcceso(resolverRuta(hash, RUTAS), preceptorConPermisoDeAlta).tipo,
+      ACCESO.denegado,
+      `${hash} debe seguir restringido al rol Preceptor`
+    );
+  }
 });
 
 test("no puede dar de alta alumnos (students.write ausente)", () => {
@@ -103,9 +121,10 @@ test("no gestiona usuarios, roles ni permisos", () => {
 test("el menu solo ofrece las secciones que puede abrir", () => {
   assert.deepEqual(
     rutasVisibles(RUTAS, jefe).map((ruta) => ruta.titulo),
-    ["Inicio", "Panel de jefatura", "Observaciones", "Calendario", "Alumnos"]
+    ["Inicio", "Panel de jefatura", "Observaciones", "Calendario", "Alumnos", "Configuración"]
   );
   assert.ok(visibleEnMenu("Panel de jefatura"));
+  assert.ok(visibleEnMenu("Configuración"));
   assert.ok(!visibleEnMenu("Tablero de Dirección"));
   assert.ok(!visibleEnMenu("Usuarios"));
   assert.ok(!visibleEnMenu("Inventario"));

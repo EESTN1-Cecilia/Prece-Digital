@@ -42,8 +42,9 @@ function vistaDivision(item, asignado) {
 }
 
 function guardarCursos(usuario, cursos) {
+  const cursosUnicos = [...new Map(cursos.map((curso) => [claveCurso(curso.curso, curso.division), curso])).values()];
   const assignments = usuario.assignments.map((asignacion) =>
-    asignacion.role === ROLES.PRECEPTOR ? { ...asignacion, cursos } : asignacion
+    asignacion.role === ROLES.PRECEPTOR ? { ...asignacion, cursos: cursosUnicos } : asignacion
   );
   userRepository.update(usuario.id, { assignments });
 }
@@ -57,7 +58,7 @@ function validarDivisiones(divisiones) {
     throw errorDeValidacion([{ field: "divisiones", message: invalidas.length ? `Cursos inexistentes: ${invalidas.join(", ")}.` : "Indicá al menos un curso." }]);
   }
 
-  return lista;
+  return [...new Set(lista)];
 }
 
 const preceptorAssignmentsService = {

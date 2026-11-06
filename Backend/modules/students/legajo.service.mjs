@@ -59,6 +59,11 @@ function nombreCompleto(alumno) {
   return `${alumno.apellido}, ${alumno.nombre}`;
 }
 
+function estadoDe(alumno) {
+  if (!alumno.isActive) return "Inactivo";
+  return studentRepository.tienePasePendiente(alumno.id) ? "Pase pendiente" : "Activo";
+}
+
 function cursoTexto(alumno) {
   return alumno.curso ? `${alumno.curso}°` : null;
 }
@@ -359,7 +364,7 @@ const legajoService = {
           turno: capitalizar(alumno.turno),
           turnoTaller: turnoTaller(alumno.turno),
           condicion: capitalizar(alumno.condicion),
-          estado: alumno.isActive ? "Activo" : "Inactivo",
+          estado: estadoDe(alumno),
           isActive: Boolean(alumno.isActive),
           fechaBaja: alumno.fechaBaja ?? null,
           motivoBaja: alumno.motivoBaja ?? null,
@@ -389,10 +394,18 @@ const legajoService = {
         datosPersonales: {
           ...vistaAlumno(alumno),
           nombreCompleto: nombreCompleto(alumno),
-          cuil: null,
-          lugarNacimiento: { pais: alumno.nacionalidad, provincia: alumno.provincia, localidad: alumno.localidad },
+          cuil: alumno.cuil ?? null,
+          pais: alumno.pais ?? null,
+          nacionalidad: alumno.nacionalidad ?? null,
+          distrito: alumno.distrito ?? null,
+          lugarNacimiento: {
+            pais: alumno.pais ?? null,
+            provincia: alumno.provincia ?? null,
+            distrito: alumno.distrito ?? null,
+            localidad: alumno.localidad ?? null
+          },
           domicilio: alumno.direccion,
-          estado: alumno.isActive ? "Activo" : "Inactivo",
+          estado: estadoDe(alumno),
           condicion: capitalizar(alumno.condicion),
           fechaIngreso: alumno.fechaAlta,
           anioLectivoActual: anioLectivo(),

@@ -645,10 +645,10 @@ Total: 455 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/notifications` | `notifications.write` |
 | GET | `/api/v1/notifications` | `notifications.read` |
 | GET | `/api/v1/notifications/unread-count` | `notifications.read` |
-| POST | `/api/v1/notifications/read` | `notifications.write` |
-| POST | `/api/v1/notifications/read-all` | `notifications.write` |
+| POST | `/api/v1/notifications/read` | `notifications.update` |
+| POST | `/api/v1/notifications/read-all` | `notifications.update` |
 | GET | `/api/v1/notifications/:notificationId` | `notifications.read` |
-| POST | `/api/v1/notifications/:notificationId/read` | `notifications.write` |
+| POST | `/api/v1/notifications/:notificationId/read` | `notifications.update` |
 | POST | `/api/v1/notifications/:notificationId/archive` | `notifications.write` |
 
 ## devices

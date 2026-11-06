@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { h, IconoFigma } from "../../../../layouts/site-layout.js";
-import { CustomSelect } from "../../../../components/common/custom-select.js";
 
 /**
  * StudentDocumentationTab: Panel centralizado de Documentación, Constancias Oficiales y Legajo Digital del Alumno.
@@ -18,81 +16,8 @@ export function StudentDocumentationTab({
   onOpenMatriz,
   onOpenBoletin
 }) {
-  const [documentosAdjuntos, setDocumentosAdjuntos] = useState([
-    {
-      id: "doc-1",
-      nombre: "DNI_Estudiante_Frente_Dorso.pdf",
-      tipo: "DNI del Estudiante",
-      fecha: "02/03/2026",
-      tamano: "1.4 MB",
-      estado: "Verificado"
-    },
-    {
-      id: "doc-2",
-      nombre: "DNI_Tutor_Responsable.pdf",
-      tipo: "DNI Tutores / Responsables",
-      fecha: "02/03/2026",
-      tamano: "1.2 MB",
-      estado: "Verificado"
-    },
-    {
-      id: "doc-3",
-      nombre: "Partida_Nacimiento_Legalizada.pdf",
-      tipo: "Partida de Nacimiento",
-      fecha: "02/03/2026",
-      tamano: "2.1 MB",
-      estado: "Verificado"
-    },
-    {
-      id: "doc-4",
-      nombre: "Ficha_Medica_Salud_2026.pdf",
-      tipo: "Ficha de Salud y Vacunación",
-      fecha: "05/03/2026",
-      tamano: "890 KB",
-      estado: "Verificado"
-    },
-    {
-      id: "doc-5",
-      nombre: "Certificado_Estudios_Primarios.pdf",
-      tipo: "Certificado de Nivel Primario / Pase",
-      fecha: "02/03/2026",
-      tamano: "3.4 MB",
-      estado: "Verificado"
-    }
-  ]);
-
-  const [modalSubirAbierto, setModalSubirAbierto] = useState(false);
-  const [nuevoDocTipo, setNuevoDocTipo] = useState("Constancia Médica");
-  const [nuevoDocNombre, setNuevoDocNombre] = useState("");
-
-  useEffect(() => {
-    if (!modalSubirAbierto) return;
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        setModalSubirAbierto(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [modalSubirAbierto]);
-
-  const handleSubirDocumento = (e) => {
-    e.preventDefault();
-    if (!nuevoDocNombre.trim()) return;
-
-    const nuevoItem = {
-      id: `doc-${Date.now()}`,
-      nombre: `${nuevoDocNombre.trim().replace(/\s+/g, "_")}.pdf`,
-      tipo: nuevoDocTipo,
-      fecha: new Date().toLocaleDateString("es-AR"),
-      tamano: "1.1 MB",
-      estado: "Verificado"
-    };
-
-    setDocumentosAdjuntos([nuevoItem, ...documentosAdjuntos]);
-    setNuevoDocNombre("");
-    setModalSubirAbierto(false);
-  };
+  const documentosAdjuntos = [];
+  const [errorSubida, setErrorSubida] = useState("");
 
   const nombreAlumno = alumno.nombreCompleto || `${alumno.apellido || ""}, ${alumno.nombre || ""}`.trim() || "el estudiante";
 
@@ -539,7 +464,7 @@ export function StudentDocumentationTab({
           {
             type: "button",
             className: "btn-adjuntar-doc",
-            onClick: () => setModalSubirAbierto(true)
+            onClick: () => setErrorSubida("La carga de archivos requiere almacenamiento seguro en el servidor, que aún no está configurado.")
           },
           h(
             "svg",
@@ -550,6 +475,10 @@ export function StudentDocumentationTab({
           h("span", null, "Adjuntar Documento")
         )
       ),
+
+      errorSubida
+        ? h("p", { className: "doc-upload-warning", role: "alert" }, errorSubida)
+        : null,
 
       h(
         "div",
@@ -574,7 +503,9 @@ export function StudentDocumentationTab({
           h(
             "tbody",
             null,
-            documentosAdjuntos.map((doc) =>
+            documentosAdjuntos.length === 0
+              ? h("tr", null, h("td", { colSpan: 6, className: "text-muted" }, "No hay documentos cargados en el servidor."))
+              : documentosAdjuntos.map((doc) =>
               h(
                 "tr",
                 { key: doc.id, className: "doc-attached-row" },
@@ -627,100 +558,7 @@ export function StudentDocumentationTab({
       )
     ),
 
-    // Modal simple para Adjuntar Documento Mock
-    modalSubirAbierto && typeof document !== "undefined"
-      ? createPortal(
-          h(
-            "div",
-            {
-              className: "matriz-modal-backdrop",
-              onClick: (e) => {
-                if (e.target === e.currentTarget) setModalSubirAbierto(false);
-              }
-            },
-            h(
-              "div",
-              {
-                className: "modal-container modal-md",
-                role: "dialog",
-                "aria-modal": "true"
-              },
-              h(
-                "div",
-                { className: "modal-header" },
-                h("h3", { className: "modal-title" }, "Adjuntar Documento al Legajo"),
-                h(
-                  "button",
-                  {
-                    type: "button",
-                    className: "modal-close-btn",
-                    onClick: () => setModalSubirAbierto(false)
-                  },
-                  "✕"
-                )
-              ),
-              h(
-                "form",
-                { onSubmit: handleSubirDocumento, className: "modal-body" },
-                h(
-                  "div",
-                  { className: "form-group", style: { marginBottom: "16px" } },
-                  h("label", { className: "form-label" }, "Tipo de Documento:"),
-                  h(CustomSelect, {
-                    value: nuevoDocTipo,
-                    options: [
-                      { value: "Constancia Médica", label: "Constancia Médica / Certificado de Aptitud" },
-                      { value: "Partida de Nacimiento", label: "Partida de Nacimiento" },
-                      { value: "DNI Tutores", label: "DNI de Padres o Tutores" },
-                      { value: "Pase Legalizado", label: "Pase o Constancia de Escuela de Origen" },
-                      { value: "Documento Judicial", label: "Documentación Judicial o Custodia" },
-                      { value: "Otro Documento", label: "Otro Documento" }
-                    ],
-                    onChange: (val) => setNuevoDocTipo(val),
-                    placeholder: "Seleccionar tipo de documento..."
-                  })
-                ),
-                h(
-                  "div",
-                  { className: "form-group", style: { marginBottom: "20px" } },
-                  h("label", { className: "form-label" }, "Nombre descriptivo del archivo:"),
-                  h("input", {
-                    type: "text",
-                    className: "form-input",
-                    placeholder: "Ej: Certificado_Aptitud_Fisica_2026",
-                    value: nuevoDocNombre,
-                    onChange: (e) => setNuevoDocNombre(e.target.value),
-                    required: true,
-                    autoFocus: true
-                  })
-                ),
-                h(
-                  "div",
-                  { className: "modal-footer" },
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      className: "modal-actions-btn modal-actions-btn--secondary",
-                      onClick: () => setModalSubirAbierto(false)
-                    },
-                    "Cancelar"
-                  ),
-                  h(
-                    "button",
-                    {
-                      type: "submit",
-                      className: "modal-actions-btn modal-actions-btn--primary"
-                    },
-                    "Guardar en Legajo"
-                  )
-                )
-              )
-            )
-          ),
-          document.body
-        )
-      : null
+    null
   );
 }
 

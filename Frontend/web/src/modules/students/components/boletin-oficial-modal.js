@@ -13,6 +13,7 @@ import {
   planDelAnio,
   promedioGeneral,
   recalcularNota,
+  esNotaValida,
   PERIODOS_PENDIENTES
 } from "../../boletin/boletin-oficial-datos.js";
 import { abrirBoletinesOficial } from "../../boletin/boletin-oficial-pdf.js";
@@ -35,8 +36,8 @@ const ESTILOS = `
 .bof-btn:disabled{opacity:.55;cursor:default}
 .bof-btn--ok{background:#15803d;border-color:#15803d;color:#fff}
 .bof-btn--x{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
-.bof-tabs{display:flex;gap:8px;padding:10px 18px;background:#fff;border-bottom:1px solid #dbe1ea;overflow-x:auto}
-.bof-tab{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:600;color:#1e2a44;cursor:pointer;white-space:nowrap}
+.bof-tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:10px 18px;background:#fff;border-bottom:1px solid #dbe1ea;overflow-x:auto}
+.bof-tab{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600;color:#1e2a44;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;min-width:0}
 .bof-tab small{margin-left:5px;font-size:9px;background:#e2e8f0;border-radius:4px;padding:1px 4px;color:#475569;text-transform:uppercase}
 .bof-tab--on{border-color:#1e2a44;box-shadow:inset 0 0 0 1px #1e2a44}
 .bof-cuerpo{overflow:auto;padding:18px}
@@ -75,7 +76,7 @@ const ESTILOS = `
 .bof-firmas small{display:block;color:#6b7280;font-size:8.5px}
 .bof-aviso{max-width:800px;margin:0 auto 10px;font-size:12px;color:#166534;background:#dcfce7;border-radius:8px;padding:7px 12px}
 .bof-aviso--err{color:#991b1b;background:#fee2e2}
-@media (max-width:700px){.bof-hoja{padding:12px}.bof-tabla{font-size:9px}.bof-cab h2{font-size:15px}}
+@media (max-width:700px){.bof-hoja{padding:12px}.bof-tabla{font-size:9px}.bof-cab h2{font-size:15px}.bof-tabs{grid-template-columns:repeat(7,minmax(96px,1fr))}}
 `;
 
 const COLS_NOTA = [
@@ -97,6 +98,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
   const [sinGuardar, setSinGuardar] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [preparando, setPreparando] = useState(false);
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     if (abierto) setAnio(anioAlumno);
@@ -174,6 +176,19 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
     cambiar((b) => ({ ...b, pendientes: b.pendientes.map((p, i) => (i === indice ? { ...p, [campo]: valor } : p)) }));
 
   const guardar = async () => {
+    if (guardando || !boletin) return;
+    const camposEditables = ["informe1", "informe2", "diciembre", "febrero"];
+    for (const [materia, notas] of Object.entries(boletin.notas)) {
+      for (const campo of camposEditables) {
+        const valor = String(notas[campo] ?? "").trim();
+        if (!esNotaValida(valor)) {
+          setMensaje({ ok: false, texto: `La nota de ${materia} (${campo}) debe ser un valor del 1 al 10 o TEA, TEP o TED.` });
+          return;
+        }
+      }
+    }
+
+    setGuardando(true);
     try {
       const guardado = await BoletinOficialService.guardarBoletin(boletin, alumno);
       setBoletin(armarBoletinOficial(alumno, anio, { registro: guardado }));
@@ -183,6 +198,8 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
       setMensaje({ ok: true, texto: "✓ Notas guardadas: ya las ven la planilla del docente y el portal del alumno." });
     } catch (error) {
       setMensaje({ ok: false, texto: `No se pudieron guardar las notas: ${error?.mensaje ?? "intentá de nuevo."}` });
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -215,7 +232,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
         ? h("input", {
             className: "bof-nota",
             value: valor,
-            disabled: Boolean(bloqueo[PERIODO_DE_CAMPO[campo]]),
+            disabled: guardando || Boolean(bloqueo[PERIODO_DE_CAMPO[campo]]),
             inputMode: "decimal",
             maxLength: 5,
             "aria-label": `${campo} de ${materia}`,
@@ -291,7 +308,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
                 "td",
                 { colSpan: 3, style: { textAlign: "left", padding: "0 8px" } },
                 "INASISTENCIA TOTAL: ",
-                h("input", { value: boletin.inasistencias, inputMode: "numeric", maxLength: 3, "aria-label": "Inasistencia total", onChange: (e) => cambiar((b) => ({ ...b, inasistencias: e.target.value.replace(/\D/g, "") })) }),
+                h("input", { value: boletin.inasistencias, inputMode: "numeric", maxLength: 3, disabled: guardando, "aria-label": "Inasistencia total", onChange: (e) => cambiar((b) => ({ ...b, inasistencias: e.target.value.replace(/\D/g, "") })) }),
                 " días"
               ),
               h("td", { colSpan: 3, style: { textAlign: "right", padding: "0 8px" } }, "PROMEDIO GENERAL ANUAL:"),
@@ -323,11 +340,11 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
               h(
                 "tr",
                 { key: i },
-                h("td", null, h("input", { className: "bof-izq", value: p.materia, placeholder: "Escriba materia previa...", "aria-label": "Materia pendiente", onChange: (e) => editarPendiente(i, "materia", e.target.value) })),
-                h("td", null, h("input", { value: p.anio, maxLength: 4, "aria-label": "Año de la materia pendiente", onChange: (e) => editarPendiente(i, "anio", e.target.value) })),
+                h("td", null, h("input", { className: "bof-izq", value: p.materia, placeholder: "Escriba materia previa...", disabled: guardando, "aria-label": "Materia pendiente", onChange: (e) => editarPendiente(i, "materia", e.target.value) })),
+                h("td", null, h("input", { value: p.anio, maxLength: 4, disabled: guardando, "aria-label": "Año de la materia pendiente", onChange: (e) => editarPendiente(i, "anio", e.target.value) })),
                 ...PERIODOS_PENDIENTES.flatMap(([k]) => [
-                  h("td", { key: `${k}c` }, h("input", { value: p[`${k}C`], maxLength: 4, "aria-label": `${k} calificación`, onChange: (e) => editarPendiente(i, `${k}C`, e.target.value) })),
-                  h("td", { key: `${k}l` }, h("input", { value: p[`${k}LF`], maxLength: 4, "aria-label": `${k} libro y folio`, onChange: (e) => editarPendiente(i, `${k}LF`, e.target.value) }))
+                  h("td", { key: `${k}c` }, h("input", { value: p[`${k}C`], maxLength: 4, disabled: guardando, "aria-label": `${k} calificación`, onChange: (e) => editarPendiente(i, `${k}C`, e.target.value) })),
+                  h("td", { key: `${k}l` }, h("input", { value: p[`${k}LF`], maxLength: 4, disabled: guardando, "aria-label": `${k} libro y folio`, onChange: (e) => editarPendiente(i, `${k}LF`, e.target.value) }))
                 ])
               )
             )
@@ -363,7 +380,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
           h(
             "div",
             { className: "bof-acciones" },
-            h("button", { type: "button", className: "bof-btn bof-btn--ok", onClick: guardar, disabled: !sinGuardar }, "Guardar Notas"),
+            h("button", { type: "button", className: "bof-btn bof-btn--ok", onClick: guardar, disabled: !sinGuardar || guardando }, guardando ? "Guardando…" : "Guardar Notas"),
             h("button", { type: "button", className: "bof-btn", onClick: imprimir, disabled: preparando || !boletin }, preparando ? "Preparando…" : "Imprimir / PDF"),
             h("button", { type: "button", className: "bof-btn bof-btn--x", onClick: onCerrar, "aria-label": "Cerrar" }, "✕")
           )
@@ -374,7 +391,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
           ...ANIOS.map((n) =>
             h(
               "button",
-              { key: n, type: "button", role: "tab", "aria-selected": n === anio, className: `bof-tab${n === anio ? " bof-tab--on" : ""}`, onClick: () => cambiarAnio(n) },
+              { key: n, type: "button", role: "tab", "aria-selected": n === anio, className: `bof-tab${n === anio ? " bof-tab--on" : ""}`, disabled: guardando, onClick: () => cambiarAnio(n) },
               `${n}° Año`,
               h("small", null, planDelAnio(n).ciclo.slice(0, 8))
             )

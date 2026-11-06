@@ -517,10 +517,10 @@ const rutasDeclaradas = [
   { method: "POST", path: "/api/v1/notifications", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.createNotification },
   { method: "GET", path: "/api/v1/notifications", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.listNotifications },
   { method: "GET", path: "/api/v1/notifications/unread-count", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getUnreadCount },
-  { method: "POST", path: "/api/v1/notifications/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markManyRead },
-  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAllRead },
+  { method: "POST", path: "/api/v1/notifications/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_UPDATE)], handler: notificationsController.markManyRead },
+  { method: "POST", path: "/api/v1/notifications/read-all", middlewares: [verifyToken, required(P.NOTIFICATIONS_UPDATE)], handler: notificationsController.markAllRead },
   { method: "GET", path: "/api/v1/notifications/:notificationId", middlewares: [verifyToken, required(P.NOTIFICATIONS_READ)], handler: notificationsController.getNotification },
-  { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.markAsRead },
+  { method: "POST", path: "/api/v1/notifications/:notificationId/read", middlewares: [verifyToken, required(P.NOTIFICATIONS_UPDATE)], handler: notificationsController.markAsRead },
   { method: "POST", path: "/api/v1/notifications/:notificationId/archive", middlewares: [verifyToken, required(P.NOTIFICATIONS_WRITE)], handler: notificationsController.archiveNotification },
 
   /* Dispositivos del usuario autenticado (preparacion para notificaciones push).

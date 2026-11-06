@@ -21,11 +21,16 @@ export const TIPOS = [
    al recargar la pagina volvian a aparecer como no leidas. */
 const CLAVE_ESTADO_LOCAL = "prece_notificaciones_estado";
 let usuarioActivo = "anonimo";
-let idsConocidos = [];
+const idsConocidosPorUsuario = new Map();
 
-function leerEstadoLocal() {
+function claveDeUsuario(usuario = usuarioActivo) {
+  if (typeof usuario === "string") return usuario || "anonimo";
+  return String(usuario?.id ?? usuario?.email ?? "anonimo");
+}
+
+function leerEstadoLocal(usuario = usuarioActivo) {
   try {
-    const crudo = JSON.parse(localStorage.getItem(`${CLAVE_ESTADO_LOCAL}:${usuarioActivo}`) ?? "null");
+    const crudo = JSON.parse(localStorage.getItem(`${CLAVE_ESTADO_LOCAL}:${claveDeUsuario(usuario)}`) ?? "null");
     return {
       leidas: crudo?.leidas && typeof crudo.leidas === "object" ? crudo.leidas : {},
       descartadas: Array.isArray(crudo?.descartadas) ? crudo.descartadas : []
@@ -35,27 +40,28 @@ function leerEstadoLocal() {
   }
 }
 
-function guardarEstadoLocal(estado) {
+function guardarEstadoLocal(estado, usuario = usuarioActivo) {
   try {
-    localStorage.setItem(`${CLAVE_ESTADO_LOCAL}:${usuarioActivo}`, JSON.stringify(estado));
+    localStorage.setItem(`${CLAVE_ESTADO_LOCAL}:${claveDeUsuario(usuario)}`, JSON.stringify(estado));
   } catch {
     // Sin almacenamiento disponible: el estado vale solo para esta pagina.
   }
 }
 
-export function recordarNotificacionLeida(id, leida = true) {
+export function recordarNotificacionLeida(id, leida = true, usuario = usuarioActivo) {
   if (id === null || id === undefined) return;
-  const estado = leerEstadoLocal();
+  const estado = leerEstadoLocal(usuario);
   estado.leidas[String(id)] = Boolean(leida);
-  guardarEstadoLocal(estado);
+  guardarEstadoLocal(estado, usuario);
 }
 
-function recordarTodasLeidas() {
-  const estado = leerEstadoLocal();
-  idsConocidos.forEach((id) => {
+function recordarTodasLeidas(usuario = usuarioActivo) {
+  const clave = claveDeUsuario(usuario);
+  const estado = leerEstadoLocal(clave);
+  (idsConocidosPorUsuario.get(clave) ?? []).forEach((id) => {
     estado.leidas[String(id)] = true;
   });
-  guardarEstadoLocal(estado);
+  guardarEstadoLocal(estado, clave);
 }
 
 function recordarDescartada(id) {
@@ -117,7 +123,7 @@ export async function listarNotificaciones(sesion = {}) {
     }
   }
 
-  usuarioActivo = String(usuario?.id ?? usuario?.email ?? "anonimo");
+  usuarioActivo = claveDeUsuario(usuario);
 
   const esDirector = roles.includes("director") || roles.includes("admin");
   const esDocente = roles.includes("docente") || roles.includes("profesor");
@@ -336,23 +342,24 @@ export async function listarNotificaciones(sesion = {}) {
   }
 
   // Aplicar lo que la persona ya leyo o descarto (sobrevive a recargar la pagina)
-  const local = leerEstadoLocal();
+  const local = leerEstadoLocal(usuarioActivo);
   items = items
     .filter((item) => !local.descartadas.includes(String(item.id)))
     .map((item) => (String(item.id) in local.leidas ? { ...item, leida: local.leidas[String(item.id)] } : item));
-  idsConocidos = items.map((item) => item.id);
+  idsConocidosPorUsuario.set(usuarioActivo, items.map((item) => item.id));
 
   return { data: items, origen: "api" };
 }
 
-export function marcarNotificacionLeida(id) {
-  recordarNotificacionLeida(id, true);
-  return pedir(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "POST" }).catch(() => true);
+export function marcarNotificacionLeida(id, usuario = usuarioActivo) {
+  recordarNotificacionLeida(id, true, usuario);
+  if (String(id).startsWith("notif-")) return Promise.resolve(true);
+  return pedir(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "POST" });
 }
 
-export function marcarTodasLasNotificacionesLeidas() {
-  recordarTodasLeidas();
-  return pedir("/api/v1/notifications/read-all", { method: "POST" }).catch(() => true);
+export function marcarTodasLasNotificacionesLeidas(usuario = usuarioActivo) {
+  recordarTodasLeidas(usuario);
+  return pedir("/api/v1/notifications/read-all", { method: "POST" });
 }
 
 export async function descartarNotificacionApi(id) {

@@ -459,9 +459,9 @@ export function StudentEditModal({
             h("label", { className: "student-edit-field-label" }, "Estado Institucional"),
             h(CustomSelect, {
               value: formData.estado,
-              options: ["Activo", "Inactivo", "Pase pendiente", "Egresado"],
-              onChange: (val) => handleChange("estado", val),
-              placeholder: "Seleccionar estado..."
+              options: [formData.estado || "Activo"],
+              disabled: true,
+              placeholder: "Estado gestionado desde acciones del legajo..."
             })
           ),
 
@@ -910,4 +910,3 @@ export function StudentObservationModal({
   }
   return modalContent;
 }
-

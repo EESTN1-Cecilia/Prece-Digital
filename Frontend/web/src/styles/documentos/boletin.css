@@ -1084,11 +1084,19 @@
    ESTILOS DE IMPRESIÓN OFICIAL (A4 PERFECTO)
    ========================================================================== */
 @media print {
-  body * {
-    visibility: hidden;
+  body:has(.boletin-modal-backdrop) > *:not(:has(.boletin-modal-backdrop)) {
+    display: none !important;
   }
 
-  .boletin-modal-backdrop {
+  body:has(.boletin-modal-backdrop),
+  html:has(.boletin-modal-backdrop) {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body:has(.boletin-modal-backdrop) .boletin-modal-backdrop {
     position: static !important;
     background: transparent !important;
     backdrop-filter: none !important;
@@ -1099,7 +1107,7 @@
     height: auto !important;
   }
 
-  .boletin-modal-container {
+  body:has(.boletin-modal-backdrop) .boletin-modal-container {
     box-shadow: none !important;
     border: none !important;
     max-width: 100% !important;
@@ -1109,27 +1117,22 @@
     position: static !important;
   }
 
-  .boletin-modal-header,
-  .boletin-nav-bar,
-  .boletin-modal-close-btn,
-  .btn-boletin-action,
-  .boletin-toast-save {
+  body:has(.boletin-modal-backdrop) .boletin-modal-header,
+  body:has(.boletin-modal-backdrop) .boletin-nav-bar,
+  body:has(.boletin-modal-backdrop) .boletin-modal-close-btn,
+  body:has(.boletin-modal-backdrop) .btn-boletin-action,
+  body:has(.boletin-modal-backdrop) .boletin-toast-save {
     display: none !important;
   }
 
-  .boletin-modal-body {
+  body:has(.boletin-modal-backdrop) .boletin-modal-body {
     background: transparent !important;
     padding: 0 !important;
     overflow: visible !important;
     display: block !important;
   }
 
-  .boletin-paper-card,
-  .boletin-paper-card * {
-    visibility: visible !important;
-  }
-
-  .boletin-paper-card {
+  body:has(.boletin-modal-backdrop) .boletin-paper-card {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;

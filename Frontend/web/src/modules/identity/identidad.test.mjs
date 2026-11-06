@@ -7,6 +7,7 @@ import {
   construirConsulta,
   filtrarUsuarios,
   iniciarSesion,
+  normalizarDni,
   normalizarUsuario,
   obtenerSesion,
   paginar,
@@ -144,6 +145,8 @@ test("validarUsuario exige los campos obligatorios y valida formatos", () => {
     }, { esAlta: true }),
     null
   );
+  assert.match(validarUsuario({ nombre: "Ana", apellido: "Perez", email: "a@b.gob.ar", dni: "1234567A" }).dni, /numeros/);
+  assert.equal(normalizarDni("12.345a67890"), "123456789");
 });
 
 test("fuera del alta el rol no es obligatorio y el telefono se valida solo si viene", () => {

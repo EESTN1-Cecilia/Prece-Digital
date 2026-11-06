@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { anioDelAlumno, armarBoletinOficial, buscarNota, cicloDeAnio, cuerpoParaGuardar, planDelAnio, promedioGeneral, recalcularNota } from "./boletin-oficial-datos.js";
+import { anioDelAlumno, armarBoletinOficial, buscarNota, cicloDeAnio, cuerpoParaGuardar, esNotaValida, planDelAnio, promedioGeneral, recalcularNota } from "./boletin-oficial-datos.js";
 import { agruparMaterias } from "./boletin-grupos.js";
 
 const alumno = { id: 7, apellido: "Perez", nombre: "Ana", dni: "99.000.007", curso: "2°", division: "1", turno: "Mañana", libro: "2026", folio: "07" };
@@ -19,6 +19,11 @@ test("recalcularNota: promedio de informes y definitiva con diciembre/febrero", 
   assert.equal(recalcularNota({ informe1: "8", informe2: "" }).definitiva, "");
   assert.equal(recalcularNota({ informe1: "4", informe2: "5", diciembre: "6" }).definitiva, "6");
   assert.equal(recalcularNota({ informe1: "4", informe2: "5", diciembre: "6", febrero: "7" }).definitiva, "7");
+});
+
+test("la validación del boletín acepta notas y conceptos permitidos y rechaza valores inválidos", () => {
+  for (const valor of ["", "1", "10", "7,5", "TEA", "tep", "TED"]) assert.equal(esNotaValida(valor), true, valor);
+  for (const valor of ["0", "10.1", "11", "A", "7.555"]) assert.equal(esNotaValida(valor), false, valor);
 });
 
 test("el boletin se arma con las notas del backend y calcula promedio y definitiva", () => {

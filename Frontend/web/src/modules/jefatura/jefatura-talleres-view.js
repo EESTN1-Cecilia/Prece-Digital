@@ -9,7 +9,7 @@ import {
   ETIQUETA_CICLO,
   ETIQUETA_DIA,
   cicloDeAnio,
-  divisionesVisibles,
+  divisionesDeInformaticaYProgramacion,
   gruposDeDivision,
   sesionesDeGrupo
 } from "./talleres-cronograma.js";
@@ -38,10 +38,8 @@ function textoAlumnos(cantidad) {
 
 const GRUPO_VACIO = { total: 0, F: 0, M: 0, X: 0 };
 
-/* ---------- Guardado de la division ----------
-   La API todavia no guarda la division de talleres (y jefatura no tiene permiso
-   de escritura sobre alumnos), asi que cada division se recuerda en este navegador. */
-
+/* El modo y los ajustes manuales son preferencias locales; la asignacion final
+   de cada alumno se sincroniza con el backend. */
 function claveGuardado(clave) {
   return `prece.jefatura.talleres.${clave}`;
 }
@@ -58,7 +56,7 @@ function leerGuardado(clave) {
       };
     }
   } catch {
-    /* sin almacenamiento: se trabaja con los valores por defecto */
+    /* El reparto inicial sigue disponible si el almacenamiento local falla. */
   }
   return { modo: "equilibrado", corte: null, manual: {} };
 }
@@ -67,7 +65,7 @@ function guardar(clave, estado) {
   try {
     window.localStorage.setItem(claveGuardado(clave), JSON.stringify(estado));
   } catch {
-    /* el guardado es una comodidad: si falla, la pantalla sigue funcionando */
+    /* La division de alumnos se guarda en el servidor por separado. */
   }
 }
 
@@ -75,7 +73,6 @@ function guardar(clave, estado) {
 
 const FILTROS_CATEGORIA = [
   ["todos", "Todos los Cursos"],
-  ["basico", "Ciclo Básico"],
   ["informatica", "Informática"],
   ["programacion", "Programación"]
 ];
@@ -180,7 +177,7 @@ function GrillaCursos({ divisiones, onAbrir }) {
   const [limite, setLimite] = useState(CURSOS_POR_PAGINA[0]);
 
   const cuenta = useMemo(() => {
-    const total = { todos: divisiones.length, basico: 0, informatica: 0, programacion: 0 };
+    const total = { todos: divisiones.length, informatica: 0, programacion: 0 };
     for (const division of divisiones) total[categoriaDeDivision(division)] += 1;
     return total;
   }, [divisiones]);
@@ -222,7 +219,7 @@ function GrillaCursos({ divisiones, onAbrir }) {
         { className: "jf-filtros__grupo", role: "group", "aria-label": "Año" },
         h("span", null, "Año:"),
         boton(anio === "todos", () => setAnio("todos"), "Todos", "jf-filtro"),
-        [1, 2, 3, 4, 5, 6, 7].map((valor) => boton(anio === valor, () => setAnio(valor), `${valor}°`, "jf-filtro"))
+        [4, 5, 6, 7].map((valor) => boton(anio === valor, () => setAnio(valor), `${valor}°`, "jf-filtro"))
       ),
       h(
         "div",
@@ -345,7 +342,7 @@ function BarraSistema({ grupos, total, pendientes, sync, onGuardar }) {
     h("span", { className: "jf-sync__texto" }, guardando ? "Guardando en el sistema..." : texto),
     estado === "ok" && !guardando
       ? null
-      : h("button", { type: "button", className: "jf-boton jf-boton--primario", disabled: guardando, onClick: onGuardar }, estado === "error" ? "Reintentar" : "Guardar en el sistema")
+      : h("button", { type: "button", className: "jf-boton jf-boton--primario", disabled: guardando, onClick: () => onGuardar() }, estado === "error" ? "Reintentar" : "Guardar en el sistema")
   );
 }
 
@@ -492,6 +489,7 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
         guardar(clave, siguiente);
         return siguiente;
       });
+      setSync((actual) => actual.estado === "guardando" ? actual : { estado: "pendiente", mensaje: null });
     },
     [clave]
   );
@@ -541,16 +539,16 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
     [ordenados, asignacion, guardadoApi, grupos]
   );
 
-  const guardarEnSistema = useCallback(async () => {
+  const guardarEnSistema = useCallback(async (asignacionAGuardar = asignacion) => {
     setSync({ estado: "guardando", mensaje: null });
     try {
       await JefaturaService.guardarDivisionTalleres({
         anio: division.anio,
         division: String(division.division),
         grupos: { A: grupos[0], B: grupos[1] },
-        asignaciones: Object.fromEntries(ordenados.map((alumno) => [alumno.id, asignacion[alumno.id] === "B" ? "B" : "A"]))
+        asignaciones: Object.fromEntries(ordenados.map((alumno) => [alumno.id, asignacionAGuardar[alumno.id] === "B" ? "B" : "A"]))
       });
-      setGuardadoApi(Object.fromEntries(ordenados.map((alumno) => [alumno.id, codigoDe(asignacion[alumno.id])])));
+      setGuardadoApi(Object.fromEntries(ordenados.map((alumno) => [alumno.id, codigoDe(asignacionAGuardar[alumno.id])])));
       setSync({ estado: "ok", mensaje: null });
     } catch (err) {
       const texto = err?.mensaje || err?.message || "";
@@ -563,12 +561,12 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
     }
   }, [division.anio, division.division, grupos, ordenados, asignacion]);
 
-  /* Cada cambio hecho por la jefatura se guarda solo en el sistema. */
+  /* Agrupa cambios seguidos y vuelve a intentar tras una escritura anterior. */
   useEffect(() => {
-    if (!tocado.current || pendientes === 0 || sync.estado === "guardando") return undefined;
-    const espera = setTimeout(guardarEnSistema, 700);
+    if (!tocado.current || pendientes === 0 || ["guardando", "error"].includes(sync.estado)) return undefined;
+    const espera = setTimeout(guardarEnSistema, 300);
     return () => clearTimeout(espera);
-  }, [asignacion]);
+  }, [asignacion, pendientes, sync.estado, guardarEnSistema]);
   const enRango = (indice) =>
     rango.desde !== null && rango.hasta !== null && indice >= Math.min(rango.desde, rango.hasta) && indice <= Math.max(rango.desde, rango.hasta);
 
@@ -581,8 +579,10 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
   const pasarRango = (letra) => {
     if (rango.desde === null) return;
     const hasta = rango.hasta ?? rango.desde;
-    actualizar({ manual: asignarRango(asignacion, ordenados, rango.desde, hasta, letra) });
+    const asignacionSiguiente = asignarRango(asignacion, ordenados, rango.desde, hasta, letra);
+    actualizar({ manual: asignacionSiguiente });
     setRango({ desde: null, hasta: null });
+    guardarEnSistema(asignacionSiguiente);
   };
 
   const encabezado = h(
@@ -698,7 +698,7 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
                 key: letra,
                 type: "button",
                 className: `jf-boton jf-boton--grupo-${letra.toLowerCase()}`,
-                disabled: rango.desde === null,
+                disabled: rango.desde === null || sync.estado === "guardando",
                 onClick: () => pasarRango(letra)
               },
               `Pasar a grupo ${grupos[indice]}`
@@ -833,7 +833,7 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo }) {
     h(
       "p",
       { className: "jf-nota" },
-      "La división queda guardada en este navegador. Todavía no se envía a los legajos de los alumnos."
+      "Los cambios se guardan en los legajos de los alumnos. El estado de sincronización aparece arriba."
     )
   );
 }
@@ -866,7 +866,7 @@ export default function JefaturaTalleresView({ escuela = "E.E.S.T. N°1 Cecilia 
     StudentsService.getDivisiones()
       .then((lista) => {
         if (!vigente) return;
-        const ordenadas = divisionesVisibles(lista ?? []).sort((a, b) => a.anio - b.anio || Number(a.division) - Number(b.division));
+        const ordenadas = divisionesDeInformaticaYProgramacion(lista ?? []).sort((a, b) => a.anio - b.anio || Number(a.division) - Number(b.division));
         setDivisiones(ordenadas);
       })
       .catch((err) => vigente && setError(err.mensaje || err.message || "No se pudieron consultar los cursos."));

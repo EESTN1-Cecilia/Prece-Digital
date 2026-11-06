@@ -186,6 +186,10 @@ export function validarUsuario(datos = {}, { esAlta = false } = {}) {
   return Object.keys(errores).length ? errores : null;
 }
 
+export function normalizarDni(valor) {
+  return String(valor ?? "").replace(/\D/g, "").slice(0, 9);
+}
+
 /* ---------- Catalogos ---------- */
 
 /* Nombre legible de un rol a partir del catalogo compartido. */

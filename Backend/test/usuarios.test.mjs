@@ -74,6 +74,24 @@ test("el alta valida campos, roles y correo duplicado", async () => {
   assert.equal(duplicado.status, 409);
 });
 
+test("el backend rechaza DNI con letras tanto al crear como al editar usuarios", async () => {
+  const altaInvalida = await pedir("POST", "/api/v1/users", "director", {
+    ...NUEVO,
+    email: "dni-invalido@prece.local",
+    dni: "3011122A"
+  });
+  assert.equal(altaInvalida.status, 422);
+  assert.ok(altaInvalida.cuerpo.error.details.some((detalle) => detalle.field === "dni"));
+
+  const creado = await pedir("POST", "/api/v1/users", "director", NUEVO);
+  const edicionInvalida = await pedir("PATCH", `/api/v1/users/${creado.cuerpo.data.id}`, "director", { dni: "3011122A" });
+  assert.equal(edicionInvalida.status, 422);
+  assert.ok(edicionInvalida.cuerpo.error.details.some((detalle) => detalle.field === "dni"));
+
+  const actual = await pedir("GET", `/api/v1/users/${creado.cuerpo.data.id}`, "director");
+  assert.equal(actual.cuerpo.data.dni, NUEVO.dni);
+});
+
 const DOCENTE = {
   nombre: "Carlos",
   apellido: "Fernandez",

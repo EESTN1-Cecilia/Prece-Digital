@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { h } from "../../../layouts/site-layout.js";
 import { ROLES_DISPONIBLES, DirectorService } from "../director-service.js";
@@ -134,7 +134,6 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   /* El fondo solo cierra el modal si el clic EMPEZO y TERMINO sobre el fondo. Si se
      arrastra el mouse desde un campo hacia afuera (por ejemplo al seleccionar
      texto), el navegador igual dispara "click" sobre el fondo y se perdia todo. */
-  const clicEmpezoEnFondo = useRef(false);
 
   // Bloquea el scroll de la pagina mientras el modal esta abierto
   useEffect(() => {
@@ -248,6 +247,10 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   };
 
   const handleCerrarModal = () => {
+    const hayDatosSinGuardar = !creadoExitoso && JSON.stringify(form) !== JSON.stringify(FORMULARIO_INICIAL);
+    if (guardando || (hayDatosSinGuardar && !window.confirm("Hay datos sin guardar. ¿Querés cerrar y descartarlos?"))) {
+      return;
+    }
     reiniciarFormulario();
     alCerrar();
   };
@@ -255,19 +258,7 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   const contenido = h(
     "div",
     {
-      className: "director-modal-backdrop",
-      onMouseDown: (e) => {
-        clicEmpezoEnFondo.current = e.target === e.currentTarget;
-      },
-      onClick: (e) => {
-        const empezoEnFondo = clicEmpezoEnFondo.current;
-        clicEmpezoEnFondo.current = false;
-        /* Con datos cargados sin guardar, el fondo no cierra: solo Cancelar o la X. */
-        const hayDatosSinGuardar = !creadoExitoso && JSON.stringify(form) !== JSON.stringify(FORMULARIO_INICIAL);
-        if (e.target === e.currentTarget && empezoEnFondo && !hayDatosSinGuardar) {
-          handleCerrarModal();
-        }
-      }
+      className: "director-modal-backdrop"
     },
     h(
       "div",

@@ -8,6 +8,7 @@ import { createApp } from "../src/app.mjs";
 import { apiRoutes } from "../routes/index.mjs";
 import { resetStore } from "../database/memory-store.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
+import { userRepository } from "../database/repositories/user.repository.mjs";
 import { asignarCursosAlPreceptorGeneral } from "./helpers.mjs";
 
 const PUERTO = 4013;
@@ -62,6 +63,32 @@ test("catalogos de observaciones", async () => {
   assert.ok(cuerpo.data.estadosObservacion.some((estado) => estado.valor === "Activa"));
   assert.ok(cuerpo.data.sectoresSugeridos.length > 0);
   assert.ok(cuerpo.data.estadosSeguimiento.some((estado) => estado.valor === "pendiente"));
+});
+
+test("sin cursos asignados el preceptor no puede consultar ni registrar observaciones", async () => {
+  const preceptor = userRepository.findByEmail("preceptor@prece.local");
+  userRepository.update(preceptor.id, {
+    assignments: preceptor.assignments.map((asignacion) =>
+      asignacion.role === "preceptor" ? { ...asignacion, cursos: [] } : asignacion
+    )
+  });
+
+  const misCursos = await pedir("GET", "/api/v1/preceptores/mis-cursos", "preceptor");
+  assert.deepEqual(misCursos.cuerpo.data, []);
+
+  const divisiones = await pedir("GET", "/api/v1/students/divisions", "preceptor");
+  assert.deepEqual(divisiones.cuerpo.data, []);
+
+  const catalogos = await pedir("GET", "/api/v1/observations/catalogos", "preceptor");
+  assert.equal(catalogos.status, 403);
+  assert.equal(catalogos.cuerpo.error.code, "PRECEPTOR_NO_ASSIGNED_COURSES");
+
+  const alta = await pedir("POST", "/api/v1/students/alu-2/observations", "preceptor", {
+    tipo: "Convivencia",
+    descripcion: "No debe guardarse sin un curso asignado."
+  });
+  assert.equal(alta.status, 403);
+  assert.equal(alta.cuerpo.error.code, "PRECEPTOR_NO_ASSIGNED_COURSES");
 });
 
 test("alta valida: responsable del token y estado por defecto", async () => {

@@ -188,15 +188,22 @@ const NUMEROS_A_LETRAS = {
 
 const NOTA_MAXIMA = 10;
 
+function numeroDeCalificacion(valor) {
+  const texto = String(valor ?? "").trim().replace(",", ".");
+  if (!/^(?:\d{1,2}(?:\.\d{1,2})?|\.\d{1,2})$/.test(texto)) return null;
+  const numero = Number(texto);
+  return Number.isFinite(numero) && numero >= 0 && numero <= NOTA_MAXIMA ? numero : null;
+}
+
 /* Calificacion: solo numeros entre 0 y 10, con hasta 2 decimales ("8", "8.5",
    "8,66"). Si lo tipeado no es valido (letras, mas de 10) se conserva el valor
    anterior, asi no se puede escribir 11, 10.01 ni texto. */
 export function sanitizarCalificacion(nuevo, anterior = "") {
   const texto = String(nuevo ?? "").replace(",", ".");
   if (texto === "") return "";
-  if (!/^\d{0,2}(\.\d{0,2})?$/.test(texto)) return anterior;
-  const num = parseFloat(texto);
-  if (!isNaN(num) && num > NOTA_MAXIMA) return anterior;
+  if (!/^\d{0,2}(?:\.\d{0,2})?$/.test(texto)) return anterior;
+  const numero = texto.endsWith(".") ? Number(texto.slice(0, -1) || 0) : numeroDeCalificacion(texto);
+  if (numero === null || !Number.isFinite(numero) || numero > NOTA_MAXIMA) return anterior;
   return texto;
 }
 
@@ -207,10 +214,8 @@ export function sanitizarAnio(nuevo) {
 
 export function convertirNotaALetras(valor) {
   if (valor === undefined || valor === null || valor === "") return "";
-  const str = String(valor).trim().replace(",", ".");
-  let num = parseFloat(str);
-  if (isNaN(num)) return "";
-  num = Math.min(Math.max(num, 0), NOTA_MAXIMA);
+  const num = numeroDeCalificacion(valor);
+  if (num === null) return "";
 
   const parteEntera = Math.floor(num);
   const parteDecimal = Math.round((num - parteEntera) * 100);
@@ -700,8 +705,8 @@ export function AlumnoMatrizModal({
 
     Object.values(matriz).forEach((filas) => {
       filas.forEach((fila) => {
-        const val = parseFloat(String(fila.calificacion).replace(",", "."));
-        if (!isNaN(val) && val > 0) {
+        const val = numeroDeCalificacion(fila.calificacion);
+        if (val !== null) {
           suma += val;
           cantidad++;
         }
