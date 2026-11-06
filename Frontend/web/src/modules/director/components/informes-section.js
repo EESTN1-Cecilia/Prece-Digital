@@ -160,8 +160,10 @@ export function InformesSection({ informes = [], alEnviar, alEliminar }) {
       setTitulo("");
       setTexto("");
       setArchivo(null);
-    } catch {
-      setErrorForm("No se pudo enviar el informe. Intente nuevamente.");
+    } catch (error) {
+      /* El servidor explica el motivo (texto vacío, adjunto muy grande, sin permiso...). */
+      const detalle = Object.values(error?.campos ?? {})[0] || error?.mensaje;
+      setErrorForm(detalle || "No se pudo enviar el informe. Intente nuevamente.");
     } finally {
       setEnviando(false);
     }

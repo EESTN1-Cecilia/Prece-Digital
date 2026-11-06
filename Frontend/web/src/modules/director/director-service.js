@@ -1089,96 +1089,27 @@ export const DirectorService = {
 
   /**
    * Obtiene los informes enviados por Dirección (filtrados opcionalmente por destinatario).
+   * Los datos viven en el backend: no hay copia local ni informes de ejemplo, porque
+   * un informe guardado solo en este navegador nunca llegaría a los alumnos.
    */
   async listarInformes(opciones = {}) {
-    const STORAGE_KEY = "prece_informes_direccion";
-    const hoyIso = new Date().toISOString().slice(0, 10);
-    const filtroDest = opciones.destinatario ? String(opciones.destinatario).toLowerCase() : null;
-
-    const filtrarPorDestinatario = (items) => {
-      if (!filtroDest) return items;
-      if (filtroDest === "alumnos") {
-        return items.filter((i) => i.destinatarios === "alumnos" || i.destinatarios === "ambos");
-      }
-      if (filtroDest === "preceptores") {
-        return items.filter((i) => i.destinatarios === "preceptores" || i.destinatarios === "ambos");
-      }
-      return items.filter((i) => i.destinatarios === filtroDest);
-    };
+    const destinatario = opciones.destinatario ? String(opciones.destinatario).toLowerCase() : null;
+    const qs = destinatario ? `?destinatario=${encodeURIComponent(destinatario)}` : "";
 
     try {
-      const qs = filtroDest ? `?destinatario=${encodeURIComponent(filtroDest)}` : "";
       const res = await pedir(`/api/v1/informes-direccion${qs}`);
-      const remotos = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
-      if (remotos.length > 0) {
-        if (!filtroDest) {
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(remotos));
-          } catch {
-            // Silencioso
-          }
-        }
-        return filtrarPorDestinatario(remotos);
-      }
+      return Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
     } catch {
-      // Fallback a almacenamiento local o iniciales
+      return [];
     }
-
-    try {
-      const guardado = localStorage.getItem(STORAGE_KEY);
-      if (guardado) {
-        const parsed = JSON.parse(guardado);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return filtrarPorDestinatario(parsed);
-        }
-      }
-    } catch {
-      // Silencioso
-    }
-
-    const iniciales = [
-      {
-        id: "inf-local-1",
-        titulo: "Comunicado Institucional de Dirección",
-        texto: "Se recuerda a toda la comunidad educativa mantener actualizada la documentación de legajos y el seguimiento diario de asistencia del ciclo lectivo en curso.",
-        fecha: hoyIso,
-        destinatarios: "ambos",
-        archivo: {
-          nombre: "Comunicado_Institucional_Direccion.pdf",
-          tipo: "application/pdf",
-          tamano: 145200
-        },
-        autor: "Dirección General",
-        creadoEn: new Date().toISOString()
-      },
-      {
-        id: "inf-local-2",
-        titulo: "Revisión de planillas y partes diarios",
-        texto: "Solicitamos al equipo de preceptoría verificar la carga de partes diarios y novedades de cursos antes del cierre de la jornada de cada turno.",
-        fecha: hoyIso,
-        destinatarios: "preceptores",
-        archivo: {
-          nombre: "Instructivo_Partes_Diarios_Preceptoria.pdf",
-          tipo: "application/pdf",
-          tamano: 98400
-        },
-        autor: "Dirección General",
-        creadoEn: new Date().toISOString()
-      }
-    ];
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(iniciales));
-    } catch {
-      // Silencioso
-    }
-    return filtrarPorDestinatario(iniciales);
   },
 
   /**
    * Crea y envía un nuevo informe de Dirección a alumnos, preceptores o ambos.
+   * Si el servidor lo rechaza o no responde, el error llega al formulario: no se
+   * guarda una copia local que el alumno no vería.
    */
   async crearInforme(datos) {
-    const STORAGE_KEY = "prece_informes_direccion";
     const payload = {
       titulo: datos?.titulo ? String(datos.titulo).trim() : "Informe de Dirección",
       texto: String(datos?.texto || "").trim(),
@@ -1187,79 +1118,19 @@ export const DirectorService = {
       archivo: datos?.archivo || null
     };
 
-    try {
-      const res = await pedir("/api/v1/informes-direccion", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-      const creado = res?.data ?? res;
-      if (creado && creado.id) {
-        const itemCreado = { ...creado, archivo: creado.archivo ?? payload.archivo };
-        try {
-          const guardado = localStorage.getItem(STORAGE_KEY);
-          const actual = guardado ? JSON.parse(guardado) : [];
-          const lista = Array.isArray(actual) ? [itemCreado, ...actual.filter((i) => i.id !== itemCreado.id)] : [itemCreado];
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
-        } catch {
-          // Silencioso
-        }
-        return itemCreado;
-      }
-    } catch {
-      // Fallback local si el servidor no responde
-    }
-
-    const nuevoLocal = {
-      id: `inf-${Date.now()}`,
-      titulo: payload.titulo || "Informe de Dirección",
-      texto: payload.texto,
-      fecha: payload.fecha,
-      destinatarios: payload.destinatarios,
-      archivo: payload.archivo,
-      autor: datos?.autor || "Dirección General",
-      creadoEn: new Date().toISOString()
-    };
-
-    try {
-      const guardado = localStorage.getItem(STORAGE_KEY);
-      const actual = guardado ? JSON.parse(guardado) : [];
-      const lista = Array.isArray(actual) ? [nuevoLocal, ...actual] : [nuevoLocal];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
-    } catch {
-      // Silencioso
-    }
-
-    return nuevoLocal;
+    const res = await pedir("/api/v1/informes-direccion", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      tiempoLimite: 60000
+    });
+    return res?.data ?? res;
   },
 
   /**
    * Elimina un informe enviado por Dirección.
    */
   async eliminarInforme(informeId) {
-    const STORAGE_KEY = "prece_informes_direccion";
-    try {
-      await pedir(`/api/v1/informes-direccion/${encodeURIComponent(informeId)}`, {
-        method: "DELETE"
-      });
-    } catch {
-      // Continuar con limpieza local
-    }
-
-    try {
-      const guardado = localStorage.getItem(STORAGE_KEY);
-      if (guardado) {
-        const actual = JSON.parse(guardado);
-        if (Array.isArray(actual)) {
-          localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(actual.filter((item) => item.id !== informeId))
-          );
-        }
-      }
-    } catch {
-      // Silencioso
-    }
-
+    await pedir(`/api/v1/informes-direccion/${encodeURIComponent(informeId)}`, { method: "DELETE" });
     return { id: informeId, eliminado: true };
   }
 };

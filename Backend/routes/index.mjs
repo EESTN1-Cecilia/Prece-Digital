@@ -52,6 +52,8 @@ import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
 import * as informesDireccionController from "../modules/director/informes-direccion.controller.mjs";
+import { soloDireccion, soloPersonal } from "../modules/director/informes-direccion.middleware.mjs";
+import { MAX_BODY_INFORME_BYTES } from "../modules/director/informes-direccion.service.mjs";
 import * as studentPortalController from "../modules/student-portal/student-portal.controller.mjs";
 import { alumnoAutenticado, cuentaConfigurada } from "../modules/student-portal/student-portal.middleware.mjs";
 import { catedrasService } from "../modules/teachers/catedras.service.mjs";
@@ -101,6 +103,9 @@ const rutasDeclaradas = [
   { method: "GET", path: "/api/v1/alumno/asistencias", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.asistencias },
   { method: "GET", path: "/api/v1/alumno/situacion-academica", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.situacionAcademica },
   { method: "GET", path: "/api/v1/alumno/previas", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: studentPortalController.previas },
+  /* Novedades: informes y comunicados que Dirección dirigió a alumnos. */
+  { method: "GET", path: "/api/v1/alumno/novedades", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: informesDireccionController.listarParaAlumno },
+  { method: "GET", path: "/api/v1/alumno/novedades/:informeId/archivo", middlewares: [verifyToken, required(P.STUDENT_PORTAL_READ), alumnoAutenticado, cuentaConfigurada], handler: informesDireccionController.archivoParaAlumno },
   /* Boletin de un alumno para el personal: es el MISMO calculo que ve el alumno
      en /api/v1/alumno/boletin. Un preceptor solo puede pedir alumnos de sus cursos. */
   { method: "GET", path: "/api/v1/alumnos/:alumnoId/boletin", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentPortalController.boletinDeAlumno },
@@ -170,10 +175,13 @@ const rutasDeclaradas = [
   { method: "GET", path: "/api/v1/dashboard/server", middlewares: [verifyToken, required(P.INVENTORY_READ)], handler: inventoryController.tableroServer },
   { method: "POST", path: "/api/v1/alerts/:alertId/dismiss", middlewares: [verifyToken, required(P.STUDENTS_WRITE)], handler: studentsController.descartarAlerta },
 
-  /* Informes y comunicados emitidos por Dirección */
-  { method: "GET", path: "/api/v1/informes-direccion", middlewares: [verifyToken], handler: informesDireccionController.listar },
-  { method: "POST", path: "/api/v1/informes-direccion", middlewares: [verifyToken], handler: informesDireccionController.crear },
-  { method: "DELETE", path: "/api/v1/informes-direccion/:informeId", middlewares: [verifyToken], handler: informesDireccionController.eliminar },
+  /* Informes y comunicados emitidos por Dirección. Solo el director emite y
+     elimina; el alumno los ve en /api/v1/alumno/novedades. El POST acepta
+     adjuntos en base64, por eso declara un limite de cuerpo propio. */
+  { method: "GET", path: "/api/v1/informes-direccion", middlewares: [verifyToken, soloPersonal], handler: informesDireccionController.listar },
+  { method: "POST", path: "/api/v1/informes-direccion", middlewares: [verifyToken, soloDireccion], maxBodyBytes: MAX_BODY_INFORME_BYTES, handler: informesDireccionController.crear },
+  { method: "GET", path: "/api/v1/informes-direccion/:informeId/archivo", middlewares: [verifyToken, soloPersonal], handler: informesDireccionController.archivo },
+  { method: "DELETE", path: "/api/v1/informes-direccion/:informeId", middlewares: [verifyToken, soloDireccion], handler: informesDireccionController.eliminar },
 
   /* Condiciones particulares de alumnos. Los literales (catalogos) van antes que
      los parametros porque el router gana con la primera coincidencia. */

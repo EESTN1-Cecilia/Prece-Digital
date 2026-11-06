@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 458 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 461 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -56,6 +56,8 @@ Total: 458 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/alumno/asistencias` | `student-portal.read` |
 | GET | `/api/v1/alumno/situacion-academica` | `student-portal.read` |
 | GET | `/api/v1/alumno/previas` | `student-portal.read` |
+| GET | `/api/v1/alumno/novedades` | `student-portal.read` |
+| GET | `/api/v1/alumno/novedades/:informeId/archivo` | `student-portal.read` |
 
 ## alumnos
 
@@ -205,6 +207,7 @@ Total: 458 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | GET | `/api/v1/informes-direccion` | sesion valida |
 | POST | `/api/v1/informes-direccion` | sesion valida |
+| GET | `/api/v1/informes-direccion/:informeId/archivo` | sesion valida |
 | DELETE | `/api/v1/informes-direccion/:informeId` | sesion valida |
 
 ## particular-conditions

@@ -1,12 +1,32 @@
 import { flushSync } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 /* Novedades: lo ultimo que se registro en el ciclo (calificaciones e
-   inasistencias), ordenado por fecha. No tiene datos propios: sale de los
-   mismos endpoints que Mi Boletin y Mis Asistencias. */
+   inasistencias), ordenado por fecha. La actividad academica sale de los mismos
+   endpoints que Mi Boletin y Mis Asistencias.
+
+   La cartelera muestra los informes y comunicados que Dirección dirigió a
+   alumnos (GET /api/v1/alumno/novedades), mas los avisos fijos de abajo. Como
+   el director emite desde otra sesion, la lista se vuelve a pedir al volver a la
+   pestaña y cada minuto. */
 
 import { h, Cargando, Encabezado, ErrorCarga, EstadoBadge, Icono, Vacio, fechaCorta, useDatos } from "./componentes.js";
-import { obtenerAsistencias, obtenerBoletin } from "./portal-api.js";
-import { DirectorService } from "../director/director-service.js";
+import { obtenerArchivoNovedad, obtenerAsistencias, obtenerBoletin, obtenerNovedades } from "./portal-api.js";
+
+const REFRESCO_NOVEDADES_MS = 60000;
+
+/* El adjunto viaja como data URL; se baja como Blob porque los navegadores
+   (sobre todo en celulares) limitan el tamaño de las data URL en un enlace. */
+async function guardarAdjunto({ nombre, dataUrl }) {
+  const blob = await (await fetch(dataUrl)).blob();
+  const direccion = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = direccion;
+  enlace.download = nombre;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  window.setTimeout(() => URL.revokeObjectURL(direccion), 10000);
+}
 
 const PERIODOS = [["c1", "1° cuatrimestre"], ["c2", "2° cuatrimestre"], ["final", "Calificación final"]];
 const ETIQUETA_MARCA = { tep: "TEP", ted: "TED", debajo_de_6: "Menor a 6" };
@@ -64,25 +84,47 @@ export default function NovedadesAlumnoView() {
   const [pagina, setPagina] = useState(0);
   const [areaFiltro, setAreaFiltro] = useState("");
   const [informesDireccion, setInformesDireccion] = useState([]);
+  const [descarga, setDescarga] = useState({ informeId: null, error: "" });
 
   useEffect(() => {
     let cancelado = false;
     const cargar = () => {
-      DirectorService.listarInformes({ destinatario: "alumnos" })
+      obtenerNovedades()
         .then((items) => {
           if (!cancelado && Array.isArray(items)) {
             setInformesDireccion(items);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          /* Sin conexion o sesion vencida: se conserva lo ya mostrado. El 401 lo
+             maneja el cliente HTTP y lleva al login. */
+        });
     };
+    const alVolver = () => {
+      if (document.visibilityState === "visible") cargar();
+    };
+
     cargar();
+    const intervalo = window.setInterval(cargar, REFRESCO_NOVEDADES_MS);
+    document.addEventListener("visibilitychange", alVolver);
     window.addEventListener("prece:informes-actualizados", cargar);
     return () => {
       cancelado = true;
+      window.clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", alVolver);
       window.removeEventListener("prece:informes-actualizados", cargar);
     };
   }, []);
+
+  const descargarAdjunto = async (informeId) => {
+    setDescarga({ informeId, error: "" });
+    try {
+      await guardarAdjunto(await obtenerArchivoNovedad(informeId));
+      setDescarga({ informeId: null, error: "" });
+    } catch (error) {
+      setDescarga({ informeId: null, error: error?.mensaje ?? "No se pudo descargar el archivo. Intentá de nuevo." });
+    }
+  };
 
   const publicaciones = useMemo(() => {
     const dinamicas = informesDireccion.map((inf) => ({
@@ -133,7 +175,10 @@ export default function NovedadesAlumnoView() {
               className: "pa-publicacion__abrir",
               "aria-haspopup": "dialog",
               onClick: () => {
-                flushSync(() => setAviso(pub));
+                flushSync(() => {
+                  setAviso(pub);
+                  setDescarga({ informeId: null, error: "" });
+                });
                 modal.current.showModal();
               }
             }, pub.titulo)),
@@ -188,8 +233,18 @@ export default function NovedadesAlumnoView() {
       aviso.fecha ? h("p", { style: { fontSize: "12px", color: "#64748b", fontWeight: 600 } }, `Fecha de emisión: ${fechaCorta(aviso.fecha)}`) : null,
       h("p", null, aviso.texto),
       aviso.archivo?.nombre
-        ? h("p", { style: { fontSize: "12px", color: "#475569", fontWeight: 600, background: "#f8fafc", padding: "8px 12px", borderRadius: "8px", border: "1px solid #e2e8f0" } }, `📎 Archivo adjunto: ${aviso.archivo.nombre}`)
-        : null
+        ? h("div", { className: "pa-aviso-modal__adjunto" },
+          h("span", null, `📎 Archivo adjunto: ${aviso.archivo.nombre}`),
+          aviso.archivo.descargable
+            ? h("button", {
+              type: "button",
+              disabled: descarga.informeId === aviso.id,
+              onClick: () => descargarAdjunto(aviso.id)
+            }, descarga.informeId === aviso.id ? "Descargando..." : "Descargar")
+            : null
+        )
+        : null,
+      descarga.error ? h("p", { className: "pa-aviso-modal__error", role: "alert" }, descarga.error) : null
     )),
     h("details", { className: "pa-cartelera__panel pa-cartelera__actividad" },
       h("summary", null, "Mi actividad académica"),

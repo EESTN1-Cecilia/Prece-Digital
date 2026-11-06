@@ -283,7 +283,12 @@ export default function DirectorDashboardView() {
   };
 
   const handleEliminarInforme = async (informeId) => {
-    await DirectorService.eliminarInforme(informeId);
+    try {
+      await DirectorService.eliminarInforme(informeId);
+    } catch (error) {
+      mostrarToast(error?.mensaje || "No se pudo eliminar el informe. Intentá de nuevo.");
+      return;
+    }
     setInformes((prev) => prev.filter((item) => item.id !== informeId));
     try {
       window.dispatchEvent(new CustomEvent("prece:informes-actualizados", { detail: { id: informeId, eliminado: true } }));
