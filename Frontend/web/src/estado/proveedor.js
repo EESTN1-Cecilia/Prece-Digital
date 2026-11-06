@@ -345,12 +345,12 @@ export function ProveedorEstado({ children }) {
       refrescarNotificaciones: cargarNotificaciones,
 
       async marcarNotificacionLeida(id) {
-        /* Se marca en pantalla y se avisa al backend. Si el backend rechaza, el
-           proximo refresco devuelve el estado real: no se pierde nada. */
+        /* Se actualiza la vista y el almacenamiento local; las notificaciones
+           del backend también se confirman allí con el permiso de actualización propio. */
         despachar({ tipo: "notificaciones/leida", id });
 
         try {
-          await marcarNotificacionLeida(id);
+          await marcarNotificacionLeida(id, estado.sesion.usuario);
         } catch (error) {
           despachar({ tipo: "notificaciones/error", error });
         }
@@ -360,7 +360,7 @@ export function ProveedorEstado({ children }) {
         despachar({ tipo: "notificaciones/todas-leidas" });
 
         try {
-          await marcarTodasLasNotificacionesLeidas();
+          await marcarTodasLasNotificacionesLeidas(estado.sesion.usuario);
         } catch (error) {
           despachar({ tipo: "notificaciones/error", error });
         }
@@ -370,7 +370,7 @@ export function ProveedorEstado({ children }) {
         despachar({ tipo: "notificaciones/leida", id, leida: valor });
         try {
           if (valor) {
-            await marcarNotificacionLeida(id);
+            await marcarNotificacionLeida(id, estado.sesion.usuario);
           }
         } catch (error) {
           despachar({ tipo: "notificaciones/error", error });

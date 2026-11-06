@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { useSesion } from "../../estado/hooks.js";
-import { actualizarUsuario, validarUsuario } from "../../services/identity-api.js";
+import { actualizarUsuario, normalizarDni, validarUsuario } from "../../services/identity-api.js";
 import { CargandoPantalla } from "../../components/ui/index.js";
 
 // Helper SVG icons
@@ -362,7 +362,7 @@ export default function PerfilView() {
       : null;
 
   const handleCambio = (campo) => (e) => {
-    const valor = e.target.value;
+    const valor = campo === "dni" ? normalizarDni(e.target.value) : e.target.value;
     setDatos((prev) => ({ ...prev, [campo]: valor }));
     if (errores[campo]) {
       setErrores((prev) => ({ ...prev, [campo]: undefined }));
@@ -604,7 +604,7 @@ export default function PerfilView() {
                   h(
                     "a",
                     {
-                      href: esDocente ? "#/docente/asistencias" : "#/preceptoria",
+                      href: esDocente ? "#/docente/asistencias" : "#/asistencias",
                       className: "profile-sidebar__item",
                       title: esDocente ? "Asistencia de Clase" : "Inasistencias"
                     },
@@ -791,6 +791,8 @@ export default function PerfilView() {
                   h("input", {
                     id: "perfil-dni",
                     type: "text",
+                    inputMode: "numeric",
+                    maxLength: 9,
                     className: `profile-form-input ${errores.dni ? "profile-form-input--error" : ""}`,
                     placeholder: "Tu número de DNI",
                     value: datos.dni,

@@ -323,6 +323,11 @@ export function divisionesVisibles(divisiones = []) {
   return divisiones.filter((division) => !DIVISIONES_OCULTAS.has(`${division.anio}-${division.division}`));
 }
 
+/* El apartado de cursos y talleres de las orientaciones técnicas empieza en 4°. */
+export function divisionesDeInformaticaYProgramacion(divisiones = []) {
+  return divisionesVisibles(divisiones).filter((division) => Number(division.anio) >= 4);
+}
+
 /* Excepciones a la regla de abajo, indicadas por la jefatura: 7°3 tiene los
    grupos 7.6 y 7.8 (la planilla no tiene 7.5 ni 7.7). */
 const GRUPOS_FIJOS = {

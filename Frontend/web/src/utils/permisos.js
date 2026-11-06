@@ -21,6 +21,8 @@ export const PERMISOS = {
   alumnosLeer: permiso("students", "read"),
   alumnosCrear: permiso("students", "write"),
   alumnosEditar: permiso("students", "write"),
+  alertasAsistenciaLeer: permiso("attendance-alerts", "read"),
+  alertasAsistenciaConfigurar: permiso("attendance-alerts", "configure"),
   observacionesLeer: permiso("observations", "read"),
   observacionesCrear: permiso("observations", "write"),
   academicosLeer: permiso("academics", "read"),

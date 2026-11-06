@@ -163,6 +163,64 @@ test("crear un alumno devuelve 201 con datos derivados del catalogo", async () =
   assert.equal(cuerpo.data.fechaBaja, null);
 });
 
+test("crear valida nombre y CUIL también en la API", async () => {
+  const invalido = await pedir("POST", "/api/v1/students", {
+    token: director.accessToken,
+    body: { nombre: "Ana2", apellido: "Test", dni: "45123123", cuil: "20123456789" }
+  });
+
+  assert.equal(invalido.status, 422);
+  assert.deepEqual(
+    invalido.cuerpo.error.details.map((detalle) => detalle.field).sort(),
+    ["cuil", "nombre"]
+  );
+
+  const creado = await pedir("POST", "/api/v1/students", {
+    token: director.accessToken,
+    body: { nombre: "Ana", apellido: "Test", dni: "45123123", cuil: "20123456786" }
+  });
+  assert.equal(creado.status, 201);
+  assert.equal(creado.cuerpo.data.cuil, "20123456786");
+
+  const perfil = await pedir("GET", `/api/v1/students/${creado.cuerpo.data.id}/profile`, {
+    token: director.accessToken
+  });
+  assert.equal(perfil.status, 200);
+  assert.equal(perfil.cuerpo.data.datosPersonales.cuil, "20123456786");
+});
+
+test("crear rechaza una provincia argentina para un país distinto de Argentina", async () => {
+  const { status, cuerpo } = await pedir("POST", "/api/v1/students", {
+    token: director.accessToken,
+    body: {
+      nombre: "Ana",
+      apellido: "Test",
+      dni: "45123123",
+      pais: "Uruguay",
+      provincia: "Buenos Aires",
+      distrito: "Montevideo",
+      localidad: "Montevideo"
+    }
+  });
+
+  assert.equal(status, 422);
+  assert.ok(cuerpo.error.details.some((detalle) => detalle.field === "provincia"));
+
+  const argentina = await pedir("POST", "/api/v1/students", {
+    token: director.accessToken,
+    body: {
+      nombre: "Ana",
+      apellido: "Test",
+      dni: "45123124",
+      pais: "Argentina",
+      provincia: "Buenos Aires",
+      distrito: "Esteban Echeverría",
+      localidad: "Monte Grande"
+    }
+  });
+  assert.equal(argentina.status, 201);
+});
+
 test("crear sin los campos obligatorios devuelve 422 con detalle por campo", async () => {
   const { status, cuerpo } = await pedir("POST", "/api/v1/students", {
     token: director.accessToken,

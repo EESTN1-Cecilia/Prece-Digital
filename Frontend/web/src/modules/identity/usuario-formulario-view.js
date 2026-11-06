@@ -17,6 +17,7 @@ import {
   areasDisponibles,
   crearUsuario,
   listarRoles,
+  normalizarDni,
   obtenerUsuario,
   validarUsuario
 } from "../../services/identity-api.js";
@@ -210,10 +211,12 @@ export default function UsuarioFormularioView({ id }) {
           etiqueta: "DNI",
           id: "dni",
           requerido: true,
+          inputMode: "numeric",
+          maxLength: 9,
           valor: datos.dni,
           error: errores.dni,
           ayuda: "Solo numeros, sin puntos.",
-          onChange: cambiar("dni")
+          onChange: (valor) => cambiar("dni")(normalizarDni(valor))
         }),
         h(Campo, {
           etiqueta: "Telefono",

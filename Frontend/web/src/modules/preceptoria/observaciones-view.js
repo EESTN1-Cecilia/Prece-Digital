@@ -3,6 +3,7 @@ import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { usePermisos, useUsuarioActual } from "../../estado/index.js";
 import { PERMISOS } from "../../utils/permisos.js";
+import { pedir } from "../../services/http.js";
 import { StudentsService } from "../students/students-service.js";
 import {
   DEFAULT_OBSERVATION_SECTORS,
@@ -961,9 +962,8 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], regi
     const trimmedFecha = form.fecha.trim();
     const trimmedDescripcion = form.descripcion.trim();
     const trimmedSector = form.sector.trim();
-    const trimmedResponsable = form.responsable.trim();
 
-    if (!trimmedAlumno || !trimmedTipo || !trimmedFecha || !trimmedDescripcion || !trimmedSector || !trimmedResponsable) {
+    if (!trimmedAlumno || !trimmedTipo || !trimmedFecha || !trimmedDescripcion || !trimmedSector) {
       setError("Completá todos los campos obligatorios para registrar la observación.");
       return;
     }
@@ -1132,12 +1132,13 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], regi
             h(
               "div",
               { className: "form-field-group" },
-              h(SearchableSelect, {
-                label: "Responsable",
-                value: form.responsable,
-                placeholder: "Seleccionar responsable",
-                options: responsibleOptions,
-                onChange: (value) => setField("responsable", value)
+              h("label", { className: "form-field-label" }, "Responsable"),
+              h("input", {
+                className: "form-field-input",
+                type: "text",
+                value: resolveResponsibleFromUser(currentUser, true),
+                readOnly: true,
+                "aria-readonly": "true"
               })
             ),
             h(
@@ -1180,6 +1181,8 @@ function ObservationFormInline({ initialAlumno = "", onSave, students = [], regi
 
 export default function ObservacionesView() {
   const usuarioActual = useUsuarioActual();
+  const rolesAcotados = usuarioActual.roles.length > 0 && usuarioActual.roles.every((rol) => ["preceptor", "docente"].includes(rol));
+  const esPreceptor = rolesAcotados && usuarioActual.roles.includes("preceptor");
   const { puede } = usePermisos();
   const puedeCrearObservacion = puede(PERMISOS.observacionesCrear);
   /* El boton de volver lleva a jefatura a su tablero: #/inicio-secretaria pide
@@ -1200,8 +1203,33 @@ export default function ObservacionesView() {
   const [studentsForObservation, setStudentsForObservation] = useState([]);
   const [registros, setRegistros] = useState([]);
   const [errorCarga, setErrorCarga] = useState(null);
+  const [estadoCursos, setEstadoCursos] = useState(esPreceptor ? "cargando" : "disponibles");
+  const [errorCursos, setErrorCursos] = useState(null);
+
+  const verificarCursos = useCallback(async () => {
+    if (!esPreceptor) {
+      setEstadoCursos("disponibles");
+      return;
+    }
+
+    setEstadoCursos("cargando");
+    setErrorCursos(null);
+    try {
+      const cursos = await pedir("/api/v1/preceptores/mis-cursos");
+      setEstadoCursos(Array.isArray(cursos) && cursos.length > 0 ? "disponibles" : "sin-cursos");
+    } catch (fallo) {
+      setErrorCursos(fallo?.mensaje ?? "No se pudo verificar si tenés cursos asignados.");
+      setEstadoCursos("error");
+    }
+  }, [esPreceptor]);
+
+  useEffect(() => {
+    verificarCursos();
+  }, [verificarCursos]);
 
   const cargarRegistros = useCallback(async () => {
+    if (esPreceptor && estadoCursos !== "disponibles") return;
+
     try {
       const lista = await StudentsService.getObservaciones();
       setRegistros((lista ?? []).map(aRegistroVista));
@@ -1209,11 +1237,12 @@ export default function ObservacionesView() {
     } catch (fallo) {
       setErrorCarga(fallo?.mensaje ?? "No se pudieron cargar las observaciones.");
     }
-  }, []);
+  }, [esPreceptor, estadoCursos]);
 
   useEffect(() => {
+    if (esPreceptor && estadoCursos !== "disponibles") return;
     cargarRegistros();
-  }, [cargarRegistros]);
+  }, [cargarRegistros, esPreceptor, estadoCursos]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1222,6 +1251,7 @@ export default function ObservacionesView() {
   }, [filtros]);
 
   useEffect(() => {
+    if (esPreceptor && estadoCursos !== "disponibles") return;
     let isCancelled = false;
     const loadStudents = async () => {
       try {
@@ -1240,7 +1270,7 @@ export default function ObservacionesView() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [esPreceptor, estadoCursos]);
 
   const updateFiltro = (key, value) => {
     setFiltros((prev) => ({ ...prev, [key]: value }));
@@ -1300,6 +1330,29 @@ export default function ObservacionesView() {
       setAlumnoSeleccionado(record.alumno);
     }
   };
+
+  if (esPreceptor && estadoCursos === "cargando") {
+    return h("section", { className: "welcome-panel", role: "status" }, h("p", null, "Verificando tus cursos asignados..."));
+  }
+
+  if (esPreceptor && estadoCursos === "sin-cursos") {
+    return h(
+      "section",
+      { className: "welcome-panel", role: "status" },
+      h("h1", { className: "secretaria-title" }, "Observaciones no disponibles"),
+      h("p", null, "Primero necesitás tener al menos un curso asignado para poder realizar observaciones.")
+    );
+  }
+
+  if (esPreceptor && estadoCursos === "error") {
+    return h(
+      "section",
+      { className: "welcome-panel", role: "alert" },
+      h("h1", { className: "secretaria-title" }, "No se pudo verificar el acceso"),
+      h("p", null, errorCursos),
+      h("button", { type: "button", className: "action-button action-button--secondary", onClick: verificarCursos }, "Reintentar")
+    );
+  }
 
   if (alumnoSeleccionado) {
     const historialBase = registros.filter((observation) => observation.alumno === alumnoSeleccionado);

@@ -1,0 +1,151 @@
+.configuracion-page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 28px;
+  color: #172033;
+}
+
+.configuracion-header {
+  margin-bottom: 24px;
+}
+
+.configuracion-header h1 {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+}
+
+.configuracion-header p,
+.configuracion-card > p {
+  color: #5b667a;
+}
+
+.configuracion-form {
+  display: grid;
+  gap: 18px;
+}
+
+.configuracion-card {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid #dce3ed;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.configuracion-card h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.configuracion-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.45;
+}
+
+.configuracion-check input {
+  accent-color: #2563eb;
+}
+
+.configuracion-field {
+  display: grid;
+  gap: 7px;
+  max-width: 360px;
+  font-weight: 600;
+}
+
+.configuracion-field input,
+.configuracion-field select,
+.configuracion-dia-form input {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.configuracion-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  padding: 12px 14px;
+  border: 1px solid #dce3ed;
+  border-radius: 8px;
+}
+
+.configuracion-options legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.configuracion-dia-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.configuracion-dia-form button,
+.configuracion-dias button,
+.configuracion-guardar {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: #1d4ed8;
+  cursor: pointer;
+}
+
+.configuracion-dias {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.configuracion-dias li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 360px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+
+.configuracion-dias button {
+  min-height: 32px;
+  background: #475569;
+}
+
+.configuracion-alerta {
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.configuracion-alerta--error {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.configuracion-alerta--ok {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.configuracion-solo-lectura,
+.configuracion-vacio {
+  color: #64748b;
+}
+
+@media (max-width: 640px) {
+  .configuracion-page {
+    padding: 18px 12px;
+  }
+
+  .configuracion-card {
+    padding: 16px;
+  }
+}

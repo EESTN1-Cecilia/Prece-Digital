@@ -35,7 +35,7 @@ export const ORDENES_TUTORES = {
 export const ORDENES_VALIDOS = Object.keys(ORDENES_TUTORES);
 
 /* Campos del tutor que pueden venir del cliente. Todo lo demas se ignora. */
-export const CAMPOS_TUTOR = ["nombre", "apellido", "dni", "telefono", "email", "direccion", "escuelaId"];
+export const CAMPOS_TUTOR = ["nombre", "apellido", "dni", "cuil", "telefono", "email", "direccion", "escuelaId"];
 
 /* Campos de la relacion tutor/alumno editables. */
 export const CAMPOS_RELACION = ["parentesco", "responsablePrincipal", "autorizadoRetiro"];

@@ -2608,33 +2608,53 @@
 
 /* Print Styles */
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  .modal-overlay,
-  .modal-container,
-  .certificate-paper,
-  .certificate-paper * {
-    visibility: visible;
-  }
-  .modal-overlay {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    background: transparent;
-    padding: 0;
-  }
-  .modal-header,
-  .modal-footer,
-  .modal-close-btn {
+  body:has(.certificate-modal) > *:not(:has(.certificate-modal)) {
     display: none !important;
   }
-  .certificate-paper {
-    border: none;
-    box-shadow: none;
-    padding: 20mm;
-    width: 100%;
+
+  body:has(.certificate-modal),
+  html:has(.certificate-modal) {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body:has(.certificate-modal) .modal-overlay {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  body:has(.certificate-modal) .modal-header,
+  body:has(.certificate-modal) .modal-footer,
+  body:has(.certificate-modal) .modal-close-btn {
+    display: none !important;
+  }
+
+  body:has(.certificate-modal) .certificate-modal,
+  body:has(.certificate-modal) .modal-body {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  body:has(.certificate-modal) .certificate-paper {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 20mm !important;
+    width: 100% !important;
+    margin: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 
@@ -2658,6 +2678,14 @@
   .actions-bar-buttons {
     flex-direction: column;
     width: 100%;
+  }
+
+  .doc-upload-warning {
+    padding: 12px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    background: #fee2e2;
   }
 
   .actions-bar-buttons button {

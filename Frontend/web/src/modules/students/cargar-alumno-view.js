@@ -7,6 +7,13 @@ import { CustomDatePicker } from "../../components/common/custom-datepicker.js";
 import { StudentsService } from "./students-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import * as XLSX from "xlsx";
+import {
+  esCuilValido,
+  esLugarNacimientoValido,
+  esNombrePersona,
+  PAISES_LUGAR_NACIMIENTO,
+  PROVINCIAS_ARGENTINAS
+} from "../../../../../Shared/src/validators/personas.mjs";
 
 function soloDigitos(val) {
   return String(val ?? "").replace(/\D/g, "");
@@ -192,7 +199,7 @@ function getEmptyFormData() {
     curso: "",
     division: "",
     turno: "",
-    estado: "",
+    estado: "Activo",
     fechaIngreso: "",
     pais: "",
     provincia: "",
@@ -685,31 +692,31 @@ export default function CargarAlumnoView() {
       // Nombre
       if (!formData.nombre.trim()) {
         errs.nombre = "El nombre es obligatorio.";
-      } else if (formData.nombre.trim().length < 2) {
-        errs.nombre = "El nombre debe tener al menos 2 letras.";
+      } else if (!esNombrePersona(formData.nombre)) {
+        errs.nombre = "Ingrese un nombre válido, sin números ni caracteres especiales.";
       }
 
       // Apellido
       if (!formData.apellido.trim()) {
         errs.apellido = "El apellido es obligatorio.";
-      } else if (formData.apellido.trim().length < 2) {
-        errs.apellido = "El apellido debe tener al menos 2 letras.";
+      } else if (!esNombrePersona(formData.apellido)) {
+        errs.apellido = "Ingrese un apellido válido, sin números ni caracteres especiales.";
       }
 
       // DNI
       const dniDigits = soloDigitos(formData.dni);
       if (!dniDigits) {
         errs.dni = "El DNI es obligatorio.";
-      } else if (dniDigits.length < 7 || dniDigits.length > 8) {
-        errs.dni = "El DNI debe tener entre 7 y 8 dígitos numéricos.";
+      } else if (dniDigits.length < 7 || dniDigits.length > 9) {
+        errs.dni = "El DNI debe tener entre 7 y 9 dígitos numéricos.";
       }
 
       // CUIL (Obligatorio)
       const cuilDigits = soloDigitos(formData.cuil);
       if (!cuilDigits) {
         errs.cuil = "El CUIL es obligatorio.";
-      } else if (cuilDigits.length !== 11) {
-        errs.cuil = "El CUIL debe contener exactamente 11 dígitos.";
+      } else if (!esCuilValido(cuilDigits)) {
+        errs.cuil = "Ingrese un CUIL válido de 11 dígitos.";
       }
 
       // Género
@@ -747,6 +754,15 @@ export default function CargarAlumnoView() {
       if (!formData.provincia) errs.provincia = "Debe seleccionar la provincia.";
       if (!formData.distrito) errs.distrito = "Debe seleccionar el distrito / partido.";
       if (!formData.localidad) errs.localidad = "Debe seleccionar la localidad.";
+      if (
+        formData.pais &&
+        formData.provincia &&
+        formData.distrito &&
+        formData.localidad &&
+        !esLugarNacimientoValido(formData)
+      ) {
+        errs.provincia = "La provincia no corresponde al país seleccionado.";
+      }
       if (!formData.codigoPostal || !formData.codigoPostal.trim()) {
         errs.codigoPostal = "El código postal es obligatorio.";
       } else if (formData.codigoPostal.trim().length < 4) {
@@ -756,31 +772,31 @@ export default function CargarAlumnoView() {
       // Tutor Nombre
       if (!formData.tutorNombre.trim()) {
         errs.tutorNombre = "El nombre del tutor es obligatorio.";
-      } else if (formData.tutorNombre.trim().length < 2) {
-        errs.tutorNombre = "Ingrese al menos 2 letras.";
+      } else if (!esNombrePersona(formData.tutorNombre)) {
+        errs.tutorNombre = "Ingrese un nombre válido, sin números ni caracteres especiales.";
       }
 
       // Tutor Apellido
       if (!formData.tutorApellido.trim()) {
         errs.tutorApellido = "El apellido del tutor es obligatorio.";
-      } else if (formData.tutorApellido.trim().length < 2) {
-        errs.tutorApellido = "Ingrese al menos 2 letras.";
+      } else if (!esNombrePersona(formData.tutorApellido)) {
+        errs.tutorApellido = "Ingrese un apellido válido, sin números ni caracteres especiales.";
       }
 
       // Tutor DNI
       const tutorDniDigits = soloDigitos(formData.tutorDni);
       if (!tutorDniDigits) {
         errs.tutorDni = "El DNI del tutor es obligatorio.";
-      } else if (tutorDniDigits.length < 7 || tutorDniDigits.length > 8) {
-        errs.tutorDni = "El DNI debe tener entre 7 y 8 dígitos numéricos.";
+      } else if (tutorDniDigits.length < 7 || tutorDniDigits.length > 9) {
+        errs.tutorDni = "El DNI debe tener entre 7 y 9 dígitos numéricos.";
       }
 
       // Tutor CUIL (Obligatorio)
       const tutorCuilDigits = soloDigitos(formData.tutorCuil);
       if (!tutorCuilDigits) {
         errs.tutorCuil = "El CUIL del tutor es obligatorio.";
-      } else if (tutorCuilDigits.length !== 11) {
-        errs.tutorCuil = "El CUIL debe contener exactamente 11 dígitos.";
+      } else if (!esCuilValido(tutorCuilDigits)) {
+        errs.tutorCuil = "Ingrese un CUIL válido de 11 dígitos.";
       }
 
       // Tutor Género y Fecha Nacimiento
@@ -906,7 +922,7 @@ export default function CargarAlumnoView() {
       }
     } else if (paso === 4) {
       if (!formData.documentos || formData.documentos.length === 0) {
-        errs.documentos = "Debe adjuntar al menos un documento para el legajo digital.";
+        errs.documentos = "La carga y el almacenamiento de documentos aún no están disponibles en el servidor.";
       }
     }
 
@@ -991,7 +1007,7 @@ export default function CargarAlumnoView() {
     }
   };
 
-  const handleAddDocumentoMock = () => {
+  const handleAddDocumento = () => {
     if (!formData.documentoTipo) {
       setErrors((prev) => ({
         ...prev,
@@ -1000,25 +1016,10 @@ export default function CargarAlumnoView() {
       return;
     }
 
-    const nuevoDoc = {
-      id: Date.now(),
-      tipo: formData.documentoTipo,
-      nombre: `doc_${formData.documentos.length + 1}_${Date.now().toString().slice(-4)}.pdf`,
-      tamano: "1.2 MB",
-      fecha: "Recién cargado"
-    };
-    setFormData((prev) => ({
+    setErrors((prev) => ({
       ...prev,
-      documentos: [...prev.documentos, nuevoDoc]
+      documentos: "La carga y el almacenamiento de documentos aún no están disponibles en el servidor."
     }));
-    if (errors.documentos || errors.documentoTipo) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.documentos;
-        delete next.documentoTipo;
-        return next;
-      });
-    }
   };
 
   const handleRemoveDocumento = (docId) => {
@@ -2273,10 +2274,10 @@ export default function CargarAlumnoView() {
                   h(CustomSelect, {
                     id: "estado",
                     className: errors.estado ? "input-error" : "",
-                    placeholder: "Seleccione estado...",
+                    placeholder: "Activo",
                     value: formData.estado,
-                    options: ["Activo", "Inactivo", "Pase pendiente"],
-                    onChange: (val) => handleChange("estado", val)
+                    options: ["Activo"],
+                    disabled: true
                   }),
                   errors.estado ? h("span", { className: "field-error-msg" }, errors.estado) : null
                 ),
@@ -2323,8 +2324,13 @@ export default function CargarAlumnoView() {
                     className: errors.pais ? "input-error" : "",
                     placeholder: "Seleccione país...",
                     value: formData.pais,
-                    options: ["Argentina", "Bolivia", "Brasil", "Chile", "Paraguay", "Uruguay", "Otro"],
-                    onChange: (val) => handleChange("pais", val)
+                    options: PAISES_LUGAR_NACIMIENTO,
+                    onChange: (val) => {
+                      handleChange("pais", val);
+                      handleChange("provincia", "");
+                      handleChange("distrito", "");
+                      handleChange("localidad", "");
+                    }
                   }),
                   errors.pais ? h("span", { className: "field-error-msg" }, errors.pais) : null
                 ),
@@ -2334,21 +2340,32 @@ export default function CargarAlumnoView() {
                   "div",
                   { className: "form-field-group" },
                   h("label", { className: "form-field-label", htmlFor: "provincia" }, "Provincia:", h("span", { className: "required-star" }, " *")),
-                  h(CustomSelect, {
-                    id: "provincia",
-                    className: errors.provincia ? "input-error" : "",
-                    placeholder: "Seleccione provincia...",
-                    value: formData.provincia,
-                    options: [
-                      { value: "Buenos Aires", label: "Buenos Aires" },
-                      { value: "CABA", label: "Ciudad Autónoma de Buenos Aires" },
-                      { value: "Córdoba", label: "Córdoba" },
-                      { value: "Santa Fe", label: "Santa Fe" },
-                      { value: "Mendoza", label: "Mendoza" },
-                      { value: "Otra", label: "Otra" }
-                    ],
-                    onChange: (val) => handleChange("provincia", val)
-                  }),
+                  formData.pais === "Argentina"
+                    ? h(CustomSelect, {
+                        id: "provincia",
+                        className: errors.provincia ? "input-error" : "",
+                        placeholder: "Buscar provincia...",
+                        value: formData.provincia,
+                        isSearchable: true,
+                        options: PROVINCIAS_ARGENTINAS.map((value) => ({
+                          value,
+                          label: value === "CABA" ? "Ciudad Autónoma de Buenos Aires" : value
+                        })),
+                        onChange: (val) => {
+                          handleChange("provincia", val);
+                          handleChange("distrito", "");
+                          handleChange("localidad", "");
+                        }
+                      })
+                    : h("input", {
+                        id: "provincia",
+                        className: `form-field-input ${errors.provincia ? "input-error" : ""}`,
+                        type: "text",
+                        maxLength: 100,
+                        placeholder: "Ingrese provincia, estado o región",
+                        value: formData.provincia,
+                        onChange: (e) => handleChange("provincia", e.target.value)
+                      }),
                   errors.provincia ? h("span", { className: "field-error-msg" }, errors.provincia) : null
                 ),
 
@@ -2357,13 +2374,14 @@ export default function CargarAlumnoView() {
                   "div",
                   { className: "form-field-group" },
                   h("label", { className: "form-field-label", htmlFor: "distrito" }, "Distrito / Partido:", h("span", { className: "required-star" }, " *")),
-                  h(CustomSelect, {
+                  h("input", {
                     id: "distrito",
-                    className: errors.distrito ? "input-error" : "",
-                    placeholder: "Seleccione distrito / partido...",
+                    className: `form-field-input ${errors.distrito ? "input-error" : ""}`,
+                    type: "text",
+                    maxLength: 100,
+                    placeholder: "Ingrese distrito o partido",
                     value: formData.distrito,
-                    options: ["Esteban Echeverría", "Ezeiza", "Almirante Brown", "Lomas de Zamora", "Lanús", "Otro"],
-                    onChange: (val) => handleChange("distrito", val)
+                    onChange: (e) => handleChange("distrito", e.target.value)
                   }),
                   errors.distrito ? h("span", { className: "field-error-msg" }, errors.distrito) : null
                 ),
@@ -2373,13 +2391,14 @@ export default function CargarAlumnoView() {
                   "div",
                   { className: "form-field-group" },
                   h("label", { className: "form-field-label", htmlFor: "localidad" }, "Localidad:", h("span", { className: "required-star" }, " *")),
-                  h(CustomSelect, {
+                  h("input", {
                     id: "localidad",
-                    className: errors.localidad ? "input-error" : "",
-                    placeholder: "Seleccione localidad...",
+                    className: `form-field-input ${errors.localidad ? "input-error" : ""}`,
+                    type: "text",
+                    maxLength: 100,
+                    placeholder: "Ingrese localidad",
                     value: formData.localidad,
-                    options: ["Monte Grande", "El Jagüel", "Luis Guillón", "Canning", "9 de Julio", "Otra"],
-                    onChange: (val) => handleChange("localidad", val)
+                    onChange: (e) => handleChange("localidad", e.target.value)
                   }),
                   errors.localidad ? h("span", { className: "field-error-msg" }, errors.localidad) : null
                 ),
@@ -3094,15 +3113,15 @@ export default function CargarAlumnoView() {
                     "div",
                     {
                       className: `file-upload-dropzone ${errors.documentos ? "input-error" : ""}`,
-                      onClick: handleAddDocumentoMock
+                      onClick: handleAddDocumento
                     },
                     h(
                       "svg",
                       { className: "dropzone-icon", viewBox: "0 0 24 24", fill: "currentColor", width: 24, height: 24 },
                       h("path", { d: "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" })
                     ),
-                    h("span", { className: "dropzone-title" }, "Hacer clic para Cargar Documentos"),
-                    h("span", { className: "dropzone-hint" }, "Formatos admitidos: PDF, JPG, PNG (máx. 5 MB)")
+                    h("span", { className: "dropzone-title" }, "Carga de archivos no disponible"),
+                    h("span", { className: "dropzone-hint" }, "El servidor todavía no cuenta con almacenamiento de documentos.")
                   ),
                   errors.documentos ? h("span", { className: "field-error-msg" }, errors.documentos) : null
                 )
@@ -3114,7 +3133,7 @@ export default function CargarAlumnoView() {
                 { className: "documentos-list-container" },
                 h("h4", { className: "documentos-list-title" }, `Documentos adjuntados (${formData.documentos.length}):`),
                 formData.documentos.length === 0
-                  ? h("div", { className: "documentos-empty-state" }, "No hay documentos adjuntos. Seleccione un tipo de documento y suba el archivo.")
+                  ? h("div", { className: "documentos-empty-state" }, "No hay documentos adjuntos. La carga no está disponible hasta configurar almacenamiento seguro.")
                   : h(
                       "div",
                       { className: "documentos-cards-grid" },
@@ -3151,7 +3170,7 @@ export default function CargarAlumnoView() {
                   {
                     type: "button",
                     className: "btn-agregar-doc-link",
-                    onClick: handleAddDocumentoMock
+                    onClick: handleAddDocumento
                   },
                   "+ Agregar documento adicional"
                 )

@@ -108,6 +108,12 @@ test("pase y constancia", async () => {
   assert.equal(pase.status, 201);
   assert.equal(pase.cuerpo.data.estado, "Iniciado");
 
+  const perfilConPase = await pedir("GET", "/api/v1/students/alu-4/profile", "secretario");
+  assert.equal(perfilConPase.cuerpo.data.datosPersonales.estado, "Pase pendiente");
+
+  const listadoConPase = await pedir("GET", "/api/v1/students?estado=pase%20pendiente", "secretario");
+  assert.ok(listadoConPase.cuerpo.data.some((alumno) => alumno.id === "alu-4"));
+
   const paseInvalido = await pedir("POST", "/api/v1/students/alu-4/transfers", "secretario", {});
   assert.equal(paseInvalido.status, 422);
 

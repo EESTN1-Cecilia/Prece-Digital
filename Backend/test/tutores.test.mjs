@@ -133,7 +133,7 @@ test("registrar un tutor valida campos obligatorios y formatos", async () => {
   const sinApellido = await pedir("/api/v1/tutors", {
     token: director.accessToken,
     method: "POST",
-    cuerpo: { nombre: "X", dni: "31122334" }
+    cuerpo: { nombre: "Ana", dni: "31122334" }
   });
   assert.equal(sinApellido.status, 422);
   assert.equal(sinApellido.cuerpo.error.details[0].field, "apellido");
@@ -141,7 +141,7 @@ test("registrar un tutor valida campos obligatorios y formatos", async () => {
   const dniCorto = await pedir("/api/v1/tutors", {
     token: director.accessToken,
     method: "POST",
-    cuerpo: { nombre: "X", apellido: "Y", dni: "123" }
+    cuerpo: { nombre: "Ana", apellido: "Test", dni: "123" }
   });
   assert.equal(dniCorto.status, 422);
   assert.equal(dniCorto.cuerpo.error.details[0].field, "dni");
@@ -149,7 +149,7 @@ test("registrar un tutor valida campos obligatorios y formatos", async () => {
   const emailInvalido = await pedir("/api/v1/tutors", {
     token: director.accessToken,
     method: "POST",
-    cuerpo: { nombre: "X", apellido: "Y", dni: "31122335", email: "no-es-email" }
+    cuerpo: { nombre: "Ana", apellido: "Test", dni: "31122335", email: "no-es-email" }
   });
   assert.equal(emailInvalido.status, 422);
   assert.equal(emailInvalido.cuerpo.error.details[0].field, "email");
@@ -157,10 +157,26 @@ test("registrar un tutor valida campos obligatorios y formatos", async () => {
   const telefonoInvalido = await pedir("/api/v1/tutors", {
     token: director.accessToken,
     method: "POST",
-    cuerpo: { nombre: "X", apellido: "Y", dni: "31122336", telefono: "abc" }
+    cuerpo: { nombre: "Ana", apellido: "Test", dni: "31122336", telefono: "abc" }
   });
   assert.equal(telefonoInvalido.status, 422);
   assert.equal(telefonoInvalido.cuerpo.error.details[0].field, "telefono");
+
+  const cuilInvalido = await pedir("/api/v1/tutors", {
+    token: director.accessToken,
+    method: "POST",
+    cuerpo: { nombre: "Ana", apellido: "Test", dni: "31122337", cuil: "20123456789" }
+  });
+  assert.equal(cuilInvalido.status, 422);
+  assert.ok(cuilInvalido.cuerpo.error.details.some((detalle) => detalle.field === "cuil"));
+
+  const cuilValido = await pedir("/api/v1/tutors/tut-2", {
+    token: director.accessToken,
+    method: "PATCH",
+    cuerpo: { cuil: "20-18111222-1" }
+  });
+  assert.equal(cuilValido.status, 200);
+  assert.equal(cuilValido.cuerpo.data.cuil, "20181112221");
 });
 
 test("no se puede registrar un tutor con el DNI duplicado en la misma escuela", async () => {

@@ -38,6 +38,7 @@ import AlumnoResumenView from "../modules/students/alumno-resumen-view.js";
 import AlumnoPerfilView from "../modules/students/alumno-perfil-view.js";
 import ObservacionesView from "../modules/preceptoria/observaciones-view.js";
 import AsistenciasView from "../modules/attendance/asistencias-view.js";
+import ConfiguracionView from "../modules/attendance/configuracion-view.js";
 import NotificacionesView from "../modules/notifications/notificaciones-view.js";
 import CalendarioView from "../modules/calendario/calendario-view.js";
 import LoginView from "../modules/auth/login-view.js";
@@ -386,6 +387,7 @@ export const RUTAS = [
     titulo: "Cargar alumno",
     vista: CargarAlumnoView,
     padre: "#/alumnos",
+    roles: ["secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosCrear]
   },
   {
@@ -505,9 +507,13 @@ export const RUTAS = [
   },
   {
     patron: "#/configuracion",
-    titulo: "Configuración de perfil",
-    vista: PerfilView,
-    padre: "#/inicio"
+    titulo: "Configuración",
+    vista: ConfiguracionView,
+    seccion: "Gestión institucional",
+    icono: "settings",
+    padre: "#/inicio",
+    permisos: [PERMISOS.alertasAsistenciaLeer],
+    enMenu: true
   }
 ];
 

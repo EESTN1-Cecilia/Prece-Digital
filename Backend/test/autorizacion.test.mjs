@@ -11,6 +11,8 @@ import { apiRoutes } from "../routes/index.mjs";
 import { resetStore } from "../database/memory-store.mjs";
 import { seedAuthData } from "../database/seeds/auth.seed.mjs";
 import { permissionsForRole } from "../config/permissions.config.mjs";
+import { userRepository } from "../database/repositories/user.repository.mjs";
+import notificationsRepository from "../modules/notifications/notifications.repository.mjs";
 
 const PUERTO = 3998;
 const base = `http://127.0.0.1:${PUERTO}`;
@@ -133,6 +135,40 @@ test("no se puede asignar un permiso que no existe en el catalogo", async () => 
   assert.match(cuerpo.error.details[0].message, /inventado\.todo/);
 });
 
+test("un preceptor puede marcar sus notificaciones como leídas sin poder modificar las de otros", async () => {
+  const preceptor = userRepository.findByEmail("preceptor@prece.local");
+  const director = userRepository.findByEmail("director@prece.local");
+  const propia = notificationsRepository.create({
+    recipientId: preceptor.id,
+    title: "Aviso propio",
+    body: "Aviso para preceptoría",
+    type: "informacion"
+  });
+  const ajena = notificationsRepository.create({
+    recipientId: director.id,
+    title: "Aviso ajeno",
+    body: "Aviso para dirección",
+    type: "informacion"
+  });
+
+  const marcada = await pedir(`/api/v1/notifications/${propia.id}/read`, {
+    quien: "preceptor",
+    method: "POST"
+  });
+  assert.equal(marcada.status, 200);
+  assert.equal(marcada.cuerpo.data.isRead, true);
+
+  const listaPropia = await pedir("/api/v1/notifications", { quien: "preceptor" });
+  assert.equal(listaPropia.status, 200);
+  assert.equal(listaPropia.cuerpo.data.notifications.find((item) => item.id === propia.id).isRead, true);
+
+  const prohibida = await pedir(`/api/v1/notifications/${ajena.id}/read`, {
+    quien: "preceptor",
+    method: "POST"
+  });
+  assert.equal(prohibida.status, 403);
+});
+
 test("/me devuelve roles y permisos del usuario, sin datos sensibles", async () => {
   const { status, cuerpo } = await pedir("/api/v1/authorization/me", { quien: "preceptor" });
   const texto = JSON.stringify(cuerpo);
@@ -175,4 +211,67 @@ test("el preceptor solo ve los cursos que le asigno la Direccion", async () => {
 
   const ajeno = await pedir("/api/v1/students?curso=2&division=1", { quien: "preceptor" });
   assert.equal(ajeno.status, 403);
+});
+
+test("una asignación con divisiones repetidas se guarda sin duplicados y sigue al iniciar sesión de nuevo", async () => {
+  const preceptor = userRepository.findByEmail("preceptor@prece.local");
+  const asignacion = await pedir("/api/v1/preceptores/asignaciones", {
+    quien: "director",
+    method: "PUT",
+    body: { divisiones: ["1-1", "1-1"], preceptorId: preceptor.id }
+  });
+
+  assert.equal(asignacion.status, 200);
+  const asignacionGuardada = userRepository.findById(preceptor.id).assignments.find((item) => item.role === "preceptor");
+  assert.equal(asignacionGuardada.cursos.filter((curso) => curso.curso === 1 && curso.division === "1").length, 1);
+
+  tokens.preceptor = await login("preceptor@prece.local", "Preceptor123!");
+  const misCursos = await pedir("/api/v1/preceptores/mis-cursos", { quien: "preceptor" });
+  assert.deepEqual(misCursos.cuerpo.data.map((curso) => curso.id), ["1-1"]);
+});
+
+test("Preceptor no puede cargar alumnos ni aunque se le agregue students.write", async () => {
+  const permisos = [...permissionsForRole("preceptor"), "students.write"];
+  const actualizarPermisos = await pedir("/api/v1/authorization/roles/preceptor/permissions", {
+    quien: "director",
+    method: "PUT",
+    body: { permisos }
+  });
+
+  assert.equal(actualizarPermisos.status, 200);
+  const alta = await pedir("/api/v1/students", {
+    quien: "preceptor",
+    method: "POST",
+    body: {}
+  });
+
+  assert.equal(alta.status, 403);
+  assert.equal(alta.cuerpo.error.code, "PRECEPTOR_CANNOT_CREATE_STUDENTS");
+});
+
+test("Preceptor no puede autoasignarse cursos ni crear estructura académica", async () => {
+  const permisos = [...permissionsForRole("preceptor"), "identity.manage", "academics.write"];
+  const actualizarPermisos = await pedir("/api/v1/authorization/roles/preceptor/permissions", {
+    quien: "director",
+    method: "PUT",
+    body: { permisos }
+  });
+  assert.equal(actualizarPermisos.status, 200);
+
+  const preceptor = userRepository.findByEmail("preceptor@prece.local");
+  const autoasignacion = await pedir("/api/v1/preceptores/asignaciones", {
+    quien: "preceptor",
+    method: "PUT",
+    body: { divisiones: ["2-1"], preceptorId: preceptor.id }
+  });
+  assert.equal(autoasignacion.status, 403);
+  assert.equal(autoasignacion.cuerpo.error.code, "PRECEPTOR_ASSIGNMENTS_MANAGED_BY_DIRECTOR");
+
+  const altaDivision = await pedir("/api/v1/divisiones", {
+    quien: "preceptor",
+    method: "POST",
+    body: { cursoId: "cur-1", nombre: "7ma" }
+  });
+  assert.equal(altaDivision.status, 403);
+  assert.equal(altaDivision.cuerpo.error.code, "PRECEPTOR_ASSIGNMENTS_MANAGED_BY_DIRECTOR");
 });

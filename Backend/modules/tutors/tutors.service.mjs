@@ -2,6 +2,7 @@ import { errorDeValidacion, noEncontrado, conflicto } from "../../utils/api-erro
 import { CAMPOS_TUTOR, DNI_RE, EMAIL_RE, ESTADOS_VALIDOS, ORDENES_TUTORES, PARENTESCOS_VALIDOS, TELEFONO_RE, normalizarParentesco } from "./validacion.mjs";
 import studentRepository from "../students/students.repository.mjs";
 import tutorsRepository from "./tutors.repository.mjs";
+import { esCuilValido, esDniValido, esNombrePersona } from "../../../Shared/src/validators/personas.mjs";
 
 const POR_PAGINA_MAXIMO = 100;
 const POR_PAGINA_DEFECTO = 20;
@@ -35,16 +36,27 @@ function validarTutor(data) {
 
   if (!data?.apellido || typeof data.apellido !== "string") {
     errores.push({ field: "apellido", message: "El apellido es obligatorio." });
+  } else if (!esNombrePersona(data.apellido)) {
+    errores.push({ field: "apellido", message: "El apellido solo puede contener letras y separadores válidos." });
   }
 
   if (!data?.nombre || typeof data.nombre !== "string") {
     errores.push({ field: "nombre", message: "El nombre es obligatorio." });
+  } else if (!esNombrePersona(data.nombre)) {
+    errores.push({ field: "nombre", message: "El nombre solo puede contener letras y separadores válidos." });
   }
 
   if (!data?.dni) {
     errores.push({ field: "dni", message: "El DNI es obligatorio." });
-  } else if (!DNI_RE.test(String(data.dni))) {
+  } else if (!DNI_RE.test(String(data.dni)) || !esDniValido(data.dni)) {
     errores.push({ field: "dni", message: "El DNI debe tener entre 7 y 9 digitos." });
+  }
+
+  if (data?.cuil !== undefined && data.cuil !== null && String(data.cuil).trim() !== "") {
+    const cuil = String(data.cuil).trim();
+    if (!/^(?:\d{11}|\d{2}-\d{8}-\d)$/.test(cuil) || !esCuilValido(cuil.replaceAll("-", ""))) {
+      errores.push({ field: "cuil", message: "El CUIL debe tener 11 dígitos y un número verificador válido." });
+    }
   }
 
   validarDatosContacto("email", data?.email, errores);
@@ -140,7 +152,9 @@ const tutorsService = {
     const soloPermitidos = {};
     for (const campo of CAMPOS_TUTOR) {
       if (data[campo] !== undefined) {
-        soloPermitidos[campo] = data[campo];
+        soloPermitidos[campo] = campo === "cuil"
+          ? String(data[campo] ?? "").replaceAll("-", "") || null
+          : data[campo];
       }
     }
 
@@ -248,7 +262,7 @@ const tutorsService = {
     }
 
     if (data?.dni !== undefined) {
-      if (!DNI_RE.test(String(data.dni))) {
+      if (!DNI_RE.test(String(data.dni)) || !esDniValido(data.dni)) {
         errores.push({ field: "dni", message: "El DNI debe tener entre 7 y 9 digitos." });
       } else {
         const duplicado = tutorsRepository.findTutorByDni(String(data.dni), actual.escuelaId);
@@ -256,6 +270,19 @@ const tutorsService = {
         if (duplicado && duplicado.id !== id) {
           throw conflicto("Ya existe un tutor con ese DNI en la escuela.");
         }
+      }
+    }
+
+    for (const campo of ["nombre", "apellido"]) {
+      if (data?.[campo] !== undefined && !esNombrePersona(data[campo])) {
+        errores.push({ field: campo, message: `El ${campo} solo puede contener letras y separadores válidos.` });
+      }
+    }
+
+    if (data?.cuil !== undefined && data.cuil !== null && String(data.cuil).trim() !== "") {
+      const cuil = String(data.cuil).trim();
+      if (!/^(?:\d{11}|\d{2}-\d{8}-\d)$/.test(cuil) || !esCuilValido(cuil.replaceAll("-", ""))) {
+        errores.push({ field: "cuil", message: "El CUIL debe tener 11 dígitos y un número verificador válido." });
       }
     }
 
@@ -273,7 +300,9 @@ const tutorsService = {
       }
 
       if (data[campo] !== undefined) {
-        cambios[campo] = data[campo];
+        cambios[campo] = campo === "cuil"
+          ? String(data[campo] ?? "").replaceAll("-", "") || null
+          : data[campo];
       }
     }
 

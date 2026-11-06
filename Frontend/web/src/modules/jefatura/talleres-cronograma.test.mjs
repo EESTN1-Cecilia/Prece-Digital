@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CRONOGRAMA, cicloDeAnio, divisionesVisibles, gruposDeAnio, gruposDeDivision } from "./talleres-cronograma.js";
+import {
+  CRONOGRAMA,
+  cicloDeAnio,
+  divisionesDeInformaticaYProgramacion,
+  divisionesVisibles,
+  gruposDeAnio,
+  gruposDeDivision
+} from "./talleres-cronograma.js";
 import { ANIOS, resumenAlumnosPorAnio, resumenTalleresPorAnio, talleresPorTipo, totalesPorCiclo } from "./jefatura-resumen-datos.js";
+import { cursosConGrupos } from "../director/components/asignaciones-talleres.js";
 
 const DIVISIONES_BASICO = ["1", "2", "3", "4", "6"];
 const DIVISIONES_SUPERIOR = ["1", "2", "3", "4"];
@@ -43,6 +51,38 @@ test("7°3 tiene los grupos 7.6 y 7.8 y el 7°4 no se muestra", () => {
 
   const catalogo = [{ anio: 7, division: "3" }, { anio: 7, division: "4" }, { anio: 6, division: "4" }];
   assert.deepEqual(divisionesVisibles(catalogo), [{ anio: 7, division: "3" }, { anio: 6, division: "4" }]);
+});
+
+test("Cursos y Talleres de Informática y Programación solo muestra de 4° a 7°", () => {
+  const catalogo = [
+    { anio: 1, division: "1" },
+    { anio: 2, division: "1" },
+    { anio: 3, division: "1" },
+    { anio: 4, division: "1" },
+    { anio: 5, division: "3" },
+    { anio: 7, division: "3" },
+    { anio: 7, division: "4" }
+  ];
+
+  assert.deepEqual(divisionesDeInformaticaYProgramacion(catalogo), [
+    { anio: 4, division: "1" },
+    { anio: 5, division: "3" },
+    { anio: 7, division: "3" }
+  ]);
+});
+
+test("Grupos de taller en Asignaciones conserva las divisiones de 1° a 7°", () => {
+  const cursos = cursosConGrupos([
+    { id: "1-1", anio: 1, division: "1" },
+    { id: "2-1", anio: 2, division: "1" },
+    { id: "3-1", anio: 3, division: "1" },
+    { id: "4-1", anio: 4, division: "1" },
+    { id: "7-3", anio: 7, division: "3" },
+    { id: "7-4", anio: 7, division: "4" }
+  ]);
+
+  assert.deepEqual(cursos.map(({ anio }) => anio), [1, 2, 3, 4, 7]);
+  assert.deepEqual(cursos[0].grupos, ["1.1", "1.3"]);
 });
 
 test("toda division se reparte los grupos sin repetirlos y no sobra ningun grupo de la planilla", () => {

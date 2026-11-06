@@ -11,7 +11,7 @@
 
 export const CURSOS_VALIDOS = [1, 2, 3, 4, 5, 6, 7];
 export const CONDICIONES_VALIDAS = ["regular", "irregular"];
-export const ESTADOS_VALIDOS = ["activo", "inactivo", "todos"];
+export const ESTADOS_VALIDOS = ["activo", "inactivo", "pase pendiente", "todos"];
 export const TURNOS_VALIDOS = ["mañana", "tarde"];
 export const ORIENTACION_INFORMATICA = "Técnico en Informática";
 export const ORIENTACION_PROGRAMACION = "Técnico en Programación";

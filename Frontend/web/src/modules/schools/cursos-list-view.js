@@ -4,6 +4,7 @@ import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
+import { useUsuarioActual } from "../../estado/index.js";
 import { StudentsService } from "../students/students-service.js";
 
 function IconAula({ className = "card-info-icon" }) {
@@ -350,6 +351,9 @@ function CargarCursoModal({ abierto, onCerrar, onGuardar }) {
 }
 
 export default function CursosListView() {
+  const { roles } = useUsuarioActual();
+  const rolesAcotados = roles.length > 0 && roles.every((rol) => ["preceptor", "docente"].includes(rol));
+  const esPreceptor = rolesAcotados && roles.includes("preceptor");
   const [cursosCatalogo, setCursosCatalogo] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorCatalogo, setErrorCatalogo] = useState(null);
@@ -358,7 +362,11 @@ export default function CursosListView() {
   // Filtros del Directorio de Cursos
   const [courseSearch, setCourseSearch] = useState("");
   const [courseFilterCiclo, setCourseFilterCiclo] = useState("todos"); // 'todos' | 'basico' | 'informatica' | 'programacion'
-  const [courseFilterAnio, setCourseFilterAnio] = useState("todos"); // 'todos' | '1°' | '2°' ...
+  const [courseFilterAnio, setCourseFilterAnio] = useState(() => {
+    if (typeof window === "undefined") return "todos";
+    const anio = new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("anio");
+    return /^[1-7]$/.test(anio ?? "") ? `${anio}°` : "todos";
+  }); // 'todos' | '1°' | '2°' ...
   const [courseFilterTurno, setCourseFilterTurno] = useState("todos"); // 'todos' | 'Mañana' | 'Tarde'
 
   const cargarCursos = useCallback(() => {
@@ -387,6 +395,15 @@ export default function CursosListView() {
   useEffect(() => {
     cargarCursos();
   }, [cargarCursos]);
+
+  useEffect(() => {
+    const aplicarAnioDeRuta = () => {
+      const anio = new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("anio");
+      setCourseFilterAnio(/^[1-7]$/.test(anio ?? "") ? `${anio}°` : "todos");
+    };
+    window.addEventListener("hashchange", aplicarAnioDeRuta);
+    return () => window.removeEventListener("hashchange", aplicarAnioDeRuta);
+  }, []);
 
   const handleGuardarNuevoCurso = (nuevoCurso) => {
     setCursosCatalogo((prev) => [nuevoCurso, ...prev]);
@@ -433,6 +450,8 @@ export default function CursosListView() {
       return true;
     });
   }, [cursosCatalogo, courseSearch, courseFilterCiclo, courseFilterAnio, courseFilterTurno]);
+
+  const sinCursosAsignados = esPreceptor && !loading && !errorCatalogo && cursosCatalogo.length === 0;
 
   const handleVerAlumnosCurso = (curso, division) => {
     window.location.hash = `#/alumnos?curso=${encodeURIComponent(curso)}&div=${encodeURIComponent(division)}`;
@@ -493,7 +512,7 @@ export default function CursosListView() {
           "div",
           { className: "alumnos-header-actions" },
           // Botón "+ Cargar Curso"
-          h(
+          !rolesAcotados ? h(
             "button",
             {
               type: "button",
@@ -503,9 +522,9 @@ export default function CursosListView() {
             },
             h(IconPlus, null),
             h("span", null, "Cargar Curso")
-          ),
+          ) : null,
           // Botón "Cargar Alumno"
-          h(
+          !rolesAcotados ? h(
             ActionButton,
             {
               icon: "clipboard",
@@ -515,7 +534,7 @@ export default function CursosListView() {
               }
             },
             "Cargar Alumno"
-          )
+          ) : null
         )
       },
 
@@ -624,7 +643,13 @@ export default function CursosListView() {
         errorCatalogo ? h(ErrorState, { mensaje: errorCatalogo, onRetry: cargarCursos }) : null,
 
         // Mensaje cuando no hay cursos coincidentes con los filtros
-        !loading && !errorCatalogo && filteredCourseCards.length === 0
+        sinCursosAsignados
+          ? h(EmptyState, {
+              mensaje: "No tenés cursos asignados actualmente. Comunicate con el Director para solicitar una asignación."
+            })
+          : null,
+
+        !sinCursosAsignados && !loading && !errorCatalogo && filteredCourseCards.length === 0
           ? h(EmptyState, {
               mensaje: "No se encontraron cursos coincidentes con los criterios de búsqueda seleccionados.",
               action: h(
@@ -645,7 +670,7 @@ export default function CursosListView() {
           : null,
 
         // Cuadrícula de Tarjetas por Curso
-        !loading && !errorCatalogo && filteredCourseCards.length > 0
+        !sinCursosAsignados && !loading && !errorCatalogo && filteredCourseCards.length > 0
           ? h(
               "div",
               { className: "course-cards-directory-grid" },

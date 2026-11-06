@@ -296,8 +296,11 @@ export function StudentPersonalTab({
   };
 
   const lugarNacimiento = typeof datosPersonales.lugarNacimiento === "object"
-    ? `${datosPersonales.lugarNacimiento.localidad || "Monte Grande"}, ${datosPersonales.lugarNacimiento.provincia || "Buenos Aires"} (${datosPersonales.lugarNacimiento.pais || "Argentina"})`
-    : datosPersonales.lugarNacimiento || "Monte Grande, Buenos Aires (Argentina)";
+    ? [
+        [datosPersonales.lugarNacimiento.localidad, datosPersonales.lugarNacimiento.provincia].filter(Boolean).join(", "),
+        datosPersonales.lugarNacimiento.pais ? `(${datosPersonales.lugarNacimiento.pais})` : ""
+      ].filter(Boolean).join(" ") || "No registrado"
+    : datosPersonales.lugarNacimiento || "No registrado";
 
   return h(
     "div",
@@ -395,13 +398,12 @@ export function StudentPersonalTab({
           label: "Lugar de Nacimiento",
           value: typeof datosPersonales.lugarNacimiento === "object" ? datosPersonales.lugarNacimiento.localidad : datosPersonales.lugarNacimiento,
           displayValue: lugarNacimiento,
-          fieldKey: "lugarNacimiento",
-          editable: puedeModificar,
-          onSave: handlerUpdate
+          editable: false
         }),
         h(ProfileFieldItem, {
           label: "Nacionalidad",
-          value: datosPersonales.nacionalidad || "Argentina",
+          value: datosPersonales.nacionalidad,
+          displayValue: datosPersonales.nacionalidad || "No especificada",
           fieldKey: "nacionalidad",
           editable: puedeModificar,
           onSave: handlerUpdate
@@ -425,14 +427,16 @@ export function StudentPersonalTab({
         }),
         h(ProfileFieldItem, {
           label: "Localidad",
-          value: datosPersonales.localidad || "Monte Grande",
+          value: datosPersonales.localidad,
+          displayValue: datosPersonales.localidad || "No registrada",
           fieldKey: "localidad",
           editable: puedeModificar,
           onSave: handlerUpdate
         }),
         h(ProfileFieldItem, {
           label: "Código Postal",
-          value: datosPersonales.codigoPostal || "1842",
+          value: datosPersonales.codigoPostal,
+          displayValue: datosPersonales.codigoPostal || "No registrado",
           fieldKey: "codigoPostal",
           valueClassName: "font-mono",
           editable: puedeModificar,
@@ -441,12 +445,8 @@ export function StudentPersonalTab({
         h(ProfileFieldItem, {
           label: "Estado del Alumno",
           value: datosPersonales.estado || "Activo",
-          fieldKey: "estado",
-          type: "select",
-          options: ["Activo", "Inactivo", "Pase pendiente", "Egresado"],
           valueClassName: "status-indicator font-bold",
-          editable: puedeModificar,
-          onSave: handlerUpdate
+          editable: false
         }),
         h(ProfileFieldItem, {
           label: "Fecha de Ingreso",

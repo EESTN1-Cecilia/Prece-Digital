@@ -434,72 +434,47 @@
 }
 
 .jf-distribucion {
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  align-items: center;
-  gap: 16px;
+  min-width: 0;
 }
 
-.jf-distribucion__dona {
-  position: relative;
-  width: 104px;
+.jf-distribucion__figura {
+  margin: 0;
 }
 
-.jf-distribucion__dona svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.jf-distribucion__fondo {
-  stroke: #f1f5f9;
-}
-
-.jf-distribucion__centro {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  pointer-events: none;
-}
-
-.jf-distribucion__centro strong {
-  font-size: 1.25rem;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.jf-distribucion__centro span {
+.jf-distribucion__total {
+  margin-bottom: 12px;
   color: var(--jf-muted);
-  font-size: 0.62rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.jf-distribucion__total strong {
+  margin-right: 4px;
+  color: var(--jf-ink, #0f172a);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .jf-distribucion__lista {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.jf-distribucion__item {
+  min-width: 0;
+}
+
 .jf-distribucion__fila {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  font-size: 0.88rem;
-}
-
-.jf-distribucion__fila i {
-  flex: none;
-  align-self: center;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  gap: 6px;
+  font-size: 0.82rem;
 }
 
 .jf-distribucion__nombre {
+  min-width: 0;
   color: #475569;
   font-weight: 700;
 }
@@ -519,30 +494,62 @@
 
 .jf-distribucion__detalle {
   display: block;
-  margin: 0 0 3px 18px;
+  margin: 1px 0 4px;
   color: var(--jf-muted);
   font-size: 0.68rem;
 }
 
 .jf-distribucion__pista {
-  height: 6px;
+  height: 12px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: 4px;
   background: #f1f5f9;
 }
 
 .jf-distribucion__pista div {
   height: 100%;
-  border-radius: 999px;
+  min-width: 0;
+  border-radius: inherit;
   transition: width 0.4s ease;
+}
+
+.jf-distribucion__eje {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--jf-muted);
+  font-size: 0.65rem;
+}
+
+.jf-distribucion__eje > span {
+  white-space: nowrap;
+}
+
+.jf-distribucion__eje > div {
+  position: relative;
+  height: 16px;
+  border-top: 1px solid var(--jf-line);
+}
+
+.jf-distribucion__eje > div span {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+}
+
+.jf-distribucion__eje > div span:first-child {
+  transform: none;
+}
+
+.jf-distribucion__eje > div span:last-child {
+  transform: translateX(-100%);
 }
 
 .jf-tono--basico { background: var(--jf-basico); }
 .jf-tono--programacion { background: var(--jf-programacion); }
 .jf-tono--informatica { background: var(--jf-informatica); }
-.jf-trazo--basico { stroke: var(--jf-basico); }
-.jf-trazo--programacion { stroke: var(--jf-programacion); }
-.jf-trazo--informatica { stroke: var(--jf-informatica); }
 
 /* ---------- Paneles ---------- */
 
@@ -1357,6 +1364,10 @@
 
   .jf-encabezado {
     border-radius: 20px;
+  }
+
+  .jf-distribucion__fila {
+    font-size: 0.76rem;
   }
 }
 

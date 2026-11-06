@@ -37,6 +37,7 @@
    5. MÓDULO DE ASISTENCIAS & SEGUIMIENTO DIARIO
    ========================================================================== */
 @import "./asistencias/asistencias.css";
+@import "./attendance/configuracion.css";
 
 /* ==========================================================================
    6. MÓDULO DE DOCUMENTACIÓN, MATRIZ & LEGAJOS
