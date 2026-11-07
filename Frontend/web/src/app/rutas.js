@@ -24,6 +24,7 @@
 
 import PreceptorInicioView from "../modules/dashboard/preceptor-inicio-view.js";
 import DirectorDashboardView from "../modules/director/director-dashboard-view.js";
+import AnnualManagementView from "../modules/director/annual-management-view.js";
 import SecretariaDashboardView from "../modules/secretaria/secretaria-dashboard-view.js";
 import JefaturaDashboardView from "../modules/jefatura/jefatura-dashboard-view.js";
 import ServerDashboardView from "../modules/server/server-dashboard-view.js";
@@ -200,6 +201,17 @@ export const RUTAS = [
     vista: DirectorDashboardView,
     padre: "#/inicio",
     permisos: [PERMISOS.usuariosLeer]
+  },
+  {
+    patron: "#/gestion-anual",
+    titulo: "Cierre e informes anuales",
+    vista: AnnualManagementView,
+    seccion: "Dirección",
+    icono: "academic",
+    padre: "#/director",
+    roles: ["director", "admin"],
+    permisos: [PERMISOS.gestionAnualLeer],
+    enMenu: true
   },
   {
     patron: "#/preceptoria",

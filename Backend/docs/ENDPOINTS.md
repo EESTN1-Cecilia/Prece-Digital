@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 461 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 466 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -21,6 +21,16 @@ Total: 461 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
 | GET | `/api/v1/roles` | publica |
+
+## annual-management
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/annual-management/preview` | `annual-management.manage` |
+| POST | `/api/v1/annual-management/confirm` | `annual-management.manage` |
+| GET | `/api/v1/annual-management/report` | `annual-management.read` |
+| GET | `/api/v1/annual-management/history` | `annual-management.read` |
+| POST | `/api/v1/annual-management/exports` | `annual-management.read` |
 
 ## authorization
 

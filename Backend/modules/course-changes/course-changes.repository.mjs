@@ -118,6 +118,10 @@ const courseChangesRepository = {
   eliminarMovimiento(id) {
     this.init();
     getStore().courseChangesMovimientos.delete(id);
+    const auditoria = getStore().courseChangesAudit;
+    for (let indice = auditoria.length - 1; indice >= 0; indice -= 1) {
+      if (auditoria[indice].entidadId === id) auditoria.splice(indice, 1);
+    }
   },
 
   listMovimientos({
