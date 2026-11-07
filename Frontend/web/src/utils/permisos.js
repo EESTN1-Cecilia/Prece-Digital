@@ -26,6 +26,8 @@ export const PERMISOS = {
   observacionesLeer: permiso("observations", "read"),
   observacionesCrear: permiso("observations", "write"),
   academicosLeer: permiso("academics", "read"),
+  gestionAnualLeer: permiso("annual-management", "read"),
+  gestionAnualGestionar: permiso("annual-management", "manage"),
   horariosLeer: permiso("schedules", "read"),
   inventoryLeer: permiso("inventory", "read"),
   inventoryCrear: permiso("inventory", "write"),

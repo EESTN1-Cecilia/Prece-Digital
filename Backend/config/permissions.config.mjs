@@ -97,6 +97,8 @@ export const PERMISSIONS = {
   ACADEMIC_RECORDS_READ: "academic-records.read",
   ACADEMIC_RECORDS_WRITE: "academic-records.write",
   ACADEMIC_RECORDS_MANAGE: "academic-records.manage",
+  ANNUAL_MANAGEMENT_READ: "annual-management.read",
+  ANNUAL_MANAGEMENT_MANAGE: "annual-management.manage",
   CURRICULUM_TRACK_WRITE: "curriculum.track",
   GROUPS_READ: "groups.read",
   GROUPS_WRITE: "groups.write",

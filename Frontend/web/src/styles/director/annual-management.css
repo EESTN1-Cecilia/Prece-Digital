@@ -1,0 +1,393 @@
+.annual-page {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+  color: #20232a;
+}
+
+.annual-header,
+.annual-filters,
+.annual-preview-summary,
+.annual-confirm-row,
+.annual-export-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.annual-header h1 {
+  margin: 0.2rem 0;
+  color: #591c23;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.annual-eyebrow,
+.annual-subtitle,
+.annual-report-meta,
+.annual-secondary,
+.annual-stat-detail {
+  color: #62656d;
+}
+
+.annual-eyebrow {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.annual-subtitle {
+  margin: 0.4rem 0 0;
+}
+
+.annual-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #d9dce2;
+}
+
+.annual-tabs button,
+.annual-primary-button,
+.annual-secondary-button {
+  border: 0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  padding: 0.7rem 1rem;
+}
+
+.annual-tabs button {
+  background: transparent;
+  color: #525660;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+
+.annual-tabs button.is-active {
+  border-bottom-color: #591c23;
+  color: #591c23;
+}
+
+.annual-section,
+.annual-report-card,
+.annual-history {
+  background: #fff;
+  border: 1px solid #e0e2e7;
+  border-radius: 0.85rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow: 0 3px 14px rgb(25 30 40 / 4%);
+}
+
+.annual-section > h2,
+.annual-history h3,
+.annual-report-card h3 {
+  margin-top: 0;
+  color: #30333b;
+}
+
+.annual-note {
+  max-width: 900px;
+  color: #525660;
+  line-height: 1.5;
+}
+
+.annual-filters {
+  justify-content: flex-start;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #e7e8ec;
+  border-radius: 0.75rem;
+  background: #fafafb;
+}
+
+.annual-filters label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 150px;
+  color: #454852;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.annual-filters input,
+.annual-filters select,
+.annual-table select,
+.annual-table input {
+  min-height: 2.5rem;
+  border: 1px solid #c9cbd2;
+  border-radius: 0.45rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  padding: 0.4rem 0.55rem;
+}
+
+.annual-next-year {
+  align-self: end;
+  color: #591c23;
+  font-weight: 700;
+  padding: 0.65rem 0;
+}
+
+.annual-primary-button {
+  align-self: end;
+  background: #591c23;
+  color: #fff;
+}
+
+.annual-secondary-button {
+  border: 1px solid #aeb1b9;
+  background: #fff;
+  color: #343740;
+}
+
+.annual-primary-button:disabled,
+.annual-secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.annual-alert {
+  border-radius: 0.65rem;
+  padding: 0.85rem 1rem;
+}
+
+.annual-alert ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.annual-alert-error {
+  border: 1px solid #e4a6a6;
+  background: #fff2f2;
+  color: #8d1d1d;
+}
+
+.annual-alert-success {
+  border: 1px solid #91c9a2;
+  background: #f0fff4;
+  color: #176232;
+}
+
+.annual-alert-info {
+  border: 1px solid #e4d7a2;
+  background: #fffbed;
+  color: #604d12;
+}
+
+.annual-table-wrap {
+  overflow: auto;
+  border: 1px solid #e1e3e8;
+  border-radius: 0.65rem;
+}
+
+.annual-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.annual-table th,
+.annual-table td {
+  border-bottom: 1px solid #e6e7eb;
+  padding: 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.annual-table th {
+  position: sticky;
+  top: 0;
+  background: #f5edef;
+  color: #591c23;
+  font-size: 0.85rem;
+}
+
+.annual-table td strong,
+.annual-table td > span,
+.annual-table td select,
+.annual-table td input {
+  display: block;
+}
+
+.annual-table td select,
+.annual-table td input {
+  max-width: 280px;
+  margin-bottom: 0.4rem;
+}
+
+.annual-secondary {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.annual-warning-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #8a5310;
+  font-size: 0.84rem;
+}
+
+.annual-warning-text {
+  color: #8a5310;
+  font-weight: 650;
+}
+
+.annual-ok {
+  color: #286744;
+}
+
+.annual-preview-summary {
+  justify-content: flex-start;
+  margin: 1rem 0;
+  color: #525660;
+}
+
+.annual-preview-summary strong {
+  color: #591c23;
+  font-size: 1.1rem;
+}
+
+.annual-confirm-row {
+  justify-content: flex-end;
+  margin: 1rem 0;
+}
+
+.annual-confirm-row > span {
+  color: #525660;
+}
+
+.annual-history ul,
+.annual-outcomes {
+  display: grid;
+  gap: 0.45rem;
+  padding-left: 1.2rem;
+}
+
+.annual-history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #4c5059;
+}
+
+.annual-stat-grid,
+.annual-report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.85rem;
+  margin: 1rem 0;
+}
+
+.annual-stat-card {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 105px;
+  padding: 1rem;
+  border: 1px solid #e2e3e8;
+  border-radius: 0.7rem;
+  background: #fff;
+}
+
+.annual-stat-label {
+  color: #62656d;
+  font-size: 0.87rem;
+}
+
+.annual-stat-value {
+  color: #591c23;
+  font-size: 1.7rem;
+}
+
+.annual-stat-detail {
+  font-size: 0.8rem;
+}
+
+.annual-report-card {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.annual-report-card-wide {
+  grid-column: 1 / -1;
+}
+
+.annual-bars {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.annual-bar-row {
+  display: grid;
+  grid-template-columns: 90px minmax(80px, 1fr) 32px;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.annual-bar-track {
+  height: 0.65rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #f0e9eb;
+}
+
+.annual-bar-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #8b3c46;
+}
+
+.annual-empty {
+  color: #6a6d75;
+}
+
+.annual-report-meta {
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.annual-export-row {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+@media (max-width: 700px) {
+  .annual-page {
+    padding: 0.75rem;
+  }
+
+  .annual-header {
+    align-items: flex-start;
+  }
+
+  .annual-header,
+  .annual-history li {
+    flex-direction: column;
+  }
+
+  .annual-filters,
+  .annual-filters label {
+    width: 100%;
+  }
+
+  .annual-primary-button {
+    width: 100%;
+  }
+}
+
+@media print {
+  .annual-header,
+  .annual-tabs,
+  .annual-section,
+  .annual-export-row {
+    display: none;
+  }
+}

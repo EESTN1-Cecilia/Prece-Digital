@@ -48,6 +48,7 @@ import * as devicesController from "../modules/devices/devices.controller.mjs";
 import * as curriculumController from "../modules/curriculum/curriculum.controller.mjs";
 import * as academicController from "../modules/academic/academic.controller.mjs";
 import * as academicRecordsController from "../modules/academic-records/academic-records.controller.mjs";
+import * as annualManagementController from "../modules/annual-management/annual-management.controller.mjs";
 import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
@@ -76,6 +77,11 @@ const rutasDeclaradas = [
   { method: "GET", path: "/health", handler: healthCheck },
   { method: "GET", path: "/api/v1/modules", handler: listModules },
   { method: "GET", path: "/api/v1/roles", handler: listRoles },
+  { method: "GET", path: "/api/v1/annual-management/preview", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_MANAGE)], handler: annualManagementController.preview },
+  { method: "POST", path: "/api/v1/annual-management/confirm", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_MANAGE)], handler: annualManagementController.confirmar },
+  { method: "GET", path: "/api/v1/annual-management/report", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_READ)], handler: annualManagementController.informe },
+  { method: "GET", path: "/api/v1/annual-management/history", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_READ)], handler: annualManagementController.historial },
+  { method: "POST", path: "/api/v1/annual-management/exports", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_READ)], handler: annualManagementController.registrarExportacion },
   { method: "GET", path: "/api/v1/authorization/me", middlewares: [verifyToken], handler: authorizationController.getMe },
   { method: "GET", path: "/api/v1/authorization/modules", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getModules },
   { method: "GET", path: "/api/v1/authorization/roles", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRoles },

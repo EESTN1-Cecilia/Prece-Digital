@@ -38,6 +38,7 @@ export const modules = [
   { id: "planning", name: "Planificaciones", description: "Planificaciones docentes y su revision." },
   { id: "academics", name: "Estructura academica", description: "Ciclos, orientaciones, cursos y divisiones." },
   { id: "academic-records", name: "Situacion academica", description: "Materias pendientes, recursadas e intensificadas." },
+  { id: "annual-management", name: "Cierre e informes anuales", description: "Actualizacion anual de matricula e informes institucionales." },
   { id: "audit", name: "Auditoria", description: "Historial de cambios, accesos, exportaciones y errores." },
   { id: "student-portal", name: "Portal del alumno", description: "Perfil, boletin, asistencias, situacion academica y previas del alumno autenticado." }
 ];
