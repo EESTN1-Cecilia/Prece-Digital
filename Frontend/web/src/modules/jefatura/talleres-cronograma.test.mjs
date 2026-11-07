@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   CRONOGRAMA,
   cicloDeAnio,
-  divisionesDeInformaticaYProgramacion,
+  divisionesDeCursosYTalleres,
   divisionesVisibles,
   gruposDeAnio,
   gruposDeDivision
@@ -53,7 +53,7 @@ test("7°3 tiene los grupos 7.6 y 7.8 y el 7°4 no se muestra", () => {
   assert.deepEqual(divisionesVisibles(catalogo), [{ anio: 7, division: "3" }, { anio: 6, division: "4" }]);
 });
 
-test("Cursos y Talleres de Informática y Programación solo muestra de 4° a 7°", () => {
+test("Cursos y Talleres muestra Ciclo Básico (1° a 3°) y de 4° a 7°, sin las divisiones ocultas", () => {
   const catalogo = [
     { anio: 1, division: "1" },
     { anio: 2, division: "1" },
@@ -64,7 +64,10 @@ test("Cursos y Talleres de Informática y Programación solo muestra de 4° a 7�
     { anio: 7, division: "4" }
   ];
 
-  assert.deepEqual(divisionesDeInformaticaYProgramacion(catalogo), [
+  assert.deepEqual(divisionesDeCursosYTalleres(catalogo), [
+    { anio: 1, division: "1" },
+    { anio: 2, division: "1" },
+    { anio: 3, division: "1" },
     { anio: 4, division: "1" },
     { anio: 5, division: "3" },
     { anio: 7, division: "3" }

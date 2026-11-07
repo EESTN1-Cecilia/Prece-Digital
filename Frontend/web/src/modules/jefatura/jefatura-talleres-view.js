@@ -9,7 +9,7 @@ import {
   ETIQUETA_CICLO,
   ETIQUETA_DIA,
   cicloDeAnio,
-  divisionesDeInformaticaYProgramacion,
+  divisionesDeCursosYTalleres,
   gruposDeDivision,
   sesionesDeGrupo
 } from "./talleres-cronograma.js";
@@ -73,6 +73,7 @@ function guardar(clave, estado) {
 
 const FILTROS_CATEGORIA = [
   ["todos", "Todos los Cursos"],
+  ["basico", "Ciclo Básico"],
   ["informatica", "Informática"],
   ["programacion", "Programación"]
 ];
@@ -177,7 +178,7 @@ function GrillaCursos({ divisiones, onAbrir }) {
   const [limite, setLimite] = useState(CURSOS_POR_PAGINA[0]);
 
   const cuenta = useMemo(() => {
-    const total = { todos: divisiones.length, informatica: 0, programacion: 0 };
+    const total = { todos: divisiones.length, basico: 0, informatica: 0, programacion: 0 };
     for (const division of divisiones) total[categoriaDeDivision(division)] += 1;
     return total;
   }, [divisiones]);
@@ -219,7 +220,7 @@ function GrillaCursos({ divisiones, onAbrir }) {
         { className: "jf-filtros__grupo", role: "group", "aria-label": "Año" },
         h("span", null, "Año:"),
         boton(anio === "todos", () => setAnio("todos"), "Todos", "jf-filtro"),
-        [4, 5, 6, 7].map((valor) => boton(anio === valor, () => setAnio(valor), `${valor}°`, "jf-filtro"))
+        [1, 2, 3, 4, 5, 6, 7].map((valor) => boton(anio === valor, () => setAnio(valor), `${valor}°`, "jf-filtro"))
       ),
       h(
         "div",
@@ -884,7 +885,7 @@ export default function JefaturaTalleresView({ escuela = "E.E.S.T. N°1 Cecilia 
     StudentsService.getDivisiones()
       .then((lista) => {
         if (!vigente) return;
-        const ordenadas = divisionesDeInformaticaYProgramacion(lista ?? []).sort((a, b) => a.anio - b.anio || Number(a.division) - Number(b.division));
+        const ordenadas = divisionesDeCursosYTalleres(lista ?? []).sort((a, b) => a.anio - b.anio || Number(a.division) - Number(b.division));
         setDivisiones(ordenadas);
       })
       .catch((err) => vigente && setError(err.mensaje || err.message || "No se pudieron consultar los cursos."));

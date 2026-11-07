@@ -323,9 +323,10 @@ export function divisionesVisibles(divisiones = []) {
   return divisiones.filter((division) => !DIVISIONES_OCULTAS.has(`${division.anio}-${division.division}`));
 }
 
-/* El apartado de cursos y talleres de las orientaciones técnicas empieza en 4°. */
-export function divisionesDeInformaticaYProgramacion(divisiones = []) {
-  return divisionesVisibles(divisiones).filter((division) => Number(division.anio) >= 4);
+/* El apartado de cursos y talleres cubre todos los años: Ciclo Básico (1° a 3°)
+   e Informática / Programación (4° a 7°). */
+export function divisionesDeCursosYTalleres(divisiones = []) {
+  return divisionesVisibles(divisiones);
 }
 
 /* Excepciones a la regla de abajo, indicadas por la jefatura: 7°3 tiene los
