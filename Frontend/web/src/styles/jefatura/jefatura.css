@@ -849,6 +849,12 @@
   white-space: nowrap;
 }
 
+.jf-curso-card__etiqueta--basico {
+  border-color: #a7f3d0;
+  background: var(--jf-basico-suave);
+  color: #0b5c55;
+}
+
 .jf-curso-card__etiqueta--informatica {
   border-color: #bfdbfe;
   background: #dbeafe;
