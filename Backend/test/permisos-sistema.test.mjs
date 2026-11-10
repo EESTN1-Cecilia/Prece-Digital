@@ -287,13 +287,20 @@ function archivosJs(dir) {
 function llamadasMobile() {
   const servicios = join(MOBILE, "services");
   const encontradas = [];
-  /* Solo los servicios que la app del alumno importa de verdad: los demas (p. ej.
-     devices-api, notifications-api) son del cliente comun y no se usan en este portal. */
-  const usados = new Set();
-  for (const fuente of archivosJs(MOBILE).filter((f) => !f.startsWith(servicios))) {
-    for (const m of readFileSync(fuente, "utf8").matchAll(/services\/([\w-]+)\.js/g)) usados.add(m[1]);
+  /* Solo los servicios que la app del alumno alcanza de verdad: se siguen los imports
+     desde App.js. Los demas (devices-api, notifications-api y su pantalla) son del
+     cliente comun y no estan conectados a este portal. */
+  const alcanzados = new Set();
+  const pendientes = [join(MOBILE, "app/App.js")];
+  while (pendientes.length) {
+    const actual = pendientes.pop();
+    if (alcanzados.has(actual) || !existsSync(actual)) continue;
+    alcanzados.add(actual);
+    for (const m of readFileSync(actual, "utf8").matchAll(/from\s+"(\.{1,2}\/[^"]+\.js)"/g)) {
+      pendientes.push(join(actual, "..", m[1]));
+    }
   }
-  for (const archivo of archivosJs(servicios).filter((f) => usados.has(/([\w-]+)\.js$/.exec(f)[1]))) {
+  for (const archivo of archivosJs(servicios).filter((f) => alcanzados.has(f))) {
     const codigo = readFileSync(archivo, "utf8");
     const base = /const BASE = "([^"]+)"/.exec(codigo)?.[1] ?? "";
     for (const m of codigo.matchAll(/pedir\(\s*(?:conAnio\(\s*)?`\$\{BASE\}([^`?]*)`/g)) {
