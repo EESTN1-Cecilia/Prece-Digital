@@ -71,3 +71,8 @@
    9. PORTAL DEL ALUMNO
    ========================================================================== */
 @import "./alumno-portal/portal.css";
+
+/* ==========================================================================
+   10. RESPONSIVE GLOBAL (siempre al final: celular, tablet, netbook, monitor)
+   ========================================================================== */
+@import "./base/responsive.css";

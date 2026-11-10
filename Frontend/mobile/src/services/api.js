@@ -213,11 +213,14 @@ async function ejecutar(url, opciones, metodo) {
     });
   }
 
+  /* El tiempo limite es de este cliente: no se le pasa a fetch. Sin valor,
+     setTimeout dispararia el aborto al instante. */
+  const { tiempoLimiteMs = TIEMPO_LIMITE_MS, ...opcionesFetch } = opciones;
   const controlador = new AbortController();
-  const temporizador = setTimeout(() => controlador.abort(), opciones.tiempoLimiteMs);
+  const temporizador = setTimeout(() => controlador.abort(), tiempoLimiteMs);
 
   try {
-    return await implementar(url, { ...opciones, signal: controlador.signal });
+    return await implementar(url, { ...opcionesFetch, signal: controlador.signal });
   } catch (fallo) {
     if (fallo && (fallo.name === "AbortError" || fallo.name === "TimeoutError")) {
       throw new ErrorDeApi({
@@ -289,7 +292,8 @@ export async function pedir(ruta, opciones = {}) {
     {
       method: metodo,
       headers: cabeceras,
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo)
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+      tiempoLimiteMs
     },
     metodo
   );
