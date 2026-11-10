@@ -4,8 +4,9 @@
    Las credenciales se validan en la API comun, no aca. */
 
 import React, { useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { baseUrlActual, esDesarrollo } from "../../config/env.js";
 import { ALTO_BOTON, ALTO_CAMPO, COLOR_SOPORTE, COLORES, ESPACIOS, RADIOS, TIPOGRAFIA } from "../../theme/tokens.js";
 import { useSesion } from "./SesionContext.js";
 
@@ -18,7 +19,7 @@ function validar(datos) {
   const errores = {};
 
   if (!datos.email.trim()) {
-    errores.email = "Ingresa tu correo institucional.";
+    errores.email = "Ingresá tu usuario o DNI.";
   }
 
   if (!datos.password) {
@@ -80,10 +81,17 @@ export default function LoginScreen() {
       View,
       { style: styles.tarjeta },
 
+      h(Image, {
+        source: require("../../../assets/logo-chico.png"),
+        style: styles.logo,
+        accessibilityLabel: "Logo de la E.E.S. Técnica N° 1",
+        resizeMode: "contain"
+      }),
+
       h(
         View,
         { style: styles.barraSuperior },
-        h(Text, { style: styles.eyebrow }, "E.E.S.T. Nº 1 · CECILIA BERDICHEVSKI"),
+        h(Text, { style: styles.eyebrow }, "E.E.S. TÉCNICA Nº 1 · ESTEBAN ECHEVERRÍA"),
         h(
           View,
           { style: styles.badge },
@@ -99,7 +107,7 @@ export default function LoginScreen() {
         h(
           Text,
           { style: styles.subtitulo },
-          "Ingresá con tus credenciales oficiales para acceder al sistema escolar."
+          "Ingresá con tu usuario o tu DNI para ver tu información escolar. En tu primer ingreso, tu contraseña es tu DNI."
         )
       ),
 
@@ -114,7 +122,10 @@ export default function LoginScreen() {
               View,
               { style: styles.alertaContenido },
               h(Text, { style: styles.alertaTitulo }, "No se pudo iniciar sesión"),
-              h(Text, { style: styles.alertaDesc }, error.mensaje ?? "Revisá tus credenciales e intentá nuevamente.")
+              h(Text, { style: styles.alertaDesc }, error.mensaje ?? (esDesarrollo() ? error.message : null) ?? "Revisá tus credenciales e intentá nuevamente."),
+              esDesarrollo() && (error.codigo === "NETWORK_ERROR" || error.codigo === "TIMEOUT")
+                ? h(Text, { style: styles.alertaDesc }, `API: ${baseUrlActual()}`)
+                : null
             )
           )
         : null,
@@ -129,23 +140,23 @@ export default function LoginScreen() {
           h(
             Text,
             { style: styles.etiqueta },
-            "Correo institucional",
+            "Usuario o DNI",
             h(Text, { style: styles.requerido }, " *")
           ),
           h(TextInput, {
             style: estilosInput(errores.email),
             value: datos.email,
             onChangeText: actualizar("email"),
-            placeholder: "secretaria@prece.local",
+            placeholder: "nombre.apellido@alumno.prece.local o DNI",
             placeholderTextColor: COLORES.marcador,
             autoCapitalize: "none",
             autoCorrect: false,
             autoComplete: "username",
             textContentType: "username",
-            keyboardType: "email-address",
+            keyboardType: "default",
             returnKeyType: "next",
             editable: !enviando,
-            accessibilityLabel: "Correo institucional"
+            accessibilityLabel: "Usuario o DNI"
           }),
           errores.email ? h(Text, { style: styles.errorCampo }, errores.email) : null
         ),
@@ -275,6 +286,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
     elevation: 4
   },
+  logo: {
+    width: 84,
+    height: 84,
+    alignSelf: "center"
+  },
   barraSuperior: {
     flexDirection: "row",
     alignItems: "center",
@@ -353,7 +369,7 @@ const styles = StyleSheet.create({
   },
   alertaDesc: {
     ...TIPOGRAFIA.alertaTexto,
-    color: COLORES.alertaBorde,
+    color: COLORES.errorFuerte,
     lineHeight: 15
   },
   campo: {

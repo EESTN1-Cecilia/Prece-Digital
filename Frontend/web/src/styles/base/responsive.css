@@ -1,0 +1,882 @@
+/* ==========================================================================
+   RESPONSIVE GLOBAL — celulares, tablets, netbooks y monitores grandes
+   Se importa AL FINAL de global.css: con igual especificidad, gana sobre los
+   estilos de cada modulo. Nada de esto toca la impresion (@media print).
+
+   Rangos de referencia
+     celular        <= 640px    (el menu lateral pasa a panel: <= 760px)
+     tablet         641–1024px
+     netbook/laptop 1025–1440px (incluye pantallas bajas de ~600–768px de alto)
+     monitor        >= 1600px   (contenedores mas anchos y encabezado alineado)
+   ========================================================================== */
+
+/* ---- 1. Base: nunca scroll horizontal de pagina, nada se sale del ancho ---- */
+
+:root {
+  --resp-gutter: clamp(12px, 2.4vw, 28px);
+  --resp-ancho-contenido: 1360px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 12px;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+li,
+td,
+th,
+label {
+  overflow-wrap: break-word;
+}
+
+/* Alto de pantalla real en celulares (la barra del navegador no tapa el pie). */
+.app-layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-layout__cuerpo,
+.app-layout__contenido,
+.page,
+main {
+  min-width: 0;
+}
+
+/* ---- 2. Modales: 100vw/100vh desbordan en celulares y con barra de scroll.
+        Un elemento fixed con inset:0 ya ocupa todo el visor. ---- */
+
+.boletin-modal-backdrop,
+.matriz-modal-backdrop,
+.modal-backdrop {
+  width: auto;
+  height: auto;
+  overscroll-behavior: contain;
+}
+
+.boletin-modal-backdrop,
+.matriz-modal-backdrop,
+.modal-backdrop,
+.server-modal-backdrop,
+.boletin-email-modal-overlay {
+  /* Si el modal es mas alto que la pantalla, el fondo se desplaza en vez de
+     recortar el contenido. */
+  overflow-y: auto;
+  align-items: safe center;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+}
+
+@supports (height: 100dvh) {
+  .boletin-modal-container {
+    max-height: 94dvh;
+  }
+
+  .matriz-modal-container {
+    max-height: 92dvh;
+  }
+
+  .director-modal-container {
+    max-height: 94dvh;
+  }
+
+  .server-modal-content {
+    max-height: 90dvh;
+  }
+
+  .doc-modal-paper-wrap {
+    max-height: 92dvh !important;
+  }
+}
+
+/* ---- 3. Encabezado y menu: tablets y netbooks ---- */
+
+.site-header__top {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.header-user-modal {
+  width: min(250px, calc(100vw - 24px));
+}
+
+/* Tablet y netbook angosta: la barra de secciones se compacta antes de saltar
+   de renglon en cada item. */
+@media (min-width: 761px) and (max-width: 1100px) {
+  .site-header__top {
+    width: calc(100% - 32px);
+  }
+
+  .main-nav--app {
+    width: calc(100% - 32px);
+    gap: 6px 14px;
+  }
+
+  .nav-pill-btn {
+    padding: 6px 14px;
+    font-size: 14.5px;
+  }
+
+  .header-logo {
+    width: clamp(150px, 20vw, 200px);
+  }
+
+  .app-layout__contenido {
+    padding: 16px var(--resp-gutter) 36px;
+  }
+}
+
+/* Netbooks y laptops con poco alto: el encabezado no se come la pantalla. */
+@media (min-width: 761px) and (max-height: 760px) {
+  .site-header__top {
+    padding-top: 8px;
+    padding-bottom: 4px;
+  }
+
+  .header-logo {
+    max-height: 52px;
+  }
+
+  .header-avatar-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .nav-pill-btn {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .site-header::after {
+    height: 30px;
+  }
+}
+
+/* ---- 4. Celulares ---- */
+
+@media (max-width: 760px) {
+  .site-header__top {
+    width: calc(100% - 24px);
+    padding-top: 8px;
+    padding-bottom: 6px;
+  }
+
+  .site-header__right,
+  .site-header__acciones {
+    gap: 8px;
+  }
+
+  .header-logo {
+    width: clamp(110px, 38vw, 150px);
+    max-height: 48px;
+  }
+
+  .header-avatar-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .site-header::after {
+    height: 24px;
+  }
+
+  .sidebar {
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    max-width: 86vw;
+  }
+
+  .app-layout__contenido {
+    padding-top: 10px;
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+  }
+
+  /* iOS hace zoom al enfocar un campo de menos de 16px. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Botones de accion en filas de formularios y encabezados: ocupan el ancho
+     para poder tocarlos con el pulgar. */
+  .ui-boton--ancho {
+    width: 100%;
+  }
+
+  /* Modales a casi pantalla completa. */
+  .boletin-modal-container,
+  .matriz-modal-container,
+  .director-modal-container,
+  .server-modal-content,
+  .doc-modal-paper-wrap {
+    width: 100%;
+    max-width: 100% !important;
+    border-radius: 12px;
+  }
+
+  /* Tablas: el contenedor se desplaza en horizontal con el dedo; el mensaje
+     visual es un degradado en el borde derecho. */
+  .ui-tabla__scroll,
+  [class*="tabla-scroll"],
+  [class*="table-wrap"],
+  [class*="tabla-wrapper"] {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+}
+
+@media (max-width: 380px) {
+  .header-logo {
+    width: 104px;
+  }
+
+  .header-avatar-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .app-layout__contenido {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+/* ---- 5. Pantallas tactiles (celulares y tablets): areas de toque de 44px ---- */
+
+@media (pointer: coarse) {
+  .nav-pill-btn,
+  .sidebar__enlace,
+  .encabezado-app__menu,
+  .ui-boton,
+  .ui-paginacion__numero,
+  .header-user-modal__item,
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea {
+    min-height: 44px;
+  }
+
+  .ui-boton--chico {
+    min-height: 40px;
+  }
+
+  /* Los menus y paneles no dependen de :hover. */
+  .nav-pill-btn:hover,
+  .header-avatar-btn:hover {
+    transform: none;
+  }
+}
+
+/* ---- 6. Monitores grandes: el contenido crece y queda alineado al encabezado ---- */
+
+@media (min-width: 1600px) {
+  :root {
+    --resp-ancho-contenido: 1500px;
+  }
+
+  .site-header__top,
+  .main-nav--app {
+    width: min(var(--resp-ancho-contenido), calc(100% - 64px));
+  }
+
+  .app-layout__contenido {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .alumnos-panel,
+  .docente-dashboard-wrapper,
+  .docente-panel,
+  .docente-cursos-container,
+  .boletines-panel,
+  .jf-page,
+  .preceptoria-dashboard-wrapper,
+  .secretaria-dashboard,
+  .secretaria-dashboard--home,
+  .annual-page,
+  .matriz-view-page,
+  .configuracion-page,
+  .observations-form-page {
+    max-width: var(--resp-ancho-contenido);
+  }
+
+  .pa-contenido,
+  .pa-cabecera__fila,
+  .pa-navegacion {
+    max-width: 1440px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --resp-ancho-contenido: 1680px;
+  }
+
+  .director-page-container {
+    max-width: 1840px;
+  }
+}
+
+/* ==========================================================================
+   8. PANTALLAS: tarjetas contenedoras, encabezados y barras de herramientas
+   Cada modulo dibuja su pantalla dentro de una "tarjeta" grande (radio 28px,
+   32px de relleno, 24px de margen) ademas del relleno que ya pone el layout.
+   En celular eso se suma y deja menos de 60% del ancho para el contenido.
+   ========================================================================== */
+
+/* Tablet: un solo margen (el del layout) y relleno mas moderado. */
+@media (min-width: 761px) and (max-width: 1100px) {
+  .director-dashboard-wrapper,
+  .docente-dashboard-wrapper,
+  .docente-panel,
+  .docente-cursos-container,
+  .boletines-panel,
+  .jf-page,
+  .preceptoria-dashboard-wrapper,
+  .secretaria-dashboard {
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 28px;
+    padding: 20px 22px 28px;
+    border-radius: 22px;
+    box-sizing: border-box;
+  }
+
+  .secretaria-dashboard--home {
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 28px;
+  }
+
+  .director-page-container {
+    width: 100%;
+    margin: 12px 0 28px;
+  }
+
+  .app-layout .page:not(.page--alumno) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Celular: tarjeta contenedora compacta, ocupa todo el ancho disponible. */
+@media (max-width: 760px) {
+  .director-dashboard-wrapper,
+  .docente-dashboard-wrapper,
+  .docente-panel,
+  .docente-cursos-container,
+  .boletines-panel,
+  .jf-page,
+  .preceptoria-dashboard-wrapper,
+  .secretaria-dashboard {
+    width: 100%;
+    max-width: 100%;
+    margin: 6px 0 24px;
+    padding: 14px 12px 24px;
+    border-radius: 16px;
+    gap: 14px;
+    box-sizing: border-box;
+  }
+
+  .secretaria-dashboard--home {
+    width: 100%;
+    max-width: 100%;
+    margin: 6px 0 24px;
+    gap: 14px;
+  }
+
+  .annual-page {
+    padding: 0.5rem 0;
+  }
+
+  .matriz-view-page {
+    padding: 8px 0;
+  }
+
+  .director-page-container {
+    width: 100%;
+    margin: 6px 0 24px;
+    gap: 12px;
+  }
+
+  .director-sidebar-access {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .app-layout .page:not(.page--alumno) {
+    padding: 8px 0 40px;
+  }
+
+  /* Encabezados grandes (hero): en columna, el texto usa todo el ancho y los
+     botones se reparten debajo. */
+  .director-hero-banner,
+  .docente-hero-banner,
+  .preceptoria-hero-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .director-hero-banner > *,
+  .docente-hero-banner > *,
+  .preceptoria-hero-banner > *,
+  .director-hero-left > * {
+    min-width: 0;
+  }
+
+  .director-hero-left {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .director-hero-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+
+  .director-hero-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .director-hero-title {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .director-hero-subtitle {
+    max-width: none;
+  }
+
+  [class*="hero"] [class*="actions"] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  [class*="hero"] [class*="actions"] > * {
+    flex: 1 1 150px;
+    justify-content: center;
+  }
+
+  /* Etiquetas de la barra superior: se acomodan en renglones. */
+  .director-top-bar,
+  .director-top-title-wrap,
+  .alumnos-top-badges {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .badge-institucion,
+  .badge-ciclo,
+  .director-badge-main {
+    white-space: normal;
+  }
+
+  /* Pestanas: una sola fila que se desliza con el dedo. */
+  .director-tabs-nav,
+  .asignaciones-subtabs-nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .director-tabs-nav::-webkit-scrollbar,
+  .asignaciones-subtabs-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .director-tab-btn {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Cabeceras y barras con titulo + acciones: las acciones pasan abajo en vez
+     de achicar el titulo a una columna de letras. */
+  .director-supervision-header,
+  .docente-section-header,
+  .preceptoria-subview-header,
+  .jf-encabezado,
+  .jf-panel__cabecera,
+  .server-categories-header,
+  .alumnos-filter-status-bar,
+  .boletin-header-top-row,
+  .matriz-header-top-row,
+  .ui-modal__cabecera,
+  .director-modal-header,
+  .modal-header,
+  .profile-form-actions-bar,
+  .form-links,
+  .kpi-header-row,
+  .cal-item__cabecera,
+  .director-informe-item__top,
+  .director-informe-item__footer,
+  .docente-curso-card__header,
+  .preceptoria-asistencia-card__header,
+  .jf-curso-card__cabecera,
+  .jf-curso-card__pie,
+  .course-directory-card__header,
+  .course-directory-card__footer,
+  .alert-item__header,
+  .alert-item__footer,
+  .server-request-footer,
+  .docente-module-card__footer,
+  .preceptoria-module-card__footer {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}
+
+/* ==========================================================================
+   9. GRILLAS Y TARJETAS (secretaria, preceptoria, docente, alumnos)
+   ========================================================================== */
+
+/* 9.1 Grillas "auto-fit/auto-fill" con minimo fijo (ej. minmax(320px, 1fr)):
+   en un celular de 360px el contenido util es menor a 320px y la tarjeta se
+   sale del panel. min(N, 100%) mantiene el mismo diseno cuando hay lugar y
+   deja una sola columna al ancho disponible cuando no. */
+
+.pa-indicadores {
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+
+.pa-datos {
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+}
+
+.pa-columnas {
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+}
+
+.pa-boletin__pie {
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+
+.pa-previa__datos {
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+
+.tutors-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+}
+
+.conditions-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+}
+
+.gradebook-header-banner {
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+
+.profile-data-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+
+.course-cards-directory-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
+}
+
+.students-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+}
+
+.ui-casillas {
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+}
+
+.ui-datos {
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+
+.form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
+}
+
+.annual-stat-grid,
+.annual-report-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+}
+
+.director-roles-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+
+.asignaciones-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr));
+}
+
+.director-periodos-lista {
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+}
+
+.docente-modules-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+}
+
+.docente-cursos-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+}
+
+.doc-official-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+}
+
+.data-formulario__campos {
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+}
+
+.jf-curso-grilla {
+  grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr));
+}
+
+.preceptoria-asistencias-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
+}
+
+.preceptoria-informes-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+}
+
+.inventory-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+}
+
+/* Elementos con ancho minimo fijo que empujan el ancho de la pantalla. */
+.docente-class-footer__left {
+  min-width: 0;
+}
+
+.header-notifications-dropdown {
+  max-width: calc(100vw - 24px);
+}
+
+.dashboard__actions {
+  max-width: 100%;
+}
+
+/* Texto largo (nombres de archivo, correos) nunca ensancha su tarjeta. */
+[class*="informe"],
+[class*="adjunto"],
+[class*="attachment"] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 9.2 Celular: las tarjetas internas ya estan dentro de un panel con relleno;
+   se reduce el suyo (~40%) para que el texto tenga ancho. */
+@media (max-width: 640px) {
+  /* secretaria.css */
+  .dashboard-hero-badge {
+    padding: 8px 12px 8px 10px;
+  }
+
+  .turnos-side-card {
+    padding: 12px 13px;
+  }
+
+  .dashboard-card__header {
+    padding: 18px 14px;
+  }
+
+  /* preceptoria.css */
+  .preceptoria-hero-banner {
+    padding: 14px 17px;
+  }
+
+  .preceptoria-module-card {
+    padding: 13px 14px;
+  }
+
+  .preceptoria-section-box {
+    padding: 13px 14px;
+  }
+
+  .preceptoria-informes-section {
+    padding: 13px 14px;
+  }
+
+  /* docente.css */
+  .docente-hero-banner {
+    padding: 17px 19px;
+  }
+
+  .docente-module-card {
+    padding: 13px;
+  }
+
+  .docente-notice-box {
+    padding: 16px 12px;
+  }
+
+  .docente-asistencias-header {
+    padding: 14px 17px;
+  }
+
+  .docente-control-panel {
+    padding: 16px 12px;
+  }
+
+  .docente-class-footer {
+    padding: 13px 14px;
+  }
+
+  .docente-chart-card {
+    padding: 18px 12px 16px;
+  }
+
+  /* alumnos.css */
+  .course-directory-card {
+    padding: 18px 12px;
+  }
+
+  .course-active-hero-banner {
+    padding: 16px 13px;
+  }
+
+  /* alumno-resumen.css */
+  .student-summary-hero-card {
+    padding: 13px 14px;
+  }
+
+  .student-summary-card {
+    padding: 18px 12px 12px;
+  }
+
+  .alert-list-empty {
+    padding: 12px 12px;
+  }
+
+  .full-profile-header {
+    padding: 18px 14px;
+  }
+
+  .full-profile-footer {
+    padding: 14px 14px;
+  }
+
+  .cambiar-estado-header {
+    padding: 18px 14px;
+  }
+
+  .cambiar-estado-footer {
+    padding: 16px 14px;
+  }
+
+  /* alumno-perfil.css */
+  .loading-state-container {
+    padding: 36px 12px;
+  }
+
+  .error-state-container {
+    padding: 36px 12px;
+  }
+
+  .student-actions-bar-container {
+    padding: 14px 13px;
+  }
+
+  .profile-section-card {
+    padding: 14px 17px;
+  }
+
+  .tutor-card {
+    padding: 16px 12px;
+  }
+
+  .audit-entry-card {
+    padding: 16px 12px;
+  }
+
+  /* cargar-alumno.css */
+  .file-upload-dropzone {
+    padding: 14px 16px;
+  }
+
+  .resumen-previo-card {
+    padding: 16px 12px;
+  }
+
+  .save-success-banner {
+    padding: 18px 13px;
+  }
+
+  .excel-template-banner {
+    padding: 12px 14px;
+  }
+
+  .excel-dropzone {
+    padding: 23px 14px;
+  }
+
+  .excel-file-card {
+    padding: 16px 13px;
+  }
+
+  .excel-guide-card {
+    padding: 12px 14px;
+  }
+
+  /* asistencias.css */
+  .registro-diario-header {
+    padding: 16px 12px;
+  }
+
+  /* Dos columnas fijas de botones/metricas: una sola con poco ancho. */
+  .preceptoria-asistencia-card__metrics,
+  .docente-curso-card__actions,
+  .student-mini-card__actions {
+    gap: 8px;
+  }
+
+  .modal-form-grid,
+  .tutor-details-grid,
+  .student-edit-form-grid,
+  .form-grid-3col-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-breakdown-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+/* ---- 7. Movimiento reducido ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

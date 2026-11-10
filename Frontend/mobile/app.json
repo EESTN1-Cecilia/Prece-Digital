@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Prece Digital",
-    "slug": "prece-digital",
+    "name": "Prece Digital Alumno",
+    "slug": "prece-digital-alumno",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -9,15 +9,21 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Usamos Face ID para que ingreses a tu cuenta sin escribir la contraseña."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#f6f7f9"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/logo.png"
       }
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "scheme": "precedigital-alumno",
+    "icon": "./assets/logo.png"
   }
 }

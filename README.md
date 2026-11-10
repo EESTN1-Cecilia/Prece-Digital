@@ -4,6 +4,7 @@ Plataforma web y móvil para la gestión escolar interna: alumnos y legajos, obs
 
 Monorepo único con npm workspaces. Backend, Frontend y Shared viven y se versionan juntos: un cambio que toca la API y la pantalla va en el mismo Pull Request.
 
+
 ## Estructura
 
 ```text
@@ -25,12 +26,54 @@ cp Backend/.env.example Backend/.env
 cp Frontend/web/.env.example Frontend/web/.env
 ```
 
+## Cómo correr todo
+
+Requisitos: Node 20+ y npm. Para la app móvil, además, **Expo Go** en el celular (misma red WiFi que la PC).
+
+**1. Instalar (una sola vez, desde la raíz)**
+
+```bash
+npm install
+cp Backend/.env.example Backend/.env
+cp Frontend/web/.env.example Frontend/web/.env
+cd Frontend/mobile && npx expo install expo-print expo-sharing expo-file-system && npx expo install --fix && cd ../..
+```
+
+**2. Backend + web** (una terminal)
+
+```bash
+npm run dev
+```
+
+- API: http://localhost:3000
+- Web: http://localhost:5173
+
+**3. App móvil** (otra terminal; la API del paso 2 tiene que estar corriendo)
+
+```bash
+cd Frontend/mobile
+npx expo start -c
+```
+
+Escanear el QR con Expo Go. La app encuentra sola la IP de la PC; si no, definir `EXPO_PUBLIC_API_BASE_URL=http://<IP-de-la-PC>:3000` en `Frontend/mobile/.env`. En Windows, permitir Node.js en el firewall (redes privadas). Más detalle y solución de problemas en [`Frontend/mobile/README.md`](Frontend/mobile/README.md).
+
+**4. Verificar**
+
+```bash
+npm test                              # Backend + web
+npm test -w @prece-digital/mobile     # app móvil
+npm run check                         # sintaxis
+```
+
+Web y mobile usan **el mismo backend y los mismos datos** (en memoria en desarrollo: se reinician con la API). Para probar como alumno: usuario `ana.perez@alumno.prece.local`, contraseña inicial `40123456` (ver la sección siguiente).
+
 ## Comandos
 
 ```bash
 npm run dev             # API (http://localhost:3000) + web (http://localhost:5173)
 npm run dev:api         # solo API
 npm run dev:web         # solo web
+npm run dev:mobile      # solo app móvil (Expo)
 npm test                # tests de Backend y Frontend web
 npm run check           # sintaxis de todo el JavaScript
 npm run build           # build de producción de la web

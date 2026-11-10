@@ -3,30 +3,30 @@
    version movil de la misma aplicacion y no una identidad nueva. */
 
 export const COLORES = {
-  navy: "#222a4c",
-  indigo: "#404d94",
-  indigoOscuro: "#354382",
-  sky: "#8dc5dc",
-  skyClaro: "#b8e0ed",
-  ink: "#17191f",
-  linea: "#b9bdc3",
+  navy: "#5c0f0f",
+  indigo: "#8b1e1e",
+  indigoOscuro: "#5c0f0f",
+  sky: "#c97a7a",
+  skyClaro: "#e8c5c5",
+  ink: "#000000",
+  linea: "#e6e6e6",
   papel: "rgba(255, 255, 255, 0.88)",
 
-  fondoApp: "#f1f2f3",
+  fondoApp: "#f4f2f2",
 
-  titulo: "#0f172a",
-  texto: "#1e293b",
-  textoSuave: "#64748b",
-  marcador: "#b0b4b9",
-  borde: "#e2e8f0",
-  divisor: "#f1f5f9",
+  titulo: "#1a0b0b",
+  texto: "#3a3434",
+  textoSuave: "#5a5555",
+  marcador: "#a39d9d",
+  borde: "#e6e6e6",
+  divisor: "#efeaea",
 
-  azul: "#2563eb",
-  azulOscuro: "#1d4ed8",
-  azulEnlace: "#1e40af",
-  azulIcono: "#3b82f6",
-  azulFondo: "#eff6ff",
-  azulBorde: "#dbeafe",
+  azul: "#8b1e1e",
+  azulOscuro: "#5c0f0f",
+  azulEnlace: "#5c0f0f",
+  azulIcono: "#a62b2b",
+  azulFondo: "#fbf3f3",
+  azulBorde: "#e8c5c5",
 
   error: "#dc2626",
   errorFuerte: "#991b1b",
@@ -36,9 +36,9 @@ export const COLORES = {
   alertaBorde: "#fecaca",
   alertaBarra: "#ef4444",
 
-  boton: "#0f1d32",
-  botonPresionado: "#1e293b",
-  botonDeshabilitado: "#475569",
+  boton: "#8b1e1e",
+  botonPresionado: "#5c0f0f",
+  botonDeshabilitado: "#7a7474",
   blanco: "#ffffff"
 };
 
@@ -80,3 +80,30 @@ export const ESPACIOS = {
 export const ALTO_CAMPO = 46;
 export const ALTO_BOTON = 46;
 export const COLOR_SOPORTE = "Prece.Digital.Soporte@gmail.com";
+/* Paleta institucional (logo de la E.E.S. Tecnica N 1). */
+export const PORTAL = {
+  bordo: "#5c0f0f",        // bordo oscuro
+  bordo2: "#8b1e1e",       // rojo institucional
+  rojoSecundario: "#a62b2b",
+  bordoSuave: "#f6eaea",
+  grisOscuro: "#5a5555",
+  gris: "#7a7474",
+  linea: "#e6e6e6",
+  fondo: "#f4f2f2",
+  blanco: "#ffffff",
+  negro: "#000000",
+  titulo: "#1a0b0b",
+  subtitulo: "#5a5555",
+  rojoClaro: "#e8c5c5",
+  rojoSuave: "#c97a7a",
+  ok: "#1f6b3a",
+  okFondo: "#e7f4ec",
+  alerta: "#8a5a00",
+  alertaFondo: "#fdf3dc",
+  peligro: "#a62b2b",
+  peligroFondo: "#fbe9e7",
+  pendiente: "#5a5555",
+  pendienteFondo: "#e6e6e6",
+  neutro: "#5a5555",
+  neutroFondo: "#e6e6e6"
+};

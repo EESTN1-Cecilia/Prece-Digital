@@ -4,8 +4,9 @@
    lo informa con un mensaje claro en lugar de guardar el token en otro lado. */
 
 import { requireOptionalNativeModule } from "expo-modules-core";
+import { Platform } from "react-native";
 
-import { configurarAlmacenamientoSeguro } from "./secure-store.js";
+import { configurarAlmacenamientoSeguro, crearAlmacenamientoEnMemoria } from "./secure-store.js";
 
 const NOMBRE_NATIVO = "SecureStore";
 
@@ -40,5 +41,13 @@ export function crearAdaptadorSecureStore() {
 }
 
 export function instalarAlmacenamientoSeguro() {
+  /* En el navegador (vista previa de Expo web) no existe Keychain/Keystore.
+     Los tokens se guardan SOLO en memoria: nunca en localStorage, y se pierden
+     al recargar la pagina. En Android e iOS siempre se usa el almacen seguro. */
+  if (Platform.OS === "web") {
+    configurarAlmacenamientoSeguro(crearAlmacenamientoEnMemoria());
+    return;
+  }
+
   configurarAlmacenamientoSeguro(crearAdaptadorSecureStore);
 }

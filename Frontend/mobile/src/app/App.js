@@ -1,268 +1,79 @@
+/* App movil de Prece Digital - sector Alumno.
+   Flujo: login unico (usuario o DNI) -> si la cuenta no es de alumno se cierra
+   el acceso -> portal del alumno. El Backend es quien autoriza cada dato. */
+
 import React from "react";
-import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
-import { modules } from "../../../../Shared/src/domain.mjs";
+import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import LoginScreen from "../modules/auth/LoginScreen.js";
-import { ESTADO_ANONIMO, ESTADO_AUTENTICADO, ProveedorDeSesion, useSesion } from "../modules/auth/SesionContext.js";
-import PantallaNotificaciones from "../modules/notifications/PantallaNotificaciones.js";
+import BloqueoScreen from "../modules/auth/BloqueoScreen.js";
+import { ESTADO_ANONIMO, ESTADO_AUTENTICADO, ESTADO_BLOQUEADO, ProveedorDeSesion, useSesion } from "../modules/auth/SesionContext.js";
+import PortalAlumno from "../modules/alumno/PortalAlumno.js";
+import { Boton, Tarjeta } from "../modules/alumno/componentes.js";
+import { resolverBaseUrlDeDesarrollo } from "../config/api-host.js";
+import { instalarBiometria } from "../services/adaptador-biometria.js";
 import { instalarAlmacenamientoSeguro } from "../services/adaptador-secure-store.js";
-import { ALTO_BOTON, COLORES, ESPACIOS, RADIOS, TIPOGRAFIA } from "../theme/tokens.js";
-import { nombresDeRol } from "../utils/roles.js";
+import { COLORES, PORTAL } from "../theme/tokens.js";
+import { esAlumno } from "../utils/alumno-reglas.js";
 
 const h = React.createElement;
 
 /* El almacen seguro se resuelve de forma perezosa: solo se toca cuando hace
    falta leer o escribir un token. */
 instalarAlmacenamientoSeguro();
+instalarBiometria();
+resolverBaseUrlDeDesarrollo();
 
 function PantallaDeEspera() {
-  return h(
-    View,
-    { style: styles.espera },
-    h(ActivityIndicator, { color: COLORES.navy, size: "large" })
-  );
+  return h(View, { style: estilos.espera }, h(ActivityIndicator, { color: PORTAL.bordo2, size: "large" }));
 }
 
-function SesionActual({ sesion, cerrarSesion, cerrando, vista, cambiarVista }) {
-  const nombre = sesion.usuario?.displayName || sesion.usuario?.email || "";
-
-  if (vista === "notificaciones") {
-    return h(
-      View,
-      { style: styles.contenedorVista },
-      h(
-        View,
-        { style: styles.encabezadoSecundario },
-        h(
-          Pressable,
-          {
-            onPress: () => cambiarVista("home"),
-            accessibilityRole: "button",
-            style: ({ pressed }) => [styles.botonVolver, pressed && styles.botonVolverPresionado]
-          },
-          h(Text, { style: styles.botonVolverTexto }, "← Volver")
-        )
-      ),
-      h(PantallaNotificaciones, null)
-    );
-  }
-
+/* Una cuenta de personal no tiene nada que hacer en esta app: se le explica y
+   puede cerrar la sesion. No se consulta ningun dato del portal. */
+function SoloAlumnos({ cerrarSesion }) {
   return h(
-    ScrollView,
-    { contentContainerStyle: styles.contenedor },
-    h(Text, { style: styles.brand }, "Prece Digital"),
-    h(Text, { style: styles.titulo }, "Asistencia movil"),
-
+    View,
+    { style: estilos.centrado },
     h(
-      View,
-      { style: styles.tarjetaSesion },
-      h(Text, { style: styles.tarjetaSesionEtiqueta }, "Sesion activa"),
-      h(Text, { style: styles.tarjetaSesionNombre }, nombre),
-      sesion.usuario?.email ? h(Text, { style: styles.tarjetaSesionDetalle }, sesion.usuario.email) : null,
-      h(
-        Text,
-        { style: styles.tarjetaSesionDetalle },
-        sesion.roles.length ? `Roles: ${nombresDeRol(sesion.roles).join(", ")}` : "Roles: sin identificar"
-      ),
-      h(
-        View,
-        { style: styles.botonera },
-        h(
-          Pressable,
-          {
-            onPress: () => cambiarVista("notificaciones"),
-            accessibilityRole: "button",
-            style: ({ pressed }) => [styles.botonPrincipal, pressed && styles.botonPrincipalPresionado]
-          },
-          h(Text, { style: styles.botonPrincipalTexto }, "Notificaciones")
-        ),
-        h(
-          Pressable,
-          {
-            onPress: cerrarSesion,
-            disabled: cerrando,
-            accessibilityRole: "button",
-            accessibilityState: { disabled: cerrando, busy: cerrando },
-            style: ({ pressed }) => [styles.botonCerrar, pressed && styles.botonCerrarPresionado]
-          },
-          h(
-            View,
-            { style: styles.botonCerrarContenido },
-            cerrando ? h(ActivityIndicator, { color: COLORES.blanco, size: "small" }) : null,
-            h(Text, { style: styles.botonCerrarTexto }, cerrando ? "Cerrando sesion..." : "Cerrar sesion")
-          )
-        )
-      )
-    ),
-
-    modules.map((module) =>
-      h(
-        View,
-        { key: module.id, style: styles.card },
-        h(Text, { style: styles.cardTitle }, module.name),
-        h(Text, { style: styles.cardBody }, module.description)
-      )
+      Tarjeta,
+      { titulo: "Esta app es solo para alumnos" },
+      h(Text, { style: estilos.texto }, "Tu cuenta no corresponde a un alumno. El personal debe ingresar desde el sistema web."),
+      h(Boton, { texto: "Cerrar sesión", onPress: cerrarSesion })
     )
   );
 }
 
 function Contenido() {
-  const { estado, sesion, cerrarSesion } = useSesion();
-  const [vista, cambiarVista] = React.useState("home");
+  const { estado, sesion, cerrarSesion, desbloquear, usarPassword, nombreBiometria } = useSesion();
 
-  if (estado === ESTADO_ANONIMO) {
-    return h(LoginScreen, null);
-  }
+  if (estado === ESTADO_ANONIMO) return h(LoginScreen, null);
+  if (estado === ESTADO_BLOQUEADO) return h(BloqueoScreen, { nombre: nombreBiometria, onDesbloquear: desbloquear, onUsarPassword: usarPassword });
+  if (estado !== ESTADO_AUTENTICADO) return h(PantallaDeEspera, null);
+  if (!esAlumno(sesion.roles)) return h(SoloAlumnos, { cerrarSesion });
 
-  if (estado !== ESTADO_AUTENTICADO) {
-    return h(PantallaDeEspera, null);
-  }
-
-  return h(SesionActual, { sesion, cerrarSesion, cerrando: false, vista, cambiarVista });
+  return h(PortalAlumno, null);
 }
 
-export default function App() {
+function Marco() {
+  const insets = useSafeAreaInsets();
+
   return h(
-    SafeAreaView,
-    { style: styles.safeArea },
-    h(StatusBar, { barStyle: "dark-content" }),
-    h(
-      ProveedorDeSesion,
-      null,
-      h(Contenido, null)
-    )
+    View,
+    { style: [estilos.raiz, { paddingTop: insets.top }] },
+    h(StatusBar, { barStyle: "light-content", backgroundColor: PORTAL.bordo }),
+    h(View, { style: [estilos.cuerpo, { paddingBottom: insets.bottom }] }, h(ProveedorDeSesion, null, h(Contenido, null)))
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORES.fondoApp
-  },
-  espera: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORES.fondoApp
-  },
-  contenedor: {
-    gap: 12,
-    padding: ESPACIOS.xl
-  },
-  brand: {
-    color: COLORES.indigo,
-    fontSize: 13,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.6
-  },
-  titulo: {
-    color: COLORES.ink,
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 8
-  },
-  tarjetaSesion: {
-    backgroundColor: COLORES.papel,
-    borderColor: COLORES.linea,
-    borderRadius: RADIOS.tarjeta,
-    borderWidth: 1,
-    padding: ESPACIOS.lg,
-    gap: ESPACIOS.xs
-  },
-  tarjetaSesionEtiqueta: {
-    ...TIPOGRAFIA.eyebrow,
-    color: COLORES.textoSuave,
-    textTransform: "uppercase"
-  },
-  tarjetaSesionNombre: {
-    color: COLORES.titulo,
-    fontSize: 18,
-    fontWeight: "800"
-  },
-  tarjetaSesionDetalle: {
-    color: COLORES.textoSuave,
-    fontSize: 13,
-    fontWeight: "500"
-  },
-  botonCerrar: {
-    height: ALTO_BOTON,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORES.boton,
-    borderRadius: RADIOS.boton
-  },
-  botonCerrarPresionado: {
-    backgroundColor: COLORES.botonPresionado
-  },
-  botonCerrarContenido: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: ESPACIOS.sm
-  },
-  botonCerrarTexto: {
-    ...TIPOGRAFIA.boton,
-    color: COLORES.blanco
-  },
-  card: {
-    backgroundColor: COLORES.blanco,
-    borderColor: COLORES.borde,
-    borderRadius: RADIOS.alerta,
-    borderWidth: 1,
-    padding: ESPACIOS.lg
-  },
-  cardTitle: {
-    color: COLORES.ink,
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: ESPACIOS.xs
-  },
-  cardBody: {
-    color: COLORES.textoSuave,
-    fontSize: 14,
-    lineHeight: 20
-  },
-  contenedorVista: {
-    flex: 1
-  },
-  encabezadoSecundario: {
-    paddingHorizontal: ESPACIOS.xl,
-    paddingTop: ESPACIOS.md,
-    paddingBottom: ESPACIOS.sm,
-    backgroundColor: COLORES.fondoApp
-  },
-  botonVolver: {
-    alignSelf: "flex-start",
-    paddingVertical: ESPACIOS.sm,
-    paddingHorizontal: ESPACIOS.lg,
-    borderRadius: RADIOS.boton,
-    borderWidth: 1,
-    borderColor: COLORES.linea,
-    backgroundColor: COLORES.papel
-  },
-  botonVolverPresionado: {
-    opacity: 0.85
-  },
-  botonVolverTexto: {
-    ...TIPOGRAFIA.enlace,
-    color: COLORES.indigo
-  },
-  botonera: {
-    gap: ESPACIOS.sm
-  },
-  botonPrincipal: {
-    height: ALTO_BOTON,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORES.indigo,
-    borderRadius: RADIOS.boton
-  },
-  botonPrincipalPresionado: {
-    backgroundColor: COLORES.indigoOscuro
-  },
-  botonPrincipalTexto: {
-    ...TIPOGRAFIA.boton,
-    color: COLORES.blanco
-  }
+export default function App() {
+  return h(SafeAreaProvider, null, h(Marco, null));
+}
+
+const estilos = StyleSheet.create({
+  raiz: { flex: 1, backgroundColor: PORTAL.bordo },
+  cuerpo: { flex: 1, backgroundColor: COLORES.fondoApp },
+  espera: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: COLORES.fondoApp },
+  centrado: { flex: 1, justifyContent: "center", padding: 16 },
+  texto: { fontSize: 14, color: PORTAL.subtitulo, lineHeight: 20 }
 });

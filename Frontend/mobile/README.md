@@ -1,6 +1,77 @@
 # Mobile (aplicación móvil)
 
-Relevamiento funcional y técnico de la aplicación móvil.
+## App del alumno (implementada)
+
+App Android/iOS con Expo, **solo para alumnos**, sobre la misma API que la web (portal del alumno: `GET /api/v1/alumno/perfil` y endpoints relacionados). Misma información y opciones que el portal web del alumno, adaptadas a pantalla de celular. Marca institucional (bordó/gris + logo de la E.E.S. Técnica N° 1) aplicada solo en mobile.
+
+### Pantallas (menú inferior)
+
+| Pantalla | Qué muestra | Equivalente web |
+| --- | --- | --- |
+| Inicio | Saludo, 4 indicadores (ausentes, TEP, aprobadas, previas) y "Mis datos" (incluye ciclo lectivo y grupo de taller) | Inicio |
+| Boletín | Boletín con el mismo diseño que la web, selector de ciclo, **Descargar PDF** e **Imprimir** | Mi Boletín |
+| Asistencias | Totales (ausentes, justificadas, injustificadas, tardes, parciales, presentes) y detalle por fecha con filtro, curso y motivo | Mis Asistencias |
+| Novedades | Cartelera escolar (comunicados de Dirección + avisos fijos), filtro por área, paginación, lectura completa y descarga de adjuntos; "Mi actividad académica" | Novedades |
+| Reportes | Accesos a Boletín, Asistencias, Situación académica y Previas | Mis Reportes |
+| Cuenta | Datos de acceso, cambio de contraseña y de usuario, cerrar sesión | Mi Cuenta |
+
+Situación académica y Previas se abren desde Reportes o desde los indicadores de Inicio (en la web son vistas ocultas del menú). En el primer ingreso la app obliga a configurar la cuenta, igual que la web.
+
+### Cómo correrla
+
+Requisitos: Node 20+, la app **Expo Go** en el celular (debe ser compatible con SDK 58) y el celular en la **misma red WiFi** que la PC.
+
+```bash
+# 1) Desde la raíz del repo (una sola vez)
+npm install
+
+# 2) Dependencias nativas de Expo (una sola vez)
+cd Frontend/mobile
+npx expo install expo-print expo-sharing expo-file-system
+npx expo install --fix
+
+# 3) Backend (terminal 1, desde la raíz)
+npm run dev:api
+
+# 4) App (terminal 2)
+cd Frontend/mobile
+npx expo start -c
+```
+
+Escanear el QR con Expo Go (Android) o con la cámara (iOS). No presionar `w` (modo web): la app es para celular.
+
+- **Dirección de la API:** en desarrollo se detecta sola a partir de la IP de la PC que muestra Expo (puerto 3000). Solo si falla, copiar `.env.example` a `.env` y fijar `EXPO_PUBLIC_API_BASE_URL=http://<IP-de-la-PC>:3000`.
+- **Firewall de Windows:** permitir Node.js en redes privadas, o el celular no llega a la API.
+- **Producción:** `EXPO_PUBLIC_APP_ENV=production` exige una API `https://`.
+- **Tests:** `npm test` dentro de `Frontend/mobile`.
+
+### Usuario de prueba
+
+`ana.perez@alumno.prece.local` (o el DNI `40123456`), contraseña inicial `40123456`; en el primer ingreso pide una contraseña nueva. Los datos están en memoria: al reiniciar la API vuelven a su estado inicial. Web y mobile usan el mismo backend, así que ven los mismos datos.
+
+### Problemas frecuentes
+
+| Síntoma | Causa / solución |
+| --- | --- |
+| `Incompatible React versions` | `react` y `react-dom` deben estar en 19.3.1 en web y mobile. Correr `npm install` en la raíz y `npx expo start -c`. |
+| "La solicitud tardó demasiado" / error de conexión | La API no está corriendo, otra WiFi o firewall. Se muestra `API: <url>` en el login (solo en desarrollo). |
+| No abre en Expo Go | Expo Go solo soporta el SDK más reciente; actualizar la app de Expo Go. |
+| Falla "Descargar PDF" o un adjunto | Faltan `expo-print`, `expo-sharing` o `expo-file-system`: correr el paso 2. |
+
+### Cambios recientes
+
+- Menú alineado con la web: se agregó **Novedades** y **Reportes** pasó a ser un índice de cuatro informes.
+- Inicio: campo "Ciclo lectivo", mensaje "Sin registros hasta el momento" y accesos directos a Situación y Previas.
+- Asistencias: "Ausentes parciales", "Presentes" y curso/motivo en cada fecha.
+- Boletín: botón de descarga en PDF e impresión.
+- Conexión: corregido el tiempo de espera que abortaba al instante, detección automática de la IP del backend y almacenamiento en memoria cuando no hay SecureStore.
+- `react`/`react-dom` fijados en 19.3.1 también en `Frontend/web/package.json`.
+
+---
+
+## Relevamiento funcional y técnico
+
+Relevamiento de la aplicación móvil (alcance completo, incluye roles de personal que aún no están implementados en la app).
 
 ---
 
