@@ -4,6 +4,7 @@ Plataforma web y móvil para la gestión escolar interna: alumnos y legajos, obs
 
 Monorepo único con npm workspaces. Backend, Frontend y Shared viven y se versionan juntos: un cambio que toca la API y la pantalla va en el mismo Pull Request.
 
+
 ## Estructura
 
 ```text
