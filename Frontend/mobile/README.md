@@ -2,7 +2,7 @@
 
 ## App del alumno (implementada)
 
-App Android/iOS con Expo, **solo para alumnos**, sobre la misma API que la web (`/api/v1/alumno/*`). Misma información y opciones que el portal web del alumno, adaptadas a pantalla de celular. Marca institucional (bordó/gris + logo de la E.E.S. Técnica N° 1) aplicada solo en mobile.
+App Android/iOS con Expo, **solo para alumnos**, sobre la misma API que la web (portal del alumno: `GET /api/v1/alumno/perfil` y endpoints relacionados). Misma información y opciones que el portal web del alumno, adaptadas a pantalla de celular. Marca institucional (bordó/gris + logo de la E.E.S. Técnica N° 1) aplicada solo en mobile.
 
 ### Pantallas (menú inferior)
 
