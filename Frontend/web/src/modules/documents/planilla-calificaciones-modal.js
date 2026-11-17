@@ -872,8 +872,11 @@ export function PlanillaCalificacionesModal({
 
           // Tabla Oficial de Calificaciones
           h(
-            "table",
-            { className: "doc-planilla-table" },
+            "div",
+            { className: "doc-table-scroll" },
+            h(
+              "table",
+              { className: "doc-planilla-table" },
             h(
               "thead",
               null,
@@ -1111,6 +1114,7 @@ export function PlanillaCalificacionesModal({
                       )
                     );
                   })
+            )
             )
           ),
 

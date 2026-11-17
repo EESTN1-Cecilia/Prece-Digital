@@ -1075,3 +1075,195 @@
     height: 44px !important;
   }
 }
+
+/* ==========================================================================
+   RESPONSIVE MÓVIL: SHELL DE MODALES DE DOCUMENTACIÓN Y LIBRO MATRIZ
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+  .matriz-modal-backdrop {
+    padding: 6px;
+    align-items: center;
+  }
+
+  .matriz-modal-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: 96dvh;
+    border-radius: 14px;
+  }
+
+  .matriz-toolbar {
+    position: sticky;
+    top: 0;
+    padding: 10px 12px;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .matriz-toolbar__left {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: 40px;
+    gap: 3px;
+  }
+
+  .matriz-toolbar__title {
+    font-size: 0.94rem;
+    line-height: 1.25;
+  }
+
+  .matriz-toolbar__badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
+
+  .matriz-toolbar__controls {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .matriz-close-btn-topright {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    margin-left: 0;
+  }
+
+  .matriz-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    min-height: 34px;
+    border-radius: 8px;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .custom-dark-dropdown {
+    width: 100%;
+  }
+
+  .custom-dark-dropdown__btn {
+    width: 100%;
+    justify-content: space-between;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    min-height: 36px;
+    box-sizing: border-box;
+  }
+
+  .custom-dark-dropdown__btn-text {
+    max-width: none;
+    flex: 1;
+    text-align: left;
+  }
+
+  .custom-dark-dropdown__menu {
+    width: 100%;
+    min-width: 0;
+    max-width: calc(100vw - 36px);
+  }
+
+  .custom-dark-dropdown__search-input {
+    font-size: 16px;
+  }
+
+  /* Hoja oficial Libro Matriz en móvil */
+  .matriz-document-sheet {
+    padding: 16px 12px;
+    margin: 10px 8px;
+    border-radius: 8px;
+  }
+
+  .matriz-watermark {
+    width: 240px;
+    height: 240px;
+  }
+
+  .matriz-header-top-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .matriz-qr-box {
+    width: 52px;
+    height: 52px;
+  }
+
+  .matriz-national-title-block {
+    flex: 1 1 200px;
+    padding: 0 4px;
+  }
+
+  .matriz-rep-title-wrap {
+    gap: 6px;
+  }
+
+  .matriz-rep-word {
+    font-size: 1.05rem;
+  }
+
+  .matriz-escudo-inline {
+    width: 24px;
+    height: 28px;
+  }
+
+  .matriz-sub-law,
+  .matriz-sub-province,
+  .matriz-sub-prov-law,
+  .matriz-sub-dept,
+  .matriz-sub-dept-bold {
+    font-size: 0.68rem;
+  }
+
+  .matriz-serial-box {
+    width: 100%;
+    text-align: right;
+    font-size: 0.75rem;
+  }
+
+  .matriz-certification-text {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .matriz-year-section {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 6px;
+  }
+
+  .matriz-table {
+    min-width: 560px;
+  }
+
+  .matriz-signatures-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .matriz-footer-bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .matriz-view-page {
+    padding: 10px 8px;
+  }
+
+  .matriz-view-header {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .matriz-view-header h1 {
+    font-size: 1.25rem;
+  }
+}

@@ -1166,3 +1166,163 @@
     margin: 6mm;
   }
 }
+
+/* ==========================================================================
+   RESPONSIVE MÓVIL: BOLETÍN OFICIAL DE CALIFICACIONES
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+  .boletin-modal-backdrop {
+    padding: 6px;
+  }
+
+  .boletin-modal-container {
+    max-height: 96dvh;
+    border-radius: 12px;
+  }
+
+  .boletin-modal-header {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .boletin-header-top-row {
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .boletin-header-icon-box {
+    width: 32px;
+    height: 32px;
+  }
+
+  .boletin-header-title {
+    font-size: 14px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .boletin-header-subtitle {
+    flex-wrap: wrap;
+    white-space: normal;
+    gap: 4px 6px;
+    font-size: 11px;
+  }
+
+  .boletin-header-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  .boletin-toolbar-search-wrap,
+  .boletin-dni-search-form {
+    width: 100%;
+  }
+
+  .boletin-dni-search-form {
+    height: 36px;
+  }
+
+  .boletin-dni-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .boletin-toolbar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .btn-boletin-action {
+    width: 100%;
+    height: 34px;
+    padding: 0 8px;
+    justify-content: center;
+    font-size: 11.5px;
+  }
+
+  .btn-boletin-action--save {
+    grid-column: 1 / -1;
+  }
+
+  .boletin-nav-bar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .boletin-years-tabs {
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .boletin-orientacion-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .boletin-orientacion-select {
+    flex: 1;
+    max-width: 220px;
+    font-size: 14px;
+  }
+
+  .boletin-modal-body {
+    padding: 10px 8px;
+    justify-content: flex-start;
+  }
+
+  .boletin-paper-card {
+    padding: 12px 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .boletin-school-header {
+    gap: 10px;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  .boletin-school-logo-wrap {
+    width: 46px;
+    height: 46px;
+  }
+
+  .boletin-school-ministry {
+    font-size: 9.5px;
+  }
+
+  .boletin-school-name {
+    font-size: 13px;
+  }
+
+  .boletin-school-doc-title {
+    font-size: 11px;
+  }
+
+  .boletin-student-data-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
+    padding: 8px 10px;
+  }
+
+  .boletin-grades-table {
+    min-width: 640px;
+  }
+
+  .boletin-grade-input {
+    font-size: 14px;
+    height: 28px;
+  }
+}
+
+@media screen and (max-width: 460px) {
+  .boletin-student-data-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

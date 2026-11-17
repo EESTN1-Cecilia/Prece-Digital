@@ -24,36 +24,41 @@ import { useUsuarioActual } from "../../../estado/index.js";
 const ANIOS = [1, 2, 3, 4, 5, 6, 7];
 
 const ESTILOS = `
-.bof-overlay{position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px}
+.bof-overlay{position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
 .bof-panel{background:#eef1f6;width:min(1000px,100%);max-height:100%;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(15,23,42,.35)}
-.bof-barra{background:#1e2a44;color:#fff;display:flex;align-items:center;gap:14px;padding:12px 18px;flex-wrap:wrap}
+.bof-barra{background:#1e2a44;color:#fff;display:flex;align-items:center;gap:14px;padding:12px 18px;flex-wrap:wrap;flex-shrink:0}
 .bof-barra-titulo{flex:1;min-width:220px}
-.bof-barra-titulo strong{display:block;font-size:16px}
-.bof-barra-titulo span{font-size:12px;opacity:.85}
-.bof-chip{background:rgba(255,255,255,.16);border-radius:6px;padding:1px 7px;font-size:11px;margin:0 4px}
-.bof-acciones{display:flex;gap:8px;flex-wrap:wrap}
-.bof-btn{border:1px solid #cbd5e1;background:#fff;color:#1e2a44;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+.bof-barra-titulo strong{display:block;font-size:16px;line-height:1.25}
+.bof-barra-sub{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;font-size:12px;opacity:.9;margin-top:2px}
+.bof-chip{background:rgba(255,255,255,.16);border-radius:6px;padding:1px 7px;font-size:11px;white-space:nowrap}
+.bof-meta-legajo{white-space:nowrap;font-size:11.5px;opacity:.9}
+.bof-acciones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bof-btn{border:1px solid #cbd5e1;background:#fff;color:#1e2a44;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .bof-btn:disabled{opacity:.55;cursor:default}
 .bof-btn--ok{background:#15803d;border-color:#15803d;color:#fff}
 .bof-btn--x{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
-.bof-tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:10px 18px;background:#fff;border-bottom:1px solid #dbe1ea;overflow-x:auto}
-.bof-tab{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600;color:#1e2a44;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;min-width:0}
+.bof-tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:10px 18px;background:#fff;border-bottom:1px solid #dbe1ea;overflow-x:auto;overflow-y:hidden;flex-shrink:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.bof-tabs::-webkit-scrollbar{display:none}
+.bof-tab{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600;color:#1e2a44;cursor:pointer;white-space:nowrap;display:flex;align-items:center;justify-content:center;min-width:0;-webkit-tap-highlight-color:transparent}
 .bof-tab small{margin-left:5px;font-size:9px;background:#e2e8f0;border-radius:4px;padding:1px 4px;color:#475569;text-transform:uppercase}
 .bof-tab--on{border-color:#1e2a44;box-shadow:inset 0 0 0 1px #1e2a44}
-.bof-cuerpo{overflow:auto;padding:18px}
-.bof-hoja{background:#fff;border:1.5px solid #7a1f2b;max-width:800px;margin:0 auto;padding:22px 26px 26px;color:#1f2937;font-size:11px}
+.bof-cuerpo{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:18px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.bof-hoja{background:#fff;border:1.5px solid #7a1f2b;max-width:800px;margin:0 auto;padding:22px 26px 26px;color:#1f2937;font-size:11px;box-sizing:border-box}
 .bof-cab{text-align:center;border-bottom:2px solid #7a1f2b;padding-bottom:8px;display:flex;align-items:center;gap:14px}
-.bof-cab img{width:64px;height:64px;object-fit:contain}
-.bof-cab div{flex:1}
+.bof-cab img{width:64px;height:64px;object-fit:contain;flex-shrink:0}
+.bof-cab div{flex:1;min-width:0}
+.bof-cab-spacer{width:64px;flex-shrink:0}
 .bof-cab small{display:block;color:#6b7280;font-weight:700;font-size:9.5px;letter-spacing:.02em}
 .bof-cab h2{margin:2px 0;color:#7a1f2b;font-size:19px;font-weight:800}
 .bof-cab b{font-size:11px}
 .bof-datos{display:grid;grid-template-columns:2fr 1fr;border:1px dotted #6b7280;margin:12px 0}
-.bof-datos div{padding:6px 9px;border-bottom:1px dotted #9ca3af}
+.bof-datos div{padding:6px 9px;border-bottom:1px dotted #9ca3af;min-width:0}
 .bof-datos b{font-size:9.5px;color:#4b5563;margin-right:6px}
 .bof-datos3{display:grid;grid-template-columns:2fr 1.2fr 1.2fr;border:1px dotted #6b7280;border-top:0;margin-top:-12px;margin-bottom:12px}
-.bof-datos3 div{padding:6px 9px;border-bottom:1px dotted #9ca3af}
+.bof-datos3 div{padding:6px 9px;border-bottom:1px dotted #9ca3af;min-width:0}
 .bof-datos3 b{font-size:9.5px;color:#4b5563;margin-right:6px}
+.bof-scroll-hint{display:none}
+.bof-tabla-scroll{width:100%}
 .bof-tabla{width:100%;border-collapse:collapse;table-layout:fixed}
 .bof-tabla th{background:#7a1f2b;color:#fff;font-size:9.5px;padding:6px 3px;border:1px solid #e5c9cd;text-transform:uppercase}
 .bof-tabla td{border:1px solid #c7c9cf;padding:0;height:25px;text-align:center}
@@ -69,14 +74,65 @@ const ESTILOS = `
 .bof-pie input{width:46px;border:1px solid #9ca3af;border-radius:4px;text-align:center;font:inherit;padding:2px}
 .bof-pend-t{background:#5c121c;color:#fff;font-weight:800;padding:5px 8px;margin-top:16px;font-size:10px}
 .bof-pend th{background:#8c262e}
-.bof-pend input{width:100%;border:0;background:transparent;font:inherit;font-size:11px;padding:5px 4px;text-align:center}
+.bof-pend input{width:100%;border:0;background:transparent;font:inherit;font-size:11px;padding:5px 4px;text-align:center;box-sizing:border-box}
 .bof-pend input.bof-izq{text-align:left}
 .bof-firmas{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:46px;text-align:center}
 .bof-firmas div{border-top:1px solid #111;padding-top:4px;font-size:10px}
 .bof-firmas small{display:block;color:#6b7280;font-size:8.5px}
 .bof-aviso{max-width:800px;margin:0 auto 10px;font-size:12px;color:#166534;background:#dcfce7;border-radius:8px;padding:7px 12px}
 .bof-aviso--err{color:#991b1b;background:#fee2e2}
-@media (max-width:700px){.bof-hoja{padding:12px}.bof-tabla{font-size:9px}.bof-cab h2{font-size:15px}.bof-tabs{grid-template-columns:repeat(7,minmax(96px,1fr))}}
+@media screen and (max-width:768px){
+  .bof-overlay{padding:6px;align-items:stretch}
+  .bof-panel{width:100%;height:100%;max-height:100dvh;border-radius:14px}
+  .bof-barra{position:relative;padding:11px 12px;gap:9px;flex-direction:column;align-items:stretch}
+  .bof-barra-titulo{min-width:0;padding-right:38px}
+  .bof-barra-titulo strong{font-size:15px}
+  .bof-barra-sub{font-size:11.5px;gap:4px 6px}
+  .bof-acciones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+  .bof-btn{height:36px;padding:0 10px;font-size:12.5px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px}
+  .bof-btn--x{position:absolute;top:10px;right:10px;width:32px;height:32px;padding:0;border-radius:8px;font-size:14px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28)}
+  .bof-tabs{display:flex;flex-wrap:nowrap;gap:6px;padding:8px 10px;background:#f8fafc}
+  .bof-tab{flex:0 0 auto;padding:6px 10px;font-size:12px;border-radius:9px}
+  .bof-tab--on{background:#1e2a44;color:#fff;border-color:#1e2a44;box-shadow:none}
+  .bof-tab--on small{background:rgba(255,255,255,.22);color:#fff}
+  .bof-cuerpo{padding:10px 8px 16px}
+  .bof-hoja{padding:12px 10px 16px;border-radius:10px;max-width:100%}
+  .bof-cab{gap:10px;text-align:left;padding-bottom:9px}
+  .bof-cab img{width:46px;height:46px}
+  .bof-cab-spacer{display:none}
+  .bof-cab small{font-size:8.5px;line-height:1.25}
+  .bof-cab h2{font-size:14.5px;line-height:1.2;margin:2px 0}
+  .bof-cab b{font-size:10px;display:block}
+  .bof-datos{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);margin:10px 0 0;border-radius:6px 6px 0 0;overflow:hidden}
+  .bof-datos3{grid-template-columns:repeat(2,minmax(0,1fr));margin:0 0 10px;border-radius:0 0 6px 6px;overflow:hidden}
+  .bof-datos div,.bof-datos3 div{display:flex;flex-direction:column;gap:2px;padding:6px 8px;font-size:11.5px;font-weight:600;color:#111827;overflow-wrap:anywhere;border-right:1px dotted #9ca3af}
+  .bof-datos div:nth-child(2n),.bof-datos3 div:nth-child(2n){border-right:0}
+  .bof-datos3 div:nth-last-child(-n+2){border-bottom:0}
+  .bof-datos b,.bof-datos3 b{display:block;font-size:8.5px;font-weight:800;color:#64748b;margin-right:0;letter-spacing:.03em}
+  .bof-scroll-hint{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 9px;margin:0 0 6px;background:#fdf2f4;border:1px solid #f2cfd5;border-radius:7px;font-size:10.5px;font-weight:700;color:#7a1f2b}
+  .bof-tabla-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #d5d7dd;border-radius:8px;background:#fff}
+  .bof-tabla{min-width:720px;font-size:10.5px}
+  .bof-tabla th{font-size:9px;padding:7px 4px;line-height:1.2;word-break:normal;overflow-wrap:normal}
+  .bof-tabla td{height:34px}
+  .bof-tabla td.bof-mat{position:sticky;left:0;z-index:2;background:#fff;font-size:10px;padding:4px 8px;line-height:1.2;box-shadow:2px 0 5px -2px rgba(15,23,42,.18)}
+  .bof-tabla tbody tr:nth-child(even) td.bof-mat{background:#f1f1f3}
+  .bof-tabla thead th:first-child{position:sticky;left:0;z-index:3;background:#7a1f2b;box-shadow:2px 0 5px -2px rgba(0,0,0,.22)}
+  .bof-nota{font-size:16px;padding:4px 2px}
+  .bof-pie td{height:36px;font-size:10.5px}
+  .bof-pie input{font-size:16px;width:54px;height:28px}
+  .bof-pend-t{margin-top:14px;border-radius:7px 7px 0 0;font-size:9.5px;padding:6px 9px}
+  .bof-pend-scroll{border-top:0;border-radius:0 0 8px 8px}
+  .bof-pend{min-width:660px}
+  .bof-pend td{height:34px}
+  .bof-pend thead th:first-child{background:#8c262e}
+  .bof-pend tbody td:first-child{position:sticky;left:0;z-index:2;background:#fff;box-shadow:2px 0 5px -2px rgba(15,23,42,.16)}
+  .bof-pend tbody tr:nth-child(even) td:first-child{background:#f1f1f3}
+  .bof-pend input{font-size:16px;padding:5px 6px}
+  .bof-firmas{gap:10px;margin-top:26px}
+  .bof-firmas div{font-size:8.5px;padding-top:4px}
+  .bof-firmas small{font-size:7.5px;line-height:1.2}
+  .bof-aviso{font-size:11.5px;padding:8px 10px;margin-bottom:8px}
+}
 `;
 
 const COLS_NOTA = [
@@ -263,7 +319,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
             h("h2", null, 'E.E.S.T. N° 1 "CECILIA BERDICHEVSKI"'),
             h("b", null, `BOLETÍN DE CALIFICACIONES • ${boletin.anio}° AÑO`)
           ),
-          h("span", { style: { width: "64px" } })
+          h("span", { className: "bof-cab-spacer", "aria-hidden": "true" })
         ),
         h(
           "div",
@@ -281,71 +337,80 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
           h("div", null, h("b", null, "LIBRO:"), boletin.alumno.libro),
           h("div", null, h("b", null, "TURNO:"), boletin.alumno.turno || "—")
         ),
+        h("div", { className: "bof-scroll-hint", "aria-hidden": "true" }, h("span", null, "Deslizá la tabla para ver y cargar notas"), h("span", null, "→")),
         h(
-          "table",
-          { className: "bof-tabla" },
+          "div",
+          { className: "bof-tabla-scroll" },
           h(
-            "colgroup",
-            null,
-            ...[26, 9, 9, 10, 9, 9, 11, 17].map((p, i) => h("col", { key: i, style: { width: `${p}%` } }))
-          ),
-          h(
-            "thead",
-            null,
-            h("tr", null, ...["Materias", "1° Informe", "2° Informe", "Promedio anual", "Diciembre", "Febrero", "Calif. definitiva", "Firmas"].map((t) => h("th", { key: t }, t)))
-          ),
-          h(
-            "tbody",
-            null,
-            filaSeccion("FORMACIÓN GENERAL"),
-            ...filasMaterias(boletin.plan.general),
-            boletin.plan.taller.length ? filaSeccion(boletin.plan.tituloTaller) : null,
-            ...filasMaterias(boletin.plan.taller),
+            "table",
+            { className: "bof-tabla" },
             h(
-              "tr",
-              { className: "bof-pie" },
+              "colgroup",
+              null,
+              ...[26, 9, 9, 10, 9, 9, 11, 17].map((p, i) => h("col", { key: i, style: { width: `${p}%` } }))
+            ),
+            h(
+              "thead",
+              null,
+              h("tr", null, ...["Materias", "1° Informe", "2° Informe", "Promedio anual", "Diciembre", "Febrero", "Calif. definitiva", "Firmas"].map((t) => h("th", { key: t }, t)))
+            ),
+            h(
+              "tbody",
+              null,
+              filaSeccion("FORMACIÓN GENERAL"),
+              ...filasMaterias(boletin.plan.general),
+              boletin.plan.taller.length ? filaSeccion(boletin.plan.tituloTaller) : null,
+              ...filasMaterias(boletin.plan.taller),
               h(
-                "td",
-                { colSpan: 3, style: { textAlign: "left", padding: "0 8px" } },
-                "INASISTENCIA TOTAL: ",
-                h("input", { value: boletin.inasistencias, inputMode: "numeric", maxLength: 3, disabled: guardando, "aria-label": "Inasistencia total", onChange: (e) => cambiar((b) => ({ ...b, inasistencias: e.target.value.replace(/\D/g, "") })) }),
-                " días"
-              ),
-              h("td", { colSpan: 3, style: { textAlign: "right", padding: "0 8px" } }, "PROMEDIO GENERAL ANUAL:"),
-              h("td", { className: "bof-def" }, promedioGeneral(boletin.notas, materias) || "—"),
-              h("td", null, "")
+                "tr",
+                { className: "bof-pie" },
+                h(
+                  "td",
+                  { colSpan: 3, style: { textAlign: "left", padding: "0 8px" } },
+                  "INASISTENCIA TOTAL: ",
+                  h("input", { value: boletin.inasistencias, inputMode: "numeric", maxLength: 3, disabled: guardando, "aria-label": "Inasistencia total", onChange: (e) => cambiar((b) => ({ ...b, inasistencias: e.target.value.replace(/\D/g, "") })) }),
+                  " días"
+                ),
+                h("td", { colSpan: 3, style: { textAlign: "right", padding: "0 8px" } }, "PROMEDIO GENERAL ANUAL:"),
+                h("td", { className: "bof-def" }, promedioGeneral(boletin.notas, materias) || "—"),
+                h("td", null, "")
+              )
             )
           )
         ),
         h("div", { className: "bof-pend-t" }, "MATERIAS PENDIENTES DE ACREDITACIÓN / REGULARIZACIÓN"),
         h(
-          "table",
-          { className: "bof-tabla bof-pend" },
+          "div",
+          { className: "bof-tabla-scroll bof-pend-scroll" },
           h(
-            "thead",
-            null,
+            "table",
+            { className: "bof-tabla bof-pend" },
             h(
-              "tr",
+              "thead",
               null,
-              h("th", { rowSpan: 2, style: { width: "30%" } }, "Materias pendientes"),
-              h("th", { rowSpan: 2, style: { width: "8%" } }, "Año"),
-              ...PERIODOS_PENDIENTES.map(([k, etiqueta]) => h("th", { key: k, colSpan: 2 }, etiqueta))
-            ),
-            h("tr", null, ...PERIODOS_PENDIENTES.flatMap(([k]) => [h("th", { key: `${k}c` }, "Calif"), h("th", { key: `${k}l` }, "L/F")]))
-          ),
-          h(
-            "tbody",
-            null,
-            ...boletin.pendientes.map((p, i) =>
               h(
                 "tr",
-                { key: i },
-                h("td", null, h("input", { className: "bof-izq", value: p.materia, placeholder: "Escriba materia previa...", disabled: guardando, "aria-label": "Materia pendiente", onChange: (e) => editarPendiente(i, "materia", e.target.value) })),
-                h("td", null, h("input", { value: p.anio, maxLength: 4, disabled: guardando, "aria-label": "Año de la materia pendiente", onChange: (e) => editarPendiente(i, "anio", e.target.value) })),
-                ...PERIODOS_PENDIENTES.flatMap(([k]) => [
-                  h("td", { key: `${k}c` }, h("input", { value: p[`${k}C`], maxLength: 4, disabled: guardando, "aria-label": `${k} calificación`, onChange: (e) => editarPendiente(i, `${k}C`, e.target.value) })),
-                  h("td", { key: `${k}l` }, h("input", { value: p[`${k}LF`], maxLength: 4, disabled: guardando, "aria-label": `${k} libro y folio`, onChange: (e) => editarPendiente(i, `${k}LF`, e.target.value) }))
-                ])
+                null,
+                h("th", { rowSpan: 2, style: { width: "30%" } }, "Materias pendientes"),
+                h("th", { rowSpan: 2, style: { width: "8%" } }, "Año"),
+                ...PERIODOS_PENDIENTES.map(([k, etiqueta]) => h("th", { key: k, colSpan: 2 }, etiqueta))
+              ),
+              h("tr", null, ...PERIODOS_PENDIENTES.flatMap(([k]) => [h("th", { key: `${k}c` }, "Calif"), h("th", { key: `${k}l` }, "L/F")]))
+            ),
+            h(
+              "tbody",
+              null,
+              ...boletin.pendientes.map((p, i) =>
+                h(
+                  "tr",
+                  { key: i },
+                  h("td", null, h("input", { className: "bof-izq", value: p.materia, placeholder: "Escriba materia previa...", disabled: guardando, "aria-label": "Materia pendiente", onChange: (e) => editarPendiente(i, "materia", e.target.value) })),
+                  h("td", null, h("input", { value: p.anio, maxLength: 4, disabled: guardando, "aria-label": "Año de la materia pendiente", onChange: (e) => editarPendiente(i, "anio", e.target.value) })),
+                  ...PERIODOS_PENDIENTES.flatMap(([k]) => [
+                    h("td", { key: `${k}c` }, h("input", { value: p[`${k}C`], maxLength: 4, disabled: guardando, "aria-label": `${k} calificación`, onChange: (e) => editarPendiente(i, `${k}C`, e.target.value) })),
+                    h("td", { key: `${k}l` }, h("input", { value: p[`${k}LF`], maxLength: 4, disabled: guardando, "aria-label": `${k} libro y folio`, onChange: (e) => editarPendiente(i, `${k}LF`, e.target.value) }))
+                  ])
+                )
               )
             )
           )
@@ -375,7 +440,13 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
             "div",
             { className: "bof-barra-titulo" },
             h("strong", null, "Boletín Digital de Calificaciones"),
-            h("span", null, `${alumno.apellido}, ${alumno.nombre}`, h("span", { className: "bof-chip" }, `DNI: ${alumno.dni ?? "—"}`), boletin ? `Legajo: ${boletin.alumno.legajo}` : "")
+            h(
+              "span",
+              { className: "bof-barra-sub" },
+              h("span", null, `${alumno.apellido}, ${alumno.nombre}`),
+              h("span", { className: "bof-chip" }, `DNI: ${alumno.dni ?? "—"}`),
+              boletin ? h("span", { className: "bof-meta-legajo" }, `Legajo: ${boletin.alumno.legajo}`) : null
+            )
           ),
           h(
             "div",

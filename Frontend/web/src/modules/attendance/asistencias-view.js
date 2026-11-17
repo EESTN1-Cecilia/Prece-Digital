@@ -640,8 +640,6 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
           onClick: () => {
             if (onVolver) {
               onVolver();
-            } else if (window.history.length > 1) {
-              window.history.back();
             } else {
               window.location.hash = esDocente ? "#/inicio" : "#/cursos";
             }

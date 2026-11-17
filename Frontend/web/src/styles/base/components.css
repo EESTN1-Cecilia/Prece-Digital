@@ -1272,57 +1272,279 @@ input[type="date"].form-input:focus {
   }
 }
 
-@media (max-width: 720px) {
+@media screen and (max-width: 768px) {
   .observations-panel {
-    width: calc(100% - 24px);
-    margin-top: 16px;
-    padding: 16px;
-    border-radius: 16px;
-  }
-
-  .observations-panel__top,
-  .observations-toolbar--main .observations-toolbar__heading {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .observations-panel__top .action-button,
-  .observations-toolbar__clear {
     width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 14px 12px 18px;
+    border-radius: 18px;
+    box-sizing: border-box;
+  }
+
+  .observations-panel .observations-top-nav {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+    margin-bottom: 10px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .observations-panel .observations-top-nav .btn-volver-atras {
+    height: 34px;
+    padding: 0 12px 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+    gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .observations-panel .observations-top-nav .btn-volver-atras__icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .observations-panel__top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .observations-panel__title {
+    gap: 2px;
+  }
+
+  .observations-panel__title h2 {
+    font-size: 22px;
+    line-height: 1.15;
+  }
+
+  .observations-panel__title p {
+    font-size: 12.5px;
+  }
+
+  .observations-panel__top .action-button {
+    width: 100%;
+    height: 40px;
     justify-content: center;
+    border-radius: 10px;
+    font-size: 13px;
   }
 
+  /* Toolbar compacto con 6 filtros en grilla de 2 columnas */
   .alumnos-toolbar.observations-toolbar--main {
-    padding: 16px;
+    padding: 12px 10px;
+    gap: 10px;
+    margin: 0 0 14px;
+    border-radius: 14px;
   }
 
-  .observations-toolbar--main .observations-toolbar__filters,
+  .observations-toolbar--main .observations-toolbar__heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .observations-toolbar__heading-icon {
+    width: 16px;
+    height: 16px;
+    padding: 6px;
+  }
+
+  .observations-toolbar__heading-copy strong {
+    font-size: 13.5px;
+  }
+
+  .observations-toolbar__heading-copy span {
+    font-size: 11.5px;
+  }
+
+  .observations-toolbar__clear {
+    width: auto;
+    padding: 5px 9px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .observations-toolbar--main .observations-toolbar__search input {
+    height: 40px;
+    font-size: 16px;
+    padding: 0 34px 0 36px;
+    border-radius: 10px;
+  }
+
+  .observations-toolbar--main .search-input-icon {
+    left: 11px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .observations-toolbar--main .observations-toolbar__filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 8px;
+    margin-top: 2px;
+  }
+
+  .observations-toolbar--main .observations-toolbar__field-label,
+  .observations-toolbar--main .observation-date-picker__label {
+    font-size: 10px;
+    left: 9px;
+    top: -6px;
+    line-height: 12px;
+  }
+
+  .observations-toolbar--main .custom-select__trigger,
+  .observations-toolbar--main .observation-date-picker__trigger {
+    height: 38px;
+    min-height: 38px;
+    padding: 0 8px 0 9px;
+    font-size: 12.5px;
+    border-radius: 9px;
+  }
+
+  .observations-toolbar--main .observation-date-picker__trigger input {
+    font-size: 13px;
+  }
+
+  .observations-toolbar--main .observation-date-picker__calendar-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .observations-toolbar--main .observation-date-picker__calendar-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .observations-toolbar--main .custom-select__dropdown {
+    max-width: calc(100vw - 40px);
+  }
+
+  .observations-toolbar--main .observations-toolbar__field:nth-child(2n) .custom-select__dropdown,
+  .observations-toolbar--main .observations-toolbar__field:nth-child(2n) .observation-calendar {
+    left: auto;
+    right: 0;
+  }
+
+  .observation-calendar {
+    width: min(286px, calc(100vw - 36px));
+    padding: 11px;
+    box-sizing: border-box;
+  }
+
+  .observation-calendar__day {
+    width: 100%;
+    height: 30px;
+  }
+
+  /* Tarjetas de observaciones compactas y legibles */
+  .observations-list {
+    gap: 10px;
+  }
+
+  .student-observation {
+    padding: 12px 12px 11px;
+    border-radius: 13px;
+  }
+
   .student-observation__row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 8px;
   }
 
   .student-observation__field {
-    min-height: 58px;
+    min-height: 0;
+    gap: 3px;
+    padding: 6px 8px;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 9px;
+  }
+
+  .student-observation__field:first-child {
+    grid-column: 1 / -1;
+    padding: 0 0 8px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid #eef2f7;
+    border-radius: 0;
+  }
+
+  .student-observation__field:first-child strong {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--navy, #222a4c);
+  }
+
+  .student-observation__label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .student-observation__field strong,
+  .student-observation__field > span:not(.student-observation__pill):not(.observation-status) {
+    font-size: 12.5px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .student-observation__pill,
+  .observation-status {
+    min-height: 22px;
+    padding: 2px 9px;
+    font-size: 11px;
   }
 
   .student-observation__footer {
-    align-items: flex-start;
     flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 1px solid #eef2f7;
   }
 
   .student-observation__description {
     white-space: normal;
+    font-size: 13px;
+    line-height: 1.42;
   }
 
   .student-observation__actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 8px;
     width: 100%;
+    margin-top: 0;
   }
-}
 
-@media (max-width: 440px) {
-  .observations-toolbar--main .observations-toolbar__filters,
-  .student-observation__row {
-    grid-template-columns: minmax(0, 1fr);
+  .student-observation__actions button {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid #c7d9f7;
+    border-radius: 9px;
+    background: #eef4ff;
+    color: #1d4ed8;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .student-observation__actions button + button {
+    border-left: 1px solid #dce3ec;
+    border-color: #dce3ec;
+    background: #f8fafc;
+    color: #334155;
+    padding-left: 10px;
   }
 }
 
@@ -1930,54 +2152,229 @@ input[type="date"].form-input:focus {
   }
 }
 
-@media (max-width: 720px) {
+@media screen and (max-width: 768px) {
+  /* Vista de Historial del Alumno en Observaciones */
+  .student-detail {
+    gap: 10px;
+  }
+
   .student-detail__topbar {
     align-items: stretch;
     flex-direction: column;
+    gap: 10px;
   }
 
-  .student-detail__topbar > .action-button {
-    width: 100%;
-    justify-content: center;
+  .student-detail__info {
+    gap: 6px;
+  }
+
+  .student-detail__info > .btn-volver-atras {
+    height: 34px;
+    padding: 0 12px 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
   }
 
   .student-detail__info h1 {
-    font-size: 28px;
+    font-size: 22px;
+    line-height: 1.15;
   }
 
   .student-detail__info p {
     display: flex;
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
+    font-size: 12.5px;
   }
 
   .student-detail__observation-count {
     margin-left: 0;
+    padding: 2px 8px;
+    background: #eef4ff;
+    color: #1d4ed8;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
   }
 
-  .student-history__filters .observations-toolbar__filters,
-  .history-item__top-grid,
-  .history-item__details {
+  .student-detail__topbar > .action-button {
+    width: 100%;
+    height: 40px;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .student-history {
+    gap: 10px;
+  }
+
+  .student-history__header {
+    padding-top: 2px;
+  }
+
+  .student-history__heading {
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .student-history__heading h2 {
+    font-size: 19px;
+  }
+
+  .student-history__filter-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    padding: 11px 10px;
+    border-radius: 13px;
+  }
+
+  .student-history__filters .observations-toolbar__filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px 8px;
+  }
+
+  .student-history__filters .custom-select__trigger,
+  .student-history__filters .observation-date-picker__trigger {
+    height: 38px;
+    min-height: 38px;
+    padding: 0 8px 0 9px;
+    font-size: 12.5px;
+    border-radius: 9px;
+  }
+
+  .student-history__filters .observation-date-picker__label {
+    font-size: 10px;
+    left: 9px;
+    top: -6px;
+    line-height: 12px;
+  }
+
+  .student-history__filters .observation-date-picker__trigger input {
+    font-size: 13px;
+  }
+
+  .student-history__filters .observations-toolbar__field:nth-child(2n) .custom-select__dropdown,
+  .student-history__filters .observations-toolbar__field:nth-child(2n) .observation-calendar {
+    left: auto;
+    right: 0;
+  }
+
+  .history-list {
+    gap: 10px;
+  }
+
+  .history-item {
+    padding: 12px;
+    border-radius: 13px;
+  }
+
+  .history-item__main {
+    gap: 10px;
+  }
+
+  .history-item__top-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 8px;
+  }
+
+  .history-item__top-grid .history-item__field {
+    padding: 6px 8px;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 9px;
   }
 
   .history-item__content {
     grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
   }
-}
 
-@media (max-width: 440px) {
-  .student-history__filters .observations-toolbar__filters,
-  .history-item__top-grid,
-  .history-item__details,
+  .history-item__details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
   .history-item__audit {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 9px 10px;
   }
 
-  .student-history__heading {
-    align-items: flex-start;
-    flex-direction: column;
+  .history-item__field dt {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .history-item__field dd {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .history-item__value {
+    min-height: 22px;
+    padding: 2px 9px;
+    font-size: 11px;
+  }
+
+  /* Formulario Cargar Nueva Observación en celular */
+  .observations-form-page {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 14px 12px 20px;
+    border-radius: 18px;
+    gap: 12px;
+    box-sizing: border-box;
+  }
+
+  .observations-form-page .observation-form__grid {
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .observations-form-page .observation-form-row {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: none;
+    gap: 12px;
+  }
+
+  .observations-form-page .form-field-input,
+  .observations-form-page .observation-form__textarea,
+  .observations-form-page .searchable-select__input {
+    font-size: 16px;
+  }
+
+  .observations-form-page .observation-date-picker {
+    height: auto;
+  }
+
+  .observations-form-page .observation-date-picker__trigger {
+    height: 42px;
+  }
+
+  .observations-form-page .observation-date-picker__trigger input {
+    font-size: 16px;
+  }
+
+  .observations-form-page .wizard-footer-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .observations-form-page .btn-wizard-anterior,
+  .observations-form-page .btn-wizard-submit {
+    width: 100%;
+    height: 40px;
+    padding: 0 10px;
+    font-size: 12.5px;
+    justify-content: center;
   }
 }
 

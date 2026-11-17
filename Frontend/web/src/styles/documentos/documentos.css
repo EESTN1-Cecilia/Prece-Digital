@@ -1169,3 +1169,303 @@
   color: #64748b;
   cursor: not-allowed;
 }
+
+.doc-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media print {
+  .doc-table-scroll {
+    overflow: visible !important;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE MÓVIL: CONSTANCIAS, PASES, RITE Y PLANILLA DE CALIFICACIONES
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+  .doc-modal-paper-wrap,
+  .doc-modal-paper-wrap--wide,
+  .doc-modal-paper-wrap--regular {
+    max-width: 100% !important;
+    max-height: 96dvh !important;
+    border-radius: 14px;
+  }
+
+  /* Barra para agregar materias / campos */
+  .doc-editor-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .doc-editor-label {
+    font-size: 12px;
+  }
+
+  .doc-editor-form {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .doc-editor-input {
+    max-width: none;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .doc-editor-btn-add {
+    height: 38px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  /* Hoja de documento oficial */
+  .doc-paper-sheet,
+  .doc-paper-sheet--wide,
+  .doc-paper-sheet--compact,
+  .doc-pase-card {
+    margin: 10px 8px;
+    padding: 18px 14px;
+    max-width: none;
+    border-radius: 10px;
+    line-height: 1.55;
+  }
+
+  .doc-paper-header-right {
+    justify-content: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .doc-paper-logo-badge {
+    width: 100%;
+    padding: 8px 12px;
+    gap: 10px;
+    box-sizing: border-box;
+  }
+
+  .doc-paper-logo-img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .doc-paper-logo-text {
+    font-size: 10.5px;
+  }
+
+  .doc-paper-title {
+    font-size: 16px;
+    margin-bottom: 16px;
+    letter-spacing: 0.4px;
+  }
+
+  .doc-paper-subtitle {
+    font-size: 12.5px;
+    margin: 16px 0 10px;
+  }
+
+  .doc-paper-body-text,
+  .doc-paper-footer-legal,
+  .doc-regular-body,
+  .doc-tramite-body,
+  .doc-pase-paragraph {
+    font-size: 13.5px;
+    line-height: 1.75;
+    text-align: left;
+  }
+
+  .doc-field-underlined {
+    padding: 0 4px;
+    word-break: break-word;
+  }
+
+  .doc-paper-signatures-row,
+  .doc-regular-footer,
+  .doc-tramite-footer,
+  .doc-pase-footer,
+  .doc-planilla-footer-signatures {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .doc-paper-signature-box,
+  .doc-regular-firma-wrap,
+  .doc-tramite-box,
+  .doc-pase-firma-wrap,
+  .doc-signature-line-box {
+    width: min(240px, 100%);
+  }
+
+  /* Alumno Regular */
+  .doc-regular-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .doc-regular-brand {
+    width: 100%;
+    gap: 10px;
+    flex-shrink: 1;
+  }
+
+  .doc-regular-escuela {
+    font-size: 12.5px;
+    white-space: normal;
+  }
+
+  .doc-regular-badge {
+    font-size: 11.5px;
+    padding: 6px 12px;
+    white-space: normal;
+  }
+
+  /* Solicitud de Pases y Trámite de Pase */
+  .doc-pase-top-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .doc-pase-blue-banner {
+    font-size: 12.5px;
+    padding: 5px 12px;
+  }
+
+  .doc-pase-est-row {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .doc-pase-field-group {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  .doc-pase-dotted-field--medium,
+  .doc-pase-dotted-field--full {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .doc-tramite-header {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
+
+  .doc-tramite-title {
+    font-size: 15px;
+  }
+
+  /* RITE */
+  .doc-rite-header {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  .doc-rite-logo-img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .doc-rite-title {
+    font-size: 13.5px;
+  }
+
+  .doc-rite-meta-grid {
+    gap: 6px 12px;
+    font-size: 11px;
+  }
+
+  .doc-rite-student-bar {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .doc-rite-table {
+    min-width: 620px;
+  }
+
+  .doc-rite-bottom-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .doc-rite-firmas-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    margin-top: 18px;
+  }
+
+  /* Planilla de Calificaciones */
+  .doc-planilla-top-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .doc-planilla-main-title {
+    font-size: 15px;
+    margin: 6px 0 10px;
+  }
+
+  .doc-planilla-meta-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .doc-planilla-stats-box {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .doc-stat-group {
+    border-right: none;
+    border-bottom: 1px solid #cbd5e1;
+  }
+
+  .doc-stat-group:last-child {
+    border-bottom: none;
+  }
+
+  .doc-stat-item {
+    padding: 6px 8px;
+  }
+
+  .doc-planilla-table {
+    min-width: 720px;
+  }
+
+  .doc-planilla-course-select.custom-select-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .doc-planilla-toast {
+    top: 12px;
+    right: 10px;
+    left: 10px;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .doc-planilla-aviso-bloqueo {
+    margin: 0 8px 10px;
+    font-size: 12px;
+  }
+}

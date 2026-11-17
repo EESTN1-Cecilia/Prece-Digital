@@ -130,13 +130,6 @@ export default function SecretariaDashboardView() {
     }).format(new Date(date));
   };
 
-  const formatFechaBanner = (date) => {
-    const d = date ? new Date(date) : new Date();
-    const options = { weekday: "long", day: "numeric", month: "long", year: "numeric" };
-    const raw = new Intl.DateTimeFormat("es-AR", options).format(d);
-    return raw.charAt(0).toUpperCase() + raw.slice(1);
-  };
-
   // Filtrado de cursos por turno y orientación
   const cursosFiltrados = (data?.alumnosPorCurso || []).filter((c) => {
     const turnoCurso = String(c.turnoAula || c.turno || "").toLowerCase();
@@ -157,65 +150,55 @@ export default function SecretariaDashboardView() {
     "section",
     { className: "secretaria-dashboard secretaria-dashboard--home" },
 
-    // Una sola cabecera, breve y orientada a la tarea.
+    // Bloque superior: en desktop mantiene su disposición original (display: contents),
+    // y en celular el contenedor azul envuelve cabecera + 4 KPIs + Distribución por turnos.
     h(
-      "header",
-      { className: "secretaria-home-header" },
+      "div",
+      { className: "secretaria-home-hero-group" },
+
+      // Una sola cabecera, breve y orientada a la tarea.
       h(
-        "div",
-        { className: "secretaria-home-header__copy" },
+        "header",
+        { className: "secretaria-home-header" },
         h(
           "div",
-          { className: "secretaria-home-header__brand" },
-          h("img", {
-            src: "/assets/precelogo.jpeg",
-            alt: "",
-            className: "secretaria-home-header__logo",
-            "aria-hidden": "true"
-          }),
+          { className: "secretaria-home-header__copy" },
           h(
-            "span",
-            { className: "secretaria-eyebrow" },
-            data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"
-          )
+            "div",
+            { className: "secretaria-home-header__brand" },
+            h("img", {
+              src: "/assets/precelogo.jpeg",
+              alt: "",
+              className: "secretaria-home-header__logo",
+              "aria-hidden": "true"
+            }),
+            h(
+              "span",
+              { className: "secretaria-eyebrow" },
+              data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"
+            )
+          ),
+          h("h1", { className: "secretaria-title" }, "Secretaría"),
+          lastUpdated
+            ? h("p", { className: "secretaria-last-updated" }, `Actualizado ${formatFechaHora(lastUpdated)}`)
+            : null
         ),
-        h("h1", { className: "secretaria-title" }, "Secretaría"),
         h(
-          "p",
-          { className: "secretaria-home-header__description" },
-          `${formatFechaBanner(new Date())}. Todo lo importante de la gestión escolar, en un solo lugar.`
-        ),
-        lastUpdated
-          ? h("p", { className: "secretaria-last-updated" }, `Actualizado ${formatFechaHora(lastUpdated)}`)
-          : null
+          "button",
+          {
+            type: "button",
+            className: "btn-actualizar-datos",
+            onClick: fetchData,
+            disabled: loading
+          },
+          h(IconoFigma, { className: "btn-actualizar-icon", nombre: "filter" }),
+          h("span", null, loading ? "Actualizando..." : "Actualizar")
+        )
       ),
-      h(
-        "button",
-        {
-          type: "button",
-          className: "btn-actualizar-datos",
-          onClick: fetchData,
-          disabled: loading
-        },
-        h(IconoFigma, { className: "btn-actualizar-icon", nombre: "filter" }),
-        h("span", null, loading ? "Actualizando..." : "Actualizar")
-      )
-    ),
 
-    // Estado de Carga
-    loading && !data ? h(LoadingState, { mensaje: "Consultando base de datos institucional..." }) : null,
-
-    // Estado de Error
-    error && !data ? h(ErrorState, { mensaje: error, onRetry: fetchData }) : null,
-
-    // Contenido del Dashboard cuando hay datos
-    data
-      ? h(
-          Fragment,
-          null,
-
-          // Resumen general, con una paleta contenida y lectura rápida.
-          h(
+      // Resumen general: 4 KPIs + Distribución por turnos
+      data
+        ? h(
             "div",
             { className: "secretaria-summary-layout" },
 
@@ -338,7 +321,21 @@ export default function SecretariaDashboardView() {
                 );
               })
             )
-          ),
+          )
+        : null
+    ),
+
+    // Estado de Carga
+    loading && !data ? h(LoadingState, { mensaje: "Consultando base de datos institucional..." }) : null,
+
+    // Estado de Error
+    error && !data ? h(ErrorState, { mensaje: error, onRetry: fetchData }) : null,
+
+    // Contenido del Dashboard cuando hay datos
+    data
+      ? h(
+          Fragment,
+          null,
 
           // Acciones frecuentes, visibles sin sumar otra capa de navegación.
           h(

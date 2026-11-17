@@ -419,3 +419,85 @@
   border-color: #2563eb;
   color: #ffffff;
 }
+
+@media screen and (max-width: 768px) {
+  .student-documentation-tab-container {
+    gap: 14px;
+    padding: 0;
+  }
+
+  .doc-tab-intro {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .doc-tab-title {
+    font-size: 15.5px;
+  }
+
+  .doc-tab-desc {
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .doc-official-cards-section {
+    gap: 10px;
+  }
+
+  .doc-section-heading {
+    font-size: 14.5px;
+  }
+
+  .doc-official-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .doc-official-card {
+    padding: 14px;
+    border-radius: 14px;
+    gap: 10px;
+  }
+
+  .doc-card-icon-wrap {
+    width: 36px;
+    height: 36px;
+  }
+
+  .doc-card-title {
+    font-size: 14.5px;
+  }
+
+  .doc-card-text {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .btn-emitir-doc {
+    height: 38px;
+    font-size: 12.5px;
+    border-radius: 9px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .doc-attached-section {
+    padding: 14px;
+    border-radius: 14px;
+    gap: 12px;
+  }
+
+  .btn-adjuntar-doc {
+    width: 100%;
+    justify-content: center;
+    height: 38px;
+  }
+
+  .doc-attached-table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .doc-attached-table {
+    min-width: 480px;
+    font-size: 12px;
+  }
+}

@@ -269,9 +269,19 @@ export default function PerfilView() {
   const cerrarSesion = sesion?.cerrarSesion;
 
   const [sidebarColapsada, setSidebarColapsada] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [anchoSidebar, setAnchoSidebar] = useState(ANCHO_INICIAL);
   const [estaArrastrando, setEstaArrastrando] = useState(false);
   const arrastrandoRef = useRef(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
 
   const [datos, setDatos] = useState({
     nombre: "",
@@ -462,15 +472,82 @@ export default function PerfilView() {
     return h("div", { className: "profile-page-wrapper" }, h(CargandoPantalla, { texto: "Cargando perfil..." }));
   }
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  const handleLogout = () => {
+    if (typeof cerrarSesion === "function") {
+      cerrarSesion();
+    } else {
+      window.location.hash = "#/login";
+    }
+  };
+
   return h(
     "div",
-    { className: `profile-layout-container ${sidebarColapsada ? "profile-layout-container--collapsed" : ""}` },
-    
+    { className: `profile-layout-container ${sidebarColapsada ? "profile-layout-container--collapsed" : ""} ${mobileMenuOpen ? "profile-layout-container--mobile-open" : ""}` },
+
+    // Barra superior exclusiva de celular con botón de menú lateral
+    h(
+      "header",
+      { className: "profile-mobile-topbar" },
+      h(
+        "div",
+        { className: "profile-mobile-topbar__left" },
+        h(
+          "button",
+          {
+            type: "button",
+            className: "profile-mobile-menu-btn",
+            onClick: () => {
+              setSidebarColapsada(false);
+              setMobileMenuOpen((prev) => !prev);
+            },
+            "aria-label": mobileMenuOpen ? "Cerrar menú lateral" : "Abrir menú lateral",
+            "aria-expanded": mobileMenuOpen
+          },
+          h(
+            "svg",
+            { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.2", strokeLinecap: "round", "aria-hidden": "true" },
+            h("line", { x1: "3", y1: "6", x2: "21", y2: "6" }),
+            h("line", { x1: "3", y1: "12", x2: "21", y2: "12" }),
+            h("line", { x1: "3", y1: "18", x2: "21", y2: "18" })
+          )
+        ),
+        h(
+          "a",
+          { href: "#/inicio", className: "profile-sidebar__brand", "aria-label": "Ir a Inicio" },
+          h("img", {
+            src: "/assets/prece-logo-horizontal.png",
+            alt: "Prece.Digital",
+            className: "profile-sidebar__logo-img"
+          })
+        )
+      ),
+      h(
+        "button",
+        {
+          type: "button",
+          className: "profile-mobile-logout-btn",
+          onClick: handleLogout
+        },
+        "Cerrar sesión"
+      )
+    ),
+
+    // Fondo oscuro al abrir el menú lateral en celular
+    mobileMenuOpen
+      ? h("div", {
+          className: "profile-sidebar-backdrop",
+          onClick: closeMobileMenu,
+          "aria-hidden": "true"
+        })
+      : null,
+
     // Sidebar Lateral del Módulo
     h(
       "aside",
       {
-        className: `profile-sidebar ${sidebarColapsada ? "profile-sidebar--collapsed" : ""} ${estaArrastrando ? "profile-sidebar--resizing" : ""}`,
+        className: `profile-sidebar ${sidebarColapsada ? "profile-sidebar--collapsed" : ""} ${estaArrastrando ? "profile-sidebar--resizing" : ""} ${mobileMenuOpen ? "profile-sidebar--mobile-open" : ""}`,
         style: sidebarColapsada ? undefined : { width: `${anchoSidebar}px` },
         "aria-label": "Menú lateral de módulos"
       },
@@ -494,7 +571,7 @@ export default function PerfilView() {
         { className: "profile-sidebar__header" },
         h(
           "a",
-          { href: "#/inicio", className: "profile-sidebar__brand", "aria-label": "Ir a Inicio" },
+          { href: "#/inicio", className: "profile-sidebar__brand", "aria-label": "Ir a Inicio", onClick: closeMobileMenu },
           h("img", {
             src: sidebarColapsada ? "/assets/precelogo.jpeg" : "/assets/prece-logo-horizontal.png",
             alt: "Prece.Digital",
@@ -502,6 +579,16 @@ export default function PerfilView() {
               ? "profile-sidebar__logo-img profile-sidebar__logo-img--collapsed"
               : "profile-sidebar__logo-img"
           })
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            className: "profile-sidebar__mobile-close",
+            onClick: closeMobileMenu,
+            "aria-label": "Cerrar menú"
+          },
+          "✕"
         ),
         h(
           "button",
@@ -544,7 +631,7 @@ export default function PerfilView() {
               null,
               h(
                 "a",
-                { href: getDashboardHref(), className: "profile-sidebar__item", title: "Dashboard" },
+                { href: getDashboardHref(), className: "profile-sidebar__item", title: "Dashboard", onClick: closeMobileMenu },
                 h(IconDashboard, { className: "profile-sidebar__item-icon" }),
                 !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Dashboard") : null
               )
@@ -554,7 +641,7 @@ export default function PerfilView() {
               null,
               h(
                 "a",
-                { href: "#/perfil", className: "profile-sidebar__item profile-sidebar__item--active", title: "Configuración", "aria-current": "page" },
+                { href: "#/perfil", className: "profile-sidebar__item profile-sidebar__item--active", title: "Configuración", "aria-current": "page", onClick: closeMobileMenu },
                 h(IconSettings, { className: "profile-sidebar__item-icon" }),
                 !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Configuración") : null
               )
@@ -575,7 +662,7 @@ export default function PerfilView() {
               null,
               h(
                 "a",
-                { href: "#/alumnos", className: "profile-sidebar__item", title: "Alumnos" },
+                { href: "#/alumnos", className: "profile-sidebar__item", title: "Alumnos", onClick: closeMobileMenu },
                 h(IconStudents, { className: "profile-sidebar__item-icon" }),
                 !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Alumnos") : null
               )
@@ -590,7 +677,8 @@ export default function PerfilView() {
                     {
                       href: esDocente ? "#/docente/cursos" : "#/cursos",
                       className: "profile-sidebar__item",
-                      title: esDocente ? "Cursos a Cargo" : "Cursos"
+                      title: esDocente ? "Cursos a Cargo" : "Cursos",
+                      onClick: closeMobileMenu
                     },
                     h(IconCourses, { className: "profile-sidebar__item-icon" }),
                     !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Cursos") : null
@@ -606,7 +694,8 @@ export default function PerfilView() {
                     {
                       href: esDocente ? "#/docente/asistencias" : "#/asistencias",
                       className: "profile-sidebar__item",
-                      title: esDocente ? "Asistencia de Clase" : "Inasistencias"
+                      title: esDocente ? "Asistencia de Clase" : "Inasistencias",
+                      onClick: closeMobileMenu
                     },
                     h(IconAttendance, { className: "profile-sidebar__item-icon" }),
                     !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Inasistencias") : null
@@ -618,7 +707,7 @@ export default function PerfilView() {
                   null,
                   h(
                     "a",
-                    { href: "#/preceptoria/observaciones", className: "profile-sidebar__item", title: "Observaciones" },
+                    { href: "#/preceptoria/observaciones", className: "profile-sidebar__item", title: "Observaciones", onClick: closeMobileMenu },
                     h(IconObservations, { className: "profile-sidebar__item-icon" }),
                     !sidebarColapsada ? h("span", { className: "profile-sidebar__item-label" }, "Observaciones") : null
                   )
@@ -655,13 +744,7 @@ export default function PerfilView() {
               {
                 type: "button",
                 className: "profile-sidebar__logout-link",
-                onClick: () => {
-                  if (typeof cerrarSesion === "function") {
-                    cerrarSesion();
-                  } else {
-                    window.location.hash = "#/login";
-                  }
-                }
+                onClick: handleLogout
               },
               "Cerrar sesión"
             )

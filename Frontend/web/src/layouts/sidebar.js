@@ -38,7 +38,12 @@ function Entrada({ entrada, activo, onNavegar }) {
 
 export function Sidebar({ hash, abierto, onCerrar }) {
   const sesion = useSesion();
-  const secciones = armarMenu(RUTAS, sesion);
+  const secciones = armarMenu(RUTAS, sesion)
+    .map((seccion) => ({
+      ...seccion,
+      entradas: seccion.entradas.filter((entrada) => entrada.href !== "#/configuracion")
+    }))
+    .filter((seccion) => seccion.entradas.length > 0);
   const activo = hrefActivo(
     hash,
     RUTAS,

@@ -2137,6 +2137,10 @@ input.form-control:focus,
   margin-top: auto;
 }
 
+.student-mini-card__actions:has(.student-card-btn--full) {
+  display: flex;
+}
+
 .student-card-btn {
   font-size: 12.5px;
   height: 34px;
@@ -2176,24 +2180,569 @@ input.form-control:focus,
   }
 }
 
+@media (max-width: 768px) {
+  /* En celular: el listado de alumnos y cursos aprovecha todo el ancho sin doble marco */
+  .alumnos-list-panel .alumnos-top-nav,
+  .cursos-panel .alumnos-top-nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    border: 1px solid #dfe6ef;
+    box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.16);
+  }
+
+  .alumnos-list-panel .btn-volver-atras,
+  .cursos-panel .btn-volver-atras {
+    height: 34px;
+    padding: 0 12px 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+    gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .alumnos-list-panel .btn-volver-atras__icon,
+  .cursos-panel .btn-volver-atras__icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .alumnos-list-panel .alumnos-top-badges,
+  .cursos-panel .alumnos-top-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: 0;
+  }
+
+  .alumnos-list-panel .badge-institucion,
+  .alumnos-list-panel .badge-ciclo,
+  .cursos-panel .badge-institucion,
+  .cursos-panel .badge-ciclo {
+    padding: 4px 9px;
+    font-size: 11px;
+    border-radius: 7px;
+  }
+
+  /* Tarjeta principal: ancho completo y cabecera ordenada */
+  .alumnos-list-panel .alumnos-main-card,
+  .cursos-panel .alumnos-main-card {
+    margin-top: 0;
+    border-radius: 18px;
+    overflow: visible;
+  }
+
+  .alumnos-list-panel .alumnos-main-card > .dashboard-card__header,
+  .cursos-panel .alumnos-main-card > .dashboard-card__header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+    border-top-left-radius: 17px;
+    border-top-right-radius: 17px;
+  }
+
+  .alumnos-list-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__title-wrap,
+  .cursos-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__title-wrap {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .alumnos-list-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__title,
+  .cursos-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__title {
+    font-size: 15.5px;
+    line-height: 1.2;
+    min-width: 0;
+  }
+
+  .alumnos-list-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__badge,
+  .cursos-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__badge {
+    margin-left: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 11px;
+    padding: 3px 9px;
+  }
+
+  .alumnos-list-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__header-right,
+  .alumnos-list-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__actions,
+  .cursos-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__header-right,
+  .cursos-panel .alumnos-main-card > .dashboard-card__header .dashboard-card__actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  /* En celular solo vista de tarjetas: oculta switch y reparte botones parejos */
+  .alumnos-list-panel .view-mode-toggle {
+    display: none;
+  }
+
+  .alumnos-list-panel .alumnos-header-actions,
+  .cursos-panel .alumnos-header-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .alumnos-list-panel .alumnos-header-actions .action-button,
+  .cursos-panel .alumnos-header-actions .action-button,
+  .cursos-panel .alumnos-header-actions .btn-cargar-curso-header {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 13px;
+    border-radius: 10px;
+    justify-content: center;
+    gap: 7px;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .alumnos-list-panel .alumnos-main-card > .dashboard-card__body,
+  .cursos-panel .alumnos-main-card > .dashboard-card__body {
+    padding: 12px 12px 16px;
+  }
+
+  /* Directorio de Cursos: buscador, filtros y tarjetas compactas */
+  .cursos-panel .courses-directory-section {
+    padding: 0;
+    gap: 10px;
+  }
+
+  .cursos-panel .courses-directory-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .cursos-panel .search-input {
+    height: 42px;
+    font-size: 16px;
+    padding: 0 36px 0 38px;
+    border-radius: 10px;
+  }
+
+  .cursos-panel .search-input-icon {
+    left: 12px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .cursos-panel .course-ciclo-pills {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .cursos-panel .course-filter-pill {
+    width: 100%;
+    padding: 8px 8px;
+    font-size: 11.5px;
+    border-radius: 10px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cursos-panel .courses-secondary-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .cursos-panel .courses-year-pills,
+  .cursos-panel .courses-turno-pills {
+    width: 100%;
+    gap: 5px;
+  }
+
+  .cursos-panel .filter-mini-label {
+    width: 100%;
+    margin: 0 0 2px;
+    font-size: 10px;
+  }
+
+  .cursos-panel .course-year-filter-btn {
+    flex: 1 1 auto;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 8px;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cursos-panel .course-turno-filter-btn {
+    flex: 1 1 0;
+    height: 32px;
+    padding: 0 8px;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cursos-panel .course-cards-directory-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  .cursos-panel .course-directory-card {
+    padding: 13px 14px;
+    border-radius: 15px;
+    gap: 10px;
+    border: 1px solid #dce4ee;
+    box-shadow: 0 4px 14px -8px rgba(15, 23, 42, 0.14);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cursos-panel .course-directory-card__badge {
+    min-width: 40px;
+    height: 34px;
+    font-size: 14.5px;
+    border-radius: 9px;
+  }
+
+  .cursos-panel .course-directory-card__body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 8px;
+  }
+
+  .cursos-panel .course-directory-card__title {
+    grid-column: 1 / -1;
+    margin: 0 0 2px;
+    font-size: 15px;
+  }
+
+  .cursos-panel .course-directory-card__info-row {
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .cursos-panel .card-info-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cursos-panel .course-directory-card__footer {
+    padding-top: 10px;
+  }
+
+  .cursos-panel .btn-open-course {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 9px;
+    font-size: 12.5px;
+  }
+
+  /* Modal Cargar Curso en celular */
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal-card.modal-cargar-curso {
+    max-width: 100%;
+    max-height: 94dvh;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .modal-cargar-curso .modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-cargar-curso .modal-header-icon-box {
+    width: 36px;
+    height: 36px;
+  }
+
+  .modal-cargar-curso .modal-title {
+    font-size: 1rem;
+  }
+
+  .modal-cargar-curso .modal-subtitle {
+    font-size: 12px;
+  }
+
+  .modal-cargar-curso .modal-form {
+    padding: 14px 16px;
+  }
+
+  .modal-cargar-curso .modal-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .modal-cargar-curso .modal-form-grid .custom-select__dropdown {
+    max-width: calc(100vw - 44px);
+  }
+
+  .modal-cargar-curso .modal-form-grid .form-group:nth-child(even) .custom-select__dropdown {
+    left: auto;
+    right: 0;
+  }
+
+  .modal-cargar-curso .form-control {
+    font-size: 16px;
+    height: 40px;
+  }
+
+  .modal-cargar-curso .modal-actions {
+    margin-top: 16px;
+    padding-top: 12px;
+    gap: 8px;
+  }
+
+  .modal-cargar-curso .modal-actions-btn {
+    flex: 1 1 0;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  /* Buscador y filtros compactos en grilla de 2 columnas */
+  .alumnos-list-panel .alumnos-toolbar.alumnos-toolbar--directory {
+    padding: 12px;
+    gap: 10px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar__heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar__heading-icon {
+    width: 16px;
+    height: 16px;
+    padding: 6px;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar__heading-copy strong {
+    font-size: 13.5px;
+    line-height: 1.2;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar__heading-copy span {
+    font-size: 11.5px;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar__clear {
+    width: auto;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar--directory .search-input {
+    height: 42px;
+    font-size: 16px;
+    padding: 0 36px 0 38px;
+    border-radius: 10px;
+  }
+
+  .alumnos-list-panel .search-input-icon {
+    left: 12px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar--directory .filters-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar--directory .filters-group .custom-select-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar--directory .filters-group .custom-select-wrapper:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar--directory .filters-group .custom-select__trigger {
+    height: 38px;
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+  }
+
+  .alumnos-list-panel .alumnos-toolbar--directory .filters-group .custom-select__dropdown {
+    max-width: calc(100vw - 44px);
+  }
+
+  .alumnos-list-panel .alumnos-toolbar--directory .filters-group .custom-select-wrapper:nth-child(2n) .custom-select__dropdown {
+    left: auto;
+    right: 0;
+  }
+
+  /* Tarjetas de alumnos optimizadas para celular */
+  .alumnos-list-panel .students-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin: 4px 0 8px;
+  }
+
+  .alumnos-list-panel .student-mini-card {
+    padding: 13px 14px;
+    border-radius: 15px;
+    gap: 10px;
+    border: 1px solid #dce4ee;
+    box-shadow: 0 4px 14px -8px rgba(15, 23, 42, 0.14);
+  }
+
+  .alumnos-list-panel .student-mini-card__header {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alumnos-list-panel .student-mini-card__name {
+    font-size: 14.5px;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .alumnos-list-panel .student-mini-card__header .status-badge {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .alumnos-list-panel .student-mini-card__body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 8px;
+    padding: 9px 0;
+    font-size: 12px;
+  }
+
+  .alumnos-list-panel .student-mini-card__info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 2px;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 9px;
+    padding: 7px 9px;
+    min-width: 0;
+  }
+
+  .alumnos-list-panel .student-mini-card__info-row:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .alumnos-list-panel .student-mini-card__info-row .info-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .alumnos-list-panel .student-mini-card__actions {
+    display: flex;
+    margin-top: 0;
+  }
+
+  .alumnos-list-panel .student-card-btn--full {
+    height: 38px;
+    border-radius: 10px;
+    font-size: 13px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Paginación limpia en celular */
+  .alumnos-list-panel .alumnos-pagination-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 0 2px;
+  }
+
+  .alumnos-list-panel .pagination-info {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .alumnos-list-panel .pagination-controls-buttons {
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  .alumnos-list-panel .pagination-nav-btn {
+    padding: 0 10px;
+    font-size: 12px;
+    height: 34px;
+  }
+
+  .alumnos-list-panel .alumnos-bottom-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+  }
+
+  .alumnos-list-panel .pagination-page-size-selector {
+    padding: 2px 3px 2px 8px;
+    gap: 6px;
+  }
+
+  .alumnos-list-panel .pagination-custom-select {
+    min-width: 108px;
+  }
+
+  .alumnos-list-panel .alumnos-bottom-actions .action-button {
+    width: 100%;
+    height: 38px;
+    justify-content: center;
+    font-size: 12.5px;
+    padding: 0 10px;
+  }
+}
+
 @media (max-width: 600px) {
   .alumnos-main-card > .dashboard-card__header,
   .alumnos-main-card > .dashboard-card__body {
     padding-left: 16px;
     padding-right: 16px;
-  }
-
-  .alumnos-toolbar__heading {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .alumnos-toolbar__clear {
-    width: 100%;
-  }
-
-  .alumnos-toolbar--directory .filters-group {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .filters-group {
@@ -2220,6 +2769,28 @@ input.form-control:focus,
 
   .alumnos-bottom-actions .action-button {
     width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .alumnos-list-panel .pagination-nav-label {
+    display: none;
+  }
+
+  .alumnos-list-panel .pagination-nav-btn {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .alumnos-list-panel .alumnos-bottom-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .alumnos-list-panel .pagination-page-size-selector {
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
   }
 }
 

@@ -1050,43 +1050,267 @@ body.asistencias-imprimiendo .firma-subtext {
   }
 }
 
-@media (max-width: 640px) {
-  .asistencias-controls-panel {
-    padding: 14px;
+@media screen and (max-width: 768px) {
+  .asistencias-page {
+    gap: 12px;
+    padding-bottom: 86px;
   }
 
-  .asistencias-course-picker__header,
-  .asistencias-actions-bar {
-    align-items: stretch;
+  /* Barra superior y título compactos */
+  .asistencias-page .secretaria-top-bar {
+    display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 0;
+  }
+
+  .asistencias-page .btn-volver-atras {
+    height: 34px;
+    padding: 0 12px 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+    gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .asistencias-page .btn-volver-atras__icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .asistencias-page .secretaria-eyebrow {
+    font-size: 10.5px;
+    line-height: 1.35;
+    letter-spacing: 0.04em;
+  }
+
+  .asistencias-page .secretaria-title-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .asistencias-page .secretaria-title {
+    font-size: 22px;
+    line-height: 1.18;
+    margin: 0;
+  }
+
+  .asistencias-page .asistencia-badge-info {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .asistencias-page .badge-curso-activo,
+  .asistencias-page .badge-turno-activo {
+    font-size: 12px;
+    padding: 4px 11px;
+  }
+
+  /* Panel de controles: selector de curso compacto */
+  .asistencias-controls-panel {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 14px;
+  }
+
+  .asistencias-course-picker {
+    gap: 10px;
+  }
+
+  .asistencias-course-picker__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
 
   .asistencias-course-picker__row {
     grid-template-columns: minmax(0, 1fr);
-    gap: 7px;
+    gap: 6px;
+  }
+
+  .asistencias-course-picker__row + .asistencias-course-picker__row {
+    padding-top: 10px;
+  }
+
+  .asistencias-year-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .asistencia-year-option {
-    flex: 1 1 64px;
+    min-width: 0;
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 4px;
+    font-size: 12px;
+    text-align: center;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .asistencias-division-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .asistencia-division-option {
-    flex: 1 1 180px;
-    justify-content: space-between;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    min-height: auto;
+    padding: 8px 10px;
+    border-radius: 10px;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .asistencia-division-option strong {
+    font-size: 12.5px;
+    line-height: 1.2;
+  }
+
+  .asistencia-division-option span {
+    padding-left: 0;
+    border-left: none;
+    font-size: 11px;
+  }
+
+  /* Selector de mes + botón imprimir */
+  .asistencias-actions-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding-top: 10px;
   }
 
   .asistencias-mes-selector-group,
   .asistencias-buttons-group,
   .btn-imprimir-planilla {
     width: 100%;
+    min-width: 0;
+  }
+
+  .asistencias-buttons-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .save-pill-badge {
+    justify-content: center;
+    font-size: 12px;
   }
 
   .btn-imprimir-planilla {
+    height: 38px;
     justify-content: center;
+    font-size: 12.5px;
+    -webkit-tap-highlight-color: transparent;
   }
 
+  /* Tarjeta y tabla de registro diario */
+  .planilla-asistencia-card {
+    border-radius: 15px;
+  }
+
+  .registro-diario-header {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .registro-escuela-logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .registro-escuela-name {
+    font-size: 10px;
+  }
+
+  .registro-main-title {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .registro-header-right {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .registro-header-box {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1px;
+    padding: 5px 6px;
+    font-size: 10.5px;
+  }
+
+  .planilla-table-scroll-container {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Columnas fijas más angostas para ver más días y celdas más cómodas para tocar */
+  .col-1 {
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+  }
+
+  .col-2 {
+    left: 26px;
+    min-width: 118px;
+    max-width: 134px;
+    padding-left: 6px !important;
+    font-size: 11px;
+  }
+
+  .th-dia-num,
+  .td-celda-asistencia {
+    min-width: 32px;
+    width: 32px;
+  }
+
+  .td-celda-asistencia {
+    height: 32px;
+    font-size: 12.5px;
+  }
+
+  .input-obs-alumno {
+    font-size: 14px;
+  }
+
+  /* Cuadros inferiores de balance y firmas */
   .asistencia-footer-balances-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .balance-box-card {
+    padding: 12px;
+    border-radius: 13px;
+  }
+
+  .balance-box-firmas {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 12px;
+    padding-top: 24px;
+  }
+
+  .firma-area {
+    flex: 1;
   }
 }
 
@@ -1228,30 +1452,49 @@ body.asistencias-imprimiendo .firma-subtext {
   cursor: not-allowed;
 }
 
-@media (max-width: 640px) {
+@media screen and (max-width: 768px) {
   .asistencias-floating-bar {
-    bottom: 16px;
-    width: calc(100% - 24px);
+    bottom: 10px;
+    width: calc(100vw - 20px);
     min-width: 0;
-    flex-direction: column;
-    border-radius: 18px;
-    padding: 12px 14px;
-    gap: 12px;
+    max-width: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 14px;
+    padding: 8px 10px;
+    gap: 8px;
+    box-sizing: border-box;
   }
 
   .floating-bar-info {
-    width: 100%;
+    gap: 7px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .floating-bar-badge {
+    min-width: 22px;
+    height: 22px;
+    font-size: 11.5px;
+  }
+
+  .floating-bar-text {
+    font-size: 12px;
   }
 
   .floating-bar-actions {
-    width: 100%;
-    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
   }
 
   .btn-floating-cancel,
   .btn-floating-save {
-    flex: 1;
-    justify-content: center;
+    height: 34px;
+    padding: 0 11px;
+    font-size: 12px;
+    border-radius: 9px;
+    white-space: nowrap;
   }
 }
 

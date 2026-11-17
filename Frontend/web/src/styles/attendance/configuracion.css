@@ -3,20 +3,60 @@
   margin: 0 auto;
   padding: 28px;
   color: #172033;
+  box-sizing: border-box;
+}
+
+.configuracion-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.configuracion-modo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.configuracion-modo-badge--edit {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.configuracion-modo-badge--readonly {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
 }
 
 .configuracion-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  padding: 18px 22px;
+  background: #ffffff;
+  border: 1px solid #dce3ed;
+  border-left: 4px solid #222a4c;
+  border-radius: 14px;
 }
 
 .configuracion-header h1 {
-  margin: 0 0 8px;
-  font-size: 1.8rem;
+  margin: 0 0 6px;
+  font-size: 1.55rem;
+  color: #182742;
 }
 
 .configuracion-header p,
 .configuracion-card > p {
+  margin: 0;
   color: #5b667a;
+  font-size: 13.5px;
+  line-height: 1.45;
 }
 
 .configuracion-form {
@@ -135,17 +175,125 @@
   background: #dcfce7;
 }
 
-.configuracion-solo-lectura,
-.configuracion-vacio {
-  color: #64748b;
+.configuracion-solo-lectura {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-@media (max-width: 640px) {
+.configuracion-vacio {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media screen and (max-width: 768px) {
   .configuracion-page {
-    padding: 18px 12px;
+    width: 100%;
+    max-width: 100%;
+    padding: 4px 0 24px;
+  }
+
+  .configuracion-topbar {
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .configuracion-topbar .btn-volver-atras {
+    height: 34px;
+    padding: 0 12px 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+  }
+
+  .configuracion-modo-badge {
+    font-size: 11px;
+    padding: 4px 9px;
+  }
+
+  .configuracion-header {
+    padding: 14px 14px 14px 16px;
+    margin-bottom: 12px;
+    border-radius: 14px;
+  }
+
+  .configuracion-header h1 {
+    font-size: 19px;
+    line-height: 1.2;
+  }
+
+  .configuracion-header p {
+    font-size: 12.5px;
+  }
+
+  .configuracion-form {
+    gap: 12px;
   }
 
   .configuracion-card {
-    padding: 16px;
+    padding: 14px;
+    gap: 12px;
+    border-radius: 14px;
+  }
+
+  .configuracion-card h2 {
+    font-size: 15px;
+  }
+
+  .configuracion-field {
+    max-width: 100%;
+    font-size: 13px;
+  }
+
+  .configuracion-field input,
+  .configuracion-field select,
+  .configuracion-dia-form input {
+    width: 100%;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  .configuracion-check {
+    font-size: 13px;
+    align-items: flex-start;
+  }
+
+  .configuracion-check input {
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .configuracion-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+
+  .configuracion-dia-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .configuracion-dia-form button,
+  .configuracion-guardar {
+    width: 100%;
+    height: 42px;
+    font-size: 13.5px;
+    font-weight: 700;
+    border-radius: 10px;
+  }
+
+  .configuracion-dias li {
+    max-width: 100%;
   }
 }
