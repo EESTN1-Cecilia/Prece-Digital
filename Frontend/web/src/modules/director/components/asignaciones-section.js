@@ -4,6 +4,7 @@ import { h } from "../../../layouts/site-layout.js";
 import { DirectorService } from "../director-service.js";
 import { CustomSelect } from "../../../components/common/custom-select.js";
 import { CustomDatePicker } from "../../../components/common/custom-datepicker.js";
+import { Paginacion } from "../../../components/ui/index.js";
 import AsignacionesTalleres from "./asignaciones-talleres.js";
 import AsignacionesSuplencias from "./asignaciones-suplencias.js";
 
@@ -2775,6 +2776,32 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
     busquedaProfesores
   ]);
 
+  const POR_PAGINA_ASIGNACIONES = 10;
+  const [paginaPreceptores, setPaginaPreceptores] = useState(1);
+  const [paginaProfesores, setPaginaProfesores] = useState(1);
+
+  const totalPaginasPreceptores = Math.max(1, Math.ceil(filasPreceptores.length / POR_PAGINA_ASIGNACIONES));
+  const paginaPreceptoresActual = Math.min(paginaPreceptores, totalPaginasPreceptores);
+  const filasPreceptoresPaginadas = useMemo(() => {
+    const inicio = (paginaPreceptoresActual - 1) * POR_PAGINA_ASIGNACIONES;
+    return filasPreceptores.slice(inicio, inicio + POR_PAGINA_ASIGNACIONES);
+  }, [filasPreceptores, paginaPreceptoresActual]);
+
+  const totalPaginasProfesores = Math.max(1, Math.ceil(filasProfesores.length / POR_PAGINA_ASIGNACIONES));
+  const paginaProfesoresActual = Math.min(paginaProfesores, totalPaginasProfesores);
+  const filasProfesoresPaginadas = useMemo(() => {
+    const inicio = (paginaProfesoresActual - 1) * POR_PAGINA_ASIGNACIONES;
+    return filasProfesores.slice(inicio, inicio + POR_PAGINA_ASIGNACIONES);
+  }, [filasProfesores, paginaProfesoresActual]);
+
+  useEffect(() => {
+    setPaginaPreceptores(1);
+  }, [filtroEstadoPreceptores, filtroTurnoPreceptores, filtroAnioPreceptores, busquedaPreceptores]);
+
+  useEffect(() => {
+    setPaginaProfesores(1);
+  }, [filtroEstadoProfesores, filtroTurnoProfesores, filtroAnioProfesores, filtroMateriaProfesores, busquedaProfesores]);
+
   // Contadores dinámicos
   const preceptoresAsignadosCount = useMemo(() => {
     return divisionesPreceptores.filter((d) => d.estado === "asignado").length;
@@ -2987,7 +3014,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
                             "No se encontraron preceptores con los filtros aplicados."
                           )
                         )
-                      : filasPreceptores.map((fila) => {
+                      : filasPreceptoresPaginadas.map((fila) => {
                           const esExpandida = Boolean(expandidasPreceptores[fila.id]);
                           const aMostrar = esExpandida ? fila.divisiones : fila.divisiones.slice(0, 3);
                           const faltantes = fila.divisiones.length - 3;
@@ -3155,7 +3182,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
                       { className: "asignaciones-cards-empty" },
                       "No se encontraron preceptores con los filtros aplicados."
                     )
-                  : filasPreceptores.map((fila) => {
+                  : filasPreceptoresPaginadas.map((fila) => {
                       const esExpandida = Boolean(expandidasPreceptores[fila.id]);
                       const aMostrar = esExpandida ? fila.divisiones : fila.divisiones.slice(0, 3);
                       const faltantes = fila.divisiones.length - 3;
@@ -3326,7 +3353,14 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
                         )
                       );
                     })
-              )
+              ),
+              h(Paginacion, {
+                pagina: paginaPreceptoresActual,
+                paginas: totalPaginasPreceptores,
+                total: filasPreceptores.length,
+                etiquetaTotal: "preceptores",
+                onPagina: setPaginaPreceptores
+              })
         )
       : null,
 
@@ -3512,7 +3546,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
                             "No se encontraron docentes con los filtros aplicados."
                           )
                         )
-                      : filasProfesores.map((fila) => {
+                      : filasProfesoresPaginadas.map((fila) => {
                           const esExpandida = Boolean(expandidasProfesores[fila.id]);
                           const aMostrar = esExpandida ? fila.catedras : fila.catedras.slice(0, 3);
                           const faltantes = fila.catedras.length - 3;
@@ -3691,7 +3725,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
                       { className: "asignaciones-cards-empty" },
                       "No se encontraron docentes con los filtros aplicados."
                     )
-                  : filasProfesores.map((fila) => {
+                  : filasProfesoresPaginadas.map((fila) => {
                       const esExpandida = Boolean(expandidasProfesores[fila.id]);
                       const aMostrar = esExpandida ? fila.catedras : fila.catedras.slice(0, 3);
                       const faltantes = fila.catedras.length - 3;
@@ -3867,7 +3901,14 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
                         )
                       );
                     })
-              )
+              ),
+              h(Paginacion, {
+                pagina: paginaProfesoresActual,
+                paginas: totalPaginasProfesores,
+                total: filasProfesores.length,
+                etiquetaTotal: "docentes",
+                onPagina: setPaginaProfesores
+              })
         )
       : null,
 

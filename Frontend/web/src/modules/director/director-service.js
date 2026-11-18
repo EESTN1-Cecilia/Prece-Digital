@@ -290,6 +290,15 @@ export const DirectorService = {
     });
   },
 
+  /**
+   * Elimina definitivamente una cuenta de usuario.
+   */
+  async eliminarUsuario(usuarioId) {
+    return pedir(`/api/v1/users/${encodeURIComponent(usuarioId)}`, {
+      method: "DELETE"
+    });
+  },
+
   // =========================================================================
   // GESTIÓN Y HABILITACIÓN DE PEDIDOS (SERVER, SECRETARÍA, PRECEPTORÍA)
   // =========================================================================
