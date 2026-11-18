@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { Fragment, useState, useEffect, useCallback } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
+import { DirectorVolverBar } from "../../components/common/director-volver-bar.js";
 import { StudentsService } from "../students/students-service.js";
 import { AsistenciasService, calcularMetricasPlanilla } from "../attendance/asistencias-service.js";
 import { DocenteCursosGrafico } from "./docente-cursos-grafico.js";
@@ -191,10 +192,14 @@ export default function DocenteDashboardView() {
   const rolDocente = user?.rolNombre || (user?.roles?.includes("docente") ? "Docente" : "Personal Docente");
 
   return h(
-    "section",
-    { className: "docente-dashboard-wrapper" },
+    Fragment,
+    null,
+    h(DirectorVolverBar, { externa: true }),
+    h(
+      "section",
+      { className: "docente-dashboard-wrapper" },
 
-    // 0. Barra superior: Eyebrow institucional y acción de refresco
+      // 0. Barra superior: Eyebrow institucional y acción de refresco
     h(
       "div",
       { className: "docente-top-bar" },
@@ -411,6 +416,7 @@ export default function DocenteDashboardView() {
           " Las calificaciones asentadas en el Boletín Digital se guardan directamente asociadas al legajo de cada alumno, con formato numérico (1 a 10) para calificación definitiva y valorativo para informes de ciclo. Los cambios quedan firmados y registrados con tu cuenta de docente."
         )
       )
+    )
     )
   );
 }

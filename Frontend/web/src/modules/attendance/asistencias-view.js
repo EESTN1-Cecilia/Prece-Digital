@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { Fragment, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { h, ActionButton, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
@@ -9,6 +9,7 @@ import {
   MESES_DEL_ANIO
 } from "./asistencias-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
+import { DirectorVolverBar } from "../../components/common/director-volver-bar.js";
 
 const ESTADOS_ASISTENCIA = {
   P: { label: "Presente", clase: "cell-presente" },
@@ -623,11 +624,15 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
   }
 
   return h(
-    "section",
-    { className: "asistencias-page secretaria-dashboard", ref: paginaRef },
+    Fragment,
+    null,
+    h(DirectorVolverBar, { externa: true }),
+    h(
+      "section",
+      { className: "asistencias-page secretaria-dashboard", ref: paginaRef },
 
-    // =========================================================================
-    // BARRA SUPERIOR INSTITUCIONAL
+      // =========================================================================
+      // BARRA SUPERIOR INSTITUCIONAL
     // =========================================================================
     h(
       "div",
@@ -1314,5 +1319,6 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
           document.body
         )
       : null
+    )
   );
 }

@@ -139,6 +139,7 @@ const rutasDeclaradas = [
   { method: "PATCH", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.updateUser },
   { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.replaceUserRoles },
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
+  { method: "DELETE", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.deleteUser },
 
   { method: "GET", path: "/api/v1/schools/:schoolId/courses/:courseId/divisions/:divisionId/students", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: academicController.listAlumnosDeDivision },
   { method: "GET", path: "/api/v1/students/listas/curso", middlewares: [verifyToken, required(P.STUDENTS_READ)], handler: studentsController.listarCurso },

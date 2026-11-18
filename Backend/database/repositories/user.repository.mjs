@@ -155,6 +155,17 @@ export const userRepository = {
     return cloneUser(user);
   },
 
+  remove(id) {
+    const user = getStore().users.get(id);
+
+    if (!user) {
+      return null;
+    }
+
+    getStore().users.delete(id);
+    return cloneUser(user);
+  },
+
   publicView(user) {
     return {
       id: user.id,
