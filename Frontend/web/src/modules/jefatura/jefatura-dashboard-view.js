@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { h } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
+import { BotonVolverDireccion } from "../../components/common/boton-volver-direccion.js";
 import { StudentsService } from "../students/students-service.js";
 import { JefaturaService } from "./jefatura-service.js";
 import { divisionesVisibles, gruposDeDivision } from "./talleres-cronograma.js";
@@ -163,6 +164,8 @@ export default function JefaturaDashboardView() {
   return h(
     "main",
     { className: "jf-page" },
+    // Solo el director ve este boton para volver a su tablero.
+    h(BotonVolverDireccion),
     h(
       "header",
       { className: "jf-encabezado" },

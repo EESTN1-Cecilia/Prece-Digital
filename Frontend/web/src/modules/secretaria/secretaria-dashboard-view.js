@@ -6,6 +6,7 @@ import { CursoDistribucionGrafico } from "../../components/dashboard/curso-distr
 import { LoadingState, EmptyState, ErrorState, StatusBadge} from "../../components/common/state-handlers.js";
 import { SecretariaService } from "./secretaria-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
+import { BotonVolverDireccion } from "../../components/common/boton-volver-direccion.js";
 import { AlumnoMatrizModal } from "../students/alumno-matriz-wiew.js";
 
 // Helper icons para las tarjetas de métricas
@@ -156,6 +157,9 @@ export default function SecretariaDashboardView() {
   return h(
     "section",
     { className: "secretaria-dashboard secretaria-dashboard--home" },
+
+    // Solo el director ve este boton para volver a su tablero.
+    h(BotonVolverDireccion),
 
     // Una sola cabecera, breve y orientada a la tarea.
     h(
