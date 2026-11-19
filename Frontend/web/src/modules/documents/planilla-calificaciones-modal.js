@@ -901,7 +901,18 @@ export function PlanillaCalificacionesModal({
                 "tr",
                 null,
                 h("th", { rowSpan: 2, className: "col-num", onClick: handleAlternarOrden, style: { cursor: "pointer" }, title: "Ordenar por número" }, "Nº ⬍"),
-                h("th", { rowSpan: 2, className: "col-name", onClick: handleAlternarOrden, style: { cursor: "pointer", textAlign: "left", paddingLeft: "8px" }, title: "Ordenar por apellido" }, "APELLIDO/S Y NOMBRE/S DEL/LA ESTUDIANTE ⬍"),
+                h(
+                  "th",
+                  {
+                    rowSpan: 2,
+                    className: "col-name",
+                    onClick: handleAlternarOrden,
+                    style: { cursor: "pointer", textAlign: "left", paddingLeft: "6px" },
+                    title: "Ordenar por apellido"
+                  },
+                  h("span", { className: "col-name-label-desktop" }, "APELLIDO/S Y NOMBRE/S DEL/LA ESTUDIANTE ⬍"),
+                  h("span", { className: "col-name-label-mobile" }, "ESTUDIANTE ⬍")
+                ),
                 h("th", { colSpan: 4 }, "1º CUATRIMESTRE"),
                 h("th", { colSpan: 4 }, "2º CUATRIMESTRE"),
                 h("th", { colSpan: 2 }, "INTENSIFICACIÓN"),
@@ -949,9 +960,12 @@ export function PlanillaCalificacionesModal({
                       h("td", { className: "col-num text-center font-bold font-mono" }, e.num),
                       h(
                         "td",
-                        { className: "col-name text-left font-bold" },
-                        h("span", { style: { color: "#1e293b" } }, `${e.apellido}, ${e.nombre}`),
-                        e.dni ? h("span", { className: "text-muted font-mono", style: { fontSize: "10px", marginLeft: "6px" } }, `(${e.dni})`) : null
+                        {
+                          className: "col-name text-left font-bold",
+                          title: `${e.apellido}, ${e.nombre}${e.dni ? ` (${e.dni})` : ""}`
+                        },
+                        h("span", { className: "doc-planilla-student-name", style: { color: "#1e293b" } }, `${e.apellido}, ${e.nombre}`),
+                        e.dni ? h("span", { className: "text-muted font-mono doc-planilla-dni", style: { fontSize: "10px", marginLeft: "6px" } }, `(${e.dni})`) : null
                       ),
 
                       // 1er Cuatrimestre: Parciales

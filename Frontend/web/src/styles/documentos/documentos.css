@@ -511,6 +511,14 @@
   display: none;
 }
 
+.col-name-label-desktop {
+  display: inline;
+}
+
+.col-name-label-mobile {
+  display: none;
+}
+
 .doc-planilla-stats-box {
   display: grid;
   grid-template-columns: 1.15fr 3fr 3fr;
@@ -1185,6 +1193,15 @@
 }
 
 @media print {
+  .col-name-label-desktop {
+    display: inline !important;
+  }
+  .col-name-label-mobile {
+    display: none !important;
+  }
+  .doc-planilla-table .doc-planilla-dni {
+    display: inline !important;
+  }
   .doc-table-scroll,
   .doc-planilla-stats-scroll {
     overflow: visible !important;
@@ -1198,6 +1215,9 @@
   .doc-planilla-table td.col-name {
     position: static !important;
     box-shadow: none !important;
+    width: auto !important;
+    min-width: auto !important;
+    max-width: none !important;
   }
 }
 
@@ -1548,9 +1568,34 @@
     margin-bottom: 16px;
   }
 
-  /* Tabla extendida con scroll horizontal y columnas fijas */
+  /* Alternancia de etiquetas en cabecera */
+  .col-name-label-desktop {
+    display: none;
+  }
+
+  .col-name-label-mobile {
+    display: inline;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .doc-planilla-table .doc-planilla-student-name {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .doc-planilla-table .doc-planilla-dni {
+    display: none;
+  }
+
+  /* Tabla extendida con scroll horizontal y columnas fijas ultra-compactas */
   .doc-planilla-table {
-    min-width: 890px;
+    min-width: 680px;
     margin-top: 0;
     border-collapse: separate;
     border-spacing: 0;
@@ -1560,6 +1605,7 @@
   .doc-planilla-table td {
     border-right: 1px solid #cbd5e1;
     border-bottom: 1px solid #cbd5e1;
+    padding: 3px 2px;
   }
 
   .doc-planilla-table tr > *:first-child {
@@ -1570,17 +1616,19 @@
     border-top: 1px solid #cbd5e1;
   }
 
-  /* Sticky columna Nº (índice 1) */
+  /* Sticky columna Nº (índice 1) compacta */
   .doc-planilla-table th.col-num,
   .doc-planilla-table td.col-num,
   .doc-planilla-table td:first-child {
     position: sticky;
     left: 0;
-    width: 38px;
-    min-width: 38px;
-    max-width: 38px;
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    padding: 3px 1px;
     box-sizing: border-box;
     text-align: center;
+    font-size: 10px;
   }
 
   .doc-planilla-table thead th.col-num {
@@ -1594,22 +1642,24 @@
     background: #ffffff;
   }
 
-  /* Sticky columna Apellido y Nombre (índice 2) */
+  /* Sticky columna Apellido y Nombre (índice 2) compacta (105px) para dar espacio a los campos de carga */
   .doc-planilla-table th.col-name,
   .doc-planilla-table td.col-name,
   .doc-planilla-table td:nth-child(2) {
     position: sticky;
-    left: 38px;
-    width: 175px;
-    min-width: 175px;
-    max-width: 175px;
+    left: 26px;
+    width: 105px;
+    min-width: 105px;
+    max-width: 105px;
+    padding: 3px 5px;
     box-sizing: border-box;
-    box-shadow: 3px 0 6px -2px rgba(15, 23, 42, 0.16);
+    box-shadow: 3px 0 6px -2px rgba(15, 23, 42, 0.22);
   }
 
   .doc-planilla-table thead th.col-name {
     z-index: 6;
     background: #222a4c;
+    padding-left: 4px !important;
   }
 
   .doc-planilla-table tbody td.col-name,
