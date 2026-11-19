@@ -49,9 +49,11 @@ function UserAvatarMenu() {
     };
 
     document.addEventListener("mousedown", handleClickFuera);
+    document.addEventListener("touchstart", handleClickFuera, { passive: true });
     document.addEventListener("keydown", handleKeydown);
     return () => {
       document.removeEventListener("mousedown", handleClickFuera);
+      document.removeEventListener("touchstart", handleClickFuera);
       document.removeEventListener("keydown", handleKeydown);
     };
   }, [abierto]);
@@ -230,9 +232,11 @@ function HeaderNotificationsMenu() {
     };
 
     document.addEventListener("mousedown", handleClickFuera);
+    document.addEventListener("touchstart", handleClickFuera, { passive: true });
     document.addEventListener("keydown", handleKeydown);
     return () => {
       document.removeEventListener("mousedown", handleClickFuera);
+      document.removeEventListener("touchstart", handleClickFuera);
       document.removeEventListener("keydown", handleKeydown);
     };
   }, [abierto]);
@@ -273,17 +277,31 @@ function HeaderNotificationsMenu() {
                 ? h("span", { className: "header-notif-dropdown__count" }, `${noLeidas} nuevas`)
                 : null
             ),
-            noLeidas > 0
-              ? h(
-                  "button",
-                  {
-                    type: "button",
-                    className: "header-notif-dropdown__mark-all",
-                    onClick: marcarTodasLeidas
-                  },
-                  "Marcar todas"
-                )
-              : null
+            h(
+              "div",
+              { className: "header-notif-dropdown__header-actions" },
+              noLeidas > 0
+                ? h(
+                    "button",
+                    {
+                      type: "button",
+                      className: "header-notif-dropdown__mark-all",
+                      onClick: marcarTodasLeidas
+                    },
+                    "Marcar todas"
+                  )
+                : null,
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "header-notif-dropdown__close-btn",
+                  "aria-label": "Cerrar notificaciones",
+                  onClick: () => setAbierto(false)
+                },
+                "✕"
+              )
+            )
           ),
           h(
             "div",

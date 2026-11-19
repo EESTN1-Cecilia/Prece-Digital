@@ -196,6 +196,31 @@ main {
     height: 42px;
   }
 
+  .header-notifications-container {
+    position: static;
+  }
+
+  .header-notification-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .header-notification-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .header-notifications-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: auto;
+    width: min(350px, 100%);
+    max-width: 100%;
+    max-height: calc(100dvh - 80px);
+    border-radius: 16px;
+  }
+
   .site-header::after {
     height: 24px;
   }
