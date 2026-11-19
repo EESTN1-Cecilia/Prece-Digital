@@ -1,0 +1,53 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prece
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci --workspace=@prece-digital/api --workspace=@prece-digital/web --include-workspace-root
+
+      - name: Verificar (sintaxis y tests)
+        run: |
+          npm run check
+          npm test -w @prece-digital/api
+          npm test -w @prece-digital/web
+
+      - name: Build web
+        run: npm run build -w @prece-digital/web
+        env:
+          # Variable del repo: Settings > Secrets and variables > Actions > Variables
+          VITE_API_BASE_URL: https://${{ vars.DOMINIO }}
+
+      - name: Publicar web
+        run: rsync -a --delete Frontend/web/dist/ /var/www/prece-digital/
+
+      - name: Publicar API
+        run: |
+          rsync -a --delete --exclude node_modules --exclude .env Backend/ /opt/prece-digital/Backend/
+          rsync -a --delete --exclude node_modules Shared/ /opt/prece-digital/Shared/
+          cp package.json package-lock.json /opt/prece-digital/
+          cd /opt/prece-digital
+          npm ci --omit=dev --workspace=@prece-digital/api --include-workspace-root
+          sudo systemctl restart prece-api
+
+      - name: Comprobar que la API responde
+        run: |
+          sleep 3
+          systemctl is-active prece-api
