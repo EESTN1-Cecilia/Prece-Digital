@@ -407,6 +407,8 @@ main {
 
   .page:has(> .secretaria-dashboard--home),
   .page:has(> .docente-dashboard-wrapper),
+  .page:has(> .docente-cursos-container),
+  .page:has(> .docente-panel),
   .page:has(> .alumnos-list-panel),
   .page:has(> .cursos-panel),
   .page:has(> .cargar-alumno-page),
@@ -418,7 +420,7 @@ main {
   .page:has(> .configuracion-page),
   .page:has(> .alumno-resumen-panel),
   .page:has(> .student-profile-page-wrapper) {
-    padding: 14px 10px 36px;
+    padding: 10px 6px 36px;
   }
 
   .welcome-panel.boletines-panel {

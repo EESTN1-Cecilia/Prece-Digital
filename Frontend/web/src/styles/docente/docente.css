@@ -2015,10 +2015,15 @@
   }
 
   /* 6. Vista Cursos y Materias a Cargo en celular */
-  .docente-cursos-container {
-    padding: 12px 10px 20px;
-    gap: 12px;
-    border-radius: 18px;
+  .docente-cursos-container,
+  .docente-panel.docente-cursos-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 4px 0 20px !important;
+    padding: 16px 12px 24px !important;
+    border-radius: 20px !important;
+    box-sizing: border-box !important;
+    gap: 14px;
   }
 
   .docente-cursos-container .alumnos-top-nav {
@@ -2162,9 +2167,8 @@
     font-weight: 700;
     color: #1e293b;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    line-height: 1.25;
   }
 
   .docente-cursos-container .alumnos-main-card > .dashboard-card__header .dashboard-card__badge {
@@ -2310,21 +2314,25 @@
 
   .docente-cursos-container .filter-pills {
     display: flex;
+    align-items: center;
     width: 100%;
-    gap: 6px;
+    gap: 8px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
+    scrollbar-width: none;
+    padding: 2px 0 4px;
+  }
+
+  .docente-cursos-container .filter-pills::-webkit-scrollbar {
+    display: none;
   }
 
   .docente-cursos-container .filter-pill {
-    flex: 1;
-    min-width: 0;
-    text-align: center;
-    padding: 7px 6px;
-    font-size: 11.5px;
+    flex: 0 0 auto;
+    padding: 7px 14px;
+    font-size: 12px;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 20px;
     white-space: nowrap;
     border: 1px solid #e2e8f0;
     background: #ffffff;
@@ -2496,8 +2504,13 @@
 }
 
 @media (max-width: 480px) {
-  .docente-cursos-container {
-    padding: 10px 8px 18px;
+  .docente-cursos-container,
+  .docente-panel.docente-cursos-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 2px 0 16px !important;
+    padding: 12px 8px 18px !important;
+    border-radius: 16px !important;
   }
 
   .docente-cursos-container .alumnos-page-title {
