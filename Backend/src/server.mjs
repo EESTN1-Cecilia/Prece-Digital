@@ -20,6 +20,19 @@ async function startServer() {
      desarrollo de todos los modulos para que el frontend tenga con que trabajar. */
   if (appConfig.env === "production") {
     await seedProductionAdmin();
+    /* La nomina de la escuela (database/seeds/data/alumnos.local.json, fuera de git) tambien
+       se carga en produccion: los modulos del personal leen los alumnos del store en memoria,
+       y sin esto los listados y tableros quedan en cero. Si el archivo no esta, no hace nada;
+       si no se puede leer (permisos, JSON roto) se informa y la API arranca igual.
+       Se desactiva con NOMINA_LOCAL=false. */
+    if (process.env.NOMINA_LOCAL !== "false") {
+      try {
+        const locales = seedAlumnosLocales();
+        if (locales > 0) console.log(`Nomina: ${locales} alumnos cargados desde alumnos.local.json`);
+      } catch (error) {
+        console.error(`Nomina: no se pudo cargar alumnos.local.json (${error.message})`);
+      }
+    }
   } else {
     await seedDesarrollo();
     const locales = seedAlumnosLocales();
