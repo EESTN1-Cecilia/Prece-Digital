@@ -104,6 +104,14 @@
   gap: 6px;
 }
 
+.filter-pill-label--desktop {
+  display: inline;
+}
+
+.filter-pill-label--mobile {
+  display: none;
+}
+
 .docente-cursos-container .filter-pill {
   border: 1px solid #e2e8f0;
   background: #ffffff;
@@ -2308,19 +2316,27 @@
     cursor: pointer;
   }
 
+  .filter-pill-label--desktop {
+    display: none;
+  }
+
+  .filter-pill-label--mobile {
+    display: inline;
+  }
+
   .docente-cursos-container .filters-group {
     width: 100%;
   }
 
   .docente-cursos-container .filter-pills {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
-    gap: 8px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    gap: 6px;
+    overflow: hidden;
+    padding: 2px 0;
     scrollbar-width: none;
-    padding: 2px 0 4px;
+    -ms-overflow-style: none;
   }
 
   .docente-cursos-container .filter-pills::-webkit-scrollbar {
@@ -2328,17 +2344,25 @@
   }
 
   .docente-cursos-container .filter-pill {
-    flex: 0 0 auto;
-    padding: 7px 14px;
+    width: 100%;
+    min-width: 0;
+    padding: 8px 4px;
     font-size: 12px;
     font-weight: 600;
-    border-radius: 20px;
+    border-radius: 10px;
+    text-align: center;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid #e2e8f0;
     background: #ffffff;
     color: #64748b;
     cursor: pointer;
     transition: all 140ms ease;
+    box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
   }
 
