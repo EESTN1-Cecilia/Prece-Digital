@@ -18,12 +18,356 @@
   animation: preceptoriaFadeIn 0.25s ease-out;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .preceptoria-dashboard-wrapper {
-    width: calc(100% - 24px);
-    margin: 16px auto 24px;
-    padding: 20px 16px 24px;
-    border-radius: 20px;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 4px 0 20px !important;
+    padding: 14px 12px 24px !important;
+    border-radius: 18px !important;
+    gap: 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 0. Barra Superior Institucional */
+  .preceptoria-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .preceptoria-institution-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.4px;
+  }
+
+  .preceptoria-main-title {
+    font-size: 22px;
+    line-height: 1.15;
+    letter-spacing: -0.3px;
+  }
+
+  .preceptoria-updated-text {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .preceptoria-top-actions {
+    width: 100%;
+  }
+
+  .btn-actualizar-datos-prece {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+
+  /* 1. Hero Banner */
+  .preceptoria-hero-banner {
+    flex-direction: column;
+    padding: 16px 14px;
+    gap: 12px;
+    align-items: stretch;
+    border-radius: 16px;
+  }
+
+  .preceptoria-hero-left {
+    gap: 6px;
+    width: 100%;
+  }
+
+  .preceptoria-hero-eyebrow {
+    font-size: 10.5px;
+  }
+
+  .preceptoria-hero-title {
+    font-size: 18px;
+    line-height: 1.25;
+    letter-spacing: -0.2px;
+  }
+
+  .preceptoria-hero-subtitle {
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .preceptoria-hero-badges {
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .preceptoria-hero-pill {
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 14px;
+  }
+
+  .preceptoria-hero-crest {
+    display: none;
+  }
+
+  /* 2. KPIs Grid (2x2 como en Secretaría) */
+  .preceptoria-kpis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .preceptoria-kpi-card {
+    padding: 12px 10px !important;
+    gap: 8px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    border-radius: 14px !important;
+    min-width: 0 !important;
+  }
+
+  .preceptoria-kpi-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  .preceptoria-kpi-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .preceptoria-kpi-label {
+    font-size: 10px !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  .preceptoria-kpi-val {
+    font-size: 18px !important;
+    line-height: 1.1 !important;
+  }
+
+  .preceptoria-kpi-sub {
+    font-size: 10.5px !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
+  }
+
+  /* 3. Módulos Operativos */
+  .preceptoria-modules-section {
+    gap: 10px;
+  }
+
+  .preceptoria-modules-section__title {
+    font-size: 15px;
+  }
+
+  .preceptoria-modules-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .preceptoria-module-card {
+    padding: 14px 12px;
+    gap: 12px;
+    border-radius: 16px;
+  }
+
+  .preceptoria-module-card__top {
+    gap: 10px;
+  }
+
+  .preceptoria-module-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+  }
+
+  .preceptoria-module-icon-wrap svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .preceptoria-module-name {
+    font-size: 15px;
+  }
+
+  .preceptoria-module-desc {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .preceptoria-module-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 10px;
+  }
+
+  .preceptoria-module-badge {
+    text-align: center;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .preceptoria-module-action-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 9px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  /* 4. Cursos y Planillas de Asistencia Rápida */
+  .preceptoria-section-box {
+    padding: 14px 12px;
+    gap: 12px;
+    border-radius: 16px;
+  }
+
+  .preceptoria-section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .preceptoria-section-title {
+    font-size: 15px;
+  }
+
+  .preceptoria-section-desc {
+    font-size: 12px;
+  }
+
+  .preceptoria-asistencias-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .preceptoria-asistencia-card {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 12px;
+  }
+
+  .preceptoria-asistencia-card__metrics {
+    padding: 8px 10px;
+  }
+
+  .preceptoria-asistencia-metric-box strong {
+    font-size: 15px;
+  }
+
+  .preceptoria-asistencia-card__btn {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 11.5px;
+  }
+
+  /* 5. Subvista Docentes y Calificaciones */
+  .preceptoria-subview-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .preceptoria-btn-back {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 12px;
+    font-size: 12.5px;
+  }
+
+  .preceptoria-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .preceptoria-search-box {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .preceptoria-search-input {
+    font-size: 16px;
+    height: 42px;
+  }
+
+  .preceptoria-select-filter {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+  }
+
+  .preceptoria-btn-reset-filters {
+    width: 100%;
+    height: 38px;
+  }
+
+  .preceptoria-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .preceptoria-table th,
+  .preceptoria-table td {
+    padding: 9px 8px;
+    font-size: 11.5px;
+  }
+
+  .preceptoria-docente-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 10.5px;
+    border-radius: 7px;
+  }
+
+  .preceptoria-docente-name {
+    font-size: 12px;
+  }
+
+  .preceptoria-btn-planilla {
+    padding: 5px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  /* 6. Informes de Dirección */
+  .preceptoria-informes-section {
+    padding: 14px 12px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+
+  .preceptoria-informes-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .preceptoria-informes-title {
+    font-size: 15px;
+  }
+
+  .preceptoria-informes-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .preceptoria-informe-card {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .preceptoria-informe-title {
+    font-size: 13.5px;
+  }
+
+  .preceptoria-informe-text {
+    font-size: 12px;
   }
 }
 
@@ -267,7 +611,7 @@
 
 @media (max-width: 580px) {
   .preceptoria-kpis-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

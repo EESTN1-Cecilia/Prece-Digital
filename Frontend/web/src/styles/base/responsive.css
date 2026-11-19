@@ -434,6 +434,7 @@ main {
   .page:has(> .docente-dashboard-wrapper),
   .page:has(> .docente-cursos-container),
   .page:has(> .docente-panel),
+  .page:has(> .preceptoria-dashboard-wrapper),
   .page:has(> .alumnos-list-panel),
   .page:has(> .cursos-panel),
   .page:has(> .cargar-alumno-page),
