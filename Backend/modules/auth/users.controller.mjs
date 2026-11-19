@@ -8,10 +8,14 @@ export async function createUser({ user, body }) {
   return { statusCode: 201, body: { data: await usersService.create(user, body) } };
 }
 
-export function updateUser({ user, params, body }) {
-  return { data: usersService.update(user, params.userId, body) };
+export async function updateUser({ user, params, body }) {
+  return { data: await usersService.update(user, params.userId, body) };
 }
 
 export function replaceUserRoles({ user, params, body }) {
   return { data: usersService.replaceRoles(user, params.userId, body) };
+}
+
+export function deleteUser({ user, params }) {
+  return { data: usersService.remove(user, params.userId) };
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, Fragment } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
-import { BotonVolverDireccion } from "../../components/common/boton-volver-direccion.js";
+import { DirectorVolverBar } from "../../components/common/director-volver-bar.js";
 import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { SecretariaService } from "../secretaria/secretaria-service.js";
@@ -378,7 +378,7 @@ export default function DashboardView() {
     { className: "preceptoria-dashboard-wrapper" },
 
     // Solo el director ve este boton para volver a su tablero.
-    h(BotonVolverDireccion),
+    h(DirectorVolverBar, null),
 
     // 0. Barra Superior Institucional (Estilo Foto 1)
     h(
