@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, Fragment } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
-import { DirectorVolverBar } from "../../components/common/director-volver-bar.js";
 import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { SecretariaService } from "../secretaria/secretaria-service.js";
@@ -353,7 +352,7 @@ export default function DashboardView() {
   const activosAlumnos = dataSecretaria?.resumenAlumnos?.activos ?? (alumnos.length > 0 ? alumnos.filter((a) => (a.condicion || "").toLowerCase() !== "baja").length : 31);
   const nuevasInscripciones = dataSecretaria?.resumenAlumnos?.nuevasInscripciones ?? totalAlumnos;
   const bajasAlumnos = dataSecretaria?.resumenAlumnos?.bajas ?? (totalAlumnos > activosAlumnos ? totalAlumnos - activosAlumnos : 1);
-  const totalDivisiones = divisiones.length > 0 ? divisiones.length : (dataSecretaria?.alumnosPorCurso?.length || 31);
+  const totalDivisiones = divisiones.length > 0 ? divisiones.length : (dataSecretaria?.alumnosPorCurso?.length || 30);
 
   const mananaCount = alumnos.filter((a) => String(a.turno || "").toLowerCase().includes("mañana")).length || 23;
   const tardeCount = alumnos.filter((a) => String(a.turno || "").toLowerCase().includes("tarde")).length || 8;
@@ -376,9 +375,6 @@ export default function DashboardView() {
   return h(
     "section",
     { className: "preceptoria-dashboard-wrapper" },
-
-    // Solo el director ve este boton para volver a su tablero.
-    h(DirectorVolverBar, null),
 
     // 0. Barra Superior Institucional (Estilo Foto 1)
     h(
@@ -665,7 +661,7 @@ export default function DashboardView() {
                 h(
                   "div",
                   { className: "preceptoria-module-card__footer" },
-                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--blue" }, `${divisiones.length || 31} Divisiones`),
+                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--blue" }, `${divisiones.length || 30} Divisiones`),
                   h(
                     "button",
                     {
@@ -1107,7 +1103,7 @@ export default function DashboardView() {
               },
               "← Volver al Tablero Principal"
             ),
-            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length || 31} Divisiones`)
+            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length || 30} Divisiones`)
           ),
 
           h(
@@ -1446,7 +1442,7 @@ export default function DashboardView() {
               },
               "← Volver al Tablero Principal"
             ),
-            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length || 31} Divisiones`)
+            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length || 30} Divisiones`)
           ),
 
           h(

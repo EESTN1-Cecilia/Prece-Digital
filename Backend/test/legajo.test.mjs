@@ -128,7 +128,7 @@ test("tablero de secretaria con datos reales y alertas descartables", async () =
   assert.equal(status, 200);
   assert.equal(cuerpo.data.resumenAlumnos.total, 32);
   assert.equal(cuerpo.data.resumenAlumnos.inactivos, 1);
-  assert.equal(cuerpo.data.alumnosPorCurso.length, 31);
+  assert.equal(cuerpo.data.alumnosPorCurso.length, 30);
   const totalAlumnosEnCursos = cuerpo.data.alumnosPorCurso.reduce((sum, c) => sum + c.cantidad, 0);
   assert.equal(totalAlumnosEnCursos, 31);
   assert.ok(cuerpo.data.alertas.length > 0);
@@ -137,7 +137,7 @@ test("tablero de secretaria con datos reales y alertas descartables", async () =
   const resumen = cuerpo.data.resumenAlumnos;
   assert.equal(resumen.matricula, totalAlumnosEnCursos);
   assert.equal(resumen.porTurno.reduce((sum, t) => sum + t.cantidad, 0), resumen.matricula);
-  assert.equal(resumen.divisiones, 31);
+  assert.equal(resumen.divisiones, 30);
   assert.equal(resumen.altasDelMes, 0); // el seed es matricula de inicio de ciclo, no altas del mes
   assert.equal(cuerpo.data.asistenciaHoy.matricula, resumen.matricula);
   assert.equal(cuerpo.data.asistenciaHoy.presentes + cuerpo.data.asistenciaHoy.ausentes, resumen.matricula);
@@ -154,8 +154,8 @@ test("directorio de divisiones y busqueda libre del listado", async () => {
   const divisiones = await pedir("GET", "/api/v1/students/divisions", "preceptor");
   assert.equal(divisiones.status, 200);
   /* El preceptor ve solo los cursos que le asigno la Direccion (todos menos 2° 2° y 5° 3°). */
-  assert.equal(divisiones.cuerpo.data.length, 29);
-  assert.equal((await pedir("GET", "/api/v1/students/divisions", "secretario")).cuerpo.data.length, 31);
+  assert.equal(divisiones.cuerpo.data.length, 28);
+  assert.equal((await pedir("GET", "/api/v1/students/divisions", "secretario")).cuerpo.data.length, 30);
   /* la promocion del seed de course-changes (alu-17) suma un activo a 4-1 */
   assert.equal(divisiones.cuerpo.data.find((division) => division.id === "4-1").activos, 5);
   assert.ok(divisiones.cuerpo.data.some((division) => division.id === "6-2"));

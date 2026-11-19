@@ -3,12 +3,11 @@
    (GET /api/v1/preceptores/mis-cursos); el backend ademas recorta cada pedido
    a esos cursos, asi que esto es solo la experiencia de uso. */
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { h } from "../../layouts/site-layout.js";
 import { CargandoPantalla } from "../../components/ui/index.js";
 import { pedir } from "../../services/http.js";
 import { useUsuarioActual } from "../../estado/index.js";
-import { DirectorVolverBar } from "../../components/common/director-volver-bar.js";
 import DashboardView from "./dashboard-view.js";
 
 export const MENSAJE_SIN_CURSOS = "No tenés cursos asignados actualmente. Comunicate con el Director para solicitar una asignación.";
@@ -36,5 +35,5 @@ export default function PreceptorInicioView() {
     );
   }
 
-  return h(Fragment, null, h(DirectorVolverBar, { externa: true, maxWidth: 1340 }), h(DashboardView));
+  return h(DashboardView);
 }

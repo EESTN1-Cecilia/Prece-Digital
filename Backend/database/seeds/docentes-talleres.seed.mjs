@@ -103,7 +103,7 @@ export function seedDocentesTalleres({ escuelaId = "esc-1" } = {}) {
     { grupo: "7.1", anio: 7, division: "1" },
     { grupo: "7.2", anio: 7, division: "2" },
     { grupo: "7.3", anio: 7, division: "3" },
-    { grupo: "7.4", anio: 7, division: "4" },
+    { grupo: "7.4", anio: 7, division: "2" },
     { grupo: "7.6", anio: 7, division: "3" },
     { grupo: "7.8", anio: 7, division: "3" }
   ];

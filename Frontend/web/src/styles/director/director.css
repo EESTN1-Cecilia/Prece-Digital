@@ -383,10 +383,11 @@
   width: 270px;
   min-width: 270px;
   flex-shrink: 0;
-  position: sticky;
-  top: 16px;
-  max-height: calc(100vh - 32px);
-  overflow-y: auto;
+  /* Sin altura maxima ni scroll propio: el panel crece lo que haga falta para
+     mostrar todos los accesos y la pagina entera es la que se desplaza. */
+  position: static;
+  height: fit-content;
+  overflow: visible;
   background: #ffffff;
   border-radius: 24px;
   padding: 22px 20px;
@@ -398,25 +399,10 @@
   box-sizing: border-box;
 }
 
-.director-sidebar-access::-webkit-scrollbar {
-  width: 5px;
-}
-
-.director-sidebar-access::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.director-sidebar-access::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
 @media (max-width: 1100px) {
   .director-sidebar-access {
     width: 100%;
     min-width: 0;
-    position: static;
-    max-height: none;
   }
 }
 
