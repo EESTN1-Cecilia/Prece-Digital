@@ -9,7 +9,6 @@ import {
   MESES_DEL_ANIO
 } from "./asistencias-service.js";
 import { useUsuarioActual } from "../../estado/index.js";
-import { DirectorVolverBar } from "../../components/common/director-volver-bar.js";
 
 const ESTADOS_ASISTENCIA = {
   P: { label: "Presente", clase: "cell-presente" },
@@ -626,7 +625,6 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
   return h(
     Fragment,
     null,
-    h(DirectorVolverBar, { externa: true }),
     h(
       "section",
       { className: "asistencias-page secretaria-dashboard", ref: paginaRef },

@@ -7,7 +7,7 @@
    Estructura de anios_divisiones (curso, division, turno_aula, orientacion):
      - Ciclo Basico (1 a 3): divisiones 1, 2, 3, 4 y 6, sin orientacion.
      - Tecnico en Informatica (4 a 7): 4°1, 4°2, 5°1, 5°2, 6°1, 6°2 y 7°1.
-     - Tecnico en Programacion (4 a 7): 4°3, 4°4, 5°3, 5°4, 6°3, 6°4, 7°2, 7°3 y 7°4. */
+     - Tecnico en Programacion (4 a 7): 4°3, 4°4, 5°3, 5°4, 6°3, 6°4, 7°2 y 7°3. */
 
 export const CURSOS_VALIDOS = [1, 2, 3, 4, 5, 6, 7];
 export const CONDICIONES_VALIDAS = ["regular", "irregular"];
@@ -64,8 +64,7 @@ const DIVISIONES = [
   [6, "4", "tarde", ORIENTACION_PROGRAMACION],
   [7, "1", "mañana", ORIENTACION_INFORMATICA],
   [7, "2", "tarde", ORIENTACION_PROGRAMACION],
-  [7, "3", "mañana", ORIENTACION_PROGRAMACION],
-  [7, "4", "tarde", ORIENTACION_PROGRAMACION]
+  [7, "3", "mañana", ORIENTACION_PROGRAMACION]
 ];
 
 /* Catalogo completo, para listados y tableros. */
