@@ -406,6 +406,7 @@ main {
   }
 
   .page:has(> .secretaria-dashboard--home),
+  .page:has(> .docente-dashboard-wrapper),
   .page:has(> .alumnos-list-panel),
   .page:has(> .cursos-panel),
   .page:has(> .cargar-alumno-page),

@@ -1551,4 +1551,382 @@
   padding: 24px 20px;
 }
 
+/* ==========================================================================
+   TARJETAS DE MÉTRICAS (KPIs) Y ADAPTACIÓN RESPONSIVE DEL DOCENTE
+   E.E.S.T. Nº 1 "Cecilia Berdichevski"
+   ========================================================================== */
+
+/* 1. Disposición en Desktop (> 768px) */
+.docente-home-hero-group {
+  display: contents;
+}
+
+.docente-home-header {
+  display: none;
+}
+
+.docente-dashboard-wrapper .kpi-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 4px 0 10px;
+}
+
+.docente-dashboard-wrapper .kpi-metric-card {
+  min-height: 104px;
+}
+
+@media (max-width: 1080px) {
+  .docente-dashboard-wrapper .kpi-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 2. Disposición en Celular (<= 768px): Contenedor azul unificado y 2x2 KPIs */
+@media (max-width: 768px) {
+  .docente-dashboard-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 0;
+    gap: 12px;
+    box-sizing: border-box;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .docente-top-bar {
+    display: none;
+  }
+
+  .docente-hero-banner {
+    display: none;
+  }
+
+  /* Contenedor azul institucional que agrupa cabecera + 4 KPIs */
+  .docente-home-hero-group {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 12px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .docente-home-hero-group::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 1 / 3;
+    margin-bottom: 24px;
+    z-index: 0;
+    background:
+      radial-gradient(circle at 86% 10%, rgba(147, 197, 253, 0.24), transparent 34%),
+      linear-gradient(160deg, #172554 0%, #1e3a5f 55%, #1d4e72 100%);
+    border: 1px solid rgba(30, 64, 175, 0.22);
+    border-radius: 22px;
+    box-shadow: 0 14px 34px -18px rgba(15, 23, 42, 0.55);
+    pointer-events: none;
+  }
+
+  /* Cabecera institucional compacta integrada en el bloque azul */
+  .docente-home-header {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand btn"
+      "title title"
+      "updated updated";
+    align-items: center;
+    gap: 6px 12px;
+    min-height: auto;
+    padding: 16px 16px 2px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .docente-home-header__copy {
+    display: contents;
+  }
+
+  .docente-home-header__brand {
+    grid-area: brand;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .docente-home-header__logo {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    padding: 2px;
+    background: #ffffff;
+    flex-shrink: 0;
+    object-fit: contain;
+  }
+
+  .docente-home-header .docente-eyebrow {
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+  }
+
+  .docente-home-header .btn-actualizar-datos {
+    grid-area: btn;
+    width: auto;
+    padding: 6px 13px;
+    font-size: 11.5px;
+    border-radius: 9999px;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #0f172a;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .docente-home-header .btn-actualizar-icon {
+    width: 13px;
+    height: 13px;
+    filter: none;
+    flex-shrink: 0;
+  }
+
+  .docente-home-header .docente-title {
+    grid-area: title;
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 4px 0 0;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+
+  .docente-home-header .docente-last-updated {
+    grid-area: updated;
+    margin-top: 2px;
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.62);
+  }
+
+  /* 2. Tarjetas de métricas del docente: Grilla 2x2 (2 arriba y 2 abajo, SIN scroll horizontal) */
+  .docente-dashboard-wrapper .kpi-summary-grid {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0 12px;
+    margin: 0;
+    overflow: visible;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    display: grid;
+    grid-template-areas:
+      "label label"
+      "value icon"
+      "subrow subrow";
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 6px 8px;
+    padding: 13px 13px 12px;
+    min-height: 104px;
+    border-radius: 16px;
+    background-color: #ffffff;
+    border: 1px solid #dce4ee;
+    box-shadow:
+      inset 0 3px 0 var(--metric-color),
+      0 8px 20px -8px rgba(15, 23, 42, 0.22);
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__content {
+    display: contents;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__label {
+    grid-area: label;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__value {
+    grid-area: value;
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__icon-box {
+    grid-area: icon;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    margin-left: auto;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__icon-box .kpi-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__subrow,
+  .docente-dashboard-wrapper .kpi-metric-card__subtext {
+    grid-area: subrow;
+    align-self: end;
+    margin-top: 2px;
+    font-size: 10.5px;
+    line-height: 1.25;
+    color: #64748b;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__period {
+    font-size: 10.5px;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__trend {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #dcfce7;
+    color: #166534;
+    font-weight: 700;
+  }
+
+  /* 3. Gráficos de cursos en celular */
+  .docente-charts-dual-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .docente-chart-card {
+    border-radius: 18px;
+    padding: 16px 14px 14px;
+    border: 1px solid #dce4ee;
+    box-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.06);
+  }
+
+  /* 4. Módulos Autorizados en celular */
+  .docente-modules-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .docente-module-card {
+    padding: 16px 14px 14px;
+    border-radius: 18px;
+    border: 1px solid #dce4ee;
+    box-shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.06);
+    gap: 12px;
+  }
+
+  .docente-module-card__top {
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .docente-module-icon-wrap {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+
+  .docente-module-name {
+    font-size: 15.5px;
+  }
+
+  .docente-module-desc {
+    font-size: 12px;
+  }
+
+  .docente-module-card__footer {
+    padding-top: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .docente-module-link-btn {
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  /* 5. Cuadro informativo oficial PBA */
+  .docente-notice-box {
+    border-radius: 18px;
+    padding: 14px 14px;
+    border: 1px solid #dce4ee;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+}
+
+@media (max-width: 480px) {
+  .docente-home-hero-group::before {
+    border-radius: 20px;
+    margin-bottom: 22px;
+  }
+
+  .docente-home-header {
+    padding: 14px 14px 2px;
+  }
+
+  .docente-home-header .docente-title {
+    font-size: 24px;
+  }
+
+  .docente-dashboard-wrapper .kpi-summary-grid {
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card {
+    padding: 12px 11px 10px;
+    min-height: 98px;
+  }
+
+  .docente-dashboard-wrapper .kpi-metric-card__value {
+    font-size: 24px;
+  }
+}
+
 

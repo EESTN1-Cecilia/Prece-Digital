@@ -6,6 +6,79 @@ import { StudentsService } from "../students/students-service.js";
 import { AsistenciasService, calcularMetricasPlanilla } from "../attendance/asistencias-service.js";
 import { DocenteCursosGrafico } from "./docente-cursos-grafico.js";
 
+// Helper icons para las tarjetas de métricas del docente
+function IconGroupUsers({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }),
+    h("circle", { cx: "9", cy: "7", r: "4" }),
+    h("path", { d: "M22 21v-2a4 4 0 0 0-3-3.87" }),
+    h("path", { d: "M16 3.13a4 4 0 0 1 0 7.75" })
+  );
+}
+
+function IconAcademicCap({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M22 10v6M2 10l10-5 10 5-10 5z" }),
+    h("path", { d: "M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" })
+  );
+}
+
+function IconAttendanceCheck({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M9 11l3 3L22 4" }),
+    h("path", { d: "M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" })
+  );
+}
+
+function IconBookSubject({ className }) {
+  return h(
+    "svg",
+    {
+      className: className || "kpi-icon",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    },
+    h("path", { d: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20" }),
+    h("path", { d: "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" }),
+    h("line", { x1: "8", y1: "6", x2: "16", y2: "6" }),
+    h("line", { x1: "8", y1: "10", x2: "14", y2: "10" })
+  );
+}
+
 // Cursos asignados a la cuenta de prueba del docente (exactamente 3 cursos: dos turno mañana, uno turno tarde)
 const ASIGNACIONES_DOCENTE_DEFAULT = [
   { anio: 1, curso: "1°", division: "1", materia: "Matemática I" },
@@ -13,11 +86,123 @@ const ASIGNACIONES_DOCENTE_DEFAULT = [
   { anio: 3, curso: "3°", division: "3", materia: "Matemática III" }
 ];
 
+function DocenteKpiGrid({
+  totalEstudiantes,
+  totalCursos,
+  promedioAsistencia,
+  totalMaterias,
+  cicloLectivo,
+  loading
+}) {
+  return h(
+    "div",
+    { className: "kpi-summary-grid docente-kpi-summary-grid" },
+
+    // Card 1: Alumnos a Cargo (Azul)
+    h(
+      "div",
+      { className: "kpi-metric-card kpi-metric-card--blue" },
+      h(
+        "div",
+        { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--blue" },
+        h(IconGroupUsers, null)
+      ),
+      h(
+        "div",
+        { className: "kpi-metric-card__content" },
+        h("span", { className: "kpi-metric-card__label" }, "Alumnos a Cargo"),
+        h("div", { className: "kpi-metric-card__value" }, loading ? "..." : totalEstudiantes),
+        h(
+          "div",
+          { className: "kpi-metric-card__subrow" },
+          h(
+            "span",
+            { className: "kpi-metric-card__period" },
+            `${totalCursos} ${totalCursos === 1 ? "curso asignado" : "cursos asignados"}`
+          ),
+          h("span", { className: "kpi-metric-card__trend" }, "↗ Activos")
+        )
+      )
+    ),
+
+    // Card 2: Cursos Asignados (Violeta)
+    h(
+      "div",
+      { className: "kpi-metric-card kpi-metric-card--purple" },
+      h(
+        "div",
+        { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--purple" },
+        h(IconAcademicCap, null)
+      ),
+      h(
+        "div",
+        { className: "kpi-metric-card__content" },
+        h("span", { className: "kpi-metric-card__label" }, "Cursos a Cargo"),
+        h("div", { className: "kpi-metric-card__value" }, loading ? "..." : totalCursos),
+        h(
+          "span",
+          { className: "kpi-metric-card__subtext" },
+          `Ciclo Lectivo ${cicloLectivo}`
+        )
+      )
+    ),
+
+    // Card 3: Asistencia Promedio (Verde)
+    h(
+      "div",
+      { className: "kpi-metric-card kpi-metric-card--green" },
+      h(
+        "div",
+        { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--green" },
+        h(IconAttendanceCheck, null)
+      ),
+      h(
+        "div",
+        { className: "kpi-metric-card__content" },
+        h("span", { className: "kpi-metric-card__label" }, "Asistencia Promedio"),
+        h(
+          "div",
+          { className: "kpi-metric-card__value" },
+          loading ? "..." : (promedioAsistencia !== null ? `${promedioAsistencia}%` : "100%")
+        ),
+        h(
+          "span",
+          { className: "kpi-metric-card__subtext" },
+          promedioAsistencia !== null ? "Promedio en tus materias" : "Sin inasistencias computadas"
+        )
+      )
+    ),
+
+    // Card 4: Materias a Cargo (Ámbar)
+    h(
+      "div",
+      { className: "kpi-metric-card kpi-metric-card--amber" },
+      h(
+        "div",
+        { className: "kpi-metric-card__icon-box kpi-metric-card__icon-box--amber" },
+        h(IconBookSubject, null)
+      ),
+      h(
+        "div",
+        { className: "kpi-metric-card__content" },
+        h("span", { className: "kpi-metric-card__label" }, "Materias a Cargo"),
+        h("div", { className: "kpi-metric-card__value" }, loading ? "..." : totalMaterias),
+        h(
+          "span",
+          { className: "kpi-metric-card__subtext" },
+          "Planillas habilitadas"
+        )
+      )
+    )
+  );
+}
+
 export default function DocenteDashboardView() {
   const user = useUsuarioActual();
   const [cursos, setCursos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [fechaHoy, setFechaHoy] = useState("");
 
   useEffect(() => {
@@ -26,6 +211,14 @@ export default function DocenteDashboardView() {
     const raw = new Intl.DateTimeFormat("es-AR", opt).format(d);
     setFechaHoy(raw.charAt(0).toUpperCase() + raw.slice(1));
   }, []);
+
+  const formatFechaHora = (date) => {
+    if (!date) return "";
+    return new Intl.DateTimeFormat("es-AR", {
+      dateStyle: "short",
+      timeStyle: "medium"
+    }).format(new Date(date));
+  };
 
   const fetchCursos = useCallback(async () => {
     try {
@@ -173,6 +366,7 @@ export default function DocenteDashboardView() {
       } else {
         setCursos(cursosListos);
       }
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error al cargar cursos del docente:", err);
       setError("No se pudieron cargar los cursos y divisiones desde la base de datos.");
@@ -191,6 +385,22 @@ export default function DocenteDashboardView() {
   const escuelaNombre = user?.escuela || "E.E.S.T N°1 Monte Grande";
   const rolDocente = user?.rolNombre || (user?.roles?.includes("docente") ? "Docente" : "Personal Docente");
 
+  const materiasUnicas = Array.from(new Set(cursos.map((c) => c.materia).filter(Boolean)));
+  const totalMaterias = materiasUnicas.length > 0 ? materiasUnicas.length : (cursos.length || 0);
+
+  const asistenciasCalculadas = cursos.map((c) => {
+    if (c.asistencia && !c.asistencia.sinAlumnos && !c.asistencia.sinRegistros) {
+      return c.asistencia.porcentaje;
+    }
+    const cant = Number(c.activos ?? c.cantidad) || 0;
+    if (cant > 0) return 100;
+    return null;
+  }).filter((p) => p !== null);
+
+  const promedioAsistencia = asistenciasCalculadas.length > 0
+    ? Math.round(asistenciasCalculadas.reduce((a, b) => a + b, 0) / asistenciasCalculadas.length)
+    : null;
+
   return h(
     "section",
     { className: "docente-dashboard-wrapper" },
@@ -198,61 +408,114 @@ export default function DocenteDashboardView() {
     // Solo el director ve este boton para volver a su tablero.
     h(BotonVolverDireccion),
 
-    // 0. Barra superior: Eyebrow institucional y acción de refresco
+    // Bloque superior: en desktop conserva la disposición amplia (top-bar + hero-banner),
+    // y en celular el contenedor azul unificado envuelve cabecera + las 4 tarjetas de métricas permitidas.
     h(
       "div",
-      { className: "docente-top-bar" },
+      { className: "docente-home-hero-group" },
+
+      // 0. Barra superior institucional (desktop)
       h(
         "div",
-        { className: "docente-eyebrow" },
-        escuelaNombre
+        { className: "docente-top-bar" },
+        h(
+          "div",
+          { className: "docente-eyebrow" },
+          escuelaNombre
+        ),
+        h(
+          "div",
+          { className: "docente-top-actions" },
+          h("span", { className: "docente-ciclo-tag" }, `Ciclo Lectivo ${cicloLectivo}`),
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-actualizar-datos",
+              onClick: fetchCursos,
+              disabled: loading,
+              title: "Actualizar nómina y cantidades desde la base de datos"
+            },
+            h(IconoFigma, { className: "btn-actualizar-icon", nombre: "filter" }),
+            h("span", null, loading ? "Actualizando..." : "Actualizar datos")
+          )
+        )
       ),
+
+      // 1. Hero Banner Institucional del Docente (desktop)
       h(
         "div",
-        { className: "docente-top-actions" },
-        h("span", { className: "docente-ciclo-tag" }, `Ciclo Lectivo ${cicloLectivo}`),
+        { className: "docente-hero-banner" },
+        h(
+          "div",
+          { className: "docente-hero-left" },
+          h(
+            "div",
+            { className: "docente-hero-eyebrow" },
+            h("span", { className: "docente-hero-dot" }),
+            `PORTAL DOCENTE INSTITUCIONAL · ${cicloLectivo}`
+          ),
+          h("h1", { className: "docente-hero-title" }, `¡Hola, ${nombreDocente}!`),
+          h(
+            "p",
+            { className: "docente-hero-subtitle" },
+            "Acceso exclusivo a registro de planillas de asistencia y confección de boletines digitales oficiales de tus cursos asignados."
+          ),
+          h(
+            "div",
+            { className: "docente-hero-badges" },
+            h("span", { className: "docente-role-tag" }, rolDocente),
+            h("span", { className: "docente-school-tag" }, escuelaNombre),
+            h("span", { className: "docente-school-tag" }, fechaHoy || `Ciclo ${cicloLectivo}`)
+          )
+        )
+      ),
+
+      // 2. Cabecera móvil compacta integrada en el bloque azul (mobile <= 768px)
+      h(
+        "header",
+        { className: "docente-home-header" },
+        h(
+          "div",
+          { className: "docente-home-header__copy" },
+          h(
+            "div",
+            { className: "docente-home-header__brand" },
+            h("img", {
+              src: "/assets/precelogo.jpeg",
+              alt: "",
+              className: "docente-home-header__logo",
+              "aria-hidden": "true"
+            }),
+            h("span", { className: "docente-eyebrow" }, escuelaNombre)
+          ),
+          h("h1", { className: "docente-title" }, `¡Hola, ${nombreDocente}!`),
+          lastUpdated
+            ? h("p", { className: "docente-last-updated" }, `Actualizado ${formatFechaHora(lastUpdated)}`)
+            : null
+        ),
         h(
           "button",
           {
             type: "button",
             className: "btn-actualizar-datos",
             onClick: fetchCursos,
-            disabled: loading,
-            title: "Actualizar nómina y cantidades desde la base de datos"
+            disabled: loading
           },
           h(IconoFigma, { className: "btn-actualizar-icon", nombre: "filter" }),
-          h("span", null, loading ? "Actualizando..." : "Actualizar datos")
+          h("span", null, loading ? "Actualizando..." : "Actualizar")
         )
-      )
-    ),
+      ),
 
-    // 1. Hero Banner Institucional del Docente
-    h(
-      "div",
-      { className: "docente-hero-banner" },
-      h(
-        "div",
-        { className: "docente-hero-left" },
-        h(
-          "div",
-          { className: "docente-hero-eyebrow" },
-          h("span", { className: "docente-hero-dot" }),
-          `PORTAL DOCENTE INSTITUCIONAL · ${cicloLectivo}`
-        ),
-        h("h1", { className: "docente-hero-title" }, `¡Hola, ${nombreDocente}!`),
-        h(
-          "p",
-          { className: "docente-hero-subtitle" },
-          "Acceso exclusivo a registro de planillas de asistencia y confección de boletines digitales oficiales de tus cursos asignados."
-        ),
-        h(
-          "div",
-          { className: "docente-hero-badges" },
-          h("span", { className: "docente-role-tag" }, rolDocente),
-          h("span", { className: "docente-school-tag" }, escuelaNombre),
-          h("span", { className: "docente-school-tag" }, fechaHoy || `Ciclo ${cicloLectivo}`)
-        )
-      )
+      // 3. Grilla 2x2 de métricas permitidas (KPI Cards)
+      h(DocenteKpiGrid, {
+        totalEstudiantes,
+        totalCursos: cursos.length,
+        promedioAsistencia,
+        totalMaterias,
+        cicloLectivo,
+        loading
+      })
     ),
 
     // 2. Gráficos interactivos del Docente (Contenedores compactos: Matrícula y Asistencia por curso)
