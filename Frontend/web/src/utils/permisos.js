@@ -17,6 +17,8 @@ export const PERMISOS = {
      identity.manage; identity.update solo alcanza para el propio perfil. */
   usuariosEditar: permiso("identity", "manage"),
   rolesLeer: permiso("identity", "read"),
+  /* Asignar usuarios y restablecer contraseñas de todos los perfiles (solo superadmin). */
+  credenciales: permiso("identity", "credentials"),
   rolesEditar: permiso("identity", "manage"),
   alumnosLeer: permiso("students", "read"),
   alumnosCrear: permiso("students", "write"),

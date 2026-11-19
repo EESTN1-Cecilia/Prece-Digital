@@ -61,6 +61,7 @@ import { catedrasService } from "../modules/teachers/catedras.service.mjs";
 import suplenciasService from "../modules/preceptor-assignments/suplencias.service.mjs";
 import * as preceptorAssignmentsController from "../modules/preceptor-assignments/preceptor-assignments.controller.mjs";
 import { alcancePreceptor, alcancePreceptorRegistro } from "../middlewares/alcance-preceptor.middleware.mjs";
+import credentialsService from "../modules/auth/credentials.service.mjs";
 import { auditarAccion } from "../modules/audit/audit.middleware.mjs";
 
 /* Exige un permiso existente: un typo en P.ALGO rompe el arranque en lugar de
@@ -87,6 +88,9 @@ const rutasDeclaradas = [
   { method: "GET", path: "/api/v1/authorization/roles", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRoles },
   { method: "GET", path: "/api/v1/authorization/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getPermissions },
   { method: "GET", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_READ)], handler: authorizationController.getRolePermissions },
+  /* Credenciales de todos los perfiles: solo el superadmin (identity.credentials). */
+  { method: "GET", path: "/api/v1/credentials", middlewares: [verifyToken, required(P.IDENTITY_CREDENTIALS)], handler: async ({ url }) => ({ data: await credentialsService.listar(Object.fromEntries(url.searchParams.entries())) }) },
+  { method: "POST", path: "/api/v1/credentials/:tipo/:id", middlewares: [verifyToken, required(P.IDENTITY_CREDENTIALS)], handler: async ({ params, body, user }) => ({ data: await credentialsService.asignar(user, params.tipo, params.id, body) }) },
   { method: "PUT", path: "/api/v1/authorization/roles/:codigo/permissions", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: authorizationController.putRolePermissions },
 
   { method: "POST", path: "/api/v1/auth/login", handler: authController.login },

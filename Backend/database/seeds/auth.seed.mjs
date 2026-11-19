@@ -42,6 +42,43 @@ export async function seedProductionAdmin({ email = process.env.BOOTSTRAP_ADMIN_
   });
 }
 
+/* Perfil SuperAdmin: se crea (o se actualiza) al iniciar la API a partir de las
+   variables SUPERADMIN_USER y SUPERADMIN_PASSWORD. La clave nunca esta en el
+   codigo. Sin SUPERADMIN_PASSWORD no se crea nada. Tiene los permisos de Direccion
+   (rol director) mas la gestion de credenciales (rol superadmin). */
+export async function seedSuperAdmin({ usuario = process.env.SUPERADMIN_USER || "SuperAdmin", password = process.env.SUPERADMIN_PASSWORD } = {}) {
+  if (!password) {
+    return false;
+  }
+
+  if (password.length < 12) {
+    throw new Error("SUPERADMIN_PASSWORD debe tener 12 caracteres o mas");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const existente = userRepository.findByEmail(usuario, { includeInactive: true });
+
+  if (existente) {
+    userRepository.update(existente.id, {
+      passwordHash,
+      isActive: true,
+      deactivatedAt: null,
+      mustChangePassword: false,
+      passwordChangedAt: new Date().toISOString(),
+      assignments: [{ role: ROLES.SUPERADMIN }, { role: ROLES.DIRECTOR, schoolId: "esc-1" }]
+    });
+    return true;
+  }
+
+  userRepository.create({
+    email: usuario,
+    passwordHash,
+    displayName: "Super Administrador",
+    assignments: [{ role: ROLES.SUPERADMIN }, { role: ROLES.DIRECTOR, schoolId: "esc-1" }]
+  });
+  return true;
+}
+
 export async function seedAuthData() {
   if (userRepository.list({ includeInactive: true }).length > 0) {
     return;

@@ -37,7 +37,23 @@ function escuelaDel(actor, cuerpo) {
   return cuerpo?.schoolId ?? actor?.assignments?.find((asignacion) => asignacion.schoolId)?.schoolId ?? null;
 }
 
-function validarRoles(roles, errores, { requerido }) {
+/* El superadmin y su gestion de credenciales no se reparten: solo otro superadmin
+   puede dar ese rol, tocar su cuenta o quitarselo. */
+export function esSuperAdmin(usuario) {
+  return (usuario?.assignments ?? []).some((asignacion) => asignacion.role === ROLES.SUPERADMIN);
+}
+
+export function gestionaCredenciales(actor) {
+  return Boolean(actor) && evaluateAccess(actor, { permission: PERMISSIONS.IDENTITY_CREDENTIALS }).allowed;
+}
+
+export function protegerSuperAdmin(actor, objetivo) {
+  if (esSuperAdmin(objetivo) && !gestionaCredenciales(actor)) {
+    throw errorHttp(403, "FORBIDDEN", "La cuenta de superadmin solo la puede administrar un superadmin.");
+  }
+}
+
+function validarRoles(roles, errores, { requerido, actor }) {
   if (roles === undefined && !requerido) {
     return undefined;
   }
@@ -58,6 +74,11 @@ function validarRoles(roles, errores, { requerido }) {
      asigna a mano a una cuenta del personal. */
   if (roles.includes(ROLES.ALUMNO)) {
     errores.push({ field: "roles", message: "El rol alumno se asigna automaticamente desde el legajo del alumno." });
+    return undefined;
+  }
+
+  if (roles.includes(ROLES.SUPERADMIN) && !gestionaCredenciales(actor)) {
+    errores.push({ field: "roles", message: "Solo un superadmin puede asignar el rol superadmin." });
     return undefined;
   }
 
@@ -187,7 +208,7 @@ export const usersService = {
   async create(actor, cuerpo = {}) {
     const errores = [];
     const datos = datosPersonales(cuerpo, errores, { alta: true });
-    const roles = validarRoles(cuerpo.roles, errores, { requerido: true });
+    const roles = validarRoles(cuerpo.roles, errores, { requerido: true, actor });
     const cargoDocente = datosCargoDocente(cuerpo.cargoDocente, roles, errores);
 
     if (errores.length) {
@@ -216,6 +237,7 @@ export const usersService = {
 
   async update(actor, id, cuerpo = {}) {
     const usuario = existente(id);
+    protegerSuperAdmin(actor, usuario);
     const propio = Boolean(actor?.id) && actor.id === id;
     const administra = gestionaIdentidad(actor);
     const estado = cuerpo.estado;
@@ -284,8 +306,9 @@ export const usersService = {
 
   replaceRoles(actor, id, cuerpo = {}) {
     const usuario = existente(id);
+    protegerSuperAdmin(actor, usuario);
     const errores = [];
-    const roles = validarRoles(cuerpo.roles, errores, { requerido: true });
+    const roles = validarRoles(cuerpo.roles, errores, { requerido: true, actor });
 
     if (errores.length) {
       throw errorDeValidacion(errores);
@@ -306,6 +329,7 @@ export const usersService = {
 
   remove(actor, id) {
     const usuario = existente(id);
+    protegerSuperAdmin(actor, usuario);
 
     if (actor?.id === id) {
       throw errorHttp(403, "FORBIDDEN", "No puede eliminar su propia cuenta.");

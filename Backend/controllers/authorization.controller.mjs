@@ -5,14 +5,16 @@
 
 import {
   MODULOS,
+  PERMISSIONS,
+  ROLES,
   ROL_CATALOGO,
   catalogoPermisos,
   catalogoRoles,
   permissionsForRole,
   replaceRolePermissions
 } from "../config/permissions.config.mjs";
-import { dividirPermiso, permisosDelUsuario, rolesDelUsuario } from "../modules/auth/permission.service.mjs";
-import { errorDeValidacion, noEncontrado } from "../utils/api-error.mjs";
+import { dividirPermiso, evaluateAccess, permisosDelUsuario, rolesDelUsuario } from "../modules/auth/permission.service.mjs";
+import { errorDeValidacion, noEncontrado, sinPermisos } from "../utils/api-error.mjs";
 
 function rolExistente(codigo) {
   const rol = ROL_CATALOGO[codigo];
@@ -52,9 +54,16 @@ export function getRolePermissions({ params }) {
 
 /* Reemplaza por completo los permisos del rol. Se rechaza cualquier codigo que no
    exista en el catalogo: el cliente no puede inventar permisos. */
-export function putRolePermissions({ params, body }) {
+export function putRolePermissions({ user, params, body }) {
   const rol = rolExistente(params.codigo);
   const codigos = body?.permisos ?? body?.permissions;
+
+  /* La gestion de credenciales es exclusiva del superadmin: ni se toca la matriz
+     de ese rol ni se reparte el permiso a otros roles sin tenerlo. */
+  const esSuperAdmin = evaluateAccess(user ?? {}, { permission: PERMISSIONS.IDENTITY_CREDENTIALS }).allowed;
+  if (!esSuperAdmin && (rol.codigo === ROLES.SUPERADMIN || (Array.isArray(codigos) && codigos.includes(PERMISSIONS.IDENTITY_CREDENTIALS)))) {
+    throw sinPermisos("Solo el superadmin puede modificar la gestion de credenciales.");
+  }
 
   if (!Array.isArray(codigos)) {
     throw errorDeValidacion([{ field: "permisos", message: "Se espera una lista de permisos." }]);

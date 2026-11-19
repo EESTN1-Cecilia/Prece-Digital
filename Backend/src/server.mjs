@@ -1,6 +1,6 @@
 import { appConfig } from "../config/app.config.mjs";
 import { apiRoutes } from "../routes/index.mjs";
-import { seedProductionAdmin } from "../database/seeds/auth.seed.mjs";
+import { seedProductionAdmin, seedSuperAdmin } from "../database/seeds/auth.seed.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
 import { seedAlumnosLocales } from "../database/seeds/students.seed.mjs";
 import studentRepository from "../modules/students/students.repository.mjs";
@@ -20,6 +20,7 @@ async function startServer() {
      desarrollo de todos los modulos para que el frontend tenga con que trabajar. */
   if (appConfig.env === "production") {
     await seedProductionAdmin();
+    await seedSuperAdmin();
     /* La nomina de la escuela (database/seeds/data/alumnos.local.json, fuera de git) tambien
        se carga en produccion: los modulos del personal leen los alumnos del store en memoria,
        y sin esto los listados y tableros quedan en cero. Si el archivo no esta, no hace nada;
@@ -35,6 +36,7 @@ async function startServer() {
     }
   } else {
     await seedDesarrollo();
+    await seedSuperAdmin();
     const locales = seedAlumnosLocales();
     if (locales > 0) {
       console.log(`Nomina local: ${locales} alumnos cargados desde alumnos.local.json`);

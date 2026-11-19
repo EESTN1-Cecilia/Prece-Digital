@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
 import { errorHttp } from "../../utils/api-error.mjs";
-import { permissionsForRole } from "../../config/permissions.config.mjs";
+import { PERMISSIONS, ROLES, permissionsForRole } from "../../config/permissions.config.mjs";
 import { evaluateAccess, extractContext, resumenPermisos } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
 import { studentAccountsService } from "../student-portal/student-accounts.service.mjs";
@@ -123,6 +123,12 @@ export const authService = {
 
     if (actor?.id && actor.id === target.id) {
       throw errorHttp(403, "FORBIDDEN", "No puede modificar su propia cuenta");
+    }
+
+    /* La cuenta de superadmin solo la administra otro superadmin. */
+    const objetivoEsSuperAdmin = target.assignments.some((asignacion) => asignacion.role === ROLES.SUPERADMIN);
+    if (objetivoEsSuperAdmin && !evaluateAccess(actor, { permission: PERMISSIONS.IDENTITY_CREDENTIALS }).allowed) {
+      throw errorHttp(403, "FORBIDDEN", "La cuenta de superadmin solo la puede administrar un superadmin");
     }
 
     const context = extractContext(contextSource);

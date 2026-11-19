@@ -360,3 +360,20 @@ export function guardarPermisosDeRol(id, permisos) {
     body: JSON.stringify({ permisos })
   });
 }
+
+/* ---------- Credenciales (solo superadmin) ---------- */
+
+/* tipo: "personal" | "alumno". Los alumnos se buscan por texto (minimo 2 letras). */
+export async function listarCredenciales({ tipo = "personal", q = "" } = {}) {
+  const consulta = new URLSearchParams({ tipo, q }).toString();
+  return pedir(`/api/v1/credentials?${consulta}`);
+}
+
+/* Asigna usuario y/o contraseña. Con `generar: true` el backend devuelve una
+   contraseña temporal una sola vez. */
+export function asignarCredenciales(tipo, id, datos) {
+  return pedir(`/api/v1/credentials/${encodeURIComponent(tipo)}/${encodeURIComponent(id)}`, {
+    method: "POST",
+    body: JSON.stringify(datos)
+  });
+}

@@ -12,6 +12,7 @@ import { getStore } from "../database/memory-store.mjs";
    permissionsForRole() lo respeta. */
 
 export const ROLES = {
+  SUPERADMIN: "superadmin",
   ADMIN: "admin",
   DIRECTOR: "director",
   SECRETARIO: "secretario",
@@ -34,6 +35,9 @@ export const PERMISSIONS = {
      asignaciones de alcance. identity.update, en cambio, alcanza para que
      cada persona edite su propio perfil. */
   IDENTITY_MANAGE: "identity.manage",
+  /* Asignar usuarios y restablecer contraseñas de cualquier perfil (personal y
+     alumnos). Solo lo tiene el rol superadmin: no se suma a admin ni a director. */
+  IDENTITY_CREDENTIALS: "identity.credentials",
   STUDENTS_READ: "students.read",
   STUDENTS_WRITE: "students.write",
   OBSERVATIONS_READ: "observations.read",
@@ -122,9 +126,14 @@ export const PERMISSIONS = {
 /* Los permisos del portal no se suman a admin y director: no tienen legajo de
    alumno y el portal no expone datos de terceros. */
 const PERMISOS_PORTAL_ALUMNO = [PERMISSIONS.STUDENT_PORTAL_READ, PERMISSIONS.STUDENT_PORTAL_UPDATE];
-const ALL_PERMISSIONS = Object.values(PERMISSIONS).filter((permiso) => !PERMISOS_PORTAL_ALUMNO.includes(permiso));
+const PERMISOS_SOLO_SUPERADMIN = [PERMISSIONS.IDENTITY_CREDENTIALS];
+const ALL_PERMISSIONS = Object.values(PERMISSIONS).filter(
+  (permiso) => !PERMISOS_PORTAL_ALUMNO.includes(permiso) && !PERMISOS_SOLO_SUPERADMIN.includes(permiso)
+);
 
 export const ROLE_PERMISSIONS = {
+  /* Los mismos permisos que Direccion y, ademas, la gestion de credenciales. */
+  [ROLES.SUPERADMIN]: [...ALL_PERMISSIONS, ...PERMISOS_SOLO_SUPERADMIN],
   [ROLES.ADMIN]: ALL_PERMISSIONS,
   [ROLES.DIRECTOR]: ALL_PERMISSIONS,
   [ROLES.SECRETARIO]: [

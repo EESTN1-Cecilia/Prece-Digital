@@ -44,6 +44,7 @@ export const modules = [
 ];
 
 export const roles = [
+  { id: "superadmin", name: "Super Administrador", description: "Todo lo de Direccion, mas la asignacion de usuarios y el restablecimiento de contraseñas de todos los perfiles." },
   { id: "admin", name: "Administrador", description: "Acceso total a todos los modulos del sistema." },
   { id: "director", name: "Direccion", description: "Gestion integral de la institucion." },
   { id: "secretario", name: "Secretaria", description: "Administracion academica y documentacion." },

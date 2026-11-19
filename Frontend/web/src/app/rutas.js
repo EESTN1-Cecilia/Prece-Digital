@@ -49,6 +49,7 @@ import UsuariosView from "../modules/identity/usuarios-view.js";
 import UsuarioDetalleView from "../modules/identity/usuario-detalle-view.js";
 import UsuarioFormularioView from "../modules/identity/usuario-formulario-view.js";
 import RolesView from "../modules/identity/roles-view.js";
+import CredencialesView from "../modules/identity/credenciales-view.js";
 import PerfilView from "../modules/identity/perfil-view.js";
 import InventarioListView from "../modules/server/inventario/inventario-list-view.js";
 import MaterialFormView from "../modules/server/inventario/material-form-view.js";
@@ -499,6 +500,16 @@ export const RUTAS = [
     icono: "people",
     padre: "#/inicio",
     permisos: [PERMISOS.usuariosLeer],
+    enMenu: true
+  },
+  {
+    patron: "#/credenciales",
+    titulo: "Usuarios y contraseñas",
+    vista: CredencialesView,
+    seccion: "Identidad y acceso",
+    icono: "filter",
+    padre: "#/inicio",
+    permisos: [PERMISOS.credenciales],
     enMenu: true
   },
   {
