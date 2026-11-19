@@ -1,0 +1,83 @@
+
+name: Deploy
+ 
+# Se despliega solo cuando el CI termina bien sobre un push a main (nunca desde PRs).
+# Tambien se puede lanzar a mano desde Actions > Deploy > Run workflow.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+ 
+concurrency:
+  group: deploy-prece
+  cancel-in-progress: false
+ 
+env:
+  SITIO: /srv/sitios/precedigital
+ 
+jobs:
+  desplegar:
+    runs-on: self-hosted
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+ 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+ 
+      # Los tests ya corrieron en el CI; aca solo hace falta lo necesario para el build.
+      - name: Instalar dependencias de la web
+        run: npm ci --workspace=@prece-digital/web --include-workspace-root
+ 
+      # VITE_API_BASE_URL vacio: la web llama a /api en el mismo dominio (nginx lo reenvia a la API).
+      - name: Build web
+        run: npm run build -w @prece-digital/web
+        env:
+          VITE_API_BASE_URL: ""
+ 
+      - name: Respaldar la version actual
+        run: |
+          TS="$(date +%Y%m%d-%H%M%S)"
+          DEST="$SITIO/.despliegues/$TS"
+          mkdir -p "$DEST"
+          tar -czf "$DEST/html.tgz" -C "$SITIO" html
+          tar -czf "$DEST/api.tgz" -C "$SITIO" --exclude=node_modules api
+          # Conserva solo los 5 respaldos mas recientes
+          ls -1d "$SITIO"/.despliegues/*/ | head -n -5 | xargs -r rm -rf
+ 
+      - name: Publicar web
+        run: rsync -a --delete Frontend/web/dist/ "$SITIO/html/"
+ 
+      - name: Publicar API
+        run: |
+          rsync -a --delete \
+            --exclude node_modules --exclude .env --exclude '*.local.json' --exclude test --exclude docs \
+            Backend Shared "$SITIO/api/"
+ 
+      - name: Reconstruir y reiniciar contenedores
+        run: |
+          cd "$SITIO"
+          docker compose up -d --build
+ 
+      - name: Comprobar que responde
+        run: |
+          for i in $(seq 1 20); do
+            if docker exec precedigital wget -qO- http://127.0.0.1/health >/dev/null 2>&1; then
+              echo "OK: /health responde"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "ERROR: /health no responde" >&2
+          docker logs --tail 50 precedigital-api >&2
+          exit 1
+ 

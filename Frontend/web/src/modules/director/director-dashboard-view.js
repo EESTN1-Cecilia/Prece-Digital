@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { h, IconoFigma } from "../../layouts/site-layout.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { EmptyState, LoadingState } from "../../components/common/state-handlers.js";
+import { Confirmacion, Paginacion } from "../../components/ui/index.js";
 import { useUsuarioActual } from "../../estado/index.js";
 import { DirectorService, ROLES_DISPONIBLES } from "./director-service.js";
 import { NuevoPerfilModal } from "./components/nuevo-perfil-modal.js";
@@ -180,13 +181,41 @@ export default function DirectorDashboardView() {
   const [busquedaPersonal, setBusquedaPersonal] = useState("");
   const [filtroRol, setFiltroRol] = useState("todos");
   const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [paginaPersonal, setPaginaPersonal] = useState(1);
 
   // Modales
   const [modalNuevoAbierto, setModalNuevoAbierto] = useState(false);
   const [usuarioEditandoRoles, setUsuarioEditandoRoles] = useState(null);
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState(null);
+  const [eliminandoUsuario, setEliminandoUsuario] = useState(false);
 
   // Mensajes de notificación temporal
   const [toastMensaje, setToastMensaje] = useState(null);
+
+  // Control de scroll horizontal suave para las pestañas
+  const tabsNavRef = useRef(null);
+  const [tabsScroll, setTabsScroll] = useState({ canLeft: false, canRight: false });
+
+  const actualizarScrollTabs = useCallback(() => {
+    const el = tabsNavRef.current;
+    if (!el) return;
+    setTabsScroll({
+      canLeft: el.scrollLeft > 4,
+      canRight: el.scrollLeft + el.clientWidth < el.scrollWidth - 4
+    });
+  }, []);
+
+  useEffect(() => {
+    actualizarScrollTabs();
+    window.addEventListener("resize", actualizarScrollTabs);
+    return () => window.removeEventListener("resize", actualizarScrollTabs);
+  }, [actualizarScrollTabs, cargando, personal.length, informes.length]);
+
+  const moverTabs = (direccion) => {
+    const el = tabsNavRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direccion * 220, behavior: "smooth" });
+  };
 
   const cargarDatos = async () => {
     setCargando(true);
@@ -296,20 +325,31 @@ export default function DirectorDashboardView() {
     mostrarToast("Informe eliminado.");
   };
 
-  const handleRolesActualizados = (usuarioId, nuevosRoles) => {
+  const handleUsuarioActualizado = (usuarioId, datosActualizados) => {
     setPersonal((prev) =>
       prev.map((u) => {
-        if (u.id === usuarioId) {
-          const rolesMapeados = nuevosRoles.map((rId) => {
-            const cat = ROLES_DISPONIBLES.find((c) => c.id === rId);
-            return { id: rId, nombre: cat?.nombre || rId, color: cat?.color || "#64748b" };
-          });
-          return { ...u, roles: rolesMapeados };
-        }
-        return u;
+        if (u.id !== usuarioId) return u;
+        const rolesMapeados = (datosActualizados.roles || []).map((rId) => {
+          const cat = ROLES_DISPONIBLES.find((c) => c.id === rId);
+          return { id: rId, nombre: cat?.nombre || rId, color: cat?.color || "#64748b" };
+        });
+        const nombre = datosActualizados.nombre ?? u.nombre;
+        const apellido = datosActualizados.apellido ?? u.apellido;
+        const nombreCompleto =
+          [nombre, apellido].filter(Boolean).join(" ") || datosActualizados.email || u.email;
+        return {
+          ...u,
+          nombre,
+          apellido,
+          nombreCompleto,
+          email: datosActualizados.email ?? u.email,
+          dni: datosActualizados.dni || "-",
+          telefono: datosActualizados.telefono || "-",
+          roles: rolesMapeados.length > 0 ? rolesMapeados : u.roles
+        };
       })
     );
-    mostrarToast("Roles del usuario actualizados correctamente.");
+    mostrarToast("Datos y rol del usuario actualizados correctamente.");
   };
 
   const handleToggleEstado = async (u) => {
@@ -322,6 +362,22 @@ export default function DirectorDashboardView() {
       mostrarToast(`Usuario ${u.nombreCompleto} marcado como ${nuevoEstado}.`);
     } catch {
       mostrarToast("No se pudo cambiar el estado del usuario.");
+    }
+  };
+
+  const handleConfirmarEliminarUsuario = async () => {
+    if (!usuarioAEliminar || eliminandoUsuario) return;
+    setEliminandoUsuario(true);
+    try {
+      await DirectorService.eliminarUsuario(usuarioAEliminar.id);
+      const nombreEliminado = usuarioAEliminar.nombreCompleto;
+      setPersonal((prev) => prev.filter((item) => item.id !== usuarioAEliminar.id));
+      setUsuarioAEliminar(null);
+      mostrarToast(`Usuario ${nombreEliminado} eliminado correctamente.`);
+    } catch (err) {
+      mostrarToast(err?.message || "No se pudo eliminar el usuario.");
+    } finally {
+      setEliminandoUsuario(false);
     }
   };
 
@@ -341,6 +397,18 @@ export default function DirectorDashboardView() {
       return true;
     });
   }, [personal, busquedaPersonal, filtroRol, filtroEstado]);
+
+  const POR_PAGINA_PERSONAL = 10;
+  const totalPaginasPersonal = Math.max(1, Math.ceil(personalFiltrado.length / POR_PAGINA_PERSONAL));
+  const paginaPersonalActual = Math.min(paginaPersonal, totalPaginasPersonal);
+  const personalPaginado = useMemo(() => {
+    const inicio = (paginaPersonalActual - 1) * POR_PAGINA_PERSONAL;
+    return personalFiltrado.slice(inicio, inicio + POR_PAGINA_PERSONAL);
+  }, [personalFiltrado, paginaPersonalActual]);
+
+  useEffect(() => {
+    setPaginaPersonal(1);
+  }, [busquedaPersonal, filtroRol, filtroEstado]);
 
   const fechaHoy = new Intl.DateTimeFormat("es-AR", {
     weekday: "long",
@@ -584,43 +652,75 @@ export default function DirectorDashboardView() {
         )
       ),
 
-      // Navegación de Pestañas (con íconos SVG)
+      // Navegación de Pestañas (con desplazamiento suave y flechas laterales cuando no entran)
       h(
         "div",
-        { className: "director-tabs-nav" },
-        [
-          { id: "general", label: "Tablero General", icon: IconChart },
-          { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
-          { id: "asignaciones", label: "Asignaciones", icon: IconSchool },
-          { id: "carga-notas", label: "Carga de Notas", icon: IconClipboard },
-          { id: "informes", label: `Informes (${informes.length})`, icon: IconClipboard },
-          ...(MOSTRAR_HABILITAR_PEDIDOS
-            ? [
+        { className: "director-tabs-shell" },
+        tabsScroll.canLeft
+          ? h(
+              "button",
               {
-                id: "pedidos",
-                label: "Habilitar Pedidos",
-                icon: IconClipboard,
-                badge: pedidosPendientesCount > 0 ? pedidosPendientesCount : null
-              }
-            ]
-            : []),
-          { id: "alertas", label: "Alertas", icon: IconAlert }
-        ].map((tab) =>
-          h(
-            "button",
-            {
-              key: tab.id,
-              type: "button",
-              className: `director-tab-btn ${pestanaActiva === tab.id ? "director-tab-btn--active" : ""}`,
-              onClick: () => setPestanaActiva(tab.id)
-            },
-            h(tab.icon, { width: "15", height: "15" }),
-            h("span", null, tab.label),
-            tab.badge
-              ? h("span", { className: "director-tab-badge-amber" }, tab.badge)
-              : null
+                type: "button",
+                className: "director-tabs-arrow director-tabs-arrow--left",
+                onClick: () => moverTabs(-1),
+                "aria-label": "Desplazar pestañas a la izquierda"
+              },
+              "‹"
+            )
+          : null,
+        h(
+          "div",
+          {
+            ref: tabsNavRef,
+            className: "director-tabs-nav",
+            onScroll: actualizarScrollTabs
+          },
+          [
+            { id: "general", label: "Tablero General", icon: IconChart },
+            { id: "personal", label: `Gestión de Personal y Roles (${personal.length})`, icon: IconUsers },
+            { id: "asignaciones", label: "Asignaciones", icon: IconSchool },
+            { id: "carga-notas", label: "Carga de Notas", icon: IconClipboard },
+            { id: "informes", label: `Informes (${informes.length})`, icon: IconClipboard },
+            ...(MOSTRAR_HABILITAR_PEDIDOS
+              ? [
+                {
+                  id: "pedidos",
+                  label: "Habilitar Pedidos",
+                  icon: IconClipboard,
+                  badge: pedidosPendientesCount > 0 ? pedidosPendientesCount : null
+                }
+              ]
+              : []),
+            { id: "alertas", label: "Alertas", icon: IconAlert }
+          ].map((tab) =>
+            h(
+              "button",
+              {
+                key: tab.id,
+                type: "button",
+                className: `director-tab-btn ${pestanaActiva === tab.id ? "director-tab-btn--active" : ""}`,
+                onClick: () => setPestanaActiva(tab.id)
+              },
+              h(tab.icon, { width: "15", height: "15" }),
+              h("span", null, tab.label),
+              tab.badge
+                ? h("span", { className: "director-tab-badge-amber" }, tab.badge)
+                : null
+            )
           )
-        )
+        ),
+        tabsScroll.canRight
+          ? h(
+              "button",
+              {
+                type: "button",
+                className: "director-tabs-arrow director-tabs-arrow--right",
+                onClick: () => moverTabs(1),
+                "aria-label": "Desplazar pestañas a la derecha"
+              },
+              "›"
+            )
+          : null
       ),
 
       cargando
@@ -1155,13 +1255,13 @@ export default function DirectorDashboardView() {
                       h("th", null, "Área / Sector"),
                       h("th", null, "Roles Asignados"),
                       h("th", null, "Estado"),
-                      h("th", { style: { textAlign: "right" } }, "Acciones")
+                      h("th", null, "Acciones")
                     )
                   ),
                   h(
                     "tbody",
                     null,
-                    personalFiltrado.map((p) =>
+                    personalPaginado.map((p) =>
                       h(
                         "tr",
                         { key: p.id, className: p.estado === "inactivo" ? "director-row--inactive" : "" },
@@ -1240,30 +1340,48 @@ export default function DirectorDashboardView() {
                         // Columna 6: Acciones
                         h(
                           "td",
-                          { style: { textAlign: "right" } },
+                          null,
                           h(
                             "div",
                             { className: "director-actions-cell" },
                             h(
-                              "button",
-                              {
-                                type: "button",
-                                className: "btn-director-action-edit-roles",
-                                onClick: () => setUsuarioEditandoRoles(p),
-                                title: "Modificar roles del usuario"
-                              },
-                              h(IconSettings, { width: "13", height: "13" }),
-                              h("span", null, "Roles")
+                              "div",
+                              { className: "director-actions-row" },
+                              h(
+                                "button",
+                                {
+                                  type: "button",
+                                  className: "btn-director-action-edit-roles",
+                                  onClick: () => setUsuarioEditandoRoles(p),
+                                  title: "Editar datos y rol del usuario"
+                                },
+                                h(IconSettings, { width: "13", height: "13" }),
+                                h("span", null, "Editar")
+                              ),
+                              h(
+                                "button",
+                                {
+                                  type: "button",
+                                  className: `btn-director-action-toggle ${p.estado === "activo" ? "btn-director-action-toggle--deactivate" : "btn-director-action-toggle--activate"}`,
+                                  onClick: () => handleToggleEstado(p),
+                                  title: p.estado === "activo" ? "Desactivar cuenta" : "Reactivar cuenta"
+                                },
+                                p.estado === "activo" ? "Suspender" : "Activar"
+                              )
                             ),
                             h(
                               "button",
                               {
                                 type: "button",
-                                className: `btn-director-action-toggle ${p.estado === "activo" ? "btn-director-action-toggle--deactivate" : "btn-director-action-toggle--activate"}`,
-                                onClick: () => handleToggleEstado(p),
-                                title: p.estado === "activo" ? "Desactivar cuenta" : "Reactivar cuenta"
+                                className: "btn-director-action-delete",
+                                onClick: () => setUsuarioAEliminar(p),
+                                disabled: usuario?.id === p.id,
+                                title:
+                                  usuario?.id === p.id
+                                    ? "No podés eliminar tu propia cuenta"
+                                    : "Eliminar usuario"
                               },
-                              p.estado === "activo" ? "Suspender" : "Activar"
+                              "Eliminar"
                             )
                           )
                         )
@@ -1271,7 +1389,14 @@ export default function DirectorDashboardView() {
                     )
                   )
                 )
-              )
+              ),
+              h(Paginacion, {
+                pagina: paginaPersonalActual,
+                paginas: totalPaginasPersonal,
+                total: personalFiltrado.length,
+                etiquetaTotal: "usuarios",
+                onPagina: setPaginaPersonal
+              })
           )
         )
         : null,
@@ -1389,12 +1514,30 @@ export default function DirectorDashboardView() {
         alPerfilCreado: handlePerfilCreado
       }),
 
-      // Modal para Editar Roles de un Usuario Existente
+      // Modal para Editar Datos y Rol de un Usuario Existente
       h(EditarRolesModal, {
         usuario: usuarioEditandoRoles,
         abierto: Boolean(usuarioEditandoRoles),
         alCerrar: () => setUsuarioEditandoRoles(null),
-        alRolesActualizados: handleRolesActualizados
+        alUsuarioActualizado: handleUsuarioActualizado
+      }),
+
+      // Modal de Confirmación para Eliminar Usuario
+      h(Confirmacion, {
+        abierto: Boolean(usuarioAEliminar),
+        titulo: "Eliminar usuario",
+        mensaje: usuarioAEliminar
+          ? `¿Estás seguro de que querés eliminar a ${usuarioAEliminar.nombreCompleto}?`
+          : "",
+        detalle: "Esta acción eliminará la cuenta de forma permanente y no se puede deshacer.",
+        textoConfirmar: "Eliminar usuario",
+        textoCancelar: "Cancelar",
+        variante: "peligro",
+        cargando: eliminandoUsuario,
+        onConfirmar: handleConfirmarEliminarUsuario,
+        onCancelar: () => {
+          if (!eliminandoUsuario) setUsuarioAEliminar(null);
+        }
       })
     )
   );

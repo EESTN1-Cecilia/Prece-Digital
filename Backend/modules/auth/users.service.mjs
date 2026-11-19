@@ -214,7 +214,7 @@ export const usersService = {
     return { ...userRepository.publicView(usuario), passwordTemporal };
   },
 
-  update(actor, id, cuerpo = {}) {
+  async update(actor, id, cuerpo = {}) {
     const usuario = existente(id);
     const propio = Boolean(actor?.id) && actor.id === id;
     const administra = gestionaIdentidad(actor);
@@ -239,6 +239,11 @@ export const usersService = {
       errores.push({ field: "estado", message: "El estado debe ser activo o inactivo." });
     }
 
+    const nuevaPassword = cuerpo.password !== undefined && cuerpo.password !== "" ? String(cuerpo.password) : null;
+    if (nuevaPassword !== null && (nuevaPassword.length < 8 || nuevaPassword.length > 120)) {
+      errores.push({ field: "password", message: "La contraseña debe tener entre 8 y 120 caracteres." });
+    }
+
     if (errores.length) {
       throw errorDeValidacion(errores);
     }
@@ -254,8 +259,18 @@ export const usersService = {
       throw errorHttp(403, "FORBIDDEN", "No puede desactivar su propia cuenta.");
     }
 
+    if (nuevaPassword !== null) {
+      datos.passwordHash = await bcrypt.hash(nuevaPassword, 10);
+      datos.passwordChangedAt = new Date().toISOString();
+      datos.mustChangePassword = false;
+    }
+
     let actualizado = userRepository.update(id, datos);
     actualizado = userRepository.update(id, { displayName: nombreVisible(actualizado) });
+
+    if (nuevaPassword !== null && actor?.id !== id) {
+      revokeUserSessions(id);
+    }
 
     if (estado === "inactivo" && usuario.isActive) {
       actualizado = userRepository.deactivate(id);
@@ -287,5 +302,18 @@ export const usersService = {
        que el cambio aplique en el proximo inicio de sesion. */
     revokeUserSessions(id);
     return userRepository.publicView(actualizado);
+  },
+
+  remove(actor, id) {
+    const usuario = existente(id);
+
+    if (actor?.id === id) {
+      throw errorHttp(403, "FORBIDDEN", "No puede eliminar su propia cuenta.");
+    }
+
+    revokeUserSessions(id);
+    userRepository.remove(id);
+    sincronizarDocentes();
+    return userRepository.publicView(usuario);
   }
 };
