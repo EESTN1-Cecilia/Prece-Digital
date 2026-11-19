@@ -1,7 +1,7 @@
-import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { h } from "../../layouts/site-layout.js";
 import { useUsuarioActual } from "../../estado/index.js";
-import { DirectorVolverBar } from "../../components/common/director-volver-bar.js";
+import { BotonVolverDireccion } from "../../components/common/boton-volver-direccion.js";
 import { StudentsService } from "../students/students-service.js";
 import { JefaturaService } from "./jefatura-service.js";
 import { divisionesVisibles, gruposDeDivision } from "./talleres-cronograma.js";
@@ -162,15 +162,13 @@ export default function JefaturaDashboardView() {
   const pestana = PESTANAS.find((item) => item.id === activa) ?? PESTANAS[0];
 
   return h(
-    Fragment,
-    null,
-    h(DirectorVolverBar, { externa: true }),
+    "main",
+    { className: "jf-page" },
+    // Solo el director ve este boton para volver a su tablero.
+    h(BotonVolverDireccion),
     h(
-      "main",
-      { className: "jf-page" },
-      h(
-        "header",
-        { className: "jf-encabezado" },
+      "header",
+      { className: "jf-encabezado" },
       h(
         "div",
         { className: "jf-encabezado__copia" },
@@ -283,7 +281,6 @@ export default function JefaturaDashboardView() {
         onVolver: () => setCursoParaAbrir(null),
         onAsignacionGuardada: handleTalleresAsignados
       })
-    )
     )
   );
 }
