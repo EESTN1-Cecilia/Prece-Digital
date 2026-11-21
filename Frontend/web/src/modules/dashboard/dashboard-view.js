@@ -935,37 +935,41 @@ export default function DashboardView() {
                 onChange: (e) => setBusquedaDocente(e.target.value)
               })
             ),
-            h(CustomSelect, {
-              className: "preceptoria-select-filter",
-              value: filtroAnioDocente,
-              onChange: (val) => setFiltroAnioDocente(val),
-              ariaLabel: "Filtrar por año",
-              options: [
-                { value: "todos", label: "Todos los Años" },
-                ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({ value: String(num), label: `${num}° Año` }))
-              ]
-            }),
-            h(CustomSelect, {
-              className: "preceptoria-select-filter",
-              value: filtroDivDocente,
-              onChange: (val) => setFiltroDivDocente(val),
-              ariaLabel: "Filtrar por división",
-              options: [
-                { value: "todas", label: "Todas las Div." },
-                ...[1, 2, 3, 4, 5, 6].map((num) => ({ value: String(num), label: `${num}° División` }))
-              ]
-            }),
-            h(CustomSelect, {
-              className: "preceptoria-select-filter",
-              value: filtroTurnoDocente,
-              onChange: (val) => setFiltroTurnoDocente(val),
-              ariaLabel: "Filtrar por turno",
-              options: [
-                { value: "todos", label: "Todos los Turnos" },
-                { value: "mañana", label: "Mañana" },
-                { value: "tarde", label: "Tarde" }
-              ]
-            }),
+            h(
+              "div",
+              { className: "preceptoria-filters-selects-row" },
+              h(CustomSelect, {
+                className: "preceptoria-select-filter",
+                value: filtroAnioDocente,
+                onChange: (val) => setFiltroAnioDocente(val),
+                ariaLabel: "Filtrar por año",
+                options: [
+                  { value: "todos", label: "Año" },
+                  ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({ value: String(num), label: `${num}° Año` }))
+                ]
+              }),
+              h(CustomSelect, {
+                className: "preceptoria-select-filter",
+                value: filtroDivDocente,
+                onChange: (val) => setFiltroDivDocente(val),
+                ariaLabel: "Filtrar por división",
+                options: [
+                  { value: "todas", label: "División" },
+                  ...[1, 2, 3, 4, 5, 6].map((num) => ({ value: String(num), label: `${num}° Div` }))
+                ]
+              }),
+              h(CustomSelect, {
+                className: "preceptoria-select-filter",
+                value: filtroTurnoDocente,
+                onChange: (val) => setFiltroTurnoDocente(val),
+                ariaLabel: "Filtrar por turno",
+                options: [
+                  { value: "todos", label: "Turno" },
+                  { value: "mañana", label: "Mañana" },
+                  { value: "tarde", label: "Tarde" }
+                ]
+              })
+            ),
             busquedaDocente || filtroAnioDocente !== "todos" || filtroDivDocente !== "todas" || filtroTurnoDocente !== "todos"
               ? h(
                   "button",
@@ -1283,37 +1287,41 @@ export default function DashboardView() {
                 onChange: (e) => setBusquedaAlumno(e.target.value)
               })
             ),
-            h(CustomSelect, {
-              className: "preceptoria-select-filter",
-              value: filtroAnioAlumno,
-              onChange: (val) => setFiltroAnioAlumno(val),
-              ariaLabel: "Filtrar alumnos por año",
-              options: [
-                { value: "todos", label: "Todos los Años" },
-                ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({ value: String(num), label: `${num}° Año` }))
-              ]
-            }),
-            h(CustomSelect, {
-              className: "preceptoria-select-filter",
-              value: filtroDivAlumno,
-              onChange: (val) => setFiltroDivAlumno(val),
-              ariaLabel: "Filtrar alumnos por división",
-              options: [
-                { value: "todas", label: "Todas las Div." },
-                ...[1, 2, 3, 4, 5, 6].map((num) => ({ value: String(num), label: `${num}° División` }))
-              ]
-            }),
-            h(CustomSelect, {
-              className: "preceptoria-select-filter",
-              value: filtroTurnoAlumno,
-              onChange: (val) => setFiltroTurnoAlumno(val),
-              ariaLabel: "Filtrar alumnos por turno",
-              options: [
-                { value: "todos", label: "Todos los Turnos" },
-                { value: "mañana", label: "Mañana" },
-                { value: "tarde", label: "Tarde" }
-              ]
-            }),
+            h(
+              "div",
+              { className: "preceptoria-filters-selects-row" },
+              h(CustomSelect, {
+                className: "preceptoria-select-filter",
+                value: filtroAnioAlumno,
+                onChange: (val) => setFiltroAnioAlumno(val),
+                ariaLabel: "Filtrar alumnos por año",
+                options: [
+                  { value: "todos", label: "Año" },
+                  ...[1, 2, 3, 4, 5, 6, 7].map((num) => ({ value: String(num), label: `${num}° Año` }))
+                ]
+              }),
+              h(CustomSelect, {
+                className: "preceptoria-select-filter",
+                value: filtroDivAlumno,
+                onChange: (val) => setFiltroDivAlumno(val),
+                ariaLabel: "Filtrar alumnos por división",
+                options: [
+                  { value: "todas", label: "División" },
+                  ...[1, 2, 3, 4, 5, 6].map((num) => ({ value: String(num), label: `${num}° Div` }))
+                ]
+              }),
+              h(CustomSelect, {
+                className: "preceptoria-select-filter",
+                value: filtroTurnoAlumno,
+                onChange: (val) => setFiltroTurnoAlumno(val),
+                ariaLabel: "Filtrar alumnos por turno",
+                options: [
+                  { value: "todos", label: "Turno" },
+                  { value: "mañana", label: "Mañana" },
+                  { value: "tarde", label: "Tarde" }
+                ]
+              })
+            ),
             busquedaAlumno || filtroAnioAlumno !== "todos" || filtroDivAlumno !== "todas" || filtroTurnoAlumno !== "todos"
               ? h(
                   "button",
