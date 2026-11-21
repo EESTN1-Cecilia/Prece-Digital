@@ -1,18 +1,21 @@
-/* PDF del Boletin Oficial en hoja Oficio (33 x 21,6 cm), apaisada, con DOS
-   boletines por hoja, lado a lado y 1 cm de margen general. Sin librerias: arma el archivo a
-   mano con Helvetica, igual que el resto de los PDF de la app. Un solo alumno
-   ocupa la mitad izquierda de la hoja (mismo tamaño que en la impresion del curso). */
+/* PDF del Boletin Oficial:
+   - Impresión individual (1 alumno): se emite en hoja completa VERTICAL (A4 portrait),
+     ocupando toda la hoja con diseño nítido y oficial.
+   - Impresión por curso (varios alumnos): en hoja Oficio apaisada con DOS boletines
+     lado a lado y línea de corte punteada en el medio.
+   Sin librerías: arma el archivo a mano con Helvetica estándar. */
 
 import { ancho, cadena, cargarLogo } from "../../utils/pdf-base.js";
 import { PERIODOS_PENDIENTES, anioDelAlumno, armarBoletinOficial, cicloDeAnio, promedioGeneral } from "./boletin-oficial-datos.js";
 import { BoletinOficialService } from "./boletin-oficial-service.js";
 
 const CM = 72 / 2.54;
-export const HOJA = { ancho: +(33 * CM).toFixed(2), alto: +(21.6 * CM).toFixed(2) }; // Oficio apaisado
+export const HOJA = { ancho: +(33 * CM).toFixed(2), alto: +(21.6 * CM).toFixed(2) }; // Oficio apaisado (dos boletines)
+export const HOJA_VERTICAL = { ancho: +(21.0 * CM).toFixed(2), alto: +(29.7 * CM).toFixed(2) }; // A4 vertical (individual)
 export const MARGEN = +CM.toFixed(2); // 1 cm
 const AP = HOJA.ancho;
 const HP = HOJA.alto;
-const ANCHO_BOLETIN = (AP - MARGEN * 2) / 2; // dos boletines lado a lado
+const ANCHO_BOLETIN = (AP - MARGEN * 2) / 2; // dos boletines lado a lado en modo lote
 const ALTO_BOLETIN = HP - MARGEN * 2;
 
 const BORDO = [0.42, 0.1, 0.13];
@@ -28,7 +31,8 @@ const num = (v) => Number(v.toFixed(2));
 const col = (c) => c.map(num).join(" ");
 
 class Hoja {
-  constructor() {
+  constructor(altoPagina = HP) {
+    this.hp = altoPagina;
     this.paginas = [];
     this.nueva();
   }
@@ -37,16 +41,16 @@ class Hoja {
     this.paginas.push(this.ops);
   }
   rect(x, y, w, alto, c) {
-    this.ops.push(`${col(c)} rg ${num(x)} ${num(HP - y - alto)} ${num(w)} ${num(alto)} re f`);
+    this.ops.push(`${col(c)} rg ${num(x)} ${num(this.hp - y - alto)} ${num(w)} ${num(alto)} re f`);
   }
   marco(x, y, w, alto, c, g = 0.6) {
-    this.ops.push(`[] 0 d ${col(c)} RG ${g} w ${num(x)} ${num(HP - y - alto)} ${num(w)} ${num(alto)} re S`);
+    this.ops.push(`[] 0 d ${col(c)} RG ${g} w ${num(x)} ${num(this.hp - y - alto)} ${num(w)} ${num(alto)} re S`);
   }
   linea(x1, y1, x2, y2, c, g = 0.5, guiones = false) {
-    this.ops.push(`${guiones ? "[3 3] 0 d" : "[] 0 d"} ${col(c)} RG ${g} w ${num(x1)} ${num(HP - y1)} m ${num(x2)} ${num(HP - y2)} l S`);
+    this.ops.push(`${guiones ? "[3 3] 0 d" : "[] 0 d"} ${col(c)} RG ${g} w ${num(x1)} ${num(this.hp - y1)} m ${num(x2)} ${num(this.hp - y2)} l S`);
   }
   imagen(x, y, w, alto) {
-    this.ops.push(`q ${num(w)} 0 0 ${num(alto)} ${num(x)} ${num(HP - y - alto)} cm /Im1 Do Q`);
+    this.ops.push(`q ${num(w)} 0 0 ${num(alto)} ${num(x)} ${num(this.hp - y - alto)} cm /Im1 Do Q`);
   }
   /* Texto que se achica (hasta `minimo`) para entrar en `w`; si aun asi no entra, se recorta con "...". */
   texto(valor, x, y, tamano, { negrita = false, c = OSCURO, alinear = "izq", w = 0, minimo = tamano } = {}) {
@@ -62,7 +66,7 @@ class Hoja {
     let px = x;
     if (alinear === "centro") px = x + (w - ancho(t, tam, negrita)) / 2;
     if (alinear === "der") px = x + w - ancho(t, tam, negrita);
-    this.ops.push(`BT /${negrita ? "F2" : "F1"} ${tam} Tf ${col(c)} rg ${num(px)} ${num(HP - y)} Td (${cadena(t)}) Tj ET`);
+    this.ops.push(`BT /${negrita ? "F2" : "F1"} ${tam} Tf ${col(c)} rg ${num(px)} ${num(this.hp - y)} Td (${cadena(t)}) Tj ET`);
   }
 }
 
@@ -80,32 +84,54 @@ function envolver(texto, maximo, tamano, negrita = false) {
   return lineas;
 }
 
-/* Un boletin dentro del rectangulo (x0, y0, ANCHO_BOLETIN, ALTO_BOLETIN). */
+/* Un boletin dentro del rectangulo definido por config (o xc para compatibilidad con código existente). */
 function dibujarBoletin(doc, b, xc, logo) {
-  const x0 = xc + 1.5;
-  const X = x0 + 9;
-  const W = ANCHO_BOLETIN - 3 - 18;
-  const base = MARGEN;
-  const altoMarco = ALTO_BOLETIN;
-  doc.marco(x0, base, ANCHO_BOLETIN - 3, altoMarco, BORDO, 1);
+  const isObj = typeof xc === "object" && xc !== null;
+  const x0 = isObj ? xc.x0 : xc + 1.5;
+  const y0 = isObj ? xc.y0 : MARGEN;
+  const anchoMarco = isObj ? xc.anchoBoletin : ANCHO_BOLETIN - 3;
+  const altoMarco = isObj ? xc.altoBoletin : ALTO_BOLETIN;
+  const esVertical = isObj ? Boolean(xc.esVertical) : false;
+
+  const X = x0 + (esVertical ? 12 : 9);
+  const W = anchoMarco - (esVertical ? 24 : 18);
+  const base = y0;
+  doc.marco(x0, base, anchoMarco, altoMarco, BORDO, esVertical ? 1.2 : 1);
 
   // Cabecera institucional
-  let y = base + 7;
-  const LOGO = 42;
+  let y = base + (esVertical ? 8 : 7);
+  const LOGO = esVertical ? 46 : 42;
   if (logo) doc.imagen(X, y, LOGO, LOGO);
-  const xt = X + LOGO + 6;
-  const wt = W - (LOGO + 6) * 2;
-  doc.texto("DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN • PROVINCIA DE BUENOS AIRES", xt, y + 11, 6.5, { negrita: true, c: GRIS, alinear: "centro", w: wt, minimo: 5 });
-  doc.texto('E.E.S.T. N° 1 "CECILIA BERDICHEVSKI"', xt, y + 26, 13, { negrita: true, c: BORDO, alinear: "centro", w: wt, minimo: 9 });
-  doc.texto(`BOLETÍN DE CALIFICACIONES • ${b.anio}° AÑO`, xt, y + 38, 8, { negrita: true, c: OSCURO, alinear: "centro", w: wt });
-  y += LOGO + 4;
-  doc.linea(X, y, X + W, y, BORDO, 1.2);
-  y += 5;
+  const xt = X + LOGO + (esVertical ? 8 : 6);
+  const wt = W - (LOGO + (esVertical ? 8 : 6)) * 2;
+  doc.texto(
+    "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN • PROVINCIA DE BUENOS AIRES",
+    xt,
+    y + (esVertical ? 12 : 11),
+    esVertical ? 7.2 : 6.5,
+    { negrita: true, c: GRIS, alinear: "centro", w: wt, minimo: 5.5 }
+  );
+  doc.texto(
+    'E.E.S.T. N° 1 "CECILIA BERDICHEVSKI"',
+    xt,
+    y + (esVertical ? 27 : 26),
+    esVertical ? 14.5 : 13,
+    { negrita: true, c: BORDO, alinear: "centro", w: wt, minimo: 10 }
+  );
+  doc.texto(
+    `BOLETÍN DE CALIFICACIONES • ${b.anio}° AÑO`,
+    xt,
+    y + (esVertical ? 41 : 38),
+    esVertical ? 9 : 8,
+    { negrita: true, c: OSCURO, alinear: "centro", w: wt }
+  );
+  y += LOGO + (esVertical ? 6 : 4);
+  doc.linea(X, y, X + W, y, BORDO, esVertical ? 1.4 : 1.2);
+  y += esVertical ? 6 : 5;
 
   // Datos del alumno
-  const RD = 11.5;
-  const cols3 = [W * 0.46, W * 0.27, W * 0.27];
-  const campos = (fila) => fila;
+  const RD = esVertical ? 13.5 : 11.5;
+  const cols3 = [W * 0.44, W * 0.28, W * 0.28];
   const filas = [
     [["APELLIDO Y NOMBRE", b.alumno.nombreCompleto, 2], ["AÑO/DIV", b.alumno.cursoDivision, 1]],
     [["LEGAJO", b.alumno.legajo, 1], ["D.N.I.", b.alumno.dni, 1], ["CICLO LECTIVO", b.cicloLectivo, 1]],
@@ -120,63 +146,86 @@ function dibujarBoletin(doc, b, xc, logo) {
     fila.forEach(([etiqueta, valor, span]) => {
       const wc = cols3.slice(ci, ci + span).reduce((s, v) => s + v, 0);
       if (cx > X) doc.linea(cx, yy, cx, yy + RD, TENUE, 0.4);
-      doc.texto(`${etiqueta}:`, cx + 4, yy + 8, 6, { negrita: true, c: GRIS });
-      const dx = ancho(`${etiqueta}:`, 6, true) + 8;
-      doc.texto(valor, cx + dx, yy + 8, 7.5, { negrita: true, w: wc - dx - 3, minimo: 5.5 });
+      const fsEtiq = esVertical ? 6.8 : 6;
+      const fsVal = esVertical ? 8.5 : 7.5;
+      const offY = esVertical ? 9.5 : 8;
+      doc.texto(`${etiqueta}:`, cx + 4, yy + offY, fsEtiq, { negrita: true, c: GRIS });
+      const dx = ancho(`${etiqueta}:`, fsEtiq, true) + 8;
+      doc.texto(valor, cx + dx, yy + offY, fsVal, { negrita: true, w: wc - dx - 3, minimo: 6 });
       cx += wc;
       ci += span;
     });
   });
-  void campos;
-  y += RD * 3 + 5;
+  y += RD * 3 + (esVertical ? 6 : 5);
 
   // Tabla de notas
-  const AN = { informe: 36, promedio: 40, mes: 37, definitiva: 44, firmas: 46 };
+  const AN = esVertical
+    ? { informe: 43, promedio: 47, mes: 43, definitiva: 51, firmas: 53 }
+    : { informe: 36, promedio: 40, mes: 37, definitiva: 44, firmas: 46 };
   const A_MATERIA = W - (AN.informe * 2 + AN.promedio + AN.mes * 2 + AN.definitiva + AN.firmas);
   const anchos = [A_MATERIA, AN.informe, AN.informe, AN.promedio, AN.mes, AN.mes, AN.definitiva, AN.firmas];
   const xs = anchos.reduce((acc, w, i) => (acc.push(i ? acc[i - 1] + anchos[i - 1] : X), acc), []);
   const titulos = ["MATERIAS", "1° INFORME", "2° INFORME", "PROMEDIO ANUAL", "DICIEMBRE", "FEBRERO", "CALIF. DEFINITIVA", "FIRMAS"];
-  const ALTO_ENC = 15;
-  const ALTO_SEC = 10;
-  const ALTO_PIE = 13;
+  const ALTO_ENC = esVertical ? 17 : 15;
+  const ALTO_SEC = esVertical ? 12 : 10;
+  const ALTO_PIE = esVertical ? 15 : 13;
 
   // Alto reservado para pendientes + firmas, el resto es de las filas de materias
-  const PEND = 9 + 9 + 9 + b.pendientes.length * 10;
-  const FIRMAS = 26;
+  const PEND = (esVertical ? 11 : 9) + 9 + 9 + b.pendientes.length * (esVertical ? 12 : 10);
+  const FIRMAS = esVertical ? 36 : 26;
   const materias = [...b.plan.general, ...b.plan.taller];
-  const disponible = base + altoMarco - 6 - FIRMAS - 6 - PEND - 5 - ALTO_PIE - 2 * ALTO_SEC - ALTO_ENC - y;
-  const alto = Math.max(9, Math.min(24, Math.floor(disponible / Math.max(materias.length, 1))));
+  const numSecciones = (b.plan.taller && b.plan.taller.length > 0) ? 2 : 1;
+  const disponible = base + altoMarco - (esVertical ? 10 : 6) - FIRMAS - (esVertical ? 10 : 6) - PEND - 6 - ALTO_PIE - numSecciones * ALTO_SEC - ALTO_ENC - y;
+  const alto = Math.max(9, Math.min(esVertical ? 22 : 24, Math.floor(disponible / Math.max(materias.length, 1))));
   const inicioTabla = y;
 
   doc.rect(X, y, W, ALTO_ENC, BORDO);
   titulos.forEach((t, i) => {
     if (i > 0) doc.linea(xs[i], y, xs[i], y + ALTO_ENC, [0.75, 0.55, 0.57], 0.4);
-    const partes = t.includes(" ") && i > 0 ? envolver(t, anchos[i] - 4, 5.8, true) : [t];
+    const fsTit = esVertical ? 6.2 : 5.8;
+    const partes = t.includes(" ") && i > 0 ? envolver(t, anchos[i] - 4, fsTit, true) : [t];
     if (partes.length > 1) {
-      partes.slice(0, 2).forEach((p, k) => doc.texto(p, xs[i], y + 6.5 + k * 6.3, 5.8, { negrita: true, c: BLANCO, alinear: "centro", w: anchos[i] }));
-    } else doc.texto(t, xs[i] + 1, y + 9.5, 6.3, { negrita: true, c: BLANCO, alinear: "centro", w: anchos[i] - 2, minimo: 4.6 });
+      partes.slice(0, 2).forEach((p, k) =>
+        doc.texto(p, xs[i], y + (esVertical ? 7 : 6.5) + k * (esVertical ? 7 : 6.3), fsTit, {
+          negrita: true,
+          c: BLANCO,
+          alinear: "centro",
+          w: anchos[i]
+        })
+      );
+    } else {
+      doc.texto(
+        t,
+        xs[i] + (i === 0 ? 6 : 1),
+        y + (esVertical ? 11 : 9.5),
+        esVertical ? (i === 0 ? 7.2 : 6.8) : 6.3,
+        { negrita: true, c: BLANCO, alinear: i === 0 ? "izq" : "centro", w: anchos[i] - (i === 0 ? 8 : 2), minimo: 5 }
+      );
+    }
   });
   y += ALTO_ENC;
 
   let n = 0;
   const seccion = (titulo, lista) => {
     doc.rect(X, y, W, ALTO_SEC, [0.34, 0.07, 0.1]);
-    doc.texto(titulo, X + 4, y + 7.2, 6.5, { negrita: true, c: BLANCO });
+    doc.texto(titulo, X + 6, y + (esVertical ? 8.5 : 7.2), esVertical ? 7.2 : 6.5, { negrita: true, c: BLANCO });
     y += ALTO_SEC;
     lista.forEach((materia) => {
       const nota = b.notas[materia] ?? {};
       if (n % 2 === 1) doc.rect(X, y, W, alto, ZEBRA);
       doc.rect(xs[3], y, anchos[3], alto, ROSA);
       doc.rect(xs[6], y, anchos[6], alto, [0.93, 0.84, 0.85]);
-      const lineas = alto >= 12 && ancho(materia, 6.5, true) > A_MATERIA - 6 ? envolver(materia, A_MATERIA - 6, 5.6, true).slice(0, 2) : null;
+      const fsMat = esVertical ? 7.5 : 6.8;
+      const lineas = alto >= 12 && ancho(materia, fsMat, true) > A_MATERIA - 8 ? envolver(materia, A_MATERIA - 8, fsMat - 1, true).slice(0, 2) : null;
       if (lineas && lineas.length > 1) {
-        lineas.forEach((l, k) => doc.texto(l, X + 3, y + alto / 2 - 0.5 + (k === 0 ? -2.2 : 4.8) - 1, 5.6, { negrita: true, w: A_MATERIA - 5 }));
+        lineas.forEach((l, k) => doc.texto(l, X + 5, y + alto / 2 - 0.5 + (k === 0 ? -2.2 : 4.8) - 1, fsMat - 1, { negrita: true, w: A_MATERIA - 8 }));
       } else {
-        doc.texto(materia, X + 3, y + alto / 2 + 2.3, 6.8, { negrita: true, w: A_MATERIA - 5, minimo: 4.6 });
+        doc.texto(materia, X + 5, y + alto / 2 + (esVertical ? 2.6 : 2.3), fsMat, { negrita: true, w: A_MATERIA - 8, minimo: 5.2 });
       }
       [["informe1", 1], ["informe2", 2], ["promedioAnual", 3], ["diciembre", 4], ["febrero", 5], ["definitiva", 6]].forEach(([campo, i]) => {
         const valor = String(nota[campo] ?? "").trim();
-        doc.texto(valor || "—", xs[i], y + alto / 2 + 2.6, 7.5, { negrita: i === 6, c: valor ? OSCURO : [0.62, 0.62, 0.64], alinear: "centro", w: anchos[i] });
+        const fsNota = esVertical ? 8.2 : 7.5;
+        doc.texto(valor || "—", xs[i], y + alto / 2 + (esVertical ? 2.8 : 2.6), fsNota, { negrita: i === 6, c: valor ? OSCURO : [0.62, 0.62, 0.64], alinear: "centro", w: anchos[i] });
       });
       doc.linea(X, y + alto, X + W, y + alto, TENUE, 0.35);
       y += alto;
@@ -188,46 +237,59 @@ function dibujarBoletin(doc, b, xc, logo) {
 
   // Pie de tabla: inasistencias y promedio general
   doc.rect(X, y, W, ALTO_PIE, [0.95, 0.95, 0.96]);
-  doc.texto("INASISTENCIA TOTAL:", X + 4, y + 9, 6.5, { negrita: true });
-  const wi = ancho("INASISTENCIA TOTAL:", 6.5, true);
-  doc.texto(b.inasistencias || "—", X + 4 + wi + 5, y + 9, 7.5, { negrita: true });
-  if (b.inasistencias) doc.texto("días", X + 4 + wi + 9 + ancho(b.inasistencias, 7.5, true), y + 9, 6.5, { c: GRIS });
-  doc.texto("PROMEDIO GENERAL ANUAL:", xs[3] - 4 - 110, y + 9, 6.5, { negrita: true, alinear: "der", w: 110 });
-  doc.texto(promedioGeneral(b.notas, materias) || "—", xs[6], y + 9, 8, { negrita: true, c: BORDO, alinear: "centro", w: anchos[6] });
+  const fsPie = esVertical ? 7.2 : 6.5;
+  const fsPieVal = esVertical ? 8.5 : 7.5;
+  const offPieY = esVertical ? 10.5 : 9;
+  doc.texto("INASISTENCIA TOTAL:", X + 6, y + offPieY, fsPie, { negrita: true });
+  const wi = ancho("INASISTENCIA TOTAL:", fsPie, true);
+  doc.texto(b.inasistencias || "—", X + 6 + wi + 5, y + offPieY, fsPieVal, { negrita: true });
+  if (b.inasistencias) doc.texto("días", X + 6 + wi + 9 + ancho(b.inasistencias, fsPieVal, true), y + offPieY, fsPie, { c: GRIS });
+  doc.texto("PROMEDIO GENERAL ANUAL:", xs[3] - 6 - 130, y + offPieY, fsPie, { negrita: true, alinear: "der", w: 130 });
+  doc.texto(promedioGeneral(b.notas, materias) || "—", xs[6], y + offPieY, esVertical ? 9 : 8, { negrita: true, c: BORDO, alinear: "centro", w: anchos[6] });
   y += ALTO_PIE;
 
   // Cuadricula de la tabla
   doc.marco(X, inicioTabla, W, y - inicioTabla, LINEA, 0.7);
   xs.slice(1).forEach((x) => doc.linea(x, inicioTabla + ALTO_ENC, x, y - ALTO_PIE, TENUE, 0.4));
-  y += 5;
+
+  // Espaciado dinámico hacia la sección de materias pendientes
+  const espacioSobrante = (base + altoMarco - (esVertical ? 38 : 15) - FIRMAS) - (y + PEND);
+  if (esVertical && espacioSobrante > 15) {
+    y += Math.min(22, Math.floor(espacioSobrante * 0.35));
+  } else {
+    y += esVertical ? 7 : 5;
+  }
 
   // Materias pendientes
-  doc.rect(X, y, W, 9, [0.34, 0.07, 0.1]);
-  doc.texto("MATERIAS PENDIENTES DE ACREDITACIÓN / REGULARIZACIÓN", X + 4, y + 6.8, 6.3, { negrita: true, c: BLANCO });
-  y += 9;
-  const aPend = [A_MATERIA - 4, 34];
+  const altoTitPend = esVertical ? 11 : 9;
+  doc.rect(X, y, W, altoTitPend, [0.34, 0.07, 0.1]);
+  doc.texto("MATERIAS PENDIENTES DE ACREDITACIÓN / REGULARIZACIÓN", X + 6, y + (esVertical ? 8 : 6.8), esVertical ? 7 : 6.3, { negrita: true, c: BLANCO });
+  y += altoTitPend;
+  const aPend = [A_MATERIA - 4, esVertical ? 38 : 34];
   const aPer = (W - aPend[0] - aPend[1]) / PERIODOS_PENDIENTES.length;
   const yp0 = y;
-  doc.rect(X, y, W, 18, [0.55, 0.15, 0.18]);
-  doc.texto("MATERIAS PENDIENTES", X, y + 11.5, 5.8, { negrita: true, c: BLANCO, alinear: "centro", w: aPend[0] });
-  doc.texto("AÑO", X + aPend[0], y + 11.5, 5.8, { negrita: true, c: BLANCO, alinear: "centro", w: aPend[1] });
+  const altoEncPer = esVertical ? 20 : 18;
+  doc.rect(X, y, W, altoEncPer, [0.55, 0.15, 0.18]);
+  doc.texto("MATERIAS PENDIENTES", X, y + (esVertical ? 12.5 : 11.5), esVertical ? 6.5 : 5.8, { negrita: true, c: BLANCO, alinear: "centro", w: aPend[0] });
+  doc.texto("AÑO", X + aPend[0], y + (esVertical ? 12.5 : 11.5), esVertical ? 6.5 : 5.8, { negrita: true, c: BLANCO, alinear: "centro", w: aPend[1] });
   PERIODOS_PENDIENTES.forEach(([, etiqueta], i) => {
     const px = X + aPend[0] + aPend[1] + i * aPer;
-    doc.texto(etiqueta, px, y + 6.6, 6, { negrita: true, c: BLANCO, alinear: "centro", w: aPer });
-    doc.texto("CALIF", px, y + 14.6, 5.2, { negrita: true, c: BLANCO, alinear: "centro", w: aPer / 2 });
-    doc.texto("L/F", px + aPer / 2, y + 14.6, 5.2, { negrita: true, c: BLANCO, alinear: "centro", w: aPer / 2 });
+    doc.texto(etiqueta, px, y + (esVertical ? 7.5 : 6.6), esVertical ? 6.8 : 6, { negrita: true, c: BLANCO, alinear: "centro", w: aPer });
+    doc.texto("CALIF", px, y + (esVertical ? 16 : 14.6), esVertical ? 5.8 : 5.2, { negrita: true, c: BLANCO, alinear: "centro", w: aPer / 2 });
+    doc.texto("L/F", px + aPer / 2, y + (esVertical ? 16 : 14.6), esVertical ? 5.8 : 5.2, { negrita: true, c: BLANCO, alinear: "centro", w: aPer / 2 });
   });
-  y += 18;
+  y += altoEncPer;
+  const altoFilaPend = esVertical ? 12 : 10;
   b.pendientes.forEach((p) => {
-    doc.texto(p.materia, X + 3, y + 7.2, 6.5, { w: aPend[0] - 6, minimo: 4.8 });
-    doc.texto(p.anio, X + aPend[0], y + 7.2, 6.5, { alinear: "centro", w: aPend[1] });
+    doc.texto(p.materia, X + 5, y + (esVertical ? 8.5 : 7.2), esVertical ? 7.2 : 6.5, { w: aPend[0] - 8, minimo: 5.5 });
+    doc.texto(p.anio, X + aPend[0], y + (esVertical ? 8.5 : 7.2), esVertical ? 7.2 : 6.5, { alinear: "centro", w: aPend[1] });
     PERIODOS_PENDIENTES.forEach(([k], i) => {
       const px = X + aPend[0] + aPend[1] + i * aPer;
-      doc.texto(p[`${k}C`], px, y + 7.2, 6.5, { alinear: "centro", w: aPer / 2 });
-      doc.texto(p[`${k}LF`], px + aPer / 2, y + 7.2, 6.5, { alinear: "centro", w: aPer / 2 });
+      doc.texto(p[`${k}C`], px, y + (esVertical ? 8.5 : 7.2), esVertical ? 7.2 : 6.5, { alinear: "centro", w: aPer / 2 });
+      doc.texto(p[`${k}LF`], px + aPer / 2, y + (esVertical ? 8.5 : 7.2), esVertical ? 7.2 : 6.5, { alinear: "centro", w: aPer / 2 });
     });
-    doc.linea(X, y + 10, X + W, y + 10, TENUE, 0.35);
-    y += 10;
+    doc.linea(X, y + altoFilaPend, X + W, y + altoFilaPend, TENUE, 0.35);
+    y += altoFilaPend;
   });
   doc.marco(X, yp0, W, y - yp0, LINEA, 0.6);
   doc.linea(X + aPend[0], yp0, X + aPend[0], y, TENUE, 0.4);
@@ -235,21 +297,28 @@ function dibujarBoletin(doc, b, xc, logo) {
   PERIODOS_PENDIENTES.forEach((_, i) => {
     const px = X + aPend[0] + aPend[1] + i * aPer;
     if (i > 0) doc.linea(px, yp0, px, y, TENUE, 0.4);
-    doc.linea(px + aPer / 2, yp0 + 9, px + aPer / 2, y, TENUE, 0.3);
+    doc.linea(px + aPer / 2, yp0 + (esVertical ? 10 : 9), px + aPer / 2, y, TENUE, 0.3);
   });
 
   // Firmas, al pie del boletin
-  const yf = base + altoMarco - 15;
+  const yf = base + altoMarco - (esVertical ? 22 : 15);
   const wf = W / 3;
-  [["AUTORIDAD ESCOLAR", "Firma y Sello Dirección"], ["PRECEPTOR", "Firma Preceptor a Cargo"], ["ADULTO RESPONSABLE", "Firma Padre / Madre / Tutor"]].forEach(([titulo, sub], i) => {
-    const fx = X + i * wf + 14;
-    doc.linea(fx, yf, fx + wf - 28, yf, OSCURO, 0.6);
-    doc.texto(titulo, fx, yf + 6.5, 6, { negrita: true, alinear: "centro", w: wf - 28 });
-    doc.texto(sub, fx, yf + 12, 5, { c: GRIS, alinear: "centro", w: wf - 28 });
+  [
+    ["AUTORIDAD ESCOLAR", "Firma y Sello Dirección"],
+    ["PRECEPTOR", "Firma Preceptor a Cargo"],
+    ["ADULTO RESPONSABLE", "Firma Padre / Madre / Tutor"]
+  ].forEach(([titulo, sub], i) => {
+    const fx = X + i * wf + (esVertical ? 20 : 14);
+    const lineW = wf - (esVertical ? 40 : 28);
+    doc.linea(fx, yf, fx + lineW, yf, OSCURO, 0.6);
+    doc.texto(titulo, fx, yf + (esVertical ? 8 : 6.5), esVertical ? 7 : 6, { negrita: true, alinear: "centro", w: lineW });
+    doc.texto(sub, fx, yf + (esVertical ? 15 : 12), esVertical ? 6 : 5, { c: GRIS, alinear: "centro", w: lineW });
   });
 }
 
-function armarArchivo(paginas, logo) {
+function armarArchivo(paginas, logo, dimensiones = HOJA) {
+  const AP = dimensiones.ancho;
+  const HP = dimensiones.alto;
   const objetos = [];
   const agregar = (contenido) => objetos.push(contenido) && objetos.length;
   agregar("");
@@ -285,20 +354,50 @@ function armarArchivo(paginas, logo) {
   return bytes;
 }
 
-/* `boletines`: lista de resultados de armarBoletinOficial. De a dos por hoja. */
-export async function generarBoletinesOficialPdf(boletines) {
+/* `boletines`: lista de resultados de armarBoletinOficial.
+   Si es un alumno individual (boletines.length === 1 o modo: "vertical"):
+   Se genera en hoja entera vertical A4 (portrait), ocupando toda la hoja.
+   Si son varios alumnos para imprimir el curso (modo lote):
+   Se generan de a dos por hoja Oficio apaisada, con línea de corte en el medio. */
+export async function generarBoletinesOficialPdf(boletines, { modo = "auto" } = {}) {
   const logo = await cargarLogo();
-  const doc = new Hoja();
-  boletines.forEach((b, i) => {
-    const lugar = i % 2;
-    if (i > 0 && lugar === 0) doc.nueva();
-    dibujarBoletin(doc, b, MARGEN + lugar * ANCHO_BOLETIN, logo);
-    if (lugar === 0 && i < boletines.length - 1) {
-      // guia de corte entre los dos boletines
-      doc.linea(MARGEN + ANCHO_BOLETIN, MARGEN - 6, MARGEN + ANCHO_BOLETIN, HP - MARGEN + 6, TENUE, 0.4, true);
-    }
-  });
-  return new Blob([armarArchivo(doc.paginas, logo)], { type: "application/pdf" });
+  const esVertical = modo === "vertical" || (modo === "auto" && boletines.length === 1);
+  const dims = esVertical ? HOJA_VERTICAL : HOJA;
+  const doc = new Hoja(dims.alto);
+
+  if (esVertical) {
+    const margenX = 20;
+    const margenY = 20;
+    const anchoB = dims.ancho - margenX * 2;
+    const altoB = dims.alto - margenY * 2;
+    boletines.forEach((b, i) => {
+      if (i > 0) doc.nueva();
+      dibujarBoletin(doc, b, {
+        x0: margenX,
+        y0: margenY,
+        anchoBoletin: anchoB,
+        altoBoletin: altoB,
+        esVertical: true
+      }, logo);
+    });
+  } else {
+    boletines.forEach((b, i) => {
+      const lugar = i % 2;
+      if (i > 0 && lugar === 0) doc.nueva();
+      dibujarBoletin(doc, b, {
+        x0: MARGEN + lugar * ANCHO_BOLETIN + 1.5,
+        y0: MARGEN,
+        anchoBoletin: ANCHO_BOLETIN - 3,
+        altoBoletin: ALTO_BOLETIN,
+        esVertical: false
+      }, logo);
+      if (lugar === 0 && i < boletines.length - 1) {
+        // guia de corte entre los dos boletines
+        doc.linea(MARGEN + ANCHO_BOLETIN, MARGEN - 6, MARGEN + ANCHO_BOLETIN, dims.alto - MARGEN + 6, TENUE, 0.4, true);
+      }
+    });
+  }
+  return new Blob([armarArchivo(doc.paginas, logo, dims)], { type: "application/pdf" });
 }
 
 export const nombreArchivoBoletines = (boletines) => {
@@ -310,8 +409,8 @@ export const nombreArchivoBoletines = (boletines) => {
 
 /* Genera el PDF y lo muestra en la ventana abierta por el clic (para imprimir). Si no hay
    ventana (bloqueada), lo descarga. */
-export async function abrirBoletinesOficial(boletines, ventana = null) {
-  const blob = await generarBoletinesOficialPdf(boletines);
+export async function abrirBoletinesOficial(boletines, ventana = null, opciones = {}) {
+  const blob = await generarBoletinesOficialPdf(boletines, opciones);
   const url = URL.createObjectURL(blob);
   if (ventana && !ventana.closed) ventana.location.href = url;
   else {
@@ -325,10 +424,10 @@ export async function abrirBoletinesOficial(boletines, ventana = null) {
   setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 
-/* Boletines de todos los alumnos de la lista (cada uno en su año), dos por hoja. */
-export async function imprimirBoletinesDeAlumnos(alumnos, ventana = null) {
+/* Boletines de todos los alumnos de la lista (cada uno en su año). */
+export async function imprimirBoletinesDeAlumnos(alumnos, ventana = null, opciones = {}) {
   /* Las notas se leen del backend (la misma fuente que la planilla y el portal). */
   const registros = await BoletinOficialService.obtenerVarios(alumnos.map((a) => a.id), new Date().getFullYear());
   const boletines = alumnos.map((a) => armarBoletinOficial(a, anioDelAlumno(a), { registro: registros[a.id] }));
-  return abrirBoletinesOficial(boletines, ventana);
+  return abrirBoletinesOficial(boletines, ventana, opciones);
 }
