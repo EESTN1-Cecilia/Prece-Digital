@@ -93,6 +93,7 @@ const rutasDeclaradas = [
   { method: "POST", path: "/api/v1/auth/refresh", handler: authController.refresh },
   { method: "POST", path: "/api/v1/auth/logout", handler: authController.logout },
   { method: "GET", path: "/api/v1/auth/me", middlewares: [verifyToken], handler: authController.me },
+  { method: "POST", path: "/api/v1/auth/change-password", middlewares: [verifyToken], handler: authController.changePassword },
   { method: "GET", path: "/api/v1/auth/permissions", middlewares: [verifyToken], handler: authController.permissions },
 
   /* Portal del alumno. Ninguna ruta recibe un id de alumno: el legajo sale

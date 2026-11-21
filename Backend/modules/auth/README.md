@@ -10,6 +10,7 @@ Login propio con JWT, refresh tokens, control de permisos por rol y alcance, y b
 | POST | `/api/v1/auth/refresh` | No | Rota el refresh token y emite un access token nuevo |
 | POST | `/api/v1/auth/logout` | No | Revoca el refresh token |
 | GET | `/api/v1/auth/me` | Bearer | Perfil, roles y permisos del usuario autenticado |
+| POST | `/api/v1/auth/change-password` | Bearer | Cambio de contraseña propio del personal (`passwordActual`, `passwordNueva`); limpia la marca de cambio obligatorio y devuelve una sesión nueva |
 | GET | `/api/v1/auth/permissions` | Bearer | Roles, permisos y resumen por módulo |
 | GET | `/api/v1/users` | Bearer + `users.read` | Lista usuarios (filtros `q`, `rol`, `estado`) |
 | POST | `/api/v1/users` | Bearer + `identity.create` | Alta con contraseña temporal |

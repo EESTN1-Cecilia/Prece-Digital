@@ -142,9 +142,19 @@ test("el director resetea una clave: devuelve una temporal, cierra sesiones y ob
   assert.equal(refresco.status, 401);
 
   /* Al elegir su propia clave la marca se limpia. */
-  const cambio = await pedir("PATCH", `/api/v1/users/${objetivo}`, nueva.accessToken, { password: "ClaveNueva2026!" });
+  const mala = await pedir("POST", "/api/v1/auth/change-password", nueva.accessToken, { passwordActual: "incorrecta1", passwordNueva: "ClaveNueva2026!" });
+  assert.equal(mala.status, 400);
+  const debil = await pedir("POST", "/api/v1/auth/change-password", nueva.accessToken, { passwordActual: cuerpo.data.passwordTemporal, passwordNueva: "corta" });
+  assert.equal(debil.status, 422);
+
+  const cambio = await pedir("POST", "/api/v1/auth/change-password", nueva.accessToken, {
+    passwordActual: cuerpo.data.passwordTemporal,
+    passwordNueva: "ClaveNueva2026!"
+  });
   assert.equal(cambio.status, 200);
-  assert.equal(cambio.cuerpo.data.debeCambiarPassword, false);
+  assert.equal(cambio.cuerpo.debeCambiarPassword, false);
+  assert.equal((await login("docente@prece.local", "ClaveNueva2026!")).status, 200);
+  assert.equal((await login("docente@prece.local", cuerpo.data.passwordTemporal)).status, 401);
 });
 
 test("el reseteo tiene limites: no a uno mismo, no a administradores salvo admin, no a cuentas inactivas ni inexistentes", async () => {

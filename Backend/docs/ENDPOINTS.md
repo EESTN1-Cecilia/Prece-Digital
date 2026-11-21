@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 468 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 469 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -51,6 +51,7 @@ Total: 468 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/auth/refresh` | publica |
 | POST | `/api/v1/auth/logout` | publica |
 | GET | `/api/v1/auth/me` | sesion valida |
+| POST | `/api/v1/auth/change-password` | sesion valida |
 | GET | `/api/v1/auth/permissions` | sesion valida |
 
 ## alumno

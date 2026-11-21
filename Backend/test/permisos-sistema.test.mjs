@@ -35,9 +35,10 @@ const SOLO_SESION = new Set(["/api/v1/auth/me", "/api/v1/auth/permissions", "/ap
 /* Rutas autenticadas SIN permiso de catalogo, por diseno:
    - informes-direccion: guardadas por rol (soloPersonal / soloDireccion), se prueban abajo por HTTP.
    - calendario (lectura), calificaciones/periodos (lectura) y devices: informacion institucional
-     de solo lectura o del propio usuario (devices filtra por el usuario del token). */
+     de solo lectura o del propio usuario (devices filtra por el usuario del token).
+   - auth/change-password: cada persona cambia su propia clave; exige la clave actual. */
 const POR_ROL = /^\/api\/v1\/informes-direccion/;
-const ABIERTAS_A_SESION = new Set(["GET /api/v1/calendario/eventos", "GET /api/v1/calendario/avisos", "GET /api/v1/calificaciones/periodos", "POST /api/v1/devices", "GET /api/v1/devices", "DELETE /api/v1/devices/:deviceId"]);
+const ABIERTAS_A_SESION = new Set(["GET /api/v1/calendario/eventos", "GET /api/v1/calendario/avisos", "GET /api/v1/calificaciones/periodos", "POST /api/v1/auth/change-password", "POST /api/v1/devices", "GET /api/v1/devices", "DELETE /api/v1/devices/:deviceId"]);
 
 const CUENTAS = {
   admin: ["admin@prece.local", "Admin123!"],

@@ -21,6 +21,13 @@ export function refresh({ body }) {
   };
 }
 
+export async function changePassword({ user, body }) {
+  return {
+    statusCode: 200,
+    body: await authService.changePassword(user, body)
+  };
+}
+
 export function logout({ body }) {
   return {
     statusCode: 200,

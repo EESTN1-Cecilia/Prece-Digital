@@ -24,6 +24,29 @@ export function useDatos(cargar, dependencias = []) {
     recargar();
   }, [recargar]);
 
+  /* Tiempo real: lo que cargan preceptores y docentes aparece solo, sin que el
+     alumno tenga que recargar. Se vuelve a pedir cada 30 s, al volver a la
+     pestaña y al recuperar la conexion. El refresco es silencioso: no muestra el
+     indicador de carga y, si falla, conserva lo que ya se veia. */
+  useEffect(() => {
+    const refrescar = () => {
+      if (document.visibilityState === "hidden") return;
+      const pedido = ++vigente.current;
+      cargar()
+        .then((datos) => pedido === vigente.current && setEstado({ cargando: false, error: null, datos }))
+        .catch(() => {});
+    };
+    const intervalo = window.setInterval(refrescar, 30000);
+    document.addEventListener("visibilitychange", refrescar);
+    window.addEventListener("online", refrescar);
+    return () => {
+      window.clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", refrescar);
+      window.removeEventListener("online", refrescar);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencias);
+
   return { ...estado, recargar };
 }
 
