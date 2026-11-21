@@ -444,7 +444,10 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
     if (!planilla) return;
     setSaving(true);
     try {
-      await AsistenciasService.guardarPlanilla(planilla);
+      const guardada = await AsistenciasService.guardarPlanilla(planilla);
+      if (guardada?.sincronizacion?.fallidas) {
+        alert("La planilla se guardó, pero algunas asistencias no llegaron al portal del alumno. Volvé a guardar para reintentar.");
+      }
       setPlanillaOriginal(JSON.parse(JSON.stringify(planilla)));
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3500);

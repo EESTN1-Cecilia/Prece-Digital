@@ -1,4 +1,5 @@
 import { StudentsService } from "../students/students-service.js";
+import { pedir } from "../../services/http.js";
 
 const STORAGE_KEY_PREFIX = "prece_asistencias_planilla_";
 
@@ -96,7 +97,7 @@ export const AsistenciasService = {
    * Obtiene la planilla de asistencias para el curso, mes y año cargando los alumnos reales del padrón.
    * Si se especifica materia (rol docente), almacena y recupera el registro específico de dicha asignatura.
    */
-  async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null, soloAlumnosIds = null) {
+  async _planillaLocal(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null, soloAlumnosIds = null) {
     const rawMateria = materia ? String(materia).trim().toLowerCase().replace(/\s+/g, "_") : "";
     const normMateria = materia
       ? String(materia).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, "_")
@@ -206,6 +207,108 @@ export const AsistenciasService = {
   },
 
   /**
+   * Planilla del curso y mes. La del preceptor (sin materia) toma del backend las
+   * inasistencias ya registradas, para que lo que ve coincida con lo que ve el
+   * alumno aunque la planilla se haya cargado desde otro navegador.
+   */
+  async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null, soloAlumnosIds = null) {
+    const planilla = await AsistenciasService._planillaLocal(cursoId, mes, anio, materia, soloAlumnosIds);
+    if (materia || !planilla?.alumnos?.length) return planilla;
+
+    try {
+      const guardadas = await AsistenciasService._inasistenciasDelMes(planilla);
+      const ordenPorAlumno = new Map(planilla.alumnos.map((a) => [a.id, a.orden]));
+      const registros = { ...planilla.registros };
+
+      for (const [ordenTexto, dias] of Object.entries(registros)) {
+        registros[ordenTexto] = { ...dias };
+        for (const dia of Object.keys(dias)) {
+          /* Se parte de lo que dice el backend: una marca local sin registro
+             alla se vuelve a enviar al guardar. */
+          if (["A", "J", "T"].includes(registros[ordenTexto][dia])) registros[ordenTexto][dia] = "P";
+        }
+      }
+
+      for (const reg of guardadas) {
+        const orden = ordenPorAlumno.get(reg.alumnoId);
+        const dia = Number(String(reg.fecha).slice(8, 10));
+        if (!orden || !dia) continue;
+        const codigo = reg.tipo === "tarde" ? "T" : reg.justificada ? "J" : "A";
+        registros[orden] = { ...(registros[orden] || {}), [dia]: codigo };
+      }
+
+      return { ...planilla, registros };
+    } catch {
+      /* Sin conexion se trabaja con la copia local; al guardar se avisa. */
+      return planilla;
+    }
+  },
+
+  async _inasistenciasDelMes(planilla) {
+    const mm = String(planilla.mes).padStart(2, "0");
+    const ultimo = new Date(planilla.anio, planilla.mes, 0).getDate();
+    const respuesta = await pedir(`/api/v1/alertas/inasistencias?desde=${planilla.anio}-${mm}-01&hasta=${planilla.anio}-${mm}-${String(ultimo).padStart(2, "0")}`);
+    const lista = Array.isArray(respuesta) ? respuesta : (respuesta?.data ?? respuesta?.items ?? []);
+    const ids = new Set(planilla.alumnos.map((a) => a.id));
+    return lista.filter((reg) => ids.has(reg.alumnoId) && !reg.bajaEn);
+  },
+
+  /**
+   * Envia al backend las diferencias de la planilla del preceptor: altas,
+   * cambios y bajas de ausentes (A), justificadas (J) y tardes (T). Asi el alumno
+   * las ve en su portal. Devuelve cuantas operaciones fallaron.
+   */
+  async _sincronizarInasistencias(planilla) {
+    const guardadas = await AsistenciasService._inasistenciasDelMes(planilla);
+    const porClave = new Map(guardadas.map((reg) => [`${reg.alumnoId}|${String(reg.fecha).slice(0, 10)}`, reg]));
+    const mm = String(planilla.mes).padStart(2, "0");
+    const tareas = [];
+
+    for (const alumno of planilla.alumnos) {
+      const dias = planilla.registros?.[alumno.orden] || {};
+      const totalDias = new Date(planilla.anio, planilla.mes, 0).getDate();
+
+      for (let dia = 1; dia <= totalDias; dia++) {
+        const codigo = dias[dia] ?? "P";
+        const fecha = `${planilla.anio}-${mm}-${String(dia).padStart(2, "0")}`;
+        const actual = porClave.get(`${alumno.id}|${fecha}`);
+        const marcada = ["A", "J", "T"].includes(codigo);
+
+        if (!marcada) {
+          if (actual) {
+            tareas.push(() =>
+              pedir(`/api/v1/alertas/inasistencias/${encodeURIComponent(actual.id)}`, {
+                method: "DELETE",
+                body: JSON.stringify({ motivo: "Corregido en la planilla de asistencia" })
+              })
+            );
+          }
+          continue;
+        }
+
+        const cuerpo = {
+          tipo: codigo === "T" ? "tarde" : "ausente",
+          justificada: codigo === "J",
+          ...(codigo === "J" ? { motivo: "Justificada por preceptoría" } : {})
+        };
+
+        if (!actual) {
+          tareas.push(() => pedir("/api/v1/alertas/inasistencias", { method: "POST", body: JSON.stringify({ alumnoId: alumno.id, fecha, ...cuerpo }) }));
+        } else if (actual.tipo !== cuerpo.tipo || Boolean(actual.justificada) !== cuerpo.justificada) {
+          tareas.push(() => pedir(`/api/v1/alertas/inasistencias/${encodeURIComponent(actual.id)}`, { method: "PATCH", body: JSON.stringify(cuerpo) }));
+        }
+      }
+    }
+
+    let fallidas = 0;
+    for (let i = 0; i < tareas.length; i += 5) {
+      const resultados = await Promise.allSettled(tareas.slice(i, i + 5).map((tarea) => tarea()));
+      fallidas += resultados.filter((r) => r.status === "rejected").length;
+    }
+    return { operaciones: tareas.length, fallidas };
+  },
+
+  /**
    * Guarda los cambios de la planilla en el almacenamiento institucional.
    */
   async guardarPlanilla(planilla) {
@@ -217,6 +320,15 @@ export const AsistenciasService = {
     };
     if (typeof localStorage !== "undefined") {
       localStorage.setItem(key, JSON.stringify(actualizado));
+    }
+
+    /* La planilla del preceptor (sin materia) se refleja en el portal del alumno. */
+    if (!planilla.materia && planilla.alumnos?.length) {
+      try {
+        actualizado.sincronizacion = await AsistenciasService._sincronizarInasistencias(actualizado);
+      } catch {
+        actualizado.sincronizacion = { operaciones: 0, fallidas: -1 };
+      }
     }
     return actualizado;
   }

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
-import { errorHttp } from "../../utils/api-error.mjs";
+import { errorDeValidacion, errorHttp } from "../../utils/api-error.mjs";
 import { permissionsForRole } from "../../config/permissions.config.mjs";
 import { evaluateAccess, extractContext, resumenPermisos } from "./permission.service.mjs";
 import { createRefreshToken, revokeRefreshToken, revokeUserSessions, rotateRefreshToken, signAccessToken } from "./token.service.mjs";
@@ -86,6 +86,53 @@ export const authService = {
     }
 
     return sessionPayload(user, signAccessToken(user), rotated.refreshToken);
+  },
+
+  /* Cambio de contraseña propio del personal (por ejemplo, despues de que
+     Direccion la reseteo). Exige la clave actual, cierra las demas sesiones y
+     entrega una sesion nueva para esta. */
+  async changePassword(actor, { passwordActual, passwordNueva } = {}) {
+    const user = userRepository.findById(actor?.id);
+
+    if (!user) {
+      throw errorHttp(401, "ACCOUNT_INACTIVE", "La cuenta no está activa");
+    }
+
+    if (user.assignments.some((assignment) => assignment.role === "alumno") || user.studentId) {
+      throw errorHttp(403, "FORBIDDEN", "Las cuentas de alumnos cambian su contraseña desde el portal del alumno");
+    }
+
+    const nueva = String(passwordNueva ?? "");
+    const errores = [];
+
+    if (nueva.length < 8 || nueva.length > 120) {
+      errores.push({ field: "passwordNueva", message: "La contraseña debe tener entre 8 y 120 caracteres." });
+    } else if (!/[a-zA-Z]/.test(nueva) || !/\d/.test(nueva)) {
+      errores.push({ field: "passwordNueva", message: "La contraseña debe combinar letras y números." });
+    }
+
+    if (errores.length) {
+      throw errorDeValidacion(errores);
+    }
+
+    const coincide = await bcrypt.compare(String(passwordActual ?? ""), user.passwordHash);
+
+    if (!coincide) {
+      throw errorHttp(400, "INVALID_CURRENT_PASSWORD", "La contraseña actual no es correcta");
+    }
+
+    if (await bcrypt.compare(nueva, user.passwordHash)) {
+      throw errorDeValidacion([{ field: "passwordNueva", message: "La contraseña nueva debe ser distinta de la actual." }]);
+    }
+
+    const actualizado = userRepository.update(user.id, {
+      passwordHash: await bcrypt.hash(nueva, 10),
+      passwordChangedAt: new Date().toISOString(),
+      mustChangePassword: false
+    });
+
+    revokeUserSessions(user.id);
+    return sessionPayload(actualizado, signAccessToken(actualizado), createRefreshToken(actualizado.id));
   },
 
   logout(refreshToken) {

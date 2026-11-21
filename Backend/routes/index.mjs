@@ -93,6 +93,7 @@ const rutasDeclaradas = [
   { method: "POST", path: "/api/v1/auth/refresh", handler: authController.refresh },
   { method: "POST", path: "/api/v1/auth/logout", handler: authController.logout },
   { method: "GET", path: "/api/v1/auth/me", middlewares: [verifyToken], handler: authController.me },
+  { method: "POST", path: "/api/v1/auth/change-password", middlewares: [verifyToken], handler: authController.changePassword },
   { method: "GET", path: "/api/v1/auth/permissions", middlewares: [verifyToken], handler: authController.permissions },
 
   /* Portal del alumno. Ninguna ruta recibe un id de alumno: el legajo sale
@@ -138,6 +139,7 @@ const rutasDeclaradas = [
      resto. Asignar roles (PUT siguiente) exige identity.manage. */
   { method: "PATCH", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.updateUser },
   { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.replaceUserRoles },
+  { method: "POST", path: "/api/v1/users/:userId/reset-password", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.resetUserPassword },
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
   { method: "DELETE", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.deleteUser },
 

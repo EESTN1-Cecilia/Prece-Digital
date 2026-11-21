@@ -1,7 +1,8 @@
 import { getStore } from "../../database/memory-store.mjs";
 import { errorDeValidacion, noEncontrado } from "../../utils/api-error.mjs";
 
-export const DESTINATARIOS = ["alumnos", "preceptores", "ambos"];
+/* "ambos" = alumnos y preceptores. "docentes" es un publico aparte: el docente solo ve lo dirigido a el. */
+export const DESTINATARIOS = ["alumnos", "preceptores", "docentes", "ambos"];
 export const MAX_TEXTO = 2000;
 export const MAX_TITULO = 160;
 /* El formulario del director permite hasta 5 MB; en base64 ocupa ~4/3 de eso. */
@@ -78,7 +79,9 @@ function vista(informe) {
 }
 
 function llegaA(informe, destinatario) {
-  return informe.destinatarios === destinatario || informe.destinatarios === "ambos";
+  if (informe.destinatarios === destinatario) return true;
+  /* "ambos" cubre alumnos y preceptores, no a los docentes. */
+  return informe.destinatarios === "ambos" && destinatario !== "docentes";
 }
 
 function ordenarPorFecha(lista) {
@@ -93,13 +96,18 @@ export function listarInformes(query = {}) {
   const filtroDest = query.destinatario ? String(query.destinatario).toLowerCase().trim() : null;
 
   let filtrados = [...lista];
-  if (filtroDest === "alumnos" || filtroDest === "preceptores") {
+  if (filtroDest === "alumnos" || filtroDest === "preceptores" || filtroDest === "docentes") {
     filtrados = filtrados.filter((i) => llegaA(i, filtroDest));
   } else if (filtroDest && filtroDest !== "todos") {
     filtrados = filtrados.filter((i) => i.destinatarios === filtroDest);
   }
 
   return ordenarPorFecha(filtrados).map(vista);
+}
+
+/* Informes para el docente: solo lo dirigido a docentes. */
+export function listarParaDocentes() {
+  return listarInformes({ destinatario: "docentes" });
 }
 
 /* Novedades del portal del alumno: solo lo dirigido a alumnos (o a ambos). */
@@ -144,7 +152,7 @@ export function crearInforme(datos = {}, user = null) {
   if (!texto) detalles.push({ field: "texto", message: "El informe necesita un texto." });
   if (texto.length > MAX_TEXTO) detalles.push({ field: "texto", message: `El texto no puede superar los ${MAX_TEXTO} caracteres.` });
   if (titulo.length > MAX_TITULO) detalles.push({ field: "titulo", message: `El título no puede superar los ${MAX_TITULO} caracteres.` });
-  if (!DESTINATARIOS.includes(destinatarios)) detalles.push({ field: "destinatarios", message: "Elegí alumnos, preceptores o ambos." });
+  if (!DESTINATARIOS.includes(destinatarios)) detalles.push({ field: "destinatarios", message: "Elegí alumnos, preceptores, docentes o ambos." });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) detalles.push({ field: "fecha", message: "La fecha no es válida." });
   if (detalles.length) throw errorDeValidacion(detalles);
 

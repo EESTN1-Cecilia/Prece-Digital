@@ -31,6 +31,7 @@ import ServerDashboardView from "../modules/server/server-dashboard-view.js";
 import DocenteDashboardView from "../modules/docente/docente-dashboard-view.js";
 import DocenteAsistenciasView from "../modules/docente/docente-asistencias-view.js";
 import DocenteCursosView from "../modules/docente/docente-cursos-view.js";
+import DocenteInformesView from "../modules/docente/docente-informes-view.js";
 import BoletinesListView from "../modules/students/boletines-list-view.js";
 import CursosListView from "../modules/schools/cursos-list-view.js";
 import CargarAlumnoView from "../modules/students/cargar-alumno-view.js";
@@ -289,6 +290,16 @@ export const RUTAS = [
     enMenu: true
   },
   {
+    patron: "#/docente/informes",
+    titulo: "Informes de Dirección",
+    vista: DocenteInformesView,
+    seccion: "General",
+    icono: "clipboard",
+    padre: "#/inicio",
+    roles: ["docente"],
+    enMenu: true
+  },
+  {
     patron: "#/asistencias/:cursoId",
     titulo: "Planilla de Asistencia",
     vista: AsistenciasView,
@@ -373,7 +384,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "activity",
     padre: "#/inicio",
-    roles: ["preceptor", "secretario", "secretaria", "director", "admin", "jefe_area"],
+    roles: ["docente", "preceptor", "secretario", "secretaria", "director", "admin", "jefe_area"],
     permisos: [PERMISOS.observacionesLeer],
     enMenu: true
   },

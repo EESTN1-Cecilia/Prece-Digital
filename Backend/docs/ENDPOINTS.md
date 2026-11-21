@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 467 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 469 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -51,6 +51,7 @@ Total: 467 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | POST | `/api/v1/auth/refresh` | publica |
 | POST | `/api/v1/auth/logout` | publica |
 | GET | `/api/v1/auth/me` | sesion valida |
+| POST | `/api/v1/auth/change-password` | sesion valida |
 | GET | `/api/v1/auth/permissions` | sesion valida |
 
 ## alumno
@@ -129,6 +130,7 @@ Total: 467 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | GET | `/api/v1/users/:userId` | `users.read` |
 | PATCH | `/api/v1/users/:userId` | `identity.update` |
 | PUT | `/api/v1/users/:userId/roles` | `identity.manage` |
+| POST | `/api/v1/users/:userId/reset-password` | `identity.manage` |
 | PATCH | `/api/v1/users/:userId/deactivate` | `users.deactivate` |
 | DELETE | `/api/v1/users/:userId` | `identity.manage` |
 

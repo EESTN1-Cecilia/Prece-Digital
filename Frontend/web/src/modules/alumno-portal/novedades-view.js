@@ -34,7 +34,9 @@ const TONO_JUSTIFICACION = { justificada: "ok", no_justificada: "peligro", pendi
 const MAXIMO = 20;
 
 const PUBLICACIONES_POR_PAGINA = 3;
-const PUBLICACIONES = [
+/* Avisos fijos: ya no se muestran. La cartelera solo muestra lo que Dirección
+   envía desde su panel (informes dirigidos a alumnos). */
+const PUBLICACIONES_FIJAS = [
   ["Dirección", "Información institucional", "Canales de comunicación con la escuela", "En esta cartelera se reúnen los avisos de la institución. Para consultas sobre un comunicado, dirigite al área que figura como emisora."],
   ["Jefatura de Área", "Talleres", "Organización de las clases de taller", "Antes de cada clase, confirmá con tu docente el aula, el horario y los materiales indicados para tu grupo."],
   ["Preceptoría", "Asistencia", "Justificación de inasistencias", "Consultá en Mis Asistencias las inasistencias registradas. Si necesitás presentar documentación o consultar por una fecha, acercate a Preceptoría."],
@@ -84,6 +86,7 @@ export default function NovedadesAlumnoView() {
   const [pagina, setPagina] = useState(0);
   const [areaFiltro, setAreaFiltro] = useState("");
   const [informesDireccion, setInformesDireccion] = useState([]);
+  const [informesCargados, setInformesCargados] = useState(false);
   const [descarga, setDescarga] = useState({ informeId: null, error: "" });
 
   useEffect(() => {
@@ -93,9 +96,11 @@ export default function NovedadesAlumnoView() {
         .then((items) => {
           if (!cancelado && Array.isArray(items)) {
             setInformesDireccion(items);
+            setInformesCargados(true);
           }
         })
         .catch(() => {
+          if (!cancelado) setInformesCargados(true);
           /* Sin conexion o sesion vencida: se conserva lo ya mostrado. El 401 lo
              maneja el cliente HTTP y lleva al login. */
         });
@@ -136,17 +141,7 @@ export default function NovedadesAlumnoView() {
       fecha: inf.fecha || null,
       archivo: inf.archivo || null
     }));
-    const base = PUBLICACIONES.map(([area, categoria, titulo, texto], idx) => ({
-      id: `base-${idx}`,
-      area,
-      categoria,
-      titulo,
-      texto,
-      fecha: null,
-      archivo: null
-    }));
-    const todas = [...dinamicas, ...base];
-    return areaFiltro ? todas.filter((item) => item.area === areaFiltro) : todas;
+    return areaFiltro ? dinamicas.filter((item) => item.area === areaFiltro) : dinamicas;
   }, [informesDireccion, areaFiltro]);
 
   const totalPaginas = Math.max(1, Math.ceil(publicaciones.length / PUBLICACIONES_POR_PAGINA));
@@ -163,6 +158,11 @@ export default function NovedadesAlumnoView() {
           h("h2", { id: "pa-publicaciones" }, "Cartelera escolar"),
           h("span", null, "Avisos institucionales")
         ),
+        !informesCargados
+          ? h(Cargando)
+          : publicaciones.length === 0
+          ? h(Vacio, { titulo: "Todavía no hay comunicados.", descripcion: "Cuando Dirección publique un informe para alumnos, lo vas a ver acá." })
+          : null,
         publicaciones.slice(inicio, inicio + PUBLICACIONES_POR_PAGINA).map((pub, indice) =>
           h("article", { className: indice === 0 && pagina === 0 ? "pa-publicacion pa-publicacion--destacada" : "pa-publicacion", "data-area": pub.area, key: pub.id || pub.titulo },
             h("div", { className: "pa-publicacion__metadatos" },
@@ -206,7 +206,7 @@ export default function NovedadesAlumnoView() {
             }
           },
             h("option", { value: "" }, "Todas las áreas"),
-            ["Dirección", "Jefatura de Área", "Preceptoría"].map((area) =>
+            ["Dirección"].map((area) =>
               h("option", { key: area, value: area }, area)
             )
           )

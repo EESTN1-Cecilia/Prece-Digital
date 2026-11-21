@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { Readable } from "node:stream";
 import * as service from "../modules/director/informes-direccion.service.mjs";
-import { soloDireccion, soloPersonal } from "../modules/director/informes-direccion.middleware.mjs";
+import * as controller from "../modules/director/informes-direccion.controller.mjs";
+import { esSoloDocente, soloDireccion, soloPersonal } from "../modules/director/informes-direccion.middleware.mjs";
 import { readJsonBody } from "../utils/read-body.mjs";
 
 test("los informes iniciales de direccion incluyen comunicados para preceptores y para ambos", () => {
@@ -130,4 +131,51 @@ test("readJsonBody respeta un limite propio por ruta y mantiene el general de 1 
   await assert.rejects(() => readJsonBody(pedido(cuerpo)), { code: "PAYLOAD_TOO_LARGE" });
   const leido = await readJsonBody(pedido(cuerpo), { maxBytes: service.MAX_BODY_INFORME_BYTES });
   assert.equal(leido.relleno.length, 1.5 * 1024 * 1024);
+});
+
+test("un informe para docentes llega solo a docentes; \"ambos\" sigue siendo alumnos y preceptores", () => {
+  const paraDocentes = service.crearInforme({ titulo: "Planificaciones", texto: "Entregar antes del viernes", destinatarios: "docentes" });
+  const paraAmbos = service.crearInforme({ titulo: "Aviso general", texto: "Alumnos y preceptores", destinatarios: "ambos" });
+  const paraAlumnos = service.crearInforme({ titulo: "Mesas", texto: "Fechas", destinatarios: "alumnos" });
+
+  const deDocentes = service.listarParaDocentes();
+  assert.ok(deDocentes.some((i) => i.id === paraDocentes.id));
+  assert.ok(!deDocentes.some((i) => i.id === paraAmbos.id), "\"ambos\" no incluye a los docentes");
+  assert.ok(!deDocentes.some((i) => i.id === paraAlumnos.id));
+
+  assert.ok(!service.listarParaAlumnos().some((i) => i.id === paraDocentes.id), "lo de docentes no llega al alumno");
+  assert.ok(!service.listarInformes({ destinatario: "preceptores" }).some((i) => i.id === paraDocentes.id));
+
+  for (const informe of [paraDocentes, paraAmbos, paraAlumnos]) service.eliminarInforme(informe.id);
+});
+
+test("el docente solo ve y baja los informes dirigidos a docentes", () => {
+  const dataUrl = `data:application/pdf;base64,${Buffer.from("contenido").toString("base64")}`;
+  const propio = service.crearInforme({ titulo: "Para docentes", texto: "Texto", destinatarios: "docentes", archivo: { nombre: "docentes.pdf", tipo: "application/pdf", dataUrl } });
+  const ajeno = service.crearInforme({ titulo: "Interno", texto: "Solo preceptoría", destinatarios: "preceptores", archivo: { nombre: "interno.pdf", tipo: "application/pdf", dataUrl } });
+  const docente = { assignments: [{ role: "docente" }] };
+  const director = { assignments: [{ role: "director" }] };
+
+  assert.equal(esSoloDocente(docente), true);
+  assert.equal(esSoloDocente({ assignments: [{ role: "docente" }, { role: "preceptor" }] }), false);
+  assert.equal(esSoloDocente(director), false);
+  assert.equal(esSoloDocente({ assignments: [] }), false);
+
+  /* Aunque pida otro filtro, el docente recibe solo lo suyo. */
+  for (const url of [new URL("http://x/api/v1/informes-direccion"), new URL("http://x/api/v1/informes-direccion?destinatario=preceptores")]) {
+    const ids = controller.listar({ url, user: docente }).body.data.map((i) => i.id);
+    assert.ok(ids.includes(propio.id));
+    assert.ok(!ids.includes(ajeno.id));
+  }
+
+  /* El director conserva el listado completo. */
+  const todos = controller.listar({ url: new URL("http://x/api/v1/informes-direccion"), user: director }).body.data.map((i) => i.id);
+  assert.ok(todos.includes(propio.id) && todos.includes(ajeno.id));
+
+  assert.equal(controller.archivo({ params: { informeId: propio.id }, user: docente }).body.data.nombre, "docentes.pdf");
+  assert.throws(() => controller.archivo({ params: { informeId: ajeno.id }, user: docente }), { code: "NOT_FOUND" });
+  assert.equal(controller.archivo({ params: { informeId: ajeno.id }, user: director }).body.data.nombre, "interno.pdf");
+
+  service.eliminarInforme(propio.id);
+  service.eliminarInforme(ajeno.id);
 });
