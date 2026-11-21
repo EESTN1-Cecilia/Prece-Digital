@@ -374,7 +374,7 @@ export default function DashboardView() {
 
   return h(
     "section",
-    { className: "preceptoria-dashboard-wrapper" },
+    { className: `preceptoria-dashboard-wrapper ${pestanaActiva !== "inicio" ? "preceptoria-dashboard-wrapper--subview" : ""}` },
 
     // 0. Barra Superior Institucional (Estilo Foto 1)
     h(
@@ -1230,17 +1230,17 @@ export default function DashboardView() {
             ),
             h(
               "div",
-              { style: { display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" } },
+              { className: "preceptoria-subview-header-actions" },
               errorBoletines ? h("span", { role: "alert", style: { color: "#b91c1c", fontSize: "13px" } }, errorBoletines) : null,
               h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${alumnosFiltrados.length} Alumnos en Padrón`),
               h(
                 "button",
                 {
                   type: "button",
+                  className: "preceptoria-btn-print-boletines",
                   onClick: imprimirBoletines,
                   disabled: Boolean(imprimiendoBoletines) || alumnosFiltrados.length === 0,
-                  title: "Imprime los boletines de todos los alumnos del curso filtrado: 2 por hoja Oficio apaisada",
-                  style: { background: "#1d4ed8", color: "#fff", border: "1px solid #1d4ed8", borderRadius: "999px", padding: "6px 16px", fontSize: "13px", fontWeight: 700, cursor: "pointer", opacity: imprimiendoBoletines || alumnosFiltrados.length === 0 ? 0.6 : 1 }
+                  title: "Imprime los boletines de todos los alumnos del curso filtrado: 2 por hoja Oficio apaisada"
                 },
                 imprimiendoBoletines ? "Preparando…" : "Imprimir Boletines"
               )
