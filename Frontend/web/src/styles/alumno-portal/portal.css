@@ -1568,6 +1568,658 @@ a.pa-indicador:hover {
   .pa-cabecera__menu {
     display: none !important;
   }
+
+  /* ---------------- Encabezados de pantalla y acciones ---------------- */
+  .pa-encabezado {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .pa-titulo {
+    font-size: 24px !important;
+    letter-spacing: -0.3px !important;
+    line-height: 1.15 !important;
+    color: #1d2a44 !important;
+  }
+
+  .pa-descripcion {
+    font-size: 13.5px !important;
+    margin-top: 3px !important;
+    color: #5b6b86 !important;
+  }
+
+  .pa-encabezado > div:first-child::after {
+    width: 36px !important;
+    height: 3px !important;
+    margin-top: 6px !important;
+    border-radius: 2px !important;
+    background: var(--pa-bordo-2) !important;
+  }
+
+  .pa-encabezado__acciones {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .pa-encabezado__acciones .pa-selector {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    margin-bottom: 2px !important;
+  }
+
+  .pa-encabezado__acciones .pa-boton {
+    flex: 1 1 calc(50% - 4px) !important;
+    min-width: 130px !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 0 10px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  .pa-selector {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    width: 100% !important;
+    background: #fff !important;
+    padding: 6px 12px !important;
+    border: 1px solid var(--pa-linea) !important;
+    border-radius: 10px !important;
+  }
+
+  .pa-selector__label {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #6b7a93 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  .pa-selector__combobox.custom-select-wrapper {
+    flex: 1 !important;
+    max-width: 140px !important;
+  }
+
+  .pa-selector__combobox .custom-select__trigger {
+    height: 36px !important;
+    min-height: 36px !important;
+    font-size: 13px !important;
+  }
+
+  /* ---------------- Tarjeta genérica (.pa-tarjeta) ---------------- */
+  .pa-tarjeta {
+    padding: 14px 14px 16px !important;
+    border-radius: 16px !important;
+    border: 0 !important;
+    border-left: 5px solid var(--pa-bordo-2) !important;
+    box-shadow: 0 4px 14px rgba(64, 20, 28, 0.08) !important;
+    background: #fff !important;
+  }
+
+  .pa-tarjeta__cabecera {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--pa-linea) !important;
+  }
+
+  .pa-tarjeta__titulo {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #1d2a44 !important;
+  }
+
+  /* ---------------- Filtros (.pa-filtros / .pa-chip) ---------------- */
+  .pa-filtros {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    padding: 2px 0 4px !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+  }
+
+  .pa-chip {
+    padding: 6px 12px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    border-radius: 16px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ---------------- Boletín del Alumno (.pa-boletin) ---------------- */
+  .pa-boletin {
+    padding: 14px 12px 16px !important;
+    border-radius: 16px !important;
+    border: 0 !important;
+    border-left: 5px solid var(--pa-bordo-2) !important;
+    box-shadow: 0 4px 16px rgba(64, 20, 28, 0.08) !important;
+    background: #fff !important;
+  }
+
+  .pa-boletin__cabecera {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid var(--pa-linea) !important;
+  }
+
+  .pa-boletin__logo {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 10px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+  }
+
+  .pa-boletin__institucion {
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .pa-boletin__escuela {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: var(--pa-bordo-2) !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+  }
+
+  .pa-boletin__titulo {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    margin: 2px 0 0 !important;
+    color: #1d2a44 !important;
+    line-height: 1.25 !important;
+  }
+
+  .pa-boletin__alumno {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px 12px !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    background: #faf8f8 !important;
+    border: 1px solid var(--pa-linea) !important;
+    margin: 12px 0 !important;
+  }
+
+  .pa-boletin__alumno dt {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #6b7a93 !important;
+    letter-spacing: 0.2px !important;
+    text-transform: uppercase !important;
+  }
+
+  .pa-boletin__alumno dd {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #1d2a44 !important;
+    margin-top: 1px !important;
+    word-break: break-word !important;
+  }
+
+  .pa-boletin__resumen {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--pa-linea) !important;
+    overflow: hidden !important;
+    margin: 12px 0 14px !important;
+    background: #fff !important;
+  }
+
+  .pa-boletin__resumen li {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px 6px !important;
+    gap: 2px !important;
+    background: #fff !important;
+  }
+
+  .pa-boletin__resumen li:nth-child(even) {
+    border-left: 1px solid var(--pa-linea) !important;
+  }
+
+  .pa-boletin__resumen li:nth-child(odd) {
+    border-left: 0 !important;
+  }
+
+  .pa-boletin__resumen li:nth-child(n + 3) {
+    border-top: 1px solid var(--pa-linea) !important;
+  }
+
+  .pa-boletin__resumen li:last-child:nth-child(odd) {
+    grid-column: span 2 !important;
+    border-left: 0 !important;
+    border-top: 1px solid var(--pa-linea) !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+  }
+
+  .pa-boletin__resumen strong {
+    font-size: 19px !important;
+    font-weight: 800 !important;
+    color: var(--pa-bordo-2) !important;
+    line-height: 1.1 !important;
+  }
+
+  .pa-boletin__resumen span {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--pa-gris) !important;
+  }
+
+  .pa-boletin__resumen li:last-child:nth-child(odd) strong {
+    font-size: 16px !important;
+  }
+
+  .pa-boletin__resumen li:last-child:nth-child(odd) span {
+    font-size: 12px !important;
+  }
+
+  .pa-tabla-envoltorio {
+    border-radius: 12px !important;
+    border: 1px solid var(--pa-linea) !important;
+    overflow-x: auto !important;
+    background: #fff !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .pa-boletin__tabla {
+    font-size: 12.5px !important;
+    min-width: 460px !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .pa-boletin__tabla th,
+  .pa-boletin__tabla td {
+    padding: 7px 8px !important;
+    border: 1px solid #ebd9dc !important;
+  }
+
+  .pa-boletin__tabla thead th {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px !important;
+    text-transform: uppercase !important;
+    background: #fbf8f8 !important;
+    color: #4b5563 !important;
+    text-align: center !important;
+  }
+
+  .pa-boletin__tabla thead th:first-child {
+    text-align: left !important;
+  }
+
+  .pa-boletin__seccion th {
+    background: var(--pa-bordo-2) !important;
+    color: #fff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    padding: 6px 10px !important;
+    border: 0 !important;
+  }
+
+  .pa-boletin__materia {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #1d2a44 !important;
+    line-height: 1.25 !important;
+    display: block !important;
+  }
+
+  .pa-boletin__docente {
+    font-size: 10px !important;
+    color: #6b7a93 !important;
+    margin-top: 1px !important;
+    display: block !important;
+  }
+
+  .pa-boletin__nota {
+    width: 44px !important;
+    min-width: 44px !important;
+    text-align: center !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 6px 2px !important;
+  }
+
+  .pa-boletin__situacion {
+    font-size: 10px !important;
+    color: #6b7a93 !important;
+    margin-top: 2px !important;
+    display: block !important;
+  }
+
+  .pa-boletin__pie {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin-top: 14px !important;
+  }
+
+  .pa-boletin__bloque {
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    background: #faf8f8 !important;
+    border: 1px solid var(--pa-linea) !important;
+    border-left: 4px solid #d79aa1 !important;
+  }
+
+  .pa-boletin__bloque h3 {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: var(--pa-bordo-2) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.2px !important;
+    margin: 0 0 4px !important;
+  }
+
+  .pa-boletin__bloque p,
+  .pa-boletin__bloque li {
+    font-size: 12px !important;
+    color: #374151 !important;
+    line-height: 1.4 !important;
+  }
+
+  .pa-boletin__criterio {
+    font-size: 11px !important;
+    color: #6b7a93 !important;
+    margin-top: 8px !important;
+  }
+
+  .pa-boletin__emision {
+    font-size: 10.5px !important;
+    color: #9ca3af !important;
+    text-align: center !important;
+    margin-top: 10px !important;
+  }
+
+  /* ---------------- Tablas de detalle tipo tarjeta (Asistencias y Situación) ---------------- */
+  .pa-tabla:not(.pa-boletin__tabla) {
+    display: block !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) thead {
+    display: none !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) tr {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding: 10px 12px !important;
+    border: 1px solid #ebd9dc !important;
+    border-left: 4px solid var(--pa-bordo-2) !important;
+    border-radius: 12px !important;
+    background: #faf8f8 !important;
+    box-shadow: 0 2px 6px rgba(64, 20, 28, 0.04) !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) tr:hover {
+    background: #faf8f8 !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) th,
+  .pa-tabla:not(.pa-boletin__tabla) td {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 2px 0 !important;
+    border: 0 !important;
+    text-align: right !important;
+    font-size: 12.5px !important;
+    min-height: 20px !important;
+    color: #1d2a44 !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) [data-titulo]::before {
+    content: attr(data-titulo) !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    color: #6b7a93 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.2px !important;
+    text-align: left !important;
+    flex-shrink: 0 !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) th[scope="row"] {
+    border-bottom: 1px solid #ebd9dc !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .pa-tabla:not(.pa-boletin__tabla) th[scope="row"] .pa-materia {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: var(--pa-bordo-2) !important;
+  }
+
+  /* ---------------- Mis Previas ---------------- */
+  .pa-previas {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .pa-previa {
+    padding: 12px 12px !important;
+    border-radius: 14px !important;
+    border: 1px solid #ebd9dc !important;
+    border-left: 5px solid var(--pa-pendiente) !important;
+    background: #faf8f8 !important;
+    box-shadow: 0 2px 6px rgba(64, 20, 28, 0.04) !important;
+  }
+
+  .pa-previa--aprobada {
+    border-left-color: var(--pa-ok) !important;
+  }
+
+  .pa-previa__cabecera {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .pa-previa__materia {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #1d2a44 !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+  }
+
+  .pa-previa__origen {
+    font-size: 11px !important;
+    color: #6b7a93 !important;
+    margin: 2px 0 0 !important;
+  }
+
+  .pa-previa__datos {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px 10px !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    border: 1px solid var(--pa-linea) !important;
+    margin: 10px 0 0 !important;
+  }
+
+  .pa-previa__datos > div:first-child {
+    grid-column: span 2 !important;
+  }
+
+  .pa-previa__datos dt {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #6b7a93 !important;
+    text-transform: uppercase !important;
+  }
+
+  .pa-previa__datos dd {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #1d2a44 !important;
+    margin: 1px 0 0 !important;
+  }
+
+  /* ---------------- Mi Cuenta ---------------- */
+  .pa-columnas {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .pa-datos {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px 10px !important;
+  }
+
+  .pa-datos .pa-dato:first-child {
+    grid-column: span 2 !important;
+  }
+
+  .pa-dato {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
+  .pa-dato dt {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    color: #6b7a93 !important;
+    text-transform: uppercase !important;
+  }
+
+  .pa-dato dd {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #1d2a44 !important;
+    word-break: break-word !important;
+    margin: 0 !important;
+  }
+
+  .pa-formulario {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .pa-campo {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  .pa-campo__etiqueta {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #374151 !important;
+  }
+
+  .pa-campo__control input {
+    height: 42px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+  }
+
+  .pa-campo__alternar {
+    min-height: 42px !important;
+    font-size: 12px !important;
+    padding: 0 12px !important;
+  }
+
+  .pa-requisitos {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+    padding: 8px 10px !important;
+    background: #faf8f8 !important;
+    border-radius: 8px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* ---------------- Cartelera / Novedades ---------------- */
+  .pa-cartelera {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .pa-cartelera__panel {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .pa-publicacion {
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .pa-publicacion h3 {
+    font-size: 15px !important;
+  }
+
+  .pa-publicacion p {
+    font-size: 13px !important;
+  }
+
+  .pa-publicacion__metadatos {
+    font-size: 11.5px !important;
+  }
+
+  .pa-aviso {
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+  }
+
+  .pa-nota {
+    font-size: 11.5px !important;
+    color: #6b7a93 !important;
+    line-height: 1.4 !important;
+    margin-top: 10px !important;
+  }
 }
 
 @media print {
@@ -1605,12 +2257,12 @@ a.pa-indicador:hover {
 .pa-boletin__bloque { border: 0; border-left: 4px solid #d79aa1; border-radius: 8px; background: var(--pa-fondo-2); }
 
 @media (max-width: 640px) {
-  .pa-titulo { font-size: 30px; }
-  .pa-descripcion { font-size: 17px; }
+  .pa-titulo { font-size: 24px; }
+  .pa-descripcion { font-size: 14px; }
   .pa-boletin__docente { padding-left: 0; }
   .pa-boletin .pa-materia__icono { display: none; }
-  .pa-boletin__titulo { font-size: 17px; }
-  .pa-boletin__logo { width: 48px; height: 48px; }
+  .pa-boletin__titulo { font-size: 15px; }
+  .pa-boletin__logo { width: 42px; height: 42px; }
 }
 
 @media print {
@@ -1652,6 +2304,14 @@ a.pa-indicador:hover {
   .pa-boletin__resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pa-boletin__resumen li:nth-child(odd) { border-left: 0; }
   .pa-boletin__resumen li:nth-child(n + 3) { border-top: 1px solid var(--pa-linea); }
+  .pa-boletin__resumen li:last-child:nth-child(odd) {
+    grid-column: span 2;
+    border-left: 0;
+    border-top: 1px solid var(--pa-linea);
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px 12px;
+  }
 }
 
 @media print {
