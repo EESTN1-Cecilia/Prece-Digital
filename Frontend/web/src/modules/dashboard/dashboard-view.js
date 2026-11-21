@@ -171,6 +171,15 @@ export default function DashboardView() {
   const [imprimiendoBoletines, setImprimiendoBoletines] = useState(null); // null | { hecho, total }
   const [errorBoletines, setErrorBoletines] = useState("");
 
+  // Al cambiar de apartado dentro del tablero, resetear el scroll arriba de todo
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    const scrollContainer = document.querySelector(".page") || document.querySelector("main");
+    if (scrollContainer) scrollContainer.scrollTop = 0;
+  }, [pestanaActiva]);
+
   // Datos del sistema
   const [dataSecretaria, setDataSecretaria] = useState(null);
   const [catedrasDocentes, setCatedrasDocentes] = useState([]);
