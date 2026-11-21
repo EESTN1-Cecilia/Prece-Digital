@@ -1309,6 +1309,7 @@ a.pa-indicador:hover {
 @media (max-width: 1100px) {
   .pa-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .pa-misdatos__grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 18px; }
+  .pa-misdatos__grilla > .pa-dato-ico:first-child { grid-column: span 2; }
 }
 
 @media (max-width: 768px) {
@@ -1445,9 +1446,7 @@ a.pa-indicador:hover {
     gap: 14px 10px !important;
     padding: 14px 0 6px !important;
   }
-  .pa-misdatos__grilla > .pa-dato-ico:first-child,
-  .pa-misdatos__grilla > .pa-dato-ico:nth-child(5),
-  .pa-misdatos__grilla > .pa-dato-ico:last-child {
+  .pa-misdatos__grilla > .pa-dato-ico:first-child {
     grid-column: span 2 !important;
   }
   .pa-dato-ico {
