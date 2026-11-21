@@ -6,7 +6,7 @@ import { sesionesDeGrupo } from "./talleres-cronograma.js";
 const resumen = (total, F, M) => ({ total, F, M, X: 0 });
 
 const datos = {
-  escuela: "E.E.S.T. N°1 Cecilia Berdichevski",
+  escuela: "E.E.S.T. N°1 Cecilia Berdichevsky",
   curso: "1°1",
   ciclo: "Ciclo Básico",
   ahora: new Date(2026, 10, 3, 9, 30),

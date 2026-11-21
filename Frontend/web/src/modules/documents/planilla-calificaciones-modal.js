@@ -765,7 +765,7 @@ export function PlanillaCalificacionesModal({
                     e.currentTarget.src = "/assets/Logo Tec.png";
                   }
                 }),
-                h("span", { className: "doc-escuela-title" }, "E.E.S.T. N° 1 \"CECILIA BERDICHEVSKI\"")
+                h("span", { className: "doc-escuela-title" }, "E.E.S.T. N° 1 \"CECILIA BERDICHEVSKY\"")
               )
             ),
             h("h1", { className: "doc-planilla-main-title" }, `PLANILLA OFICIAL DE CALIFICACIONES ${fecha.anio}`),

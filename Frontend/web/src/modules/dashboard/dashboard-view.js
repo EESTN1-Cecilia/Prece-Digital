@@ -378,7 +378,7 @@ export default function DashboardView() {
   };
 
   const nombrePreceptor = user.nombre || user.displayName || "Preceptor/a";
-  const escuelaNombre = user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski";
+  const escuelaNombre = user.escuela || "E.E.S.T. N°1 Cecilia Berdichevsky";
   const cicloLectivo = new Date().getFullYear();
 
   return h(
@@ -471,7 +471,7 @@ export default function DashboardView() {
           "div",
           { className: "preceptoria-hero-crest-text" },
           h("strong", null, "E.E.S.T. N°1"),
-          h("span", null, "Cecilia Berdichevski")
+          h("span", null, "Cecilia Berdichevsky")
         )
       )
     ),

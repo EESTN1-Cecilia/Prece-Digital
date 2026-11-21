@@ -4,7 +4,7 @@
 
 export const INSTITUCION = {
   direccion: "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN · PROVINCIA DE BUENOS AIRES",
-  escuela: "E.E.S.T. N.º 1 “Cecilia Berdichevski”"
+  escuela: "E.E.S.T. N.º 1 “Cecilia Berdichevsky”"
 };
 
 export const tituloPlanilla = (anio) => `PLANILLA OFICIAL DE CALIFICACIONES ${anio}`;

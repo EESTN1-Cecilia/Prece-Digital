@@ -77,7 +77,7 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
         h(
           "div",
           { className: "secretaria-eyebrow login-card__eyebrow" },
-          "E.E.S.T. Nº 1 · CECILIA BERDICHEVSKI"
+          "E.E.S.T. Nº 1 · CECILIA BERDICHEVSKY"
         ),
         h(
           "div",

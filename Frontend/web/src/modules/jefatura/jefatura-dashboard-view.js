@@ -176,7 +176,7 @@ export default function JefaturaDashboardView() {
           "div",
           { className: "jf-encabezado__marca" },
           h("img", { src: "/assets/precelogo.jpeg", alt: "", className: "jf-encabezado__logo", "aria-hidden": "true" }),
-          h("span", { className: "jf-eyebrow" }, user?.escuela || "E.E.S.T. N°1 Cecilia Berdichevski")
+          h("span", { className: "jf-eyebrow" }, user?.escuela || "E.E.S.T. N°1 Cecilia Berdichevsky")
         ),
         h("h1", null, "Jefatura de Área"),
         h("p", { className: "jf-encabezado__texto" }, `${fechaDelDia()}. Talleres y cursos del Ciclo Básico y del Ciclo Superior en un solo lugar.`)
@@ -276,7 +276,7 @@ export default function JefaturaDashboardView() {
       "div",
       { className: "jf-contenido", role: "tabpanel", id: `jf-panel-${pestana.id}`, "aria-labelledby": `jf-pestana-${pestana.id}` },
       h(pestana.vista, {
-        escuela: user?.escuela || "E.E.S.T. N°1 Cecilia Berdichevski",
+        escuela: user?.escuela || "E.E.S.T. N°1 Cecilia Berdichevsky",
         cursoSeleccionado: pestana.id === "talleres" ? cursoParaAbrir : null,
         onVolver: () => setCursoParaAbrir(null),
         onAsignacionGuardada: handleTalleresAsignados

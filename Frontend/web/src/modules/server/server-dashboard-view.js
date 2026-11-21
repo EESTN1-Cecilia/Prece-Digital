@@ -157,7 +157,7 @@ export default function ServerDashboardView() {
       h(
         "div",
         { className: "secretaria-eyebrow" },
-        `${data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"} • ${data?.institucion?.sector || "MÓDULO SERVER / RECURSOS"}`
+        `${data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevsky"} • ${data?.institucion?.sector || "MÓDULO SERVER / RECURSOS"}`
       )
     ),
 
@@ -231,7 +231,7 @@ export default function ServerDashboardView() {
                 "div",
                 { className: "school-crest-text" },
                 h("strong", { className: "school-crest-title" }, "E.E.S.T. N°1"),
-                h("span", { className: "school-crest-subtitle" }, "Cecilia Berdichevski")
+                h("span", { className: "school-crest-subtitle" }, "Cecilia Berdichevsky")
               )
             )
           ),

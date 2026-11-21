@@ -101,7 +101,7 @@ export function AlumnoRegularModal({ abierto, onCerrar, alumnoInicial = null }) 
                 h(
                   "div",
                   { style: { display: "flex", flexDirection: "column", justifyContent: "center" } },
-                  h("span", { className: "doc-regular-escuela", style: { whiteSpace: "nowrap" } }, "E.E.S.T. Nº 1 \"Cecilia Berdichevski\""),
+                  h("span", { className: "doc-regular-escuela", style: { whiteSpace: "nowrap" } }, "E.E.S.T. Nº 1 \"Cecilia Berdichevsky\""),
                   h("span", { className: "doc-regular-tel", style: { display: "block", marginTop: "2px" } }, "Monte Grande · Esteban Echeverría")
                 )
               )
@@ -114,7 +114,7 @@ export function AlumnoRegularModal({ abierto, onCerrar, alumnoInicial = null }) 
             "div",
             { className: "doc-regular-est-row" },
             h("strong", null, "ESTABLECIMIENTO: "),
-            h("span", { className: "doc-field-underlined doc-field--bold" }, "E.E.S.T. Nº 1 \"Cecilia Berdichevski\" - Esteban Echeverría")
+            h("span", { className: "doc-field-underlined doc-field--bold" }, "E.E.S.T. Nº 1 \"Cecilia Berdichevsky\" - Esteban Echeverría")
           ),
 
           // Cuerpo

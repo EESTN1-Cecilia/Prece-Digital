@@ -112,7 +112,7 @@ function dibujarBoletin(doc, b, xc, logo) {
     { negrita: true, c: GRIS, alinear: "centro", w: wt, minimo: 5.5 }
   );
   doc.texto(
-    'E.E.S.T. N° 1 "CECILIA BERDICHEVSKI"',
+    'E.E.S.T. N° 1 "CECILIA BERDICHEVSKY"',
     xt,
     y + (esVertical ? 27 : 26),
     esVertical ? 14.5 : 13,

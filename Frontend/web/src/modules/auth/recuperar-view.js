@@ -17,7 +17,7 @@ export default function RecuperarView() {
       h(
         "div",
         { className: "login-card__top-bar" },
-        h("div", { className: "secretaria-eyebrow login-card__eyebrow" }, "E.E.S.T. Nº 1 · CECILIA BERDICHEVSKI")
+        h("div", { className: "secretaria-eyebrow login-card__eyebrow" }, "E.E.S.T. Nº 1 · CECILIA BERDICHEVSKY")
       ),
       h(
         "div",

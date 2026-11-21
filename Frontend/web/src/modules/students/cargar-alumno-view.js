@@ -2194,7 +2194,7 @@ export default function CargarAlumnoView() {
       h(
         "div",
         { className: "secretaria-eyebrow" },
-        `${user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"} · CICLO ${user.cicloLectivo || 2026}`
+        `${user.escuela || "E.E.S.T. N°1 Cecilia Berdichevsky"} · CICLO ${user.cicloLectivo || 2026}`
       )
     ),
 

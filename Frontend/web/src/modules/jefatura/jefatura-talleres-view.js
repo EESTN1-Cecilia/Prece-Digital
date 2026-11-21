@@ -853,7 +853,7 @@ function DetalleCurso({ division, grupos, escuela, docentesGrupo, onAsignacionGu
 
 /* ---------- Vista ---------- */
 
-export default function JefaturaTalleresView({ escuela = "E.E.S.T. N°1 Cecilia Berdichevski", cursoSeleccionado = null, onVolver = null, onAsignacionGuardada = null } = {}) {
+export default function JefaturaTalleresView({ escuela = "E.E.S.T. N°1 Cecilia Berdichevsky", cursoSeleccionado = null, onVolver = null, onAsignacionGuardada = null } = {}) {
   const [divisiones, setDivisiones] = useState(null);
   const [error, setError] = useState(null);
   const [seleccion, setSeleccion] = useState(cursoSeleccionado);

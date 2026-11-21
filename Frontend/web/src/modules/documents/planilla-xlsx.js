@@ -236,7 +236,7 @@ export function generarPlanillaXlsx(d, logo = null) {
   // --- XML de la hoja
   const filtro = estudiantes.length ? `<autoFilter ref="A${FILA_S}:${letra(ultima)}${ultimaFila}"/>` : "";
   const cols = COLS.map((c, i) => `<col min="${i + 1}" max="${i + 1}" width="${ANCHO_COL[c.id]}" customWidth="1"/>`).join("");
-  const pie = "&amp;L&amp;8E.E.S.T. N.º 1 “Cecilia Berdichevski” · Planilla de calificaciones&amp;R&amp;8Página &amp;P de &amp;N";
+  const pie = "&amp;L&amp;8E.E.S.T. N.º 1 “Cecilia Berdichevsky” · Planilla de calificaciones&amp;R&amp;8Página &amp;P de &amp;N";
   const hoja = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><tabColor rgb="FF${BORDO}"/><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${letra(ultima)}${finArea}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><pane ySplit="${FILA_S}" topLeftCell="A${FILA_S + 1}" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A${FILA_S + 1}" sqref="A${FILA_S + 1}"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${cols}</cols><sheetData>${H.datos()}</sheetData>${filtro}<mergeCells count="${H.combinadas.length}">${H.combinadas.map((m) => `<mergeCell ref="${m}"/>`).join("")}</mergeCells><printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.3" bottom="0.4" header="0.15" footer="0.2"/><pageSetup paperSize="${PAPEL_OFICIO}" orientation="portrait" fitToWidth="1" fitToHeight="1"/><headerFooter><oddFooter>${pie}</oddFooter></headerFooter>${logo ? '<drawing r:id="rId1"/>' : ""}</worksheet>`;
 

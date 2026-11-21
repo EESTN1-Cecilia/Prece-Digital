@@ -316,7 +316,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
             "div",
             null,
             h("small", null, "DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN • PROVINCIA DE BUENOS AIRES"),
-            h("h2", null, 'E.E.S.T. N° 1 "CECILIA BERDICHEVSKI"'),
+            h("h2", null, 'E.E.S.T. N° 1 "CECILIA BERDICHEVSKY"'),
             h("b", null, `BOLETÍN DE CALIFICACIONES • ${boletin.anio}° AÑO`)
           ),
           h("span", { className: "bof-cab-spacer", "aria-hidden": "true" })

@@ -179,7 +179,7 @@ export default function SecretariaDashboardView() {
             h(
               "span",
               { className: "secretaria-eyebrow" },
-              data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevski"
+              data?.institucion?.nombre || user.escuela || "E.E.S.T. N°1 Cecilia Berdichevsky"
             )
           ),
           h("h1", { className: "secretaria-title" }, "Secretaría"),

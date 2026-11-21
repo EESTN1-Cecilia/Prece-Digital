@@ -10,7 +10,7 @@ const PAGINAS = {
   nosotros: {
     titulo: "Sobre Nosotros",
     intro:
-      "Prece.Digital es la plataforma de gestión escolar de la E.E.S.T. Nº 1 \"Cecilia Berdichevski\" de Monte Grande, Esteban Echeverría.",
+      "Prece.Digital es la plataforma de gestión escolar de la E.E.S.T. Nº 1 \"Cecilia Berdichevsky\" de Monte Grande, Esteban Echeverría.",
     bloques: [
       [
         "Qué hacemos",
@@ -62,7 +62,7 @@ const PAGINAS = {
     bloques: [
       ["Consultas generales", CORREO_CONTACTO],
       ["Soporte técnico", CORREO_SOPORTE],
-      ["Escuela", "E.E.S.T. Nº 1 \"Cecilia Berdichevski\" · Monte Grande, Esteban Echeverría"]
+      ["Escuela", "E.E.S.T. Nº 1 \"Cecilia Berdichevsky\" · Monte Grande, Esteban Echeverría"]
     ],
     correo: CORREO_CONTACTO
   }
