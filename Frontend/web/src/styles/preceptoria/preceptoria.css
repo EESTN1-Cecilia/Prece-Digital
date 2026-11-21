@@ -20,17 +20,20 @@
 
 @media (max-width: 768px) {
   .preceptoria-dashboard-wrapper {
+    display: flex;
+    flex-direction: column;
     width: 100% !important;
     max-width: 100% !important;
     margin: 4px 0 20px !important;
     padding: 14px 12px 24px !important;
     border-radius: 18px !important;
-    gap: 14px !important;
+    gap: 12px !important;
     box-sizing: border-box !important;
   }
 
   /* 0. Barra Superior Institucional */
   .preceptoria-top-bar {
+    order: 1 !important;
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
@@ -64,52 +67,71 @@
     border-radius: 12px;
   }
 
-  /* 1. Hero Banner */
+  /* 1. Hero Banner Compacto */
   .preceptoria-hero-banner {
+    order: 2 !important;
     flex-direction: column;
-    padding: 16px 14px;
-    gap: 12px;
+    padding: 12px 14px 10px;
+    gap: 6px;
     align-items: stretch;
-    border-radius: 16px;
+    border-radius: 14px;
   }
 
   .preceptoria-hero-left {
-    gap: 6px;
+    gap: 4px;
     width: 100%;
   }
 
   .preceptoria-hero-eyebrow {
     font-size: 10.5px;
+    gap: 5px;
+  }
+
+  .preceptoria-hero-eyebrow-text--desktop {
+    display: none !important;
+  }
+
+  .preceptoria-hero-eyebrow-text--mobile {
+    display: inline !important;
   }
 
   .preceptoria-hero-title {
-    font-size: 18px;
+    font-size: 16.5px;
     line-height: 1.25;
     letter-spacing: -0.2px;
   }
 
+  /* Ocultar texto largo en celular */
   .preceptoria-hero-subtitle {
-    font-size: 12.5px;
-    line-height: 1.45;
+    display: none !important;
   }
 
+  /* Ocultar etiquetas secundarias redundantes en celular */
   .preceptoria-hero-badges {
+    display: flex;
     gap: 6px;
-    margin-top: 4px;
+    margin-top: 2px;
+  }
+
+  .preceptoria-hero-badges .preceptoria-hero-pill:not(.preceptoria-hero-pill--primary),
+  .preceptoria-hero-pill--desktop-only {
+    display: none !important;
   }
 
   .preceptoria-hero-pill {
     font-size: 11px;
-    padding: 4px 9px;
-    border-radius: 14px;
+    padding: 3px 9px;
+    border-radius: 12px;
   }
 
+  /* Ocultar caja del escudo en celular */
   .preceptoria-hero-crest {
-    display: none;
+    display: none !important;
   }
 
-  /* 2. KPIs Grid (2x2 como en Secretaría) */
+  /* 2. KPIs Grid arriba (2x2 como en Secretaría) */
   .preceptoria-kpis-grid {
+    order: 3 !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
   }
@@ -150,8 +172,17 @@
     line-height: 1.25 !important;
   }
 
+  /* 6. Informes de Dirección (ahora debajo de los KPIs) */
+  .preceptoria-informes-section {
+    order: 4 !important;
+    padding: 14px 12px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+
   /* 3. Módulos Operativos */
   .preceptoria-modules-section {
+    order: 5 !important;
     gap: 10px;
   }
 
@@ -217,8 +248,9 @@
     box-sizing: border-box;
   }
 
-  /* 4. Cursos y Planillas de Asistencia Rápida */
+  /* 4. Cursos y Planillas de Asistencia Rápida / Subvistas */
   .preceptoria-section-box {
+    order: 6 !important;
     padding: 14px 12px;
     gap: 12px;
     border-radius: 16px;
@@ -333,13 +365,6 @@
     padding: 5px 8px;
     font-size: 11px;
     gap: 4px;
-  }
-
-  /* 6. Informes de Dirección */
-  .preceptoria-informes-section {
-    padding: 14px 12px;
-    gap: 10px;
-    border-radius: 16px;
   }
 
   .preceptoria-informes-header {
@@ -498,6 +523,14 @@
   color: #6366f1;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+}
+
+.preceptoria-hero-eyebrow-text--desktop {
+  display: inline;
+}
+
+.preceptoria-hero-eyebrow-text--mobile {
+  display: none;
 }
 
 .preceptoria-hero-dot {

@@ -420,7 +420,8 @@ export default function DashboardView() {
           "span",
           { className: "preceptoria-hero-eyebrow" },
           h("span", { className: "preceptoria-hero-dot" }),
-          "Panel de Preceptoría · Supervisión Institucional"
+          h("span", { className: "preceptoria-hero-eyebrow-text--desktop" }, "Panel de Preceptoría · Supervisión Institucional"),
+          h("span", { className: "preceptoria-hero-eyebrow-text--mobile" }, "Supervisión Institucional")
         ),
         h(
           "h2",
@@ -436,9 +437,9 @@ export default function DashboardView() {
           "div",
           { className: "preceptoria-hero-badges" },
           h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, "Cuerpo de Preceptores"),
-          h("span", { className: "preceptoria-hero-pill" }, `${totalDivisiones} Divisiones Asignadas`),
-          h("span", { className: "preceptoria-hero-pill" }, `Ciclo Lectivo ${cicloLectivo}`),
-          h("span", { className: "preceptoria-hero-pill" }, "Turnos Mañana y Tarde")
+          h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--desktop-only" }, `${totalDivisiones} Divisiones Asignadas`),
+          h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--desktop-only" }, `Ciclo Lectivo ${cicloLectivo}`),
+          h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--desktop-only" }, "Turnos Mañana y Tarde")
         )
       ),
       h(
