@@ -7,14 +7,14 @@ import { obtenerBoletin, obtenerPerfil } from "./portal-api.js";
 
 const mayuscula = (texto) => (texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : null);
 
-function Indicador({ icono, titulo, valor, detalle, detalleVacio, href }) {
+function Indicador({ icono, titulo, valor, detalle, detalleVacio, href, tono = "neutro" }) {
   return h(
     "li",
-    null,
+    { className: "pa-kpis__item" },
     h(
       "a",
-      { className: "pa-kpi", href },
-      h("span", { className: "pa-kpi__icono" }, h(Icono, { nombre: icono, tamano: 26 })),
+      { className: `pa-kpi pa-kpi--${tono}`, href },
+      h("span", { className: "pa-kpi__icono" }, h(Icono, { nombre: icono, tamano: 24 })),
       h(
         "span",
         { className: "pa-kpi__cuerpo" },
@@ -58,10 +58,10 @@ export default function InicioAlumnoView() {
     h(
       "ul",
       { className: "pa-kpis" },
-      h(Indicador, { icono: "usuario", titulo: "Ausentes", valor: resumen.ausentes, detalle: "Inasistencias registradas", href: "#/mi-perfil/asistencias" }),
-      h(Indicador, { icono: "libro", titulo: "Materias con TEP", valor: resumen.materiasConTep, detalle: "Trayectoria en proceso", href: "#/mi-perfil/situacion-academica" }),
-      h(Indicador, { icono: "tilde", titulo: "Materias aprobadas", valor: aprobadas, detalle: "En el ciclo actual", detalleVacio: boletin.error ? "No se pudo cargar" : "Cargando...", href: "#/mi-perfil/boletin" }),
-      h(Indicador, { icono: "portapapeles", titulo: "Previas pendientes", valor: resumen.previasPendientes, detalle: "De ciclos anteriores", href: "#/mi-perfil/previas" })
+      h(Indicador, { icono: "usuario", titulo: "Ausentes", valor: resumen.ausentes, detalle: "Inasistencias registradas", href: "#/mi-perfil/asistencias", tono: resumen.ausentes ? "peligro" : "neutro" }),
+      h(Indicador, { icono: "libro", titulo: "Materias con TEP", valor: resumen.materiasConTep, detalle: "Trayectoria en proceso", href: "#/mi-perfil/situacion-academica", tono: resumen.materiasConTep ? "alerta" : "neutro" }),
+      h(Indicador, { icono: "tilde", titulo: "Materias aprobadas", valor: aprobadas, detalle: "En el ciclo actual", detalleVacio: boletin.error ? "No se pudo cargar" : "Cargando...", href: "#/mi-perfil/boletin", tono: "ok" }),
+      h(Indicador, { icono: "portapapeles", titulo: "Previas pendientes", valor: resumen.previasPendientes, detalle: "De ciclos anteriores", href: "#/mi-perfil/previas", tono: resumen.previasPendientes ? "pendiente" : "neutro" })
     ),
     h(
       "section",

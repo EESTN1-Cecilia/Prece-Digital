@@ -979,6 +979,26 @@ a.pa-indicador:hover {
 .pa-kpi__valor--activo { color: var(--pa-bordo-2); }
 .pa-kpi__detalle { font-size: 12px; line-height: 1.3; color: var(--pa-gris); }
 
+.pa-kpi--peligro { border-left-color: var(--pa-peligro); }
+.pa-kpi--peligro .pa-kpi__icono { color: var(--pa-peligro); background: var(--pa-peligro-fondo); }
+.pa-kpi--peligro .pa-kpi__valor--activo { color: var(--pa-peligro); }
+.pa-kpi--peligro > .pa-icono:last-child { color: var(--pa-peligro); }
+
+.pa-kpi--alerta { border-left-color: #c98a00; }
+.pa-kpi--alerta .pa-kpi__icono { color: var(--pa-alerta); background: var(--pa-alerta-fondo); }
+.pa-kpi--alerta .pa-kpi__valor--activo { color: #a16b00; }
+.pa-kpi--alerta > .pa-icono:last-child { color: #a16b00; }
+
+.pa-kpi--ok { border-left-color: var(--pa-ok); }
+.pa-kpi--ok .pa-kpi__icono { color: var(--pa-ok); background: var(--pa-ok-fondo); }
+.pa-kpi--ok .pa-kpi__valor--activo { color: var(--pa-ok); }
+.pa-kpi--ok > .pa-icono:last-child { color: var(--pa-ok); }
+
+.pa-kpi--pendiente { border-left-color: var(--pa-pendiente); }
+.pa-kpi--pendiente .pa-kpi__icono { color: var(--pa-pendiente); background: var(--pa-pendiente-fondo); }
+.pa-kpi--pendiente .pa-kpi__valor--activo { color: var(--pa-pendiente); }
+.pa-kpi--pendiente > .pa-icono:last-child { color: var(--pa-pendiente); }
+
 .pa-misdatos { position: relative; background: #fff; border-radius: 14px; padding: 24px 28px 20px; box-shadow: 0 4px 18px rgba(64, 20, 28, 0.08); }
 .pa-misdatos__cabecera { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--pa-linea); }
 .pa-misdatos__cabecera h2 { margin: 0 0 6px; font-size: 26px; font-weight: 800; color: #1d2a44; }
@@ -1001,17 +1021,267 @@ a.pa-indicador:hover {
 .pa-reporte__texto span { color: var(--pa-gris-oscuro); font-size: 14px; }
 
 @media (max-width: 1100px) {
-  .pa-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pa-misdatos__grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pa-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .pa-misdatos__grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 18px; }
 }
 
-@media (max-width: 640px) {
-  .pa-saludo__titulo { font-size: 34px; }
-  .pa-saludo__ciclo { font-size: 18px; }
-  .pa-kpis, .pa-reportes, .pa-misdatos__grilla { grid-template-columns: 1fr; }
-  .pa-kpi__valor { font-size: 30px; }
-  .pa-misdatos { padding: 20px 18px 16px; }
-  .pa-misdatos__barras { display: none; }
+@media (max-width: 768px) {
+  .pa-contenido { padding: 16px 12px 36px !important; }
+  .pa-pagina { gap: 14px !important; }
+
+  .pa-saludo__titulo {
+    font-size: 26px !important;
+    letter-spacing: -0.3px !important;
+    line-height: 1.15 !important;
+  }
+  .pa-saludo__ciclo {
+    margin: 4px 0 8px !important;
+    font-size: 13.5px !important;
+  }
+  .pa-saludo__linea {
+    width: 38px !important;
+    height: 3px !important;
+  }
+
+  /* 2x2 Grid para los 4 KPIs en mobile (estilo Secretaría / Preceptoría) */
+  .pa-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px 8px !important;
+  }
+
+  .pa-kpis__item {
+    min-width: 0 !important;
+  }
+
+  .pa-kpi {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    padding: 12px 10px 10px !important;
+    gap: 6px !important;
+    min-height: 104px !important;
+    border-radius: 14px !important;
+    border-left-width: 5px !important;
+    box-shadow: 0 4px 14px rgba(64, 20, 28, 0.08) !important;
+    box-sizing: border-box !important;
+  }
+
+  .pa-kpi:hover {
+    transform: none !important;
+  }
+
+  .pa-kpi > .pa-icono:last-child {
+    position: absolute !important;
+    top: 10px !important;
+    right: 8px !important;
+    margin-left: 0 !important;
+    width: 14px !important;
+    height: 14px !important;
+    opacity: 0.35 !important;
+  }
+
+  .pa-kpi__icono {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+  }
+
+  .pa-kpi__icono .pa-icono,
+  .pa-kpi__icono svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .pa-kpi__cuerpo {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .pa-kpi__titulo {
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    color: #5b6b86 !important;
+    letter-spacing: 0.15px !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .pa-kpi__valor {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    margin: 1px 0 !important;
+  }
+
+  .pa-kpi__detalle {
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    color: var(--pa-gris) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Mis datos compactado y ordenado */
+  .pa-misdatos {
+    padding: 16px 14px 14px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 14px rgba(64, 20, 28, 0.08) !important;
+  }
+  .pa-misdatos__cabecera {
+    gap: 12px !important;
+    padding-bottom: 12px !important;
+  }
+  .pa-misdatos__cabecera .pa-kpi__icono {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+  .pa-misdatos__cabecera .pa-kpi__icono .pa-icono {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .pa-misdatos__cabecera h2 {
+    font-size: 18px !important;
+    margin: 0 0 3px !important;
+  }
+  .pa-misdatos__barras {
+    display: none !important;
+  }
+  .pa-misdatos__grilla {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px 10px !important;
+    padding: 14px 0 6px !important;
+  }
+  .pa-misdatos__grilla > .pa-dato-ico:first-child,
+  .pa-misdatos__grilla > .pa-dato-ico:nth-child(5),
+  .pa-misdatos__grilla > .pa-dato-ico:last-child {
+    grid-column: span 2 !important;
+  }
+  .pa-dato-ico {
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+  .pa-dato-ico .pa-icono {
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+  }
+  .pa-dato-ico dt {
+    font-size: 10.5px !important;
+    letter-spacing: 0.2px !important;
+  }
+  .pa-dato-ico dd {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    word-break: break-word !important;
+  }
+  .pa-misdatos__nota {
+    font-size: 11.5px !important;
+    padding-top: 10px !important;
+    margin-top: 10px !important;
+    gap: 8px !important;
+  }
+
+  /* Mis Reportes */
+  .pa-reportes {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .pa-reporte {
+    padding: 14px 14px !important;
+    border-radius: 14px !important;
+    gap: 12px !important;
+  }
+  .pa-reporte__texto strong {
+    font-size: 15px !important;
+  }
+  .pa-reporte__texto span {
+    font-size: 12.5px !important;
+  }
+
+  /* Indicadores compactos en Asistencias / Situación */
+  .pa-indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .pa-indicadores--seis .pa-indicador,
+  .pa-indicadores--cuatro .pa-indicador {
+    padding: 10px 36px 10px 11px !important;
+    min-height: 74px !important;
+    border-radius: 12px !important;
+  }
+  .pa-indicadores--seis .pa-indicador__icono,
+  .pa-indicadores--cuatro .pa-indicador__icono {
+    top: 8px !important;
+    right: 8px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .pa-indicadores--seis .pa-indicador__icono .pa-icono,
+  .pa-indicadores--cuatro .pa-indicador__icono .pa-icono {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .pa-indicadores--seis .pa-indicador__etiqueta,
+  .pa-indicadores--cuatro .pa-indicador__etiqueta {
+    font-size: 10.5px !important;
+    line-height: 1.2 !important;
+  }
+  .pa-indicadores--seis .pa-indicador__valor,
+  .pa-indicadores--cuatro .pa-indicador__valor {
+    font-size: 20px !important;
+    line-height: 1.1 !important;
+  }
+  .pa-indicadores--seis .pa-indicador__detalle,
+  .pa-indicadores--cuatro .pa-indicador__detalle {
+    font-size: 9.5px !important;
+  }
+
+  /* Cabecera institucional */
+  .pa-cabecera__fila {
+    padding: 10px 14px !important;
+    gap: 8px 12px !important;
+  }
+  .pa-cabecera__marca {
+    gap: 10px !important;
+  }
+  .pa-cabecera__logo {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 10px !important;
+  }
+  .pa-cabecera__escuela {
+    font-size: 13.5px !important;
+  }
+  .pa-cabecera__portal {
+    font-size: 12px !important;
+  }
+  .pa-cabecera__usuario {
+    gap: 8px !important;
+    margin-left: auto !important;
+  }
+  .pa-cabecera__salir {
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+    gap: 6px !important;
+  }
+  .pa-cabecera__menu {
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    border-radius: 8px !important;
+  }
 }
 
 @media print {
