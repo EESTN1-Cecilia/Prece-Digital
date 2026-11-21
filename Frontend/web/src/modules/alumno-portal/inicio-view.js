@@ -14,15 +14,18 @@ function Indicador({ icono, titulo, valor, detalle, detalleVacio, href, tono = "
     h(
       "a",
       { className: `pa-kpi pa-kpi--${tono}`, href },
-      h("span", { className: "pa-kpi__icono" }, h(Icono, { nombre: icono, tamano: 24 })),
       h(
-        "span",
+        "div",
+        { className: "pa-kpi__arriba" },
+        h("span", { className: "pa-kpi__icono" }, h(Icono, { nombre: icono, tamano: 22 })),
+        h("strong", { className: `pa-kpi__valor ${valor ? "pa-kpi__valor--activo" : ""}` }, valor ?? "—")
+      ),
+      h(
+        "div",
         { className: "pa-kpi__cuerpo" },
         h("span", { className: "pa-kpi__titulo" }, titulo),
-        h("strong", { className: `pa-kpi__valor ${valor ? "pa-kpi__valor--activo" : ""}` }, valor ?? "—"),
         h("span", { className: "pa-kpi__detalle" }, valor === null ? (detalleVacio ?? "") : valor ? detalle : "Sin registros hasta el momento")
-      ),
-      h(Icono, { nombre: "chevron", tamano: 18 })
+      )
     )
   );
 }

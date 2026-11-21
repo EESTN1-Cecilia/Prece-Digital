@@ -957,27 +957,313 @@ a.pa-indicador:hover {
 
 .pa-kpi {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: space-between;
   gap: 12px;
   height: 100%;
-  padding: 12px 14px 12px 16px;
+  padding: 16px 16px 14px;
   color: inherit;
   text-decoration: none;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 14px;
   border-left: 6px solid var(--pa-bordo-2);
   box-shadow: 0 4px 18px rgba(64, 20, 28, 0.08);
   transition: box-shadow 0.15s ease, transform 0.15s ease;
+  box-sizing: border-box;
 }
 .pa-kpi:hover { box-shadow: 0 8px 24px rgba(64, 20, 28, 0.14); transform: translateY(-2px); }
-.pa-kpi > .pa-icono:last-child { margin-left: auto; color: var(--pa-bordo-2); }
 
-.pa-kpi__icono { display: grid; place-items: center; flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%; color: var(--pa-bordo-2); background: #f3dfe1; }
-.pa-kpi__cuerpo { display: flex; flex-direction: column; min-width: 0; gap: 0; }
-.pa-kpi__titulo { font-size: 14px; line-height: 1.25; font-weight: 700; color: #1d2a44; }
-.pa-kpi__valor { font-size: 32px; font-weight: 800; line-height: 1.1; color: #1d2a44; font-variant-numeric: tabular-nums; }
+.pa-kpi__arriba {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pa-kpi__icono { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; color: var(--pa-bordo-2); background: #f3dfe1; }
+.pa-kpi__cuerpo { display: flex; flex-direction: column; min-width: 0; gap: 2px; margin-top: auto; }
+.pa-kpi__titulo { font-size: 13px; line-height: 1.25; font-weight: 700; color: #5b6b86; text-transform: uppercase; letter-spacing: 0.2px; }
+.pa-kpi__valor { font-size: 30px; font-weight: 800; line-height: 1; color: #1d2a44; font-variant-numeric: tabular-nums; margin-left: auto; }
 .pa-kpi__valor--activo { color: var(--pa-bordo-2); }
 .pa-kpi__detalle { font-size: 12px; line-height: 1.3; color: var(--pa-gris); }
+
+/* ---------------- Boton Hamburguesa y Sidebar del Alumno ---------------- */
+
+.pa-cabecera__menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pa-cabecera__menu-btn:hover,
+.pa-cabecera__menu-btn:active {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.pa-sidebar-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+  visibility: hidden;
+  transition: visibility 0.25s ease;
+}
+
+.pa-sidebar-wrapper--abierto {
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.pa-sidebar-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.pa-sidebar-wrapper--abierto .pa-sidebar-backdrop {
+  opacity: 1;
+}
+
+.pa-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(290px, 84vw);
+  background: #ffffff;
+  box-shadow: 10px 0 36px rgba(10, 20, 40, 0.32);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateX(-100%);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 2;
+}
+
+.pa-sidebar--abierto {
+  transform: translateX(0);
+}
+
+.pa-sidebar__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: linear-gradient(115deg, var(--pa-bordo) 0%, var(--pa-bordo-2) 100%);
+  color: #ffffff;
+}
+
+.pa-sidebar__marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pa-sidebar__logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.pa-sidebar__textos {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.pa-sidebar__escuela {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.pa-sidebar__subtitulo {
+  font-size: 12px;
+  opacity: 0.88;
+}
+
+.pa-sidebar__cerrar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.pa-sidebar__cerrar:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pa-sidebar__nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pa-sidebar__seccion-titulo {
+  margin: 0 0 8px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--pa-gris);
+}
+
+.pa-sidebar__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pa-sidebar__enlace {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--pa-gris-oscuro);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pa-sidebar__enlace:hover {
+  background: #f7f3f4;
+  color: var(--pa-bordo-2);
+}
+
+.pa-sidebar__enlace--activo {
+  background: var(--pa-bordo-suave);
+  color: var(--pa-bordo-2);
+  border-left-color: var(--pa-bordo-2);
+  font-weight: 700;
+}
+
+.pa-sidebar__icono-box {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(122, 37, 48, 0.08);
+  color: var(--pa-bordo-2);
+  flex-shrink: 0;
+}
+
+.pa-sidebar__enlace--activo .pa-sidebar__icono-box {
+  background: var(--pa-bordo-2);
+  color: #ffffff;
+}
+
+.pa-sidebar__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.pa-sidebar__pie {
+  padding: 14px 14px 18px;
+  border-top: 1px solid var(--pa-linea);
+  background: #faf8f8;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pa-sidebar__usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pa-sidebar__avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pa-bordo-suave);
+  color: var(--pa-bordo-2);
+  flex-shrink: 0;
+}
+
+.pa-sidebar__usuario-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.pa-sidebar__usuario-nombre {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1d2a44;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pa-sidebar__usuario-rol {
+  font-size: 11px;
+  color: var(--pa-gris);
+}
+
+.pa-sidebar__boton-salir {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #d9c3c6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--pa-bordo-2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pa-sidebar__boton-salir:hover {
+  background: var(--pa-bordo-suave);
+  border-color: var(--pa-bordo-2);
+}
 
 .pa-kpi--peligro { border-left-color: var(--pa-peligro); }
 .pa-kpi--peligro .pa-kpi__icono { color: var(--pa-peligro); background: var(--pa-peligro-fondo); }
@@ -1059,8 +1345,8 @@ a.pa-indicador:hover {
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: space-between !important;
-    padding: 12px 10px 10px !important;
-    gap: 6px !important;
+    padding: 12px 11px 11px !important;
+    gap: 8px !important;
     min-height: 104px !important;
     border-radius: 14px !important;
     border-left-width: 5px !important;
@@ -1072,34 +1358,39 @@ a.pa-indicador:hover {
     transform: none !important;
   }
 
-  .pa-kpi > .pa-icono:last-child {
-    position: absolute !important;
-    top: 10px !important;
-    right: 8px !important;
-    margin-left: 0 !important;
-    width: 14px !important;
-    height: 14px !important;
-    opacity: 0.35 !important;
+  .pa-kpi__arriba {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
   }
 
   .pa-kpi__icono {
-    width: 34px !important;
-    height: 34px !important;
+    width: 36px !important;
+    height: 36px !important;
     border-radius: 10px !important;
   }
 
   .pa-kpi__icono .pa-icono,
   .pa-kpi__icono svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 19px !important;
+    height: 19px !important;
+  }
+
+  .pa-kpi__valor {
+    font-size: 26px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    margin-left: auto !important;
   }
 
   .pa-kpi__cuerpo {
     display: flex !important;
     flex-direction: column !important;
-    gap: 1px !important;
+    gap: 2px !important;
     width: 100% !important;
     min-width: 0 !important;
+    margin-top: 0 !important;
   }
 
   .pa-kpi__titulo {
@@ -1112,13 +1403,6 @@ a.pa-indicador:hover {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-  }
-
-  .pa-kpi__valor {
-    font-size: 24px !important;
-    font-weight: 800 !important;
-    line-height: 1.1 !important;
-    margin: 1px 0 !important;
   }
 
   .pa-kpi__detalle {
@@ -1249,7 +1533,13 @@ a.pa-indicador:hover {
   /* Cabecera institucional */
   .pa-cabecera__fila {
     padding: 10px 14px !important;
-    gap: 8px 12px !important;
+    gap: 10px !important;
+  }
+  .pa-cabecera__menu-btn {
+    display: inline-flex !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 9px !important;
   }
   .pa-cabecera__marca {
     gap: 10px !important;
@@ -1277,10 +1567,7 @@ a.pa-indicador:hover {
     gap: 6px !important;
   }
   .pa-cabecera__menu {
-    min-height: 36px !important;
-    padding: 0 12px !important;
-    font-size: 13px !important;
-    border-radius: 8px !important;
+    display: none !important;
   }
 }
 
