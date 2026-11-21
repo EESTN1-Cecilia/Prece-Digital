@@ -138,6 +138,7 @@ const rutasDeclaradas = [
      resto. Asignar roles (PUT siguiente) exige identity.manage. */
   { method: "PATCH", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_UPDATE)], handler: usersController.updateUser },
   { method: "PUT", path: "/api/v1/users/:userId/roles", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.replaceUserRoles },
+  { method: "POST", path: "/api/v1/users/:userId/reset-password", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.resetUserPassword },
   { method: "PATCH", path: "/api/v1/users/:userId/deactivate", middlewares: [verifyToken, required(P.USERS_DEACTIVATE)], handler: authController.deactivateUser },
   { method: "DELETE", path: "/api/v1/users/:userId", middlewares: [verifyToken, required(P.IDENTITY_MANAGE)], handler: usersController.deleteUser },
 

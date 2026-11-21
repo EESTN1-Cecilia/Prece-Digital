@@ -16,6 +16,7 @@ Login propio con JWT, refresh tokens, control de permisos por rol y alcance, y b
 | GET | `/api/v1/users/:userId` | Bearer + `users.read` | Detalle |
 | PATCH | `/api/v1/users/:userId` | Bearer + `identity.update` | Datos personales del propio perfil; editar a otra persona o cambiar estado exige `identity.manage` |
 | PUT | `/api/v1/users/:userId/roles` | Bearer + `identity.manage` | Reemplaza los roles |
+| POST | `/api/v1/users/:userId/reset-password` | Bearer + `identity.manage` | Resetea la contraseña del personal: clave temporal (se muestra una vez), cierra sesiones y obliga a cambiarla. No sobre uno mismo, alumnos ni cuentas inactivas; un administrador solo lo resetea otro administrador |
 | PATCH | `/api/v1/users/:userId/deactivate` | Bearer + `users.deactivate` | Baja lógica de la cuenta |
 
 ## Estrategia de autenticación

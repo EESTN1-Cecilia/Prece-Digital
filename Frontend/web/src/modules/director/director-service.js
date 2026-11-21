@@ -291,6 +291,15 @@ export const DirectorService = {
   },
 
   /**
+   * Resetea la contraseña de un integrante del personal. Devuelve la clave
+   * temporal (se muestra una sola vez).
+   */
+  async resetearPassword(usuarioId) {
+    const res = await pedir(`/api/v1/users/${encodeURIComponent(usuarioId)}/reset-password`, { method: "POST" });
+    return res?.data ?? res;
+  },
+
+  /**
    * Elimina definitivamente una cuenta de usuario.
    */
   async eliminarUsuario(usuarioId) {

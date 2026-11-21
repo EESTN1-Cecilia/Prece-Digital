@@ -38,6 +38,13 @@ export const OPCIONES_DESTINATARIOS = [
     sublabel: "Aparece a ambos sectores",
     badge: "Alumnos y Preceptores",
     colorClass: "director-informe-dest--ambos"
+  },
+  {
+    id: "docentes",
+    label: "Solo Docentes",
+    sublabel: "Aparece en el panel del Docente",
+    badge: "Docentes",
+    colorClass: "director-informe-dest--docentes"
   }
 ];
 
@@ -194,7 +201,7 @@ export function InformesSection({ informes = [], alEnviar, alEliminar }) {
           h(
             "p",
             { className: "director-informes-header__subtitle" },
-            "Redacte un informe institucional, indique la fecha y asigne si se envía a los alumnos, a los preceptores o a ambos."
+            "Redacte un informe institucional, indique la fecha y asigne si se envía a los alumnos, a los preceptores, a los docentes o a alumnos y preceptores."
           )
         )
       ),
@@ -392,6 +399,7 @@ export function InformesSection({ informes = [], alEnviar, alEliminar }) {
               { id: "todos", label: "Todos" },
               { id: "alumnos", label: "Alumnos" },
               { id: "preceptores", label: "Preceptores" },
+              { id: "docentes", label: "Docentes" },
               { id: "ambos", label: "Ambos" }
             ].map((f) =>
               h(

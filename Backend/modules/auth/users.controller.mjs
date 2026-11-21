@@ -19,3 +19,7 @@ export function replaceUserRoles({ user, params, body }) {
 export function deleteUser({ user, params }) {
   return { data: usersService.remove(user, params.userId) };
 }
+
+export async function resetUserPassword({ user, params }) {
+  return { data: await usersService.resetPassword(user, params.userId) };
+}

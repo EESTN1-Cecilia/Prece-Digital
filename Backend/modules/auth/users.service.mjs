@@ -304,6 +304,47 @@ export const usersService = {
     return userRepository.publicView(actualizado);
   },
 
+  /* Reseteo de la contrasena de acceso del personal. Genera una clave temporal
+     que se muestra una sola vez, obliga a cambiarla en el proximo ingreso y
+     cierra las sesiones abiertas. Nunca se guarda en claro. */
+  async resetPassword(actor, id) {
+    const usuario = existente(id);
+    const roles = usuario.assignments.map((asignacion) => asignacion.role);
+
+    if (actor?.id === id) {
+      throw errorHttp(403, "FORBIDDEN", "Para cambiar su propia contraseña use su perfil.");
+    }
+
+    if (roles.includes(ROLES.ALUMNO) || usuario.studentId) {
+      throw errorHttp(403, "FORBIDDEN", "Las cuentas de alumnos no se gestionan desde el personal.");
+    }
+
+    const actorEsAdmin = actor?.assignments?.some((asignacion) => asignacion.role === ROLES.ADMIN);
+    if (roles.includes(ROLES.ADMIN) && !actorEsAdmin) {
+      throw errorHttp(403, "FORBIDDEN", "Solo un administrador puede resetear la contraseña de otro administrador.");
+    }
+
+    if (!usuario.isActive) {
+      throw conflicto("La cuenta esta desactivada: reactivela antes de resetear su contraseña.");
+    }
+
+    const passwordTemporal = crypto.randomBytes(9).toString("base64url");
+    userRepository.update(id, {
+      passwordHash: await bcrypt.hash(passwordTemporal, 10),
+      passwordChangedAt: new Date().toISOString(),
+      mustChangePassword: true
+    });
+    revokeUserSessions(id);
+
+    return {
+      id: usuario.id,
+      displayName: usuario.displayName,
+      email: usuario.email,
+      roles: [...new Set(roles)],
+      passwordTemporal
+    };
+  },
+
   remove(actor, id) {
     const usuario = existente(id);
 

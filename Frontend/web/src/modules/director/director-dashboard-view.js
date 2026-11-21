@@ -11,6 +11,7 @@ import { HabilitarPedidosSection } from "./components/habilitar-pedidos-section.
 import { PeriodosCargaSection } from "./components/periodos-carga-section.js";
 import { AsignacionesSection, calcularMetricasAsignaciones } from "./components/asignaciones-section.js";
 import { InformesSection } from "./components/informes-section.js";
+import { AccesosSection } from "./components/accesos-section.js";
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { fecha } from "../../utils/formato.js";
 
@@ -681,6 +682,7 @@ export default function DirectorDashboardView() {
             { id: "asignaciones", label: "Asignaciones", icon: IconSchool },
             { id: "carga-notas", label: "Carga de Notas", icon: IconClipboard },
             { id: "informes", label: `Informes (${informes.length})`, icon: IconClipboard },
+            { id: "accesos", label: "Accesos", icon: IconUsers },
             ...(MOSTRAR_HABILITAR_PEDIDOS
               ? [
                 {
@@ -1477,6 +1479,17 @@ export default function DirectorDashboardView() {
               )
             )
           )
+        )
+        : null,
+
+      // =========================================================================
+      // ACCESOS: reseteo de contraseñas del personal
+      // =========================================================================
+      !cargando && pestanaActiva === "accesos"
+        ? h(
+          "div",
+          { className: "director-section-content" },
+          h(AccesosSection, { personal, usuarioActualId: usuario?.id ?? null, onMostrarToast: mostrarToast })
         )
         : null,
 
