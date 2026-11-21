@@ -235,7 +235,8 @@ export const DirectorService = {
             datos.situacionRevista === "suplente" ? String(datos.docenteSuplido || "").trim() : undefined,
           modulos: Number(datos.modulos),
           horaDesde: datos.horaDesde,
-          horaHasta: datos.horaHasta
+          horaHasta: datos.horaHasta,
+          cursos: Array.isArray(datos.cursos) ? datos.cursos : []
         }
       : undefined;
 

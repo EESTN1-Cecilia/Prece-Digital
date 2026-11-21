@@ -9,6 +9,8 @@ import { PERMISSIONS, ROL_CATALOGO, ROLES } from "../../config/permissions.confi
 import { conflicto, errorDeValidacion, errorHttp, noEncontrado } from "../../utils/api-error.mjs";
 import { evaluateAccess } from "./permission.service.mjs";
 import { revokeUserSessions } from "./token.service.mjs";
+import { DIVISIONES_CATALOGO } from "../students/catalogo.mjs";
+import { claveCurso } from "../preceptor-assignments/alcance.mjs";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const DNI_RE = /^\d{7,9}$/;
@@ -119,6 +121,18 @@ function datosCargoDocente(cargo, roles, errores) {
     horaDesde: String(cargo.horaDesde ?? ""),
     horaHasta: String(cargo.horaHasta ?? "")
   };
+
+  /* Cursos en los que dicta la materia (ids "anio-division" del catalogo). */
+  if (cargo.cursos !== undefined && cargo.cursos !== null) {
+    const validos = new Set(DIVISIONES_CATALOGO.map((item) => claveCurso(item.anio, item.division)));
+    const pedidos = Array.isArray(cargo.cursos) ? cargo.cursos.map(String) : [];
+    const invalidos = pedidos.filter((id) => !validos.has(id));
+    if (!Array.isArray(cargo.cursos) || invalidos.length) {
+      errores.push({ field: "cargoDocente.cursos", message: invalidos.length ? `Cursos inexistentes: ${invalidos.join(", ")}.` : "Los cursos deben ser una lista." });
+    } else {
+      salida.cursos = [...new Set(pedidos)];
+    }
+  }
 
   if (!salida.materia) {
     errores.push({ field: "cargoDocente.materia", message: "La materia es obligatoria." });

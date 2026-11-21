@@ -121,7 +121,8 @@ const FORMULARIO_INICIAL = {
   docenteSuplido: "",
   modulos: 4,
   horaDesde: "",
-  horaHasta: ""
+  horaHasta: "",
+  cursos: []
 };
 
 export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
@@ -131,6 +132,7 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   const [errorGlobal, setErrorGlobal] = useState(null);
   const [creadoExitoso, setCreadoExitoso] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  const [divisiones, setDivisiones] = useState([]);
   /* El fondo solo cierra el modal si el clic EMPEZO y TERMINO sobre el fondo. Si se
      arrastra el mouse desde un campo hacia afuera (por ejemplo al seleccionar
      texto), el navegador igual dispara "click" sobre el fondo y se perdia todo. */
@@ -144,6 +146,22 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
       document.body.style.overflow = overflowPrevio;
     };
   }, [abierto]);
+
+  /* Cursos disponibles: salen del backend, solo cuando se elige el rol docente. */
+  const eligioDocente = form.roles.includes("docente");
+  useEffect(() => {
+    if (!abierto || !eligioDocente || divisiones.length) return undefined;
+    let activo = true;
+    DirectorService.listarAsignacionesPreceptores()
+      .then((lista) => {
+        const filas = Array.isArray(lista) ? lista : lista?.data;
+        if (activo && Array.isArray(filas)) setDivisiones(filas);
+      })
+      .catch(() => {});
+    return () => {
+      activo = false;
+    };
+  }, [abierto, eligioDocente, divisiones.length]);
 
   if (!abierto) return null;
 
@@ -200,6 +218,7 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
       if (isNaN(mod) || mod <= 0) {
         errs.modulos = "Indica la cantidad de módulos semanales (mayor a 0).";
       }
+      if (!form.cursos.length) errs.cursos = "Elegí al menos un curso en el que dicta la materia.";
       if (!form.horaDesde || !form.horaHasta) {
         errs.horario = "Completa el horario desde y hasta.";
       } else if (form.horaHasta <= form.horaDesde) {
@@ -581,6 +600,41 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
                           onChange: (e) => handleChange("materia", e.target.value)
                         }),
                         errores.materia ? h("span", { className: "director-form-error" }, errores.materia) : null
+                      ),
+
+                      // Cursos en los que dicta la materia
+                      h(
+                        "div",
+                        { className: "director-form-group" },
+                        h("label", { className: "director-form-label" }, "Curso/s de la materia *"),
+                        divisiones.length
+                          ? h(
+                              "div",
+                              { className: "asignaciones-chip-row", style: { display: "flex", flexWrap: "wrap", gap: "6px" } },
+                              divisiones.map((d) => {
+                                const activo = form.cursos.includes(d.id);
+                                return h(
+                                  "button",
+                                  {
+                                    key: d.id,
+                                    type: "button",
+                                    className: `asignaciones-chip-btn ${activo ? "asignaciones-chip-btn--active" : ""}`,
+                                    "aria-pressed": activo,
+                                    onClick: () =>
+                                      handleChange(
+                                        "cursos",
+                                        activo ? form.cursos.filter((id) => id !== d.id) : [...form.cursos, d.id]
+                                      )
+                                  },
+                                  `${d.anio}°${d.numDivision}`
+                                );
+                              })
+                            )
+                          : h("span", { className: "director-roles-sublabel" }, "Cargando cursos..."),
+                        form.cursos.length
+                          ? h("span", { className: "director-roles-sublabel" }, `${form.cursos.length} ${form.cursos.length === 1 ? "curso elegido" : "cursos elegidos"}`)
+                          : null,
+                        errores.cursos ? h("span", { className: "director-form-error" }, errores.cursos) : null
                       ),
 
                       // Situación de revista (diseño idéntico al de asignación docente)
