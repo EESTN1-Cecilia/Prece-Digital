@@ -5,6 +5,7 @@ import { LoadingState, EmptyState, ErrorState } from "../../components/common/st
 import { CustomSelect } from "../../components/common/custom-select.js";
 import { SecretariaService } from "../secretaria/secretaria-service.js";
 import { StudentsService, formatDni } from "../students/students-service.js";
+import { pedir } from "../../services/http.js";
 import { DirectorService } from "../director/director-service.js";
 import { CursoDistribucionGrafico } from "../../components/dashboard/curso-distribucion-grafico.js";
 import { PlanillaCalificacionesModal, obtenerClavesMateriaBoletin } from "../documents/planilla-calificaciones-modal.js";
@@ -177,6 +178,7 @@ export default function DashboardView() {
   const [alumnos, setAlumnos] = useState([]);
   const [divisiones, setDivisiones] = useState([]);
   const [informesDireccion, setInformesDireccion] = useState([]);
+  const [inasistenciasMes, setInasistenciasMes] = useState(null);
 
   // Filtros para la sección "Docentes y Materias" (Estilo Foto 2)
   const [busquedaDocente, setBusquedaDocente] = useState("");
@@ -211,10 +213,13 @@ export default function DashboardView() {
     setLoading(true);
     setError(null);
     try {
+      /* Un preceptor ve solo los cursos que le asigno la Direccion: sus totales
+         salen de sus alumnos (todas las paginas), no del resumen de la escuela. */
+      const esPreceptor = (user?.roles ?? []).length > 0 && (user.roles ?? []).every((rol) => (rol?.id ?? rol) === "preceptor");
       const [resSec, catedras, aluRes, divs, informesDir] = await Promise.all([
-        SecretariaService.getDashboardData().catch(() => null),
+        esPreceptor ? Promise.resolve(null) : SecretariaService.getDashboardData().catch(() => null),
         DirectorService.listarAsignacionesProfesores().catch(() => []),
-        StudentsService.getAlumnos({ limit: 100 }).catch(() => ({ data: [] })),
+        (esPreceptor ? StudentsService.getTodosLosAlumnos({}) : StudentsService.getAlumnos({ limit: 100 })).catch(() => ({ data: [] })),
         StudentsService.getDivisiones().catch(() => []),
         DirectorService.listarInformes({ destinatario: "preceptores" }).catch(() => [])
       ]);
@@ -232,6 +237,20 @@ export default function DashboardView() {
       setAlumnos(aluRes?.data || []);
       setDivisiones(divisionesVisibles);
       setInformesDireccion(Array.isArray(informesDir) ? informesDir : []);
+
+      /* Inasistencias del mes en curso de los alumnos visibles (backend). */
+      try {
+        const hoy = new Date();
+        const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+        const ultimo = String(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()).padStart(2, "0");
+        const respuesta = await pedir(`/api/v1/alertas/inasistencias?desde=${hoy.getFullYear()}-${mm}-01&hasta=${hoy.getFullYear()}-${mm}-${ultimo}`);
+        const lista = Array.isArray(respuesta) ? respuesta : (respuesta?.data ?? respuesta?.items ?? []);
+        const ids = new Set((aluRes?.data || []).map((a) => a.id));
+        const delMes = lista.filter((reg) => !reg.bajaEn && (!esPreceptor || ids.has(reg.alumnoId)));
+        setInasistenciasMes({ total: delMes.length, justificadas: delMes.filter((reg) => reg.justificada).length });
+      } catch {
+        setInasistenciasMes(null);
+      }
       setLastUpdated(new Date());
     } catch (err) {
       setError(err.message || "Error al sincronizar la información del módulo de preceptoría.");
@@ -348,14 +367,17 @@ export default function DashboardView() {
   };
 
   // Totales para las tarjetas KPI superiores (Estilo Foto 1)
-  const totalAlumnos = dataSecretaria?.resumenAlumnos?.total ?? (alumnos.length > 0 ? alumnos.length : 32);
-  const activosAlumnos = dataSecretaria?.resumenAlumnos?.activos ?? (alumnos.length > 0 ? alumnos.filter((a) => (a.condicion || "").toLowerCase() !== "baja").length : 31);
+  const esSoloPreceptor = (user?.roles ?? []).length > 0 && (user.roles ?? []).every((rol) => (rol?.id ?? rol) === "preceptor");
+  const totalAlumnos = dataSecretaria?.resumenAlumnos?.total ?? alumnos.length;
+  const activosAlumnos = dataSecretaria?.resumenAlumnos?.activos ?? alumnos.filter((a) => (a.condicion || "").toLowerCase() !== "baja").length;
   const nuevasInscripciones = dataSecretaria?.resumenAlumnos?.nuevasInscripciones ?? totalAlumnos;
   const bajasAlumnos = dataSecretaria?.resumenAlumnos?.bajas ?? (totalAlumnos > activosAlumnos ? totalAlumnos - activosAlumnos : 1);
-  const totalDivisiones = divisiones.length > 0 ? divisiones.length : (dataSecretaria?.alumnosPorCurso?.length || 30);
+  const totalDivisiones = esSoloPreceptor ? divisiones.length : divisiones.length > 0 ? divisiones.length : (dataSecretaria?.alumnosPorCurso?.length ?? 0);
+  const cursosManana = divisiones.filter((d) => String(d.turnoAula || "").toLowerCase().includes("mañana")).length;
+  const cursosTarde = divisiones.filter((d) => String(d.turnoAula || "").toLowerCase().includes("tarde")).length;
 
-  const mananaCount = alumnos.filter((a) => String(a.turno || "").toLowerCase().includes("mañana")).length || 23;
-  const tardeCount = alumnos.filter((a) => String(a.turno || "").toLowerCase().includes("tarde")).length || 8;
+  const mananaCount = alumnos.filter((a) => String(a.turno || "").toLowerCase().includes("mañana")).length;
+  const tardeCount = alumnos.filter((a) => String(a.turno || "").toLowerCase().includes("tarde")).length;
   const totalTurnos = mananaCount + tardeCount || 1;
   const pctManana = Math.min(100, Math.round((mananaCount / totalTurnos) * 100));
   const pctTarde = Math.min(100, Math.round((tardeCount / totalTurnos) * 100));
@@ -562,7 +584,7 @@ export default function DashboardView() {
                 { className: "preceptoria-kpi-content" },
                 h("span", { className: "preceptoria-kpi-label" }, "Divisiones Asignadas"),
                 h("strong", { className: "preceptoria-kpi-val" }, `${totalDivisiones} Cursos`),
-                h("span", { className: "preceptoria-kpi-sub" }, `${mananaCount} Mañana · ${tardeCount} Tarde`)
+                h("span", { className: "preceptoria-kpi-sub" }, `${cursosManana} Mañana · ${cursosTarde} Tarde`)
               )
             ),
 
@@ -596,9 +618,9 @@ export default function DashboardView() {
               h(
                 "div",
                 { className: "preceptoria-kpi-content" },
-                h("span", { className: "preceptoria-kpi-label" }, "Presentismo Promedio"),
-                h("strong", { className: "preceptoria-kpi-val text-emerald-700" }, "95.4%"),
-                h("span", { className: "preceptoria-kpi-sub" }, "Asistencia institucional")
+                h("span", { className: "preceptoria-kpi-label" }, "Inasistencias del Mes"),
+                h("strong", { className: "preceptoria-kpi-val text-emerald-700" }, inasistenciasMes ? inasistenciasMes.total : "—"),
+                h("span", { className: "preceptoria-kpi-sub" }, inasistenciasMes ? `${inasistenciasMes.justificadas} justificadas` : "Sin datos del mes")
               )
             ),
 
@@ -615,7 +637,7 @@ export default function DashboardView() {
                 "div",
                 { className: "preceptoria-kpi-content" },
                 h("span", { className: "preceptoria-kpi-label" }, "Cátedras Supervisadas"),
-                h("strong", { className: "preceptoria-kpi-val" }, `${catedrasDocentes.length || 68} Materias`),
+                h("strong", { className: "preceptoria-kpi-val" }, `${catedrasDocentes.length} Materias`),
                 h("span", { className: "preceptoria-kpi-sub" }, "Docentes en ejercicio")
               )
             )
@@ -661,7 +683,7 @@ export default function DashboardView() {
                 h(
                   "div",
                   { className: "preceptoria-module-card__footer" },
-                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--blue" }, `${divisiones.length || 30} Divisiones`),
+                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--blue" }, `${divisiones.length} Divisiones`),
                   h(
                     "button",
                     {
@@ -700,7 +722,7 @@ export default function DashboardView() {
                 h(
                   "div",
                   { className: "preceptoria-module-card__footer" },
-                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--purple" }, `${catedrasDocentes.length || 68} Cátedras Oficiales`),
+                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--purple" }, `${catedrasDocentes.length} Cátedras Oficiales`),
                   h(
                     "button",
                     {
@@ -847,7 +869,7 @@ export default function DashboardView() {
                           "div",
                           { className: "preceptoria-asistencia-metric-box" },
                           h("span", null, "Matrícula"),
-                          h("strong", null, `${div.cantidad || div.activos || 26} Alumnos`)
+                          h("strong", null, `${div.cantidad ?? div.activos ?? 0} Alumnos`)
                         ),
                         h(
                           "div",
@@ -1103,7 +1125,7 @@ export default function DashboardView() {
               },
               "← Volver al Tablero Principal"
             ),
-            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length || 30} Divisiones`)
+            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length} Divisiones`)
           ),
 
           h(
@@ -1181,7 +1203,7 @@ export default function DashboardView() {
                       "div",
                       { className: "preceptoria-asistencia-metric-box" },
                       h("span", null, "Matrícula"),
-                      h("strong", null, `${div.cantidad || div.activos || 26} Alumnos`)
+                      h("strong", null, `${div.cantidad ?? div.activos ?? 0} Alumnos`)
                     ),
                     h(
                       "div",
@@ -1442,7 +1464,7 @@ export default function DashboardView() {
               },
               "← Volver al Tablero Principal"
             ),
-            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length || 30} Divisiones`)
+            h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${divisiones.length} Divisiones`)
           ),
 
           h(

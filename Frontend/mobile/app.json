@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Prece Digital Alumno",
+    "name": "Prece Digital",
     "slug": "prece-digital-alumno",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -11,19 +11,28 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Usamos Face ID para que ingreses a tu cuenta sin escribir la contraseña."
-      }
+        "NSFaceIDUsageDescription": "Usamos Face ID para que ingreses a tu cuenta sin escribir la contraseña.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.eestn1.precedigital",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/logo.png"
-      }
+      },
+      "package": "com.eestn1.precedigital",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro"
     },
     "scheme": "precedigital-alumno",
-    "icon": "./assets/logo.png"
+    "icon": "./assets/logo.png",
+    "plugins": [
+      "expo-secure-store",
+      "expo-local-authentication"
+    ]
   }
 }

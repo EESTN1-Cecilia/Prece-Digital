@@ -2,6 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { listarNotificaciones, marcarNotificacionLeida } from "./notificaciones-api.js";
 
+test("sin notificaciones del backend no se inventan alertas", async () => {
+  globalThis.localStorage = { getItem: () => null, setItem: () => {} };
+  globalThis.window = { localStorage: globalThis.localStorage };
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ data: { notifications: [] } }) });
+  const director = await listarNotificaciones({ usuario: { id: "usuario-9" }, roles: ["director"] });
+  assert.deepEqual(director.data, []);
+});
+
 test("el estado leído persiste por usuario y no se comparte entre cuentas", async () => {
   const almacen = new Map();
   const localStorage = {
@@ -13,13 +21,13 @@ test("el estado leído persiste por usuario y no se comparte entre cuentas", asy
   globalThis.fetch = async () => ({
     ok: true,
     status: 200,
-    json: async () => ({ data: { notifications: [] } })
+    json: async () => ({ data: { notifications: [{ id: "ntf_1", title: "Aviso del sistema", body: "Detalle", isRead: false }] } })
   });
 
   const director = { id: "usuario-1" };
   const otroDirector = { id: "usuario-2" };
   const primeraCarga = await listarNotificaciones({ usuario: director, roles: ["director"] });
-  const notificacion = primeraCarga.data.find((item) => item.id === "notif-dir-1");
+  const notificacion = primeraCarga.data.find((item) => item.id === "ntf_1");
 
   assert.ok(notificacion);
   assert.equal(notificacion.leida, false);
