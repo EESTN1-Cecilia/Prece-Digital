@@ -20,13 +20,22 @@ const ESTADOS_ASISTENCIA = {
 
 const LETRAS_DIAS = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
 
-/* Estilos de impresión para la planilla oficial de asistencias:
-   Configura la hoja apaisada (Landscape) para ocupar el 100% de la hoja (A4, Oficio/Legal o Carta),
-   con márgenes limpios y diseño oficial institucional fiel. */
+/* Hoja de la planilla: A4 apaisada con 0,5 cm de margen en los cuatro lados.
+   El area util (287 x 200 mm) se calcula una vez y la planilla se ajusta para
+   ocupar toda esa area en UNA sola hoja. Si se imprime en otro papel, cambiar
+   solo PAPEL_ANCHO_MM y PAPEL_ALTO_MM. */
+const MM_A_PX = 96 / 25.4;
+const PAPEL_ANCHO_MM = 297;
+const PAPEL_ALTO_MM = 210;
+const MARGEN_MM = 5;
+const AREA_ANCHO_PX = Math.floor((PAPEL_ANCHO_MM - 2 * MARGEN_MM) * MM_A_PX);
+// 3 px de holgura abajo: evita que el redondeo del navegador cree una 2.a hoja en blanco
+const AREA_ALTO_PX = Math.floor((PAPEL_ALTO_MM - 2 * MARGEN_MM) * MM_A_PX) - 3;
+
 const ESTILO_IMPRESION_PLANILLA = `
   @page {
-    size: landscape;
-    margin: 4mm 6mm;
+    size: ${PAPEL_ANCHO_MM}mm ${PAPEL_ALTO_MM}mm;
+    margin: ${MARGEN_MM}mm;
   }
   *, *::before, *::after {
     box-sizing: border-box !important;
@@ -34,8 +43,9 @@ const ESTILO_IMPRESION_PLANILLA = `
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    width: ${AREA_ANCHO_PX}px !important;
+    height: ${AREA_ALTO_PX}px !important;
+    overflow: hidden !important;
     background: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -44,17 +54,21 @@ const ESTILO_IMPRESION_PLANILLA = `
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     color: #000000;
   }
+  .marco-hoja-impresion {
+    width: ${AREA_ANCHO_PX}px !important;
+    height: ${AREA_ALTO_PX}px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+  }
   .hoja-asistencia-impresion {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: 100% !important;
+    transform-origin: top left !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
     gap: 4px !important;
     box-sizing: border-box !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
   }
   .hoja-asistencia-impresion > .asistencias-page {
     width: 100% !important;
@@ -108,8 +122,8 @@ async function imprimirPlanillaAsistencia(original) {
     position: "fixed",
     left: "-10000px",
     top: "0",
-    width: "1120px",
-    height: "760px",
+    width: "1300px",
+    height: "1000px",
     border: "0"
   });
   document.body.appendChild(marco);
@@ -121,7 +135,7 @@ async function imprimirPlanillaAsistencia(original) {
     `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Planilla Oficial de Asistencia - E.E.S.T N° 1</title>` +
       externas.map((href) => `<link rel="stylesheet" href="${href}">`).join("") +
       `<style>${css}</style><style>${ESTILO_IMPRESION_PLANILLA}</style></head>` +
-      `<body class="asistencias-imprimiendo"><div class="hoja-asistencia-impresion"></div></body></html>`
+      `<body class="asistencias-imprimiendo"><div class="marco-hoja-impresion"><div class="hoja-asistencia-impresion"></div></div></body></html>`
   );
   doc.close();
 
@@ -144,16 +158,27 @@ async function imprimirPlanillaAsistencia(original) {
   await doc.fonts?.ready;
   await Promise.all([...doc.images].map((img) => img.decode().catch(() => {})));
 
-  // Ajuste inteligente si la cantidad de alumnos excede la altura útil de 1 página apaisada (~760px):
-  // Asegura que toda la nómina y los balances entren exactamente en una sola hoja sin generar segundas páginas.
-  const altoDisponible = 760;
-  const altoReal = contenedor.scrollHeight;
-  if (altoReal > altoDisponible) {
-    const factorEscala = Math.max(0.65, Math.min(1, (altoDisponible - 12) / altoReal));
-    contenedor.style.transform = `scale(${factorEscala})`;
-    contenedor.style.transformOrigin = "top left";
-    contenedor.style.width = `${(100 / factorEscala).toFixed(3)}%`;
+  /* Ajuste a UNA hoja que ocupa toda el area util:
+     - Se ensancha el contenido a (ancho / escala) y se lo reduce con transform, de modo
+       que siempre llene el ancho de la hoja.
+     - La escala se busca para que el alto resultante coincida con el alto de la hoja.
+     - Si la planilla es corta (pocos alumnos), el contenedor se estira hasta el alto
+       total y reparte el espacio sobrante entre sus bloques. */
+  let escala = 1;
+  for (let i = 0; i < 6; i += 1) {
+    contenedor.style.width = `${AREA_ANCHO_PX / escala}px`;
+    contenedor.style.height = "auto";
+    const altoNatural = contenedor.scrollHeight;
+    const nueva = Math.min(1, AREA_ALTO_PX / altoNatural);
+    if (Math.abs(nueva - escala) < 0.002) {
+      escala = Math.min(escala, nueva);
+      break;
+    }
+    escala = nueva;
   }
+  contenedor.style.width = `${AREA_ANCHO_PX / escala}px`;
+  contenedor.style.minHeight = `${AREA_ALTO_PX / escala}px`;
+  contenedor.style.transform = `scale(${escala})`;
 
   const ventana = marco.contentWindow;
   ventana.addEventListener("afterprint", () => setTimeout(() => marco.remove(), 0));
@@ -484,7 +509,7 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
     }
   };
 
-  // Imprimir planilla en una sola hoja oficio apaisada con márgenes de 1 cm
+  // Imprimir la planilla en una sola hoja apaisada, ocupando toda la hoja, con margen de 0,5 cm
   const handleImprimir = () => {
     if (paginaRef.current) {
       imprimirEnHojaOficio(paginaRef.current);
