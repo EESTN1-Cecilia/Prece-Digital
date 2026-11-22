@@ -2660,24 +2660,325 @@
 
 /* Responsive Styles for Student Profile */
 @media (max-width: 768px) {
-  .student-profile-hero-content {
-    flex-direction: column;
-    text-align: center;
+  /* Barra superior de navegación */
+  .student-profile-top-bar {
+    gap: 8px;
   }
 
-  .student-profile-name-row,
+  .top-bar-left {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .student-profile-top-bar .btn-volver-atras,
+  .student-profile-top-bar .btn-listado-general,
+  .student-profile-top-bar .btn-refresh-data {
+    height: 34px;
+    padding: 0 11px;
+    font-size: 12px;
+    border-radius: 9px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .feedback-toast {
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+
+  /* Hero compacto sin huecos a la izquierda */
+  .student-profile-hero {
+    border-radius: 16px;
+  }
+
+  .student-profile-hero-content {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center;
+    text-align: left;
+    gap: 10px 12px;
+    padding: 14px;
+  }
+
+  .student-profile-avatar-box {
+    grid-column: 1;
+    grid-row: 1;
+    width: 48px;
+    height: 48px;
+  }
+
+  .student-profile-avatar-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .student-profile-main-info {
+    display: contents;
+  }
+
+  .student-profile-name-row {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-start;
+    gap: 5px 8px;
+    min-width: 0;
+  }
+
+  .student-profile-name {
+    font-size: 1.18rem;
+    line-height: 1.18;
+    width: 100%;
+  }
+
   .student-profile-pills-row {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .profile-pill {
+    width: 100%;
+    box-sizing: border-box;
     justify-content: center;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 7px;
+    min-width: 0;
+  }
+
+  .profile-pill .pill-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .student-profile-pills-row > .profile-pill:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  /* Pestañas deslizables ergonómicas */
+  .student-profile-tabs-wrapper {
+    padding: 0 4px;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .student-profile-tabs-nav {
+    gap: 4px;
+    padding: 0 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .profile-tab-btn {
+    padding: 11px 11px;
+    font-size: 12.5px;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tabs-scroll-arrow {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Barra de acciones rápidas: grilla limpia de 2 columnas */
+  .student-actions-bar-container {
+    padding: 12px;
+    border-radius: 14px;
   }
 
   .student-actions-bar-inner {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .actions-bar-title {
+    font-size: 13.5px;
+  }
+
+  .actions-bar-desc {
+    font-size: 11.5px;
   }
 
   .actions-bar-buttons {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
     width: 100%;
+  }
+
+  .actions-bar-buttons button,
+  .actions-bar-buttons a {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    padding: 0 10px;
+    font-size: 12px;
+    justify-content: center;
+    border-radius: 10px;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .actions-bar-buttons > *:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  /* Tarjetas de secciones dentro de cada pestaña */
+  .student-tab-content-pane {
+    gap: 12px;
+  }
+
+  .profile-section-card {
+    padding: 14px;
+    border-radius: 15px;
+  }
+
+  .profile-section-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .profile-section-title {
+    font-size: 15px;
+  }
+
+  .profile-data-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .profile-field-item {
+    padding: 9px 10px;
+    min-width: 0;
+  }
+
+  .profile-field-item:has(.profile-field-inline-editor),
+  .profile-data-grid > .profile-field-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .profile-field-label {
+    font-size: 10px;
+  }
+
+  .profile-field-value {
+    font-size: 12.5px;
+    word-break: break-word;
+  }
+
+  .profile-field-edit-btn {
+    opacity: 0.78;
+    visibility: visible;
+  }
+
+  .profile-field-inline-editor input,
+  .profile-field-inline-select,
+  .profile-field-inline-textarea {
+    font-size: 16px;
+  }
+
+  /* Tutores */
+  .tutors-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .tutor-card {
+    padding: 13px;
+  }
+
+  .tutor-card-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tutor-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .tutor-details-grid > .tutor-detail-item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  /* Académico y Asistencias: KPIs en 2x2 y tablas con scroll horizontal suave */
+  .academic-kpi-grid,
+  .attendance-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .academic-kpi-card,
+  .attendance-kpi-card {
+    padding: 12px 10px;
+  }
+
+  .academic-kpi-value,
+  .kpi-num {
+    font-size: 1.35rem;
+  }
+
+  .academic-details-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .gradebook-modal-launcher-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .btn-launcher-main,
+  .btn-open-matriz-modal {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .gradebook-header-right-actions {
+    width: 100%;
+  }
+
+  .table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+
+  .data-table {
+    min-width: 540px;
+    font-size: 12.5px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 9px 10px;
+  }
+
+  /* Observaciones, condiciones y auditoría */
+  .conditions-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .condition-subcard,
+  .obs-item-card,
+  .audit-entry-card {
+    padding: 13px;
+  }
+
+  .audit-diff-box {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .doc-upload-warning {
@@ -2688,12 +2989,84 @@
     background: #fee2e2;
   }
 
-  .actions-bar-buttons button {
-    width: 100%;
-    justify-content: center;
+  /* Modales de Perfil (Editar, Observación, Pase, Constancia) */
+  .modal-overlay {
+    padding: 10px;
+    align-items: center;
   }
 
-  .profile-data-grid {
-    grid-template-columns: 1fr;
+  .modal-container,
+  .modal-md,
+  .modal-lg,
+  .student-edit-modal-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: 94dvh;
+    border-radius: 16px;
+  }
+
+  .modal-header,
+  .student-edit-modal-header {
+    padding: 14px 16px;
+  }
+
+  .modal-title,
+  .student-edit-modal-header__title {
+    font-size: 1rem;
+  }
+
+  .modal-body {
+    padding: 14px 16px;
+  }
+
+  .student-edit-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .student-edit-field-box input,
+  .student-edit-field-box select,
+  .student-edit-field-box textarea,
+  .modal-body input,
+  .modal-body select,
+  .modal-body textarea {
+    font-size: 16px;
+  }
+
+  .modal-footer,
+  .student-edit-modal-footer {
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .modal-footer button,
+  .student-edit-modal-footer button {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .certificate-paper {
+    padding: 18px 14px;
+  }
+
+  .cert-school,
+  .cert-main-title {
+    font-size: 1.05rem;
+  }
+
+  .cert-body-text {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    text-align: left;
+  }
+
+  .cert-signatures {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    margin-top: 24px;
   }
 }

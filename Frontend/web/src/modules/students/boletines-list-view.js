@@ -74,6 +74,24 @@ export default function BoletinesListView() {
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [planillaModalOpen, setPlanillaModalOpen] = useState(false);
   const [califRefreshTick, setCalifRefreshTick] = useState(0);
+  const [isMobileView, setIsMobileView] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 768px)").matches
+      : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const onChange = (e) => setIsMobileView(e.matches);
+    setIsMobileView(mq.matches);
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    }
+    mq.addListener(onChange);
+    return () => mq.removeListener(onChange);
+  }, []);
 
   // Escuchar actualizaciones de calificaciones para refrescar estados de la tabla
   useEffect(() => {
@@ -359,14 +377,10 @@ export default function BoletinesListView() {
           type: "button",
           className: "btn-volver-atras",
           onClick: () => {
-            if (window.history.length > 1) {
-              window.history.back();
-            } else {
-              window.location.hash = "#/inicio";
-            }
+            window.location.hash = "#/inicio";
           },
-          title: "Volver atrás",
-          "aria-label": "Volver atrás"
+          title: "Volver al Inicio",
+          "aria-label": "Volver al Inicio"
         },
         h(
           "svg",
@@ -665,58 +679,48 @@ export default function BoletinesListView() {
         )
       : null,
 
-    // Tabla de Alumnos para Boletín
+    // Nómina de Alumnos para Boletín (tarjetas en celular, tabla en escritorio)
     !loading && !error && students.length > 0
-      ? h(
-          "div",
-          { className: "boletines-table-wrap" },
-          h(
-            "table",
-            { className: "boletines-table" },
-            h(
-              "thead",
-              null,
-              h(
-                "tr",
-                null,
-                h("th", null, "Apellido y Nombre"),
-                h("th", null, "DNI"),
-                h("th", null, "Curso / Div"),
-                h("th", null, "Turno"),
-                h("th", null, "Condición"),
-                h("th", null, "Estado Calificación"),
-                h("th", { style: { textAlign: "center" } }, "Acción")
-              )
-            ),
-            h(
-              "tbody",
-              null,
-              students.map((alumno) => {
-                const tieneCalificaciones = alumnoTieneNotas(resumenesCursos, alumno);
+      ? isMobileView
+        ? h(
+            "div",
+            { className: "boletines-cards-list", "aria-label": "Listado de boletines de alumnos" },
+            students.map((alumno) => {
+              const tieneCalificaciones = alumnoTieneNotas(resumenesCursos, alumno);
+              const iniciales = `${alumno.apellido?.charAt(0) || ""}${alumno.nombre?.charAt(0) || ""}`;
 
-                return h(
-                  "tr",
-                  { key: alumno.id, className: "boletines-row" },
+              return h(
+                "article",
+                { key: alumno.id, className: "boletin-mobile-card" },
+                h(
+                  "div",
+                  { className: "boletin-mobile-card__top" },
                   h(
-                    "td",
-                    { className: "boletin-identity-cell" },
-                    h(
-                      "span",
-                      { className: "boletin-table-avatar", "aria-hidden": "true" },
-                      `${alumno.apellido?.charAt(0) || ""}${alumno.nombre?.charAt(0) || ""}`
-                    ),
-                    h("strong", { className: "boletin-alumno-name" }, `${alumno.apellido}, ${alumno.nombre}`)
+                    "span",
+                    { className: "boletin-table-avatar boletin-mobile-card__avatar", "aria-hidden": "true" },
+                    iniciales
                   ),
-                  h("td", { className: "text-muted font-mono" }, alumno.dni),
                   h(
-                    "td",
-                    null,
-                    h("span", { className: "curso-badge" }, `${alumno.curso} ${alumno.division}`)
+                    "div",
+                    { className: "boletin-mobile-card__identity" },
+                    h("strong", { className: "boletin-mobile-card__name" }, `${alumno.apellido}, ${alumno.nombre}`),
+                    h("span", { className: "boletin-mobile-card__dni" }, `DNI ${alumno.dni || "-"}`)
                   ),
-                  h("td", null, alumno.turno || "-"),
+                  h("span", { className: "curso-badge boletin-mobile-card__curso" }, `${alumno.curso} ${alumno.division}`)
+                ),
+                h(
+                  "div",
+                  { className: "boletin-mobile-card__meta" },
                   h(
-                    "td",
-                    null,
+                    "div",
+                    { className: "boletin-mobile-card__meta-item" },
+                    h("span", { className: "boletin-mobile-card__meta-label" }, "Turno"),
+                    h("span", { className: "boletin-mobile-card__meta-value" }, alumno.turno || "-")
+                  ),
+                  h(
+                    "div",
+                    { className: "boletin-mobile-card__meta-item" },
+                    h("span", { className: "boletin-mobile-card__meta-label" }, "Condición"),
                     h(
                       "span",
                       {
@@ -728,64 +732,178 @@ export default function BoletinesListView() {
                     )
                   ),
                   h(
-                    "td",
-                    null,
+                    "div",
+                    { className: "boletin-mobile-card__meta-item boletin-mobile-card__meta-item--full" },
+                    h("span", { className: "boletin-mobile-card__meta-label" }, "Estado"),
                     tieneCalificaciones
                       ? h("span", { className: "boletin-status-pill boletin-status-pill--ready" }, "Calificaciones asentadas")
                       : h("span", { className: "boletin-status-pill boletin-status-pill--pending" }, "Pendiente de carga")
+                  )
+                ),
+                h(
+                  "div",
+                  { className: "boletin-mobile-card__actions" },
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      className: "boletin-btn-open boletin-mobile-btn boletin-mobile-btn--primary",
+                      onClick: () => {
+                        setPlanillaModalOpen(false);
+                        setAlumnoSeleccionado(alumno);
+                      },
+                      title: `Abrir Boletín Oficial de ${alumno.nombre} ${alumno.apellido}`
+                    },
+                    h(
+                      "svg",
+                      { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", "aria-hidden": "true" },
+                      h("path", { d: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" }),
+                      h("path", { d: "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" })
+                    ),
+                    "Abrir Boletín"
                   ),
                   h(
-                    "td",
-                    { style: { textAlign: "center" } },
+                    "button",
+                    {
+                      type: "button",
+                      className: "boletin-btn-open boletin-mobile-btn boletin-mobile-btn--secondary",
+                      onClick: () => {
+                        setAlumnoSeleccionado(alumno);
+                        setPlanillaModalOpen(true);
+                      },
+                      title: `Cargar / Ver Planilla de Calificaciones de ${alumno.nombre} ${alumno.apellido}`
+                    },
                     h(
-                      "div",
-                      { style: { display: "inline-flex", alignItems: "center", gap: "8px", justifyContent: "center", flexWrap: "wrap" } },
+                      "svg",
+                      { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", "aria-hidden": "true" },
+                      h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
+                      h("path", { d: "M3 9h18M9 21V9" })
+                    ),
+                    "Planilla"
+                  )
+                )
+              );
+            })
+          )
+        : h(
+            "div",
+            { className: "boletines-table-wrap" },
+            h(
+              "table",
+              { className: "boletines-table" },
+              h(
+                "thead",
+                null,
+                h(
+                  "tr",
+                  null,
+                  h("th", null, "Apellido y Nombre"),
+                  h("th", null, "DNI"),
+                  h("th", null, "Curso / Div"),
+                  h("th", null, "Turno"),
+                  h("th", null, "Condición"),
+                  h("th", null, "Estado Calificación"),
+                  h("th", { style: { textAlign: "center" } }, "Acción")
+                )
+              ),
+              h(
+                "tbody",
+                null,
+                students.map((alumno) => {
+                  const tieneCalificaciones = alumnoTieneNotas(resumenesCursos, alumno);
+
+                  return h(
+                    "tr",
+                    { key: alumno.id, className: "boletines-row" },
+                    h(
+                      "td",
+                      { className: "boletin-identity-cell" },
                       h(
-                        "button",
-                        {
-                          type: "button",
-                          className: "boletin-btn-open",
-                          onClick: () => {
-                            setPlanillaModalOpen(false);
-                            setAlumnoSeleccionado(alumno);
-                          },
-                          title: `Abrir Boletín Oficial de ${alumno.nombre} ${alumno.apellido}`
-                        },
-                        h(
-                          "svg",
-                          { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                          h("path", { d: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" }),
-                          h("path", { d: "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" })
-                        ),
-                        "Abrir Boletín"
+                        "span",
+                        { className: "boletin-table-avatar", "aria-hidden": "true" },
+                        `${alumno.apellido?.charAt(0) || ""}${alumno.nombre?.charAt(0) || ""}`
                       ),
+                      h("strong", { className: "boletin-alumno-name" }, `${alumno.apellido}, ${alumno.nombre}`)
+                    ),
+                    h("td", { className: "text-muted font-mono" }, alumno.dni),
+                    h(
+                      "td",
+                      null,
+                      h("span", { className: "curso-badge" }, `${alumno.curso} ${alumno.division}`)
+                    ),
+                    h("td", null, alumno.turno || "-"),
+                    h(
+                      "td",
+                      null,
                       h(
-                        "button",
+                        "span",
                         {
-                          type: "button",
-                          className: "boletin-btn-open",
-                          style: { background: "#eff6ff", color: "#1d4ed8", borderColor: "#bfdbfe" },
-                          onClick: () => {
-                            setAlumnoSeleccionado(alumno);
-                            setPlanillaModalOpen(true);
-                          },
-                          title: `Cargar / Ver Planilla de Calificaciones de ${alumno.nombre} ${alumno.apellido}`
+                          className: `condicion-tag ${
+                            alumno.condicion === "Irregular" ? "condicion-tag--libre" : "condicion-tag--regular"
+                          }`
                         },
+                        alumno.condicion || "Regular"
+                      )
+                    ),
+                    h(
+                      "td",
+                      null,
+                      tieneCalificaciones
+                        ? h("span", { className: "boletin-status-pill boletin-status-pill--ready" }, "Calificaciones asentadas")
+                        : h("span", { className: "boletin-status-pill boletin-status-pill--pending" }, "Pendiente de carga")
+                    ),
+                    h(
+                      "td",
+                      { style: { textAlign: "center" } },
+                      h(
+                        "div",
+                        { style: { display: "inline-flex", alignItems: "center", gap: "8px", justifyContent: "center", flexWrap: "wrap" } },
                         h(
-                          "svg",
-                          { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
-                          h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
-                          h("path", { d: "M3 9h18M9 21V9" })
+                          "button",
+                          {
+                            type: "button",
+                            className: "boletin-btn-open",
+                            onClick: () => {
+                              setPlanillaModalOpen(false);
+                              setAlumnoSeleccionado(alumno);
+                            },
+                            title: `Abrir Boletín Oficial de ${alumno.nombre} ${alumno.apellido}`
+                          },
+                          h(
+                            "svg",
+                            { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                            h("path", { d: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" }),
+                            h("path", { d: "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" })
+                          ),
+                          "Abrir Boletín"
                         ),
-                        "Planilla"
+                        h(
+                          "button",
+                          {
+                            type: "button",
+                            className: "boletin-btn-open",
+                            style: { background: "#eff6ff", color: "#1d4ed8", borderColor: "#bfdbfe" },
+                            onClick: () => {
+                              setAlumnoSeleccionado(alumno);
+                              setPlanillaModalOpen(true);
+                            },
+                            title: `Cargar / Ver Planilla de Calificaciones de ${alumno.nombre} ${alumno.apellido}`
+                          },
+                          h(
+                            "svg",
+                            { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                            h("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }),
+                            h("path", { d: "M3 9h18M9 21V9" })
+                          ),
+                          "Planilla"
+                        )
                       )
                     )
-                  )
-                );
-              })
+                  );
+                })
+              )
             )
           )
-        )
       : null,
 
     // Paginación Inferior

@@ -138,7 +138,7 @@ export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) 
               h(
                 "span",
                 { className: "doc-pase-dotted-field doc-pase-dotted-field--grow" },
-                "E.E.S.T. Nº 1 \"Cecilia Berdichevski\""
+                "E.E.S.T. Nº 1 \"Cecilia Berdichevsky\""
               )
             ),
             h(

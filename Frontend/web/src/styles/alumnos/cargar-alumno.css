@@ -772,32 +772,246 @@
 }
 
 @media (max-width: 768px) {
-  .wizard-tabs-container {
-    grid-template-columns: 1fr;
+  /* Barra superior y cabecera compactas */
+  .cargar-alumno-page .secretaria-top-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 2px;
   }
+
+  .cargar-alumno-page .btn-volver-atras {
+    height: 34px;
+    padding: 0 12px 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+    gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cargar-alumno-page .btn-volver-atras__icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .cargar-alumno-page .secretaria-eyebrow {
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+  }
+
+  .cargar-alumno-page .secretaria-title-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px 10px;
+  }
+
+  .cargar-alumno-page .secretaria-title-row > div:first-child {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+
+  .cargar-alumno-page .secretaria-title {
+    font-size: 24px;
+    line-height: 1.15;
+    margin: 0 0 4px;
+  }
+
+  .cargar-alumno-page .secretaria-subtitle {
+    font-size: 12.5px;
+    line-height: 1.38;
+    margin: 0;
+  }
+
+  .cargar-alumno-page .wizard-badge-step {
+    font-size: 11.5px;
+    padding: 4px 11px;
+    align-self: flex-start;
+  }
+
+  /* Pestañas de modalidad: 50/50 sin desbordar */
+  .cargar-alumno-page .cargar-modalidad-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 4px;
+    border-radius: 12px;
+  }
+
+  .cargar-alumno-page .modalidad-tab-btn {
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 4px;
+    padding: 9px 6px;
+    font-size: 12.5px;
+    line-height: 1.2;
+    border-radius: 9px;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cargar-alumno-page .modalidad-tab-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .cargar-alumno-page .modalidad-tab-badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+
+  /* Pasos del wizard en grilla compacta 2x2 */
+  .wizard-tabs-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .wizard-tab-btn {
+    padding: 9px 10px;
+    gap: 8px;
+    border-radius: 12px;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .wizard-tab-number {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .wizard-tab-title {
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .wizard-tab-subtitle {
+    display: none;
+  }
+
+  /* Tarjeta del formulario y campos cómodos para touch */
+  .cargar-alumno-card {
+    border-radius: 16px;
+  }
+
+  .cargar-alumno-page .cargar-alumno-card > .dashboard-card__header {
+    padding: 13px 14px;
+  }
+
+  .cargar-alumno-page .cargar-alumno-card > .dashboard-card__header .dashboard-card__title {
+    font-size: 14.5px;
+  }
+
+  .cargar-alumno-page .cargar-alumno-card > .dashboard-card__body {
+    padding: 14px 12px 16px;
+  }
+
+  .wizard-form-body {
+    gap: 16px;
+  }
+
+  .form-section-title {
+    font-size: 15px;
+  }
+
+  .form-section-desc {
+    font-size: 12px;
+  }
+
   .form-grid-3col,
   .form-grid-2col,
-  .documentos-cards-grid,
-  .resumen-previo-grid {
-    grid-template-columns: 1fr;
+  .documentos-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
+
+  .form-grid-3col-inner {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .form-field-input,
+  .form-field-select,
+  .form-field-textarea {
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .form-field-input,
+  .form-field-select {
+    height: 42px;
+    padding: 0 12px;
+  }
+
+  .form-field-select {
+    padding-right: 32px;
+  }
+
+  .segundo-tutor-box {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .resumen-previo-card {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+
+  .resumen-previo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .save-success-banner {
     flex-direction: column;
     align-items: flex-start;
+    padding: 14px;
+    gap: 12px;
   }
+
   .save-success-actions {
     width: 100%;
     flex-direction: column;
   }
+
   .save-success-actions button {
     width: 100%;
   }
+
+  /* Footer del wizard: puntos centrados arriba, botones 50/50 abajo */
   .wizard-footer-actions {
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
+    padding-top: 14px;
   }
+
+  .wizard-dots-indicator {
+    order: -1;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 2px;
+  }
+
   .wizard-footer-actions button {
-    flex: 1;
+    flex: 1 1 0;
+    padding: 11px 12px;
+    font-size: 13px;
+    text-align: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -1737,6 +1951,436 @@
   }
   .excel-floating-bar__actions button {
     flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .excel-template-banner {
+    padding: 14px;
+    border-radius: 14px;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .excel-template-banner__left {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .excel-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+  }
+
+  .excel-icon-img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .excel-template-banner__info h3 {
+    font-size: 14.5px;
+  }
+
+  .excel-template-banner__info p {
+    font-size: 12.5px;
+  }
+
+  .excel-dropzone {
+    padding: 24px 14px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+  }
+
+  .excel-guide-card {
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+  }
+
+  .excel-metrics-grid {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .excel-metric-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .excel-metric-card strong {
+    font-size: 20px;
+  }
+
+  .excel-floating-action-modal {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: calc(100vw - 20px);
+    padding: 8px 10px;
+    bottom: 10px;
+    border-radius: 14px;
+    box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.24), 0 4px 12px rgba(15, 23, 42, 0.1);
+  }
+
+  .excel-floating-bar__left {
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .excel-floating-bar__icon-wrap {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .excel-floating-bar__img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .excel-floating-bar__text {
+    min-width: 0;
+    gap: 1px;
+  }
+
+  .excel-floating-bar__title {
+    font-size: 12.5px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .excel-floating-bar__subtitle {
+    font-size: 10.5px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .excel-floating-bar__actions {
+    width: auto;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .excel-floating-bar__actions button {
+    flex: 0 0 auto;
+  }
+
+  .excel-floating-action-modal .btn-cancelar-masiva {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 9px;
+    justify-content: center;
+  }
+
+  .excel-floating-action-modal .btn-cancelar-masiva span {
+    display: none;
+  }
+
+  .excel-floating-action-modal .btn-confirmar-masiva {
+    height: 34px;
+    padding: 0 12px;
+    gap: 5px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  .excel-floating-action-modal .btn-confirmar-masiva svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .excel-bulk-container--has-floating {
+    padding-bottom: 84px;
+  }
+
+  /* Vista previa en tarjetas paginadas (Carga Masiva móvil) */
+  .excel-preview-block {
+    scroll-margin-top: 84px;
+    margin-bottom: 16px;
+  }
+
+  .excel-preview-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .excel-preview-title {
+    font-size: 14.5px;
+    line-height: 1.25;
+  }
+
+  .excel-preview-subtitle {
+    font-size: 12px;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .excel-preview-cards-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .excel-preview-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .excel-preview-card {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #dce4ee;
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 14px -8px rgba(15, 23, 42, 0.14);
+  }
+
+  .excel-preview-card--duplicate {
+    background: #fffdf5;
+    border-color: #fcd34d;
+  }
+
+  .excel-preview-card--editing {
+    z-index: 40;
+    border-color: #93c5fd;
+  }
+
+  .excel-preview-card__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .excel-preview-card__orden {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .excel-preview-card__delete {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .excel-preview-card__delete:active,
+  .excel-preview-card__delete--highlight {
+    color: #dc2626;
+    border-color: #fca5a5;
+    background: #fef2f2;
+  }
+
+  .excel-preview-card__name {
+    padding: 4px 8px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+  }
+
+  .excel-preview-card__name-text {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .excel-preview-card__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .excel-preview-card__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 9px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    min-width: 0;
+  }
+
+  .excel-preview-card__field--full {
+    grid-column: 1 / -1;
+  }
+
+  .excel-preview-card__field-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .excel-gender-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  .excel-gender-pill--m {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+
+  .excel-gender-pill--f {
+    background: #fdf2f8;
+    color: #be185d;
+    border: 1px solid #fbcfe8;
+  }
+
+  .excel-curso-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .excel-turno-val {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  /* Lápiz siempre visible en tarjetas táctiles y controles sin zoom iOS */
+  .excel-preview-card .btn-cell-pencil {
+    opacity: 0.78;
+    visibility: visible;
+    width: 24px;
+    height: 24px;
+  }
+
+  .excel-preview-card .cell-view-wrap {
+    gap: 6px;
+    min-height: 26px;
+  }
+
+  .excel-preview-card .cell-text-input {
+    font-size: 16px;
+    height: 36px;
+    min-width: 0;
+  }
+
+  .excel-preview-card .btn-cell-save {
+    width: 36px;
+    height: 36px;
+  }
+
+  .excel-preview-card__field--right .cell-custom-select .custom-select__dropdown {
+    left: auto !important;
+    right: 0 !important;
+  }
+
+  .excel-preview-cards-empty {
+    padding: 22px 14px;
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .excel-preview-pagination {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 6px;
+  }
+
+  .excel-preview-pagination .pagination-info {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .excel-preview-pagination .pagination-controls-buttons {
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  .excel-preview-pagination .pagination-nav-btn {
+    padding: 0 10px;
+    font-size: 12px;
+    height: 34px;
+  }
+
+  .excel-preview-confirm-row {
+    display: flex;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .excel-preview-confirm-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    line-height: 1.25;
+    text-align: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .excel-preview-pagination .pagination-nav-label {
+    display: none;
+  }
+
+  .excel-preview-pagination .pagination-nav-btn {
+    width: 34px;
+    padding: 0;
     justify-content: center;
   }
 }

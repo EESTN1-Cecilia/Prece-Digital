@@ -1,6 +1,6 @@
 /* ==========================================================================
    MÓDULO DE BOLETINES DIGITALES - VISTA DE NÓMINA Y CALIFICACIONES
-   E.E.S.T. Nº 1 "Cecilia Berdichevski"
+   E.E.S.T. Nº 1 "Cecilia Berdichevsky"
    ========================================================================== */
 
 .boletines-panel {
@@ -451,40 +451,6 @@
   }
 }
 
-@media (max-width: 640px) {
-  .boletines-panel {
-    width: calc(100% - 16px);
-    margin-top: 16px;
-    padding: 16px 12px 24px;
-    border-radius: 20px;
-  }
-
-  .boletines-header-top {
-    padding: 18px 16px;
-  }
-
-  .boletines-main-title {
-    font-size: 21px;
-  }
-
-  .boletines-toolbar__heading {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .boletines-toolbar__clear {
-    width: 100%;
-  }
-
-  .boletines-toolbar .filters-group {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .boletines-results-bar {
-    align-items: stretch;
-  }
-}
-
 @media screen {
   .page:has(> .boletines-panel) {
     /* La onda sobresale 43 px del encabezado. */
@@ -493,5 +459,424 @@
 
   .page > .boletines-panel {
     margin-top: 0;
+  }
+}
+
+/* Tarjetas móviles para nómina de boletines */
+.boletines-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.boletin-mobile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  background: #ffffff;
+  border: 1px solid #dce4ee;
+  border-radius: 15px;
+  box-shadow: 0 4px 14px -8px rgba(15, 23, 42, 0.14);
+  box-sizing: border-box;
+}
+
+.boletin-mobile-card__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.boletin-mobile-card__avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.boletin-mobile-card__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.boletin-mobile-card__name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--navy, #222a4c);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.boletin-mobile-card__dni {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.boletin-mobile-card__curso {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.boletin-mobile-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 8px;
+  padding: 9px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.boletin-mobile-card__meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 9px;
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 9px;
+  min-width: 0;
+}
+
+.boletin-mobile-card__meta-item--full {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.boletin-mobile-card__meta-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.boletin-mobile-card__meta-value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.boletin-mobile-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.boletin-mobile-btn {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.boletin-mobile-btn--primary {
+  background: #232d56;
+  border-color: #232d56;
+  color: #ffffff;
+}
+
+.boletin-mobile-btn--primary:hover {
+  background: #1a2344;
+  border-color: #1a2344;
+  color: #ffffff;
+}
+
+.boletin-mobile-btn--secondary {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+@media screen and (max-width: 768px) {
+  /* Barra superior compacta alineada con Alumnos y Cursos */
+  .boletines-panel .alumnos-top-nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 0;
+    border-radius: 14px;
+    border: 1px solid #dfe6ef;
+    box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.16);
+  }
+
+  .boletines-panel .btn-volver-atras {
+    height: 34px;
+    padding: 0 12px 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+    gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .boletines-panel .btn-volver-atras__icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .boletines-panel .alumnos-top-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: 0;
+  }
+
+  .boletines-panel .badge-institucion,
+  .boletines-panel .badge-ciclo {
+    padding: 4px 9px;
+    font-size: 11px;
+    border-radius: 7px;
+  }
+
+  /* Cabecera principal */
+  .boletines-header-top {
+    padding: 14px 14px 14px 17px;
+    border-radius: 16px;
+    gap: 8px;
+  }
+
+  .boletines-eyebrow {
+    font-size: 10.5px;
+    gap: 5px;
+  }
+
+  .boletines-main-title {
+    font-size: 20px;
+    line-height: 1.18;
+  }
+
+  .boletines-subtitle {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  /* Toolbar de búsqueda y filtros en 2 columnas */
+  .boletines-toolbar {
+    padding: 12px;
+    gap: 10px;
+    background: #ffffff;
+    border: 1px solid #dfe6ef;
+    border-radius: 15px;
+    box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.14);
+  }
+
+  .boletines-toolbar__heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .boletines-toolbar__heading-icon {
+    width: 16px;
+    height: 16px;
+    padding: 6px;
+  }
+
+  .boletines-toolbar__heading-copy strong {
+    font-size: 13.5px;
+    line-height: 1.2;
+  }
+
+  .boletines-toolbar__heading-copy span {
+    font-size: 11.5px;
+  }
+
+  .boletines-toolbar__clear {
+    width: auto;
+    flex-shrink: 0;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  .boletines-toolbar .search-input {
+    height: 42px;
+    font-size: 16px;
+    padding: 0 36px 0 38px;
+    border-radius: 10px;
+  }
+
+  .boletines-toolbar .search-input-icon {
+    left: 12px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .boletines-toolbar .filters-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .boletines-toolbar .filters-group .custom-select-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .boletines-toolbar .filters-group .custom-select-wrapper:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .boletines-toolbar .filters-group .custom-select__trigger {
+    height: 38px;
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 12.5px;
+    border-radius: 9px;
+  }
+
+  .boletines-toolbar .filters-group .custom-select__dropdown {
+    max-width: calc(100vw - 44px);
+  }
+
+  .boletines-toolbar .filters-group .custom-select-wrapper:nth-child(2n) .custom-select__dropdown {
+    left: auto;
+    right: 0;
+  }
+
+  .boletines-active-filters {
+    padding-top: 9px;
+    gap: 6px;
+  }
+
+  /* Banner docente compacto */
+  .boletines-panel .alumnos-filter-status-bar {
+    margin: 0 !important;
+    padding: 11px 12px;
+    border-radius: 13px;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px !important;
+    font-size: 12px;
+  }
+
+  .boletines-panel .alumnos-filter-status-bar .boletin-btn-open {
+    width: 100%;
+    height: 38px;
+    justify-content: center;
+    border-radius: 10px;
+  }
+
+  /* Barra de resumen e impresión */
+  .boletines-results-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 11px 12px;
+    margin-bottom: 0;
+    background: #ffffff;
+    border: 1px solid #dfe6ef;
+    border-radius: 14px;
+  }
+
+  .boletines-print-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .boletines-print-btn {
+    width: 100%;
+    height: 38px;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 13px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .boletines-print-error {
+    max-width: 100%;
+  }
+
+  /* Paginación limpia en celular */
+  .boletines-panel .alumnos-pagination-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    margin-top: 0;
+    background: #ffffff;
+    border: 1px solid #dfe6ef;
+    border-radius: 14px;
+  }
+
+  .boletines-panel .pagination-info {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .boletines-panel .pagination-controls-buttons {
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  .boletines-panel .pagination-nav-btn {
+    padding: 0 10px;
+    font-size: 12px;
+    height: 34px;
+  }
+
+  .boletines-panel .alumnos-bottom-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .boletines-panel .pagination-page-size-selector {
+    width: 100%;
+    justify-content: space-between;
+    padding: 2px 3px 2px 10px;
+    box-sizing: border-box;
+  }
+
+  .boletines-panel .pagination-custom-select {
+    min-width: 124px;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  .boletines-panel .pagination-nav-label {
+    display: none;
+  }
+
+  .boletines-panel .pagination-nav-btn {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .boletin-mobile-card {
+    padding: 12px;
+  }
+
+  .boletin-mobile-btn {
+    font-size: 12px;
+    padding: 0 8px;
   }
 }

@@ -1,5 +1,6 @@
 /* Calendario escolar y docente. Usa los azules institucionales del sistema. */
-.cal { display: grid; gap: 16px; }
+.cal { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.cal > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
 .cal__encabezado { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .cal__encabezado h1 { margin: 0; color: var(--navy); font-size: 1.6rem; }
 .cal__encabezado p { margin: 4px 0 0; color: #4a5068; }
@@ -74,7 +75,246 @@
 .cal-aviso__otros li { display: grid; font-size: .9rem; }
 .cal-aviso__otros span, .cal-aviso__mas { color: #5a5f76; font-size: .85rem; }
 @media (max-width: 900px) {
-  .cal__cuerpo { grid-template-columns: 1fr; }
+  .cal__cuerpo { grid-template-columns: minmax(0, 1fr); }
   .cal__dia { min-height: 64px; }
-  .cal__marca { font-size: 0; padding: 0; width: 8px; height: 8px; border-radius: 50%; }
+  .cal__marca { font-size: 0; padding: 0; width: 18px; height: 4px; border-radius: 999px; }
+}
+
+@media screen and (max-width: 768px) {
+  .cal {
+    gap: 12px;
+  }
+
+  .cal__encabezado {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid #dfe6ef;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px -10px rgba(15, 23, 42, 0.14);
+  }
+
+  .cal__encabezado h1 {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .cal__encabezado p {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .cal__gestion {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .cal__gestion .ui-boton {
+    width: 100%;
+    min-height: 38px;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    border-radius: 10px;
+  }
+
+  .cal-estado,
+  .cal-mensaje {
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  /* Barra de navegación de mes/año y filtros sin desborde */
+  .cal__barra {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid #dfe6ef;
+    border-radius: 15px;
+  }
+
+  .cal__mes {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1.35fr) minmax(0, 0.85fr) 34px auto;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .cal__nav {
+    width: 34px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 1.15rem;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cal__mes .custom-select-wrapper,
+  .cal__mes .custom-select__trigger {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .cal__mes .custom-select__trigger {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 8px 0 9px;
+    font-size: 12.5px;
+    border-radius: 9px;
+  }
+
+  .cal__anio-select .custom-select__dropdown {
+    left: auto;
+    right: 0;
+    min-width: 110px;
+  }
+
+  .cal__mes-select .custom-select__dropdown {
+    min-width: 150px;
+    max-width: calc(100vw - 44px);
+  }
+
+  .cal__mes .ui-boton {
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .cal__filtros {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .cal__filtro {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Grilla mensual de 7 columnas 100% visible */
+  .cal__cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .cal__grilla {
+    width: 100%;
+    border-radius: 14px;
+  }
+
+  .cal__dias span {
+    padding: 7px 2px;
+    font-size: 11px;
+    letter-spacing: 0.01em;
+  }
+
+  .cal__dia {
+    min-height: 52px;
+    padding: 5px 2px 4px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cal__num {
+    align-self: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 4px;
+    font-size: 12px;
+  }
+
+  .cal__marca {
+    width: 18px;
+    height: 4px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .cal__mas {
+    font-size: 9.5px;
+    line-height: 1;
+    font-weight: 700;
+  }
+
+  /* Agenda lateral */
+  .cal__lateral {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .cal-seccion {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .cal-seccion h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .cal-item {
+    padding: 9px 10px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .cal-item__cabecera {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .cal-item__titulo {
+    font-size: 13.5px;
+  }
+
+  .cal-item p {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  /* Modal de agregar / editar fecha */
+  .cal-campo input,
+  .cal-campo select {
+    font-size: 16px;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .cal-form__acciones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .cal-form__acciones .ui-boton {
+    width: 100%;
+    justify-content: center;
+  }
 }

@@ -765,7 +765,7 @@ export function PlanillaCalificacionesModal({
                     e.currentTarget.src = "/assets/Logo Tec.png";
                   }
                 }),
-                h("span", { className: "doc-escuela-title" }, "E.E.S.T. N° 1 \"CECILIA BERDICHEVSKI\"")
+                h("span", { className: "doc-escuela-title" }, "E.E.S.T. N° 1 \"CECILIA BERDICHEVSKY\"")
               )
             ),
             h("h1", { className: "doc-planilla-main-title" }, `PLANILLA OFICIAL DE CALIFICACIONES ${fecha.anio}`),
@@ -804,30 +804,34 @@ export function PlanillaCalificacionesModal({
               )
             ),
 
-            // Resumen Estadístico Superior en Vivo
+            // Resumen Estadístico Superior en Vivo (con contenedor scrollable horizontal en móvil)
             h(
               "div",
-              { className: "doc-planilla-stats-box" },
-              ...resumenCurso(metricas).map((grupo) =>
-                h(
-                  "div",
-                  {
-                    key: grupo.titulo,
-                    className: `doc-stat-group${grupo.celdas.length === 1 ? " doc-stat-group--compact" : ""}`
-                  },
-                  h("div", { className: "doc-stat-group__header" }, grupo.titulo),
+              { className: "doc-planilla-stats-scroll no-print-scroll" },
+              h(
+                "div",
+                { className: "doc-planilla-stats-box" },
+                ...resumenCurso(metricas).map((grupo) =>
                   h(
                     "div",
-                    { className: "doc-stat-group__cells" },
-                    ...grupo.celdas.map(([nombre, valor]) =>
-                      h(
-                        "div",
-                        {
-                          key: `${grupo.titulo}-${nombre}`,
-                          className: `doc-stat-item${nombre === "Aprobados" ? " doc-stat-item--success" : nombre === "Desaprobados" ? " doc-stat-item--danger" : ""}`
-                        },
-                        h("span", { className: "doc-stat-item__label" }, nombre.toUpperCase()),
-                        h("strong", { className: "doc-stat-item__value" }, valor)
+                    {
+                      key: grupo.titulo,
+                      className: `doc-stat-group${grupo.celdas.length === 1 ? " doc-stat-group--compact" : ""}`
+                    },
+                    h("div", { className: "doc-stat-group__header" }, grupo.titulo),
+                    h(
+                      "div",
+                      { className: "doc-stat-group__cells" },
+                      ...grupo.celdas.map(([nombre, valor]) =>
+                        h(
+                          "div",
+                          {
+                            key: `${grupo.titulo}-${nombre}`,
+                            className: `doc-stat-item${nombre === "Aprobados" ? " doc-stat-item--success" : nombre === "Desaprobados" ? " doc-stat-item--danger" : ""}`
+                          },
+                          h("span", { className: "doc-stat-item__label" }, nombre.toUpperCase()),
+                          h("strong", { className: "doc-stat-item__value" }, valor)
+                        )
                       )
                     )
                   )
@@ -870,10 +874,26 @@ export function PlanillaCalificacionesModal({
             )
           ),
 
+          // Indicador ergonómico de desplazamiento horizontal en pantallas móviles
+          h(
+            "div",
+            { className: "doc-table-scroll-hint no-print" },
+            h(
+              "svg",
+              { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+              h("path", { d: "M17 8l4 4m0 0l-4 4m4-4H3" }),
+              h("path", { d: "M7 16l-4-4m0 0l4-4m-4 4h18" })
+            ),
+            h("span", null, "Deslizá la tabla horizontalmente para ver y calificar todas las notas e informes")
+          ),
+
           // Tabla Oficial de Calificaciones
           h(
-            "table",
-            { className: "doc-planilla-table" },
+            "div",
+            { className: "doc-table-scroll" },
+            h(
+              "table",
+              { className: "doc-planilla-table" },
             h(
               "thead",
               null,
@@ -881,7 +901,18 @@ export function PlanillaCalificacionesModal({
                 "tr",
                 null,
                 h("th", { rowSpan: 2, className: "col-num", onClick: handleAlternarOrden, style: { cursor: "pointer" }, title: "Ordenar por número" }, "Nº ⬍"),
-                h("th", { rowSpan: 2, className: "col-name", onClick: handleAlternarOrden, style: { cursor: "pointer", textAlign: "left", paddingLeft: "8px" }, title: "Ordenar por apellido" }, "APELLIDO/S Y NOMBRE/S DEL/LA ESTUDIANTE ⬍"),
+                h(
+                  "th",
+                  {
+                    rowSpan: 2,
+                    className: "col-name",
+                    onClick: handleAlternarOrden,
+                    style: { cursor: "pointer", textAlign: "left", paddingLeft: "6px" },
+                    title: "Ordenar por apellido"
+                  },
+                  h("span", { className: "col-name-label-desktop" }, "APELLIDO/S Y NOMBRE/S DEL/LA ESTUDIANTE ⬍"),
+                  h("span", { className: "col-name-label-mobile" }, "ESTUDIANTE ⬍")
+                ),
                 h("th", { colSpan: 4 }, "1º CUATRIMESTRE"),
                 h("th", { colSpan: 4 }, "2º CUATRIMESTRE"),
                 h("th", { colSpan: 2 }, "INTENSIFICACIÓN"),
@@ -926,12 +957,15 @@ export function PlanillaCalificacionesModal({
                     return h(
                       "tr",
                       { key: e.id, className: rowClass },
-                      h("td", { className: "text-center font-bold font-mono" }, e.num),
+                      h("td", { className: "col-num text-center font-bold font-mono" }, e.num),
                       h(
                         "td",
-                        { className: "text-left font-bold" },
-                        h("span", { style: { color: "#1e293b" } }, `${e.apellido}, ${e.nombre}`),
-                        e.dni ? h("span", { className: "text-muted font-mono", style: { fontSize: "10px", marginLeft: "6px" } }, `(${e.dni})`) : null
+                        {
+                          className: "col-name text-left font-bold",
+                          title: `${e.apellido}, ${e.nombre}${e.dni ? ` (${e.dni})` : ""}`
+                        },
+                        h("span", { className: "doc-planilla-student-name", style: { color: "#1e293b" } }, `${e.apellido}, ${e.nombre}`),
+                        e.dni ? h("span", { className: "text-muted font-mono doc-planilla-dni", style: { fontSize: "10px", marginLeft: "6px" } }, `(${e.dni})`) : null
                       ),
 
                       // 1er Cuatrimestre: Parciales
@@ -1111,6 +1145,7 @@ export function PlanillaCalificacionesModal({
                       )
                     );
                   })
+            )
             )
           ),
 

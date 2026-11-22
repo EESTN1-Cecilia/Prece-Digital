@@ -113,9 +113,44 @@ export default function ConfiguracionView() {
   return h(
     "section",
     { className: "configuracion-page" },
+    h(
+      "div",
+      { className: "configuracion-topbar" },
+      h(
+        "button",
+        {
+          type: "button",
+          className: "btn-volver-atras",
+          onClick: () => {
+            window.location.hash = "#/inicio";
+          },
+          "aria-label": "Volver al Inicio"
+        },
+        h(
+          "svg",
+          {
+            className: "btn-volver-atras__icon",
+            viewBox: "0 0 20 20",
+            fill: "currentColor",
+            "aria-hidden": "true"
+          },
+          h("path", {
+            fillRule: "evenodd",
+            d: "M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z",
+            clipRule: "evenodd"
+          })
+        ),
+        h("span", null, "Volver al Inicio")
+      ),
+      h(
+        "span",
+        { className: `configuracion-modo-badge ${puedeConfigurar ? "configuracion-modo-badge--edit" : "configuracion-modo-badge--readonly"}` },
+        puedeConfigurar ? "Edición habilitada · Dirección" : "Solo lectura"
+      )
+    ),
     h("header", { className: "configuracion-header" },
-      h("h1", null, "Configuración institucional"),
-      h("p", null, "Administrá las reglas existentes para las alertas de inasistencia.")
+      h("h1", null, "Configuración de alertas de inasistencia"),
+      h("p", null, "Reglas institucionales para detectar rachas de faltas, canales de aviso, umbrales y días no hábiles.")
     ),
     error ? h("p", { className: "configuracion-alerta configuracion-alerta--error", role: "alert" }, error) : null,
     aviso ? h("p", { className: "configuracion-alerta configuracion-alerta--ok", role: "status" }, aviso) : null,

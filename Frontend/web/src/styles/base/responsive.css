@@ -196,6 +196,31 @@ main {
     height: 42px;
   }
 
+  .header-notifications-container {
+    position: static;
+  }
+
+  .header-notification-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .header-notification-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .header-notifications-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: auto;
+    width: min(350px, 100%);
+    max-width: 100%;
+    max-height: calc(100dvh - 80px);
+    border-radius: 16px;
+  }
+
   .site-header::after {
     height: 24px;
   }
@@ -371,6 +396,8 @@ main {
     width: 100%;
     max-width: 100%;
     margin: 12px 0 28px;
+    padding: 0 16px;
+    border-radius: 0;
   }
 
   .director-page-container {
@@ -403,11 +430,106 @@ main {
     box-sizing: border-box;
   }
 
+  .page:has(> .secretaria-dashboard--home),
+  .page:has(> .docente-dashboard-wrapper),
+  .page:has(> .docente-cursos-container),
+  .page:has(> .docente-panel),
+  .page:has(> .preceptoria-dashboard-wrapper),
+  .page:has(> .alumnos-list-panel),
+  .page:has(> .cursos-panel),
+  .page:has(> .cargar-alumno-page),
+  .page:has(> .asistencias-page),
+  .page:has(> .boletines-panel),
+  .page:has(> .observations-panel),
+  .page:has(> .observations-form-page),
+  .page:has(> .cal),
+  .page:has(> .configuracion-page),
+  .page:has(> .alumno-resumen-panel),
+  .page:has(> .student-profile-page-wrapper) {
+    padding: 10px 6px 36px;
+  }
+
+  .welcome-panel.boletines-panel {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    gap: 10px;
+  }
+
+  .asistencias-page.secretaria-dashboard {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 14px 12px 24px;
+    border-radius: 18px;
+    gap: 12px;
+    box-sizing: border-box;
+  }
+
+  .welcome-panel.alumnos-panel.cursos-panel {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .welcome-panel.alumno-resumen-panel {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .student-profile-page-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 0;
+    gap: 12px;
+    box-sizing: border-box;
+  }
+
+  .cargar-alumno-page.secretaria-dashboard {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 14px 12px 18px;
+    border-radius: 18px;
+    gap: 12px;
+    box-sizing: border-box;
+  }
+
   .secretaria-dashboard--home {
     width: 100%;
     max-width: 100%;
-    margin: 6px 0 24px;
-    gap: 14px;
+    margin: 4px 0 24px;
+    padding: 0;
+    border-radius: 0;
+    gap: 12px;
+  }
+
+  .welcome-panel.alumnos-panel.alumnos-list-panel {
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 24px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .annual-page {

@@ -13,8 +13,29 @@ export default function AlumnosListView() {
   const esPreceptor = user?.rol === "preceptor" || (Array.isArray(user?.roles) && user.roles.includes("preceptor") && !user.roles.includes("admin") && !user.roles.includes("secretario") && !user.roles.includes("director"));
   const puedeCargarAlumno = !esPreceptor && (user?.roles?.length ? puede(user, PERMISOS.alumnosCrear) : true);
 
+  // En vista celular (<= 768px) se fuerza únicamente la vista en tarjetas
+  const [isMobileView, setIsMobileView] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 768px)").matches
+      : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const onChange = (e) => setIsMobileView(e.matches);
+    setIsMobileView(mq.matches);
+    if (mq.addEventListener) {
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    }
+    mq.addListener(onChange);
+    return () => mq.removeListener(onChange);
+  }, []);
+
   // Filtros del Listado de Alumnos
   const [viewMode, setViewMode] = useState("table"); // 'table' | 'card'
+  const effectiveViewMode = isMobileView ? "card" : viewMode;
   const [studentSearch, setStudentSearch] = useState("");
   const [debouncedStudentSearch, setDebouncedStudentSearch] = useState("");
   const [selectedCurso, setSelectedCurso] = useState("todos");
@@ -231,68 +252,70 @@ export default function AlumnosListView() {
         actions: h(
           "div",
           { className: "alumnos-header-actions" },
-          // Switch de Vista: Tabla vs Tarjetas
-          h(
-            "div",
-            { className: "view-mode-toggle", role: "group", "aria-label": "Modo de visualización" },
-            h(
-              "button",
-              {
-                type: "button",
-                className: `view-mode-btn ${viewMode === "table" ? "active" : ""}`,
-                onClick: () => setViewMode("table"),
-                title: "Vista en lista de tabla",
-                "aria-label": "Vista en lista de tabla",
-                "aria-pressed": viewMode === "table"
-              },
-              h(
-                "svg",
-                {
-                  className: "view-mode-icon",
-                  viewBox: "0 0 20 20",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: "2.2",
-                  strokeLinecap: "round",
-                  "aria-hidden": "true"
-                },
-                h("circle", { cx: "4", cy: "5.5", r: "1", fill: "currentColor", stroke: "none" }),
-                h("line", { x1: "8", y1: "5.5", x2: "16.5", y2: "5.5" }),
-                h("circle", { cx: "4", cy: "10", r: "1", fill: "currentColor", stroke: "none" }),
-                h("line", { x1: "8", y1: "10", x2: "16.5", y2: "10" }),
-                h("circle", { cx: "4", cy: "14.5", r: "1", fill: "currentColor", stroke: "none" }),
-                h("line", { x1: "8", y1: "14.5", x2: "16.5", y2: "14.5" })
+          // Switch de Vista: Tabla vs Tarjetas (oculto en celular, donde solo se muestran tarjetas)
+          !isMobileView
+            ? h(
+                "div",
+                { className: "view-mode-toggle", role: "group", "aria-label": "Modo de visualización" },
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: `view-mode-btn ${viewMode === "table" ? "active" : ""}`,
+                    onClick: () => setViewMode("table"),
+                    title: "Vista en lista de tabla",
+                    "aria-label": "Vista en lista de tabla",
+                    "aria-pressed": viewMode === "table"
+                  },
+                  h(
+                    "svg",
+                    {
+                      className: "view-mode-icon",
+                      viewBox: "0 0 20 20",
+                      fill: "none",
+                      stroke: "currentColor",
+                      strokeWidth: "2.2",
+                      strokeLinecap: "round",
+                      "aria-hidden": "true"
+                    },
+                    h("circle", { cx: "4", cy: "5.5", r: "1", fill: "currentColor", stroke: "none" }),
+                    h("line", { x1: "8", y1: "5.5", x2: "16.5", y2: "5.5" }),
+                    h("circle", { cx: "4", cy: "10", r: "1", fill: "currentColor", stroke: "none" }),
+                    h("line", { x1: "8", y1: "10", x2: "16.5", y2: "10" }),
+                    h("circle", { cx: "4", cy: "14.5", r: "1", fill: "currentColor", stroke: "none" }),
+                    h("line", { x1: "8", y1: "14.5", x2: "16.5", y2: "14.5" })
+                  )
+                ),
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: `view-mode-btn ${viewMode === "card" ? "active" : ""}`,
+                    onClick: () => setViewMode("card"),
+                    title: "Vista en tarjetas",
+                    "aria-label": "Vista en tarjetas",
+                    "aria-pressed": viewMode === "card"
+                  },
+                  h(
+                    "svg",
+                    {
+                      className: "view-mode-icon",
+                      viewBox: "0 0 20 20",
+                      fill: "none",
+                      stroke: "currentColor",
+                      strokeWidth: "2.2",
+                      strokeLinecap: "round",
+                      strokeLinejoin: "round",
+                      "aria-hidden": "true"
+                    },
+                    h("rect", { x: "3", y: "3", width: "5.5", height: "5.5", rx: "1.5" }),
+                    h("rect", { x: "11.5", y: "3", width: "5.5", height: "5.5", rx: "1.5" }),
+                    h("rect", { x: "3", y: "11.5", width: "5.5", height: "5.5", rx: "1.5" }),
+                    h("rect", { x: "11.5", y: "11.5", width: "5.5", height: "5.5", rx: "1.5" })
+                  )
+                )
               )
-            ),
-            h(
-              "button",
-              {
-                type: "button",
-                className: `view-mode-btn ${viewMode === "card" ? "active" : ""}`,
-                onClick: () => setViewMode("card"),
-                title: "Vista en tarjetas",
-                "aria-label": "Vista en tarjetas",
-                "aria-pressed": viewMode === "card"
-              },
-              h(
-                "svg",
-                {
-                  className: "view-mode-icon",
-                  viewBox: "0 0 20 20",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: "2.2",
-                  strokeLinecap: "round",
-                  strokeLinejoin: "round",
-                  "aria-hidden": "true"
-                },
-                h("rect", { x: "3", y: "3", width: "5.5", height: "5.5", rx: "1.5" }),
-                h("rect", { x: "11.5", y: "3", width: "5.5", height: "5.5", rx: "1.5" }),
-                h("rect", { x: "3", y: "11.5", width: "5.5", height: "5.5", rx: "1.5" }),
-                h("rect", { x: "11.5", y: "11.5", width: "5.5", height: "5.5", rx: "1.5" })
-              )
-            )
-          ),
+            : null,
           // Botón Ver Cursos
           h(
             "a",
@@ -493,9 +516,9 @@ export default function AlumnosListView() {
           })
         : null,
 
-      // Listado de Alumnos (Tabla o Tarjetas)
+      // Listado de Alumnos (Tabla o Tarjetas; en celular siempre tarjetas)
       !loading && !error && students.length > 0
-        ? viewMode === "table"
+        ? effectiveViewMode === "table"
           ? // 1. Tabla de Alumnos
             h(
               "div",

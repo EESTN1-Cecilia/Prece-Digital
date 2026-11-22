@@ -190,9 +190,7 @@ export const RUTAS = [
     seccion: "General",
     icono: "academic",
     padre: "#/inicio",
-    /* El tablero arma sus metricas con /api/v1/users y /api/v1/dashboard/secretaria:
-       exigir usuarios.read evita que preceptoria, docencia o jefatura de area entren
-       a una pantalla de direccion (mismo criterio que #/inicio-director). */
+    roles: ["director", "admin"],
     permisos: [PERMISOS.usuariosLeer],
     enMenu: true
   },
@@ -201,6 +199,7 @@ export const RUTAS = [
     titulo: "Tablero de Dirección",
     vista: DirectorDashboardView,
     padre: "#/inicio",
+    roles: ["director", "admin"],
     permisos: [PERMISOS.usuariosLeer]
   },
   {
@@ -253,6 +252,7 @@ export const RUTAS = [
     titulo: "Tablero de secretaria",
     vista: SecretariaDashboardView,
     padre: "#/inicio",
+    roles: ["secretario", "secretaria", "director", "admin"],
     permisos: [PERMISOS.alumnosEditar]
   },
   {
@@ -336,6 +336,7 @@ export const RUTAS = [
     seccion: "Server",
     icono: "filter",
     padre: "#/inicio",
+    roles: ["server", "director", "admin"],
     permisos: [PERMISOS.inventoryLeer],
     enMenu: true
   },
@@ -344,6 +345,7 @@ export const RUTAS = [
     titulo: "Tablero de Server",
     vista: ServerDashboardView,
     padre: "#/inicio",
+    roles: ["server", "director", "admin"],
     permisos: [PERMISOS.inventoryLeer]
   },
   {
@@ -351,6 +353,7 @@ export const RUTAS = [
     titulo: "Registrar material",
     vista: MaterialFormView,
     padre: "#/inventario",
+    roles: ["server", "director", "admin"],
     permisos: [PERMISOS.inventoryCrear]
   },
   {
@@ -358,6 +361,7 @@ export const RUTAS = [
     titulo: "Modificar material",
     vista: MaterialFormView,
     padre: "#/inventario/:id",
+    roles: ["server", "director", "admin"],
     permisos: [PERMISOS.inventoryEditar]
   },
   {
@@ -365,6 +369,7 @@ export const RUTAS = [
     titulo: "Detalle del material",
     vista: MaterialDetalleView,
     padre: "#/inventario",
+    roles: ["server", "director", "admin"],
     permisos: [PERMISOS.inventoryLeer]
   },
   {
@@ -374,6 +379,7 @@ export const RUTAS = [
     seccion: "Server",
     icono: "clipboard",
     padre: "#/server",
+    roles: ["server", "director", "admin"],
     permisos: [PERMISOS.inventoryLeer],
     enMenu: true
   },
@@ -479,6 +485,7 @@ export const RUTAS = [
     titulo: "Invitar usuario",
     vista: InviteView,
     padre: "#/usuarios",
+    roles: ["director", "admin"],
     permisos: [PERMISOS.usuariosCrear]
   },
   {
@@ -486,6 +493,7 @@ export const RUTAS = [
     titulo: "Nuevo usuario",
     vista: UsuarioFormularioView,
     padre: "#/usuarios",
+    roles: ["director", "admin"],
     permisos: [PERMISOS.usuariosCrear]
   },
   {
@@ -493,6 +501,7 @@ export const RUTAS = [
     titulo: "Editar usuario",
     vista: UsuarioFormularioView,
     padre: "#/usuarios/:id",
+    roles: ["director", "admin"],
     permisos: [PERMISOS.usuariosEditar]
   },
   {
@@ -500,6 +509,7 @@ export const RUTAS = [
     titulo: "Detalle del usuario",
     vista: UsuarioDetalleView,
     padre: "#/usuarios",
+    roles: ["director", "admin"],
     permisos: [PERMISOS.usuariosLeer]
   },
   {
@@ -509,6 +519,7 @@ export const RUTAS = [
     seccion: "Identidad y acceso",
     icono: "people",
     padre: "#/inicio",
+    roles: ["director", "admin"],
     permisos: [PERMISOS.usuariosLeer],
     enMenu: true
   },
@@ -519,6 +530,7 @@ export const RUTAS = [
     seccion: "Identidad y acceso",
     icono: "filter",
     padre: "#/inicio",
+    roles: ["director", "admin"],
     permisos: [PERMISOS.rolesLeer],
     enMenu: true
   },

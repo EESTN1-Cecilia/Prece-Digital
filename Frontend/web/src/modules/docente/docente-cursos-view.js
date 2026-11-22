@@ -271,9 +271,9 @@ export default function DocenteCursosView() {
             "div",
             { className: "filter-pills" },
             [
-              { id: "todos", label: "Todos los turnos" },
-              { id: "mañana", label: "Turno Mañana" },
-              { id: "tarde", label: "Turno Tarde" }
+              { id: "todos", label: "Todos los turnos", mobileLabel: "Todos" },
+              { id: "mañana", label: "Turno Mañana", mobileLabel: "Mañana" },
+              { id: "tarde", label: "Turno Tarde", mobileLabel: "Tarde" }
             ].map((pill) =>
               h(
                 "button",
@@ -281,9 +281,11 @@ export default function DocenteCursosView() {
                   key: pill.id,
                   type: "button",
                   className: `filter-pill ${selectedTurnoFilter === pill.id ? "active filter-pill--active" : ""}`,
-                  onClick: () => setSelectedTurnoFilter(pill.id)
+                  onClick: () => setSelectedTurnoFilter(pill.id),
+                  title: pill.label
                 },
-                pill.label
+                h("span", { className: "filter-pill-label--desktop" }, pill.label),
+                h("span", { className: "filter-pill-label--mobile" }, pill.mobileLabel)
               )
             )
           )

@@ -20,30 +20,52 @@ const ESTADOS_ASISTENCIA = {
 
 const LETRAS_DIAS = ["DO", "LU", "MA", "MI", "JU", "VI", "SA"];
 
-// Hoja oficio apaisada (356 × 216 mm) y su área útil con márgenes de 1 cm, en px CSS.
-const MM_A_PX = 96 / 25.4;
-const MARGEN_HOJA = 10 * MM_A_PX;
-const AREA_IMPRESION_OFICIO = { ancho: 336 * MM_A_PX, alto: 196 * MM_A_PX };
-
-/* Los márgenes van como padding del body y no en @page: así se respetan aunque el
-   diálogo de impresión tenga "Márgenes: Ninguno". La planilla va dentro de un
-   recuadro del tamaño del área útil que recorta lo que sobre: nunca pasa a otra
-   hoja. Sin padding abajo queda 1 cm de holgura por si el diálogo agrega margen. */
-const ESTILO_HOJA_OFICIO = `
-  @page { size: legal landscape; margin: 0; }
-  html { margin: 0 !important; padding: 0 !important; background: #ffffff !important; }
-  body { margin: 0 !important; padding: 10mm 10mm 0 !important; background: #ffffff !important; }
-  body::before, body::after { content: none !important; display: none !important; }
-  .hoja-oficio {
-    width: 336mm;
-    height: 195mm;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    break-inside: avoid;
+/* Estilos de impresión para la planilla oficial de asistencias:
+   Configura la hoja apaisada (Landscape) para ocupar el 100% de la hoja (A4, Oficio/Legal o Carta),
+   con márgenes limpios y diseño oficial institucional fiel. */
+const ESTILO_IMPRESION_PLANILLA = `
+  @page {
+    size: landscape;
+    margin: 4mm 6mm;
   }
-  .hoja-oficio > .asistencias-page { flex: none; }
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+  }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #000000;
+  }
+  .hoja-asistencia-impresion {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .hoja-asistencia-impresion > .asistencias-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    background: #ffffff !important;
+  }
 `;
 
 /* Reglas de pantalla del sitio, sin las de impresión: el boletín, la matriz y el
@@ -74,35 +96,45 @@ function reglasDePantalla() {
   return { css: reglas.join("\n"), externas };
 }
 
-/* Imprime la planilla sola, dentro de un iframe: así no salen el fondo del sitio,
-   el encabezado ni hojas en blanco. La escala se calcula para que entre entera en
-   una hoja oficio apaisada. */
-async function imprimirEnHojaOficio(original) {
-  const { ancho, alto } = AREA_IMPRESION_OFICIO;
+/* Imprime la planilla de asistencia ocupando la hoja completa en formato apaisado.
+   Utiliza un iframe limpio para aislar estilos de navegación y garantizar
+   que la grilla de días, totales y balances llenen el ancho de la hoja (100%)
+   y entren en una única página oficial. */
+async function imprimirPlanillaAsistencia(original) {
   const marco = document.createElement("iframe");
   marco.setAttribute("aria-hidden", "true");
-  Object.assign(marco.style, { position: "fixed", left: "-10000px", top: "0", width: `${ancho + 2 * MARGEN_HOJA}px`, height: `${alto + 2 * MARGEN_HOJA}px`, border: "0" });
+  // Dimensiones de referencia de página apaisada para renderizado previo a impresión
+  Object.assign(marco.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    width: "1120px",
+    height: "760px",
+    border: "0"
+  });
   document.body.appendChild(marco);
 
   const { css, externas } = reglasDePantalla();
   const doc = marco.contentDocument;
   doc.open();
   doc.write(
-    `<!doctype html><html><head><meta charset="utf-8"><title>Planilla de asistencia</title>` +
+    `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Planilla Oficial de Asistencia - E.E.S.T N° 1</title>` +
       externas.map((href) => `<link rel="stylesheet" href="${href}">`).join("") +
-      `<style>${css}</style><style>${ESTILO_HOJA_OFICIO}</style></head>` +
-      `<body class="asistencias-imprimiendo"><div class="hoja-oficio"></div></body></html>`
+      `<style>${css}</style><style>${ESTILO_IMPRESION_PLANILLA}</style></head>` +
+      `<body class="asistencias-imprimiendo"><div class="hoja-asistencia-impresion"></div></body></html>`
   );
   doc.close();
 
+  const contenedor = doc.querySelector(".hoja-asistencia-impresion");
   const hoja = doc.importNode(original, true);
-  // cloneNode no copia lo que se escribió en los inputs (observaciones)
-  const inputs = original.querySelectorAll("input");
+
+  // Copiamos valores de observaciones ingresados a mano en inputs
+  const inputsOriginales = original.querySelectorAll("input");
   hoja.querySelectorAll("input").forEach((input, i) => {
-    input.setAttribute("value", inputs[i]?.value ?? "");
+    input.setAttribute("value", inputsOriginales[i]?.value ?? "");
     input.removeAttribute("placeholder");
   });
-  doc.querySelector(".hoja-oficio").appendChild(hoja);
+  contenedor.appendChild(hoja);
 
   await Promise.all(
     [...doc.querySelectorAll('link[rel="stylesheet"]')].map(
@@ -112,30 +144,24 @@ async function imprimirEnHojaOficio(original) {
   await doc.fonts?.ready;
   await Promise.all([...doc.images].map((img) => img.decode().catch(() => {})));
 
-  // Con la planilla maquetada al ancho útil se mide cuánto hay que reducirla para
-  // que entre en el alto; luego se ensancha en la misma proporción para que,
-  // reducida, siga ocupando todo el ancho de la hoja.
-  const medirEscala = () => Math.min(1, alto / hoja.scrollHeight, ancho / hoja.scrollWidth);
-  let escala = 1;
-  for (let i = 0; i < 3; i++) {
-    hoja.style.setProperty("--print-ancho", `${ancho / escala}px`);
-    escala = medirEscala();
+  // Ajuste inteligente si la cantidad de alumnos excede la altura útil de 1 página apaisada (~760px):
+  // Asegura que toda la nómina y los balances entren exactamente en una sola hoja sin generar segundas páginas.
+  const altoDisponible = 760;
+  const altoReal = contenedor.scrollHeight;
+  if (altoReal > altoDisponible) {
+    const factorEscala = Math.max(0.65, Math.min(1, (altoDisponible - 12) / altoReal));
+    contenedor.style.transform = `scale(${factorEscala})`;
+    contenedor.style.transformOrigin = "top left";
+    contenedor.style.width = `${(100 / factorEscala).toFixed(3)}%`;
   }
-  hoja.style.setProperty("--print-ancho", `${ancho / escala}px`);
-  escala = Math.min(escala, medirEscala());
-
-  // Margen de seguridad: al imprimir, cada fila escalada se redondea a píxeles enteros
-  // y el texto puede medir distinto que en pantalla. El ancho se recalcula con el zoom
-  // final para que la planilla ocupe toda la hoja de lado a lado; el recuadro la centra.
-  const zoom = escala * 0.92;
-  hoja.style.setProperty("--print-ancho", `${ancho / zoom}px`);
-  hoja.style.zoom = String(zoom);
 
   const ventana = marco.contentWindow;
   ventana.addEventListener("afterprint", () => setTimeout(() => marco.remove(), 0));
   ventana.focus();
   ventana.print();
 }
+
+const imprimirEnHojaOficio = imprimirPlanillaAsistencia;
 
 const ASIGNACIONES_DOCENTE_DEFAULT = [
   { id: "1-1", anio: 1, curso: "1°", division: "1", materia: "Matemática I", turno: "Mañana", orientacion: "Ciclo Básico" },
@@ -646,8 +672,6 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
           onClick: () => {
             if (onVolver) {
               onVolver();
-            } else if (window.history.length > 1) {
-              window.history.back();
             } else {
               window.location.hash = esDocente ? "#/inicio" : "#/cursos";
             }

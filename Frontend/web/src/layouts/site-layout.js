@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { DocumentosManagerModal } from "../modules/documents/document-modals.js";
+import { Sidebar } from "./sidebar.js";
 import { useSesion, useNotificaciones } from "../estado/hooks.js";
 import { fecha } from "../utils/formato.js";
 
@@ -48,9 +49,11 @@ function UserAvatarMenu() {
     };
 
     document.addEventListener("mousedown", handleClickFuera);
+    document.addEventListener("touchstart", handleClickFuera, { passive: true });
     document.addEventListener("keydown", handleKeydown);
     return () => {
       document.removeEventListener("mousedown", handleClickFuera);
+      document.removeEventListener("touchstart", handleClickFuera);
       document.removeEventListener("keydown", handleKeydown);
     };
   }, [abierto]);
@@ -229,9 +232,11 @@ function HeaderNotificationsMenu() {
     };
 
     document.addEventListener("mousedown", handleClickFuera);
+    document.addEventListener("touchstart", handleClickFuera, { passive: true });
     document.addEventListener("keydown", handleKeydown);
     return () => {
       document.removeEventListener("mousedown", handleClickFuera);
+      document.removeEventListener("touchstart", handleClickFuera);
       document.removeEventListener("keydown", handleKeydown);
     };
   }, [abierto]);
@@ -272,17 +277,31 @@ function HeaderNotificationsMenu() {
                 ? h("span", { className: "header-notif-dropdown__count" }, `${noLeidas} nuevas`)
                 : null
             ),
-            noLeidas > 0
-              ? h(
-                  "button",
-                  {
-                    type: "button",
-                    className: "header-notif-dropdown__mark-all",
-                    onClick: marcarTodasLeidas
-                  },
-                  "Marcar todas"
-                )
-              : null
+            h(
+              "div",
+              { className: "header-notif-dropdown__header-actions" },
+              noLeidas > 0
+                ? h(
+                    "button",
+                    {
+                      type: "button",
+                      className: "header-notif-dropdown__mark-all",
+                      onClick: marcarTodasLeidas
+                    },
+                    "Marcar todas"
+                  )
+                : null,
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "header-notif-dropdown__close-btn",
+                  "aria-label": "Cerrar notificaciones",
+                  onClick: () => setAbierto(false)
+                },
+                "✕"
+              )
+            )
           ),
           h(
             "div",
@@ -379,7 +398,7 @@ function HeaderNotificationsMenu() {
   );
 }
 
-function Header({ esLogin }) {
+function Header({ esLogin, onAbrirSidebar }) {
   const sesion = useSesion();
   /* Menu de notificaciones y de usuario ("Cerrar sesion"): solo con sesion iniciada
      y fuera de las pantallas de acceso. */
@@ -393,6 +412,35 @@ function Header({ esLogin }) {
       h(
         "div",
         { className: "site-header__left" },
+        mostrarSesion
+          ? h(
+              "button",
+              {
+                type: "button",
+                className: "site-header__menu-btn",
+                "aria-label": "Abrir menú lateral",
+                onClick: onAbrirSidebar
+              },
+              h(
+                "svg",
+                {
+                  className: "site-header__menu-icon",
+                  width: "22",
+                  height: "22",
+                  viewBox: "0 0 24 24",
+                  fill: "none",
+                  stroke: "currentColor",
+                  strokeWidth: "2.2",
+                  strokeLinecap: "round",
+                  strokeLinejoin: "round",
+                  "aria-hidden": "true"
+                },
+                h("line", { x1: "3", y1: "6", x2: "21", y2: "6" }),
+                h("line", { x1: "3", y1: "12", x2: "21", y2: "12" }),
+                h("line", { x1: "3", y1: "18", x2: "21", y2: "18" })
+              )
+            )
+          : null,
         h(
           "a",
           { href: "#/inicio", "aria-label": "Ir al inicio" },
@@ -559,6 +607,9 @@ export function ModalDocumentosGlobal() {
 /* Layout de las rutas publicas (login, activar cuenta). Las pantallas internas
    usan AppLayout o su layout propio (perfil). */
 export function SiteLayout({ ruta, children }) {
+  const sesion = useSesion();
+  const [sidebarAbierto, setSidebarAbierto] = useState(false);
+
   const esLogin =
     ruta === "#/login" ||
     ruta === "#/activar" ||
@@ -576,6 +627,25 @@ export function SiteLayout({ ruta, children }) {
   /* Portal del alumno: tiene su propio encabezado y navegacion
      (modules/alumno-portal/portal-layout.js). */
   const esPortalAlumno = ruta === "#/mi-perfil" || ruta?.startsWith("#/mi-perfil/");
+  const mostrarSidebarMovil = !esLogin && !esPerfil && !esPortalAlumno && Boolean(sesion?.autenticado);
+
+  useEffect(() => {
+    setSidebarAbierto(false);
+  }, [ruta]);
+
+  useEffect(() => {
+    if (!sidebarAbierto) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const alTeclear = (e) => {
+      if (e.key === "Escape") setSidebarAbierto(false);
+    };
+    document.addEventListener("keydown", alTeclear);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", alTeclear);
+    };
+  }, [sidebarAbierto]);
 
   if (esPortalAlumno) {
     return h("div", { className: "page page--alumno" }, children);
@@ -593,7 +663,21 @@ export function SiteLayout({ ruta, children }) {
   return h(
     React.Fragment,
     null,
-    h(Header, { ruta, esLogin }),
+    mostrarSidebarMovil
+      ? h(Sidebar, {
+          hash: ruta,
+          abierto: sidebarAbierto,
+          onCerrar: () => setSidebarAbierto(false)
+        })
+      : null,
+    mostrarSidebarMovil && sidebarAbierto
+      ? h("div", {
+          className: "app-layout__velo",
+          role: "presentation",
+          onClick: () => setSidebarAbierto(false)
+        })
+      : null,
+    h(Header, { ruta, esLogin, onAbrirSidebar: () => setSidebarAbierto(true) }),
     h("main", { className: `page ${esLogin ? "page--login" : ""}`, id: "inicio" }, children),
     h(Footer, { esLogin }),
     h(ModalDocumentosGlobal)

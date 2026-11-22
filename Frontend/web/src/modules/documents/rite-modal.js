@@ -179,8 +179,11 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
 
           // Tabla RITE de Materias y Calificaciones
           h(
-            "table",
-            { className: "doc-rite-table" },
+            "div",
+            { className: "doc-table-scroll" },
+            h(
+              "table",
+              { className: "doc-rite-table" },
             h(
               "thead",
               null,
@@ -222,6 +225,7 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
                   h("td", { className: "text-center text-muted" }, "-")
                 )
               )
+            )
             )
           ),
 
