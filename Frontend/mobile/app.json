@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/logo.png"
+        "foregroundImage": "./assets/adaptive-icon.png"
       },
       "package": "com.eestn1.precedigital",
       "versionCode": 1
@@ -29,10 +29,15 @@
       "bundler": "metro"
     },
     "scheme": "precedigital-alumno",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/icon.png",
     "plugins": [
       "expo-secure-store",
       "expo-local-authentication"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "dad95902-1dfc-476d-9212-cdc587e6016d"
+      }
+    }
   }
 }
