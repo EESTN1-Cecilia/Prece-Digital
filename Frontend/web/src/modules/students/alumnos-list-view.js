@@ -96,6 +96,58 @@ export default function AlumnosListView() {
     return () => clearTimeout(timer);
   }, [studentSearch]);
 
+  // Descarga de la nómina filtrada en Excel (.xlsx)
+  const [descargando, setDescargando] = useState(false);
+
+  const descargarNomina = useCallback(async () => {
+    if (descargando) return;
+    setDescargando(true);
+    try {
+      const [{ data: todos }, XLSX] = await Promise.all([
+        StudentsService.getTodosLosAlumnos({
+          q: debouncedStudentSearch,
+          curso: selectedCurso,
+          division: selectedDivision,
+          turno: selectedTurno,
+          estado: selectedEstado,
+          condicion: selectedCondicion,
+          sortBy,
+          sortOrder
+        }),
+        import("xlsx")
+      ]);
+
+      if (!todos.length) {
+        alert("No hay alumnos para descargar con los filtros aplicados.");
+        return;
+      }
+
+      const filas = todos.map((a, i) => ({
+        "N°": i + 1,
+        Apellido: a.apellido ?? "",
+        Nombre: a.nombre ?? "",
+        DNI: a.dni ?? "",
+        Curso: a.curso ?? "",
+        División: a.division ?? "",
+        Turno: a.turno ?? "",
+        "Grupo de taller": a.grupoTaller ?? "",
+        Condición: a.condicion ?? "",
+        Estado: a.estado ?? ""
+      }));
+
+      const hoja = XLSX.utils.json_to_sheet(filas);
+      hoja["!cols"] = [6, 22, 22, 14, 8, 10, 10, 16, 14, 12].map((wch) => ({ wch }));
+      hoja["!autofilter"] = { ref: hoja["!ref"] };
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, "Nómina");
+      XLSX.writeFile(libro, `Nomina_alumnos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (err) {
+      alert(`No se pudo descargar la nómina: ${err?.message || "error desconocido"}`);
+    } finally {
+      setDescargando(false);
+    }
+  }, [descargando, debouncedStudentSearch, selectedCurso, selectedDivision, selectedTurno, selectedEstado, selectedCondicion, sortBy, sortOrder]);
+
   // Cargar nómina de alumnos con filtros y paginación
   const fetchStudents = useCallback(async () => {
     setLoading(true);
@@ -854,9 +906,10 @@ export default function AlumnosListView() {
                 {
                   tone: "secondary",
                   icon: "clipboard",
-                  onClick: () => alert("Exportando nómina de alumnos filtrada...")
+                  disabled: descargando,
+                  onClick: descargarNomina
                 },
-                "Exportar Nómina"
+                descargando ? "Descargando..." : "Descargar Nómina"
               )
             )
           )

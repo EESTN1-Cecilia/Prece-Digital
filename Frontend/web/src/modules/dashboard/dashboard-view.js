@@ -764,14 +764,14 @@ export default function DashboardView() {
                     h(
                       "p",
                       { className: "preceptoria-module-desc" },
-                      "Padrón general de estudiantes matriculados, condición de regularidad y acceso inmediato a boletines digitales oficiales."
+                      "Padrón general de estudiantes matriculados y su condición de regularidad."
                     )
                   )
                 ),
                 h(
                   "div",
                   { className: "preceptoria-module-card__footer" },
-                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--green" }, `${totalAlumnos} Alumnos Registrados`),
+                  h("span", { className: "preceptoria-module-badge preceptoria-module-badge--green" }, "Vista de Boletines"),
                   h(
                     "button",
                     {
@@ -1297,7 +1297,7 @@ export default function DashboardView() {
               h(
                 "p",
                 { className: "preceptoria-section-desc" },
-                "Padrón general de estudiantes con acceso a boletines digitales y condición de regularidad."
+                "Padrón general de estudiantes y su condición de regularidad."
               )
             )
           ),
