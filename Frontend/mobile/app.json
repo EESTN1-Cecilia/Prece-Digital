@@ -32,8 +32,7 @@
     "icon": "./assets/icon.png",
     "plugins": [
       "expo-secure-store",
-      "expo-local-authentication",
-      "expo-sharing"
+      "expo-local-authentication"
     ],
     "extra": {
       "eas": {
