@@ -15,13 +15,13 @@
     "fix-deps": "npx expo install --fix"
   },
   "dependencies": {
-    "expo": "~58.0.0",
+    "expo": "~58.0.26",
     "expo-constants": "*",
     "expo-file-system": "*",
-    "expo-local-authentication": "~58.0.2",
-    "expo-print": "*",
-    "expo-secure-store": "*",
-    "expo-sharing": "*",
+    "expo-local-authentication": "~58.0.3",
+    "expo-print": "~58.0.9",
+    "expo-secure-store": "~58.0.3",
+    "expo-sharing": "~58.0.23",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "react-native": "~0.88.0",
