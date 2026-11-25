@@ -16,26 +16,56 @@ Shared/             dominio compartido (módulos, roles, permisos) y scripts del
 ```
 
 
-## Instalación
+## Inicio rápido
 
-Desde la raíz (instala todos los workspaces con un solo `package-lock.json`):
+Requisitos: [Node 20+](https://nodejs.org) y npm. Opcional: [XAMPP](https://www.apachefriends.org) para guardar los datos en MySQL.
 
 ```bash
+git clone https://github.com/EESTN1-Cecilia/Prece-Digital.git
+cd Prece-Digital
 npm install
-cp Backend/.env.example Backend/.env
-cp Frontend/web/.env.example Frontend/web/.env
+npm run dev
 ```
+
+Abrir http://localhost:5173 y entrar con `secretario@prece.local` / `Secretaria123!`.
+
+`npm install` crea solo los `.env` que falten (`Backend`, `Frontend/web`, `Frontend/mobile`) a partir de los `.env.example`. Si se pierde alguno, `npm run setup` los vuelve a crear sin pisar los existentes.
+
+### Base de datos (XAMPP)
+
+- **Con XAMPP:** iniciar **MySQL** en el panel de XAMPP *antes* de `npm install`. El setup lo detecta y configura `Backend/.env` con `DB_CLIENT=mysql` (usuario `root`, sin clave). La base `prece_digital` y sus tablas (`ps_students`, `ps_grades_calificaciones`, ...) se crean solas en el primer arranque, con los datos de prueba. Se pueden ver en http://localhost/phpmyadmin.
+- **Sin XAMPP:** la API usa datos en memoria (se reinician con la API). Para pasar a MySQL después: iniciar MySQL y en `Backend/.env` poner `DB_CLIENT=mysql`, `DB_USER=root` y `DB_PASSWORD=` (vacío).
+- **Volver a los datos de prueba:** borrar la base `prece_digital` en phpMyAdmin y reiniciar la API.
+- **Error "No se pudo conectar a MySQL":** MySQL no está iniciado en XAMPP (o el puerto no es 3306: ajustar `DB_PORT`).
+
+### Base de datos (SQL Server)
+
+1. Instalar [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads) (con Windows en español y la configuración regional distinta, usar el instalador en inglés). Habilitar TCP en el puerto 1433 (SQL Server Configuration Manager → Protocolos → TCP/IP → IPAll: `TcpPort=1433`, `TcpDynamicPorts` vacío) y reiniciar el servicio.
+2. Crear la base y un usuario (autenticación mixta activada):
+
+   ```sql
+   CREATE DATABASE prece_digital;
+   CREATE LOGIN prece_api WITH PASSWORD = 'una-clave-segura';
+   USE prece_digital;
+   CREATE USER prece_api FOR LOGIN prece_api;
+   ALTER ROLE db_owner ADD MEMBER prece_api;
+   ```
+
+3. En `Backend/.env`: `DB_CLIENT=sqlserver`, `DB_SERVER=localhost`, `DB_PORT=1433`, `DB_NAME=prece_digital`, `DB_USER=prece_api`, `DB_PASSWORD=...`.
+4. `npm run dev`. Las tablas `ps_*` se crean solas en el primer arranque, con los datos de prueba.
+
+El portal del alumno sobre las tablas académicas reales del colegio (`DB_PORTAL=sqlserver`) es un paso aparte: ver [`Backend/database/sqlserver/README.md`](Backend/database/sqlserver/README.md).
+
+Más detalle en [`Backend/README.md`](Backend/README.md).
 
 ## Cómo correr todo
 
-Requisitos: Node 20+ y npm. Para la app móvil, además, **Expo Go** en el celular (misma red WiFi que la PC).
+Para la app móvil, además, **Expo Go** en el celular (misma red WiFi que la PC).
 
 **1. Instalar (una sola vez, desde la raíz)**
 
 ```bash
 npm install
-cp Backend/.env.example Backend/.env
-cp Frontend/web/.env.example Frontend/web/.env
 cd Frontend/mobile && npx expo install expo-print expo-sharing expo-file-system && npx expo install --fix && cd ../..
 ```
 
@@ -65,11 +95,12 @@ npm test -w @prece-digital/mobile     # app móvil
 npm run check                         # sintaxis
 ```
 
-Web y mobile usan **el mismo backend y los mismos datos** (en memoria en desarrollo: se reinician con la API). Para probar como alumno: usuario `ana.perez@alumno.prece.local`, contraseña inicial `40123456` (ver la sección siguiente).
+Web y mobile usan **el mismo backend y los mismos datos** (en MySQL si está configurado; si no, en memoria y se reinician con la API). Para probar como alumno: usuario `ana.perez@alumno.prece.local`, contraseña inicial `40123456` (ver la sección siguiente).
 
 ## Comandos
 
 ```bash
+npm run setup           # crea los .env que falten (ya corre con npm install)
 npm run dev             # API (http://localhost:3000) + web (http://localhost:5173)
 npm run dev:api         # solo API
 npm run dev:web         # solo web

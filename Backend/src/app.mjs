@@ -20,7 +20,7 @@ const METODOS_PERMITIDOS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE"]);
 
    Por cada peticion: headers de seguridad y CORS -> metodo y limite -> resolver ruta -> leer cuerpo -> middlewares -> handler
    -> auditoria -> respuesta. Cualquier error termina en el middleware centralizado. */
-export function createApp(rutas) {
+export function createApp(rutas, { alModificar } = {}) {
   if (!Array.isArray(rutas)) {
     throw new TypeError("createApp espera la lista de rutas (ver routes/index.mjs).");
   }
@@ -36,6 +36,9 @@ export function createApp(rutas) {
       response.end();
       return;
     }
+
+    /* Tras un pedido que puede modificar datos (incluso fallido: login, auditoria). */
+    if (alModificar && request.method !== "GET") response.once("finish", alModificar);
 
     const ctx = { request, response, url: null, params: {}, user: null, body: {} };
 

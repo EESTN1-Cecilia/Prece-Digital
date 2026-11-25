@@ -62,7 +62,7 @@ Las rutas académicas exigen además haber cambiado la clave inicial.
 
 ## SQL Server
 
-`repositorio.mjs` elige la implementación según `DB_CLIENT`. Con `DB_CLIENT=sqlserver` se usan `student-portal.repository.sqlserver.mjs` y `cuentas.repository.sqlserver.mjs`. Ver `Backend/database/sqlserver/README.md`.
+`repositorio.mjs` elige la implementación según `DB_PORTAL`. Con `DB_PORTAL=sqlserver` se usan `student-portal.repository.sqlserver.mjs` y `cuentas.repository.sqlserver.mjs`. Ver `Backend/database/sqlserver/README.md`.
 
 ## Login único y boletín único
 
