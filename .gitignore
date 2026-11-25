@@ -8,3 +8,10 @@ coverage/
 .DS_Store
 Thumbs.db
 .Expo
+
+# Prebuild de Expo (generado con `expo prebuild`, no se versiona)
+Frontend/mobile/android/
+Frontend/mobile/ios/
+
+# Keystore de firma Android: NUNCA versionar (ver Frontend/mobile/keystore/README.md)
+Frontend/mobile/keystore/
