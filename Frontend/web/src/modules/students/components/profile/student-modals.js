@@ -4,6 +4,7 @@ import { h } from "../../../../layouts/site-layout.js";
 import { CustomSelect } from "../../../../components/common/custom-select.js";
 import { CustomDatePicker } from "../../../../components/common/custom-datepicker.js";
 import { useUsuarioActual } from "../../../../estado/index.js";
+import { descargarAlumnoRegularPdf } from "../../../documents/constancias-pdf.js";
 
 /**
  * Modal 1: Constancia de Alumno Regular (con vista previa oficial y opción de imprimir)
@@ -135,6 +136,19 @@ export function StudentCertificateModal({
           "button",
           {
             type: "button",
+            className: "btn-secondary",
+            onClick: () =>
+              descargarAlumnoRegularPdf({
+                alumno: data,
+                textoOficial: data.textoOficial || null
+              }).catch(() => {})
+          },
+          "Descargar PDF"
+        ),
+        h(
+          "button",
+          {
+            type: "button",
             className: "btn-primary",
             onClick: handlePrint
           },
@@ -145,7 +159,7 @@ export function StudentCertificateModal({
             h("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
             h("rect", { x: "6", y: "14", width: "12", height: "8" })
           ),
-          h("span", null, "Imprimir / Descargar PDF")
+          h("span", null, "Imprimir")
         )
       )
     )

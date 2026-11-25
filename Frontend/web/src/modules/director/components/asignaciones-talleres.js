@@ -306,7 +306,7 @@ function ModalAsignarTaller({
     }));
     list.push({
       value: "otro",
-      label: "➕ Asignar otro docente / nuevo nombre..."
+      label: "+ Asignar otro docente / nuevo nombre..."
     });
     return list;
   }, [docentesDisponibles]);

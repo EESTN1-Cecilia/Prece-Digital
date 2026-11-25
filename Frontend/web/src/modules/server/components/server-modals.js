@@ -405,10 +405,10 @@ export function RegistrarMovimientoModal({ materialInicial, materiales = [], abi
                 value: tipo,
                 ariaLabel: "Tipo de Movimiento",
                 options: [
-                  { value: "ingreso", label: "📥 Ingreso (Alta o reposición)" },
-                  { value: "egreso", label: "📤 Egreso (Entrega o préstamo)" },
-                  { value: "transferencia", label: "🔄 Transferencia a otro sector" },
-                  { value: "ajuste", label: "⚖️ Ajuste de inventario" }
+                  { value: "ingreso", label: "Ingreso (Alta o reposición)" },
+                  { value: "egreso", label: "Egreso (Entrega o préstamo)" },
+                  { value: "transferencia", label: "Transferencia a otro sector" },
+                  { value: "ajuste", label: "Ajuste de inventario" }
                 ],
                 onChange: (val) => setTipo(val)
               })

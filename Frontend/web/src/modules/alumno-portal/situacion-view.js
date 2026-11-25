@@ -3,7 +3,7 @@
    Calificacion | Estado. */
 
 import { useState } from "react";
-import { h, Cargando, Encabezado, ErrorCarga, EstadoBadge, Indicador, Materia, Tarjeta, Vacio, useDatos } from "./componentes.js";
+import { h, Cargando, Encabezado, ErrorCarga, EstadoBadge, Icono, Indicador, Materia, Tarjeta, Vacio, useDatos } from "./componentes.js";
 import { obtenerSituacion } from "./portal-api.js";
 
 const A_REVISAR = ["tep", "ted", "debajo_de_6", "pendiente"];
@@ -21,7 +21,11 @@ export default function SituacionAlumnoView() {
   return h(
     "div",
     { className: "pa-pagina" },
-    h(Encabezado, { titulo: "Mi Situación Académica", descripcion: `Ciclo lectivo ${cicloLectivo}` }),
+    h(
+      Encabezado,
+      { titulo: "Mi Situación Académica", descripcion: `Ciclo lectivo ${cicloLectivo}` },
+      h("button", { type: "button", className: "pa-boton pa-boton--primario", onClick: () => window.print() }, h(Icono, { nombre: "impresora", tamano: 18 }), "Imprimir")
+    ),
     h(
       "div",
       { className: "pa-indicadores pa-indicadores--cuatro" },

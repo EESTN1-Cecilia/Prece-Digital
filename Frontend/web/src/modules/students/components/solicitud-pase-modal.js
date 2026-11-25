@@ -8,6 +8,7 @@ import {
   SelloInstitucionalCircular,
   BotonCerrarBarra
 } from "../../documents/document-helpers.js";
+import { descargarSolicitudPasePdf } from "../../documents/constancias-pdf.js";
 
 /**
  * SolicitudPaseModal: Digitalización oficial del formulario "SOLICITUD DE PASES"
@@ -73,6 +74,29 @@ export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) 
             "button",
             {
               type: "button",
+              className: "matriz-btn matriz-btn--pdf",
+              onClick: () =>
+                descargarSolicitudPasePdf({
+                  alumno,
+                  establecimientoDestino,
+                  distritoDestino,
+                  tipoAccion,
+                  fecha
+                }).catch(() => {}),
+              title: "Descargar solicitud de pase en PDF"
+            },
+            h(
+              "svg",
+              { className: "matriz-btn-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", width: "16", height: "16" },
+              h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+              h("polyline", { points: "14 2 14 8 20 8" })
+            ),
+            h("span", null, "Descargar PDF")
+          ),
+          h(
+            "button",
+            {
+              type: "button",
               className: "matriz-btn matriz-btn--primary",
               onClick: () => window.print()
             },
@@ -93,7 +117,7 @@ export function SolicitudPaseModal({ abierto, onCerrar, alumnoInicial = null }) 
               }),
               h("rect", { x: "6", y: "14", width: "12", height: "8" })
             ),
-            h("span", null, "Imprimir / PDF")
+            h("span", null, "Imprimir")
           ),
           h(BotonCerrarBarra, { onCerrar })
         )

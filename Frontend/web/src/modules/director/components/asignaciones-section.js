@@ -682,7 +682,7 @@ function ModalAsignarPreceptor({ abierto, division, personal, todasLasDivisiones
     }));
     list.push({
       value: "otro",
-      label: "➕ Asignar otro preceptor / nuevo nombre..."
+      label: "+ Asignar otro preceptor / nuevo nombre..."
     });
     return list;
   }, [preceptoresDisponibles]);
@@ -2380,6 +2380,18 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
   const [filtroEstadoPreceptores, setFiltroEstadoPreceptores] = useState("todos");
   const [divisionParaAsignar, setDivisionParaAsignar] = useState(null);
   const [modoVistaPreceptores, setModoVistaPreceptores] = useState("tabla"); // "tabla" | "tarjetas"
+  const [esMovil, setEsMovil] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 768px)").matches : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const actualizar = () => setEsMovil(mq.matches);
+    actualizar();
+    mq.addEventListener("change", actualizar);
+    return () => mq.removeEventListener("change", actualizar);
+  }, []);
 
   // Estado de Profesores
   const [catedrasProfesores, setCatedrasProfesores] = useState([]);
@@ -2979,8 +2991,8 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
             })
           ),
 
-          // Renderizado según modo de vista (Tabla / Lista o Tarjetas)
-          modoVistaPreceptores === "tabla"
+          // Renderizado según modo de vista (en móvil siempre tarjetas)
+          (!esMovil && modoVistaPreceptores === "tabla")
             ? h(
                 "div",
                 { className: "director-table-responsive" },
@@ -3511,8 +3523,8 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
             })
           ),
 
-          // Renderizado según modo de vista (Tabla / Lista o Tarjetas)
-          modoVistaProfesores === "tabla"
+          // Renderizado según modo de vista (en móvil siempre tarjetas)
+          (!esMovil && modoVistaProfesores === "tabla")
             ? h(
                 "div",
                 { className: "director-table-responsive" },
@@ -3960,7 +3972,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
           ),
           h(AsignacionesTalleres, {
             personal,
-            modoVista: modoVistaTalleres,
+            modoVista: esMovil ? "tarjetas" : modoVistaTalleres,
             onMostrarToast,
             onContar: setTalleresAsignados
           })

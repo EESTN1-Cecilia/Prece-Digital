@@ -808,6 +808,20 @@ export function AlumnoMatrizModal({
     window.print();
   };
 
+  const handleDescargarPdf = async () => {
+    try {
+      const { descargarMatrizPdf } = await import("./matriz-pdf.js");
+      await descargarMatrizPdf({
+        datosEstudiante,
+        orientacionNombre: infoOrientacionActiva.nombreTitulo,
+        anios: aniosAMostrar,
+        promedio: promedioGeneral
+      });
+    } catch {
+      alert("No se pudo generar el PDF del Libro Matriz.");
+    }
+  };
+
   if (!abierto) return null;
 
   const anios = [
@@ -944,14 +958,32 @@ export function AlumnoMatrizModal({
                 )
               ),
 
-          // Botón Imprimir / Exportar - Usando icono SVG en vez de emoji
+          // Botón Descargar PDF directo
+          h(
+            "button",
+            {
+              type: "button",
+              className: "matriz-btn matriz-btn--pdf",
+              onClick: handleDescargarPdf,
+              title: "Descargar Libro Matriz en archivo PDF (A4)"
+            },
+            h(
+              "svg",
+              { className: "matriz-btn-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", width: "16", height: "16" },
+              h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+              h("polyline", { points: "14 2 14 8 20 8" })
+            ),
+            "Descargar PDF"
+          ),
+
+          // Botón Imprimir - Usando icono SVG en vez de emoji
           h(
             "button",
             {
               type: "button",
               className: "matriz-btn matriz-btn--primary",
               onClick: handleImprimir,
-              title: "Imprimir o Guardar como PDF oficial"
+              title: "Imprimir Libro Matriz oficial"
             },
             h(
               "svg",
@@ -960,7 +992,7 @@ export function AlumnoMatrizModal({
               h("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
               h("rect", { x: "6", y: "14", width: "12", height: "8" })
             ),
-            "Imprimir / PDF"
+            "Imprimir"
           ),
 
           // Botón Cerrar en la barra superior que permanece fijo al scrollear

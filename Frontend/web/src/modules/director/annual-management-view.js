@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { h } from "../../layouts/site-layout.js";
 import { pedir } from "../../services/http.js";
+import { descargarInformeAnualPdf } from "./annual-management-pdf.js";
 
 const anioActual = new Date().getFullYear();
 
@@ -253,11 +254,28 @@ export default function AnnualManagementView() {
     }
   }
 
+  async function descargarPdf() {
+    if (!informe) return;
+    setError("");
+    setExportando(true);
+    try {
+      await pedir("/api/v1/annual-management/exports", {
+        method: "POST",
+        body: JSON.stringify({ anio: informe.anio, formato: "pdf" })
+      });
+      await descargarInformeAnualPdf(informe);
+    } catch (fallo) {
+      setError(fallo.mensaje ?? "No se pudo generar el archivo PDF.");
+    } finally {
+      setExportando(false);
+    }
+  }
+
   async function exportarPdf() {
     if (!informe) return;
     const ventana = window.open("", "_blank");
     if (!ventana) {
-      setError("El navegador bloqueó la ventana de impresión. Permití ventanas emergentes e intentá nuevamente.");
+      setError("El navegador bloqueó la ventana de impresión. Usá el botón «Descargar PDF» o permití ventanas emergentes.");
       return;
     }
     setExportando(true);
@@ -271,7 +289,7 @@ export default function AnnualManagementView() {
       ventana.document.close();
     } catch (fallo) {
       ventana.close();
-      setError(fallo.mensaje ?? "No se pudo preparar el PDF.");
+      setError(fallo.mensaje ?? "No se pudo preparar la impresión.");
     } finally {
       setExportando(false);
     }
@@ -495,7 +513,8 @@ export default function AnnualManagementView() {
             )
           ),
           h("div", { className: "annual-export-row" },
-            h("button", { type: "button", className: "annual-secondary-button", disabled: exportando, onClick: exportarPdf }, exportando ? "Preparando…" : "Imprimir / Guardar PDF"),
+            h("button", { type: "button", className: "annual-secondary-button", disabled: exportando, onClick: descargarPdf }, exportando ? "Preparando…" : "Descargar PDF"),
+            h("button", { type: "button", className: "annual-secondary-button", disabled: exportando, onClick: exportarPdf }, exportando ? "Preparando…" : "Imprimir informe"),
             h("button", { type: "button", className: "annual-secondary-button", disabled: exportando, onClick: exportarExcel }, exportando ? "Exportando…" : "Exportar tablas a Excel")
           )
         ) : null

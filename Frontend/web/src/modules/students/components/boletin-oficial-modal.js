@@ -16,7 +16,7 @@ import {
   esNotaValida,
   PERIODOS_PENDIENTES
 } from "../../boletin/boletin-oficial-datos.js";
-import { abrirBoletinesOficial } from "../../boletin/boletin-oficial-pdf.js";
+import { abrirBoletinesOficial, descargarBoletinesOficial } from "../../boletin/boletin-oficial-pdf.js";
 import { BoletinOficialService } from "../../boletin/boletin-oficial-service.js";
 import { PeriodosCargaService, bloqueosDe, enumerar } from "../../grades/periodos-carga.js";
 import { useUsuarioActual } from "../../../estado/index.js";
@@ -216,7 +216,7 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
   const bloqueo = useMemo(() => bloqueosDe(estadoPeriodos, usuario?.assignments ?? []), [estadoPeriodos, usuario?.assignments]);
   const avisoBloqueo = useMemo(() => {
     const nombres = (estadoPeriodos?.periodos ?? []).filter((periodo) => bloqueo[periodo.id]).map((periodo) => periodo.nombre);
-    return nombres.length > 0 ? `🔒 La Dirección bloqueó la carga de notas de: ${enumerar(nombres)}. Esas columnas son de solo lectura.` : null;
+    return nombres.length > 0 ? `La Dirección bloqueó la carga de notas de: ${enumerar(nombres)}. Esas columnas son de solo lectura.` : null;
   }, [estadoPeriodos, bloqueo]);
 
   if (!abierto || !alumno) return null;
@@ -267,6 +267,17 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
     } catch {
       ventana?.close();
       setMensaje({ ok: false, texto: "No se pudo preparar el PDF del boletín." });
+    } finally {
+      setPreparando(false);
+    }
+  };
+
+  const descargarPdf = async () => {
+    setPreparando(true);
+    try {
+      await descargarBoletinesOficial([boletin]);
+    } catch {
+      setMensaje({ ok: false, texto: "No se pudo descargar el PDF del boletín." });
     } finally {
       setPreparando(false);
     }
@@ -452,7 +463,8 @@ export function BoletinOficialModal({ abierto, onCerrar, alumno }) {
             "div",
             { className: "bof-acciones" },
             h("button", { type: "button", className: "bof-btn bof-btn--ok", onClick: guardar, disabled: !sinGuardar || guardando }, guardando ? "Guardando…" : "Guardar Notas"),
-            h("button", { type: "button", className: "bof-btn", onClick: imprimir, disabled: preparando || !boletin }, preparando ? "Preparando…" : "Imprimir / PDF"),
+            h("button", { type: "button", className: "bof-btn", onClick: descargarPdf, disabled: preparando || !boletin }, preparando ? "Preparando…" : "Descargar PDF"),
+            h("button", { type: "button", className: "bof-btn", onClick: imprimir, disabled: preparando || !boletin }, preparando ? "Preparando…" : "Imprimir"),
             h("button", { type: "button", className: "bof-btn bof-btn--x", onClick: onCerrar, "aria-label": "Cerrar" }, "✕")
           )
         ),

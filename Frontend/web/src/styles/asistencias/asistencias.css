@@ -340,6 +340,28 @@
   color: #0f172a;
 }
 
+.btn-pdf-planilla {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.btn-pdf-planilla:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.btn-excel-planilla {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.btn-excel-planilla:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
 .btn-guardar-planilla {
   background: var(--navy, #222a4c);
   color: #ffffff;
@@ -1284,8 +1306,8 @@ body.asistencias-imprimiendo .firma-subtext {
 
 /* Reglas para impresión directa del navegador (Ctrl+P) */
 @media print {
-  @page {
-    size: landscape;
+  @page asistencias-page {
+    size: A4 landscape;
     margin: 4mm 6mm;
   }
 
@@ -1306,6 +1328,7 @@ body.asistencias-imprimiendo .firma-subtext {
   }
 
   body:has(.asistencias-page) .asistencias-page {
+    page: asistencias-page;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;

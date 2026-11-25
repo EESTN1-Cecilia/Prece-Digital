@@ -8,6 +8,7 @@ import {
   AsistenciasService,
   MESES_DEL_ANIO
 } from "./asistencias-service.js";
+import { descargarAsistenciasPdf, descargarAsistenciasExcel } from "./asistencias-export.js";
 import { useUsuarioActual } from "../../estado/index.js";
 
 const ESTADOS_ASISTENCIA = {
@@ -516,6 +517,35 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
     }
   };
 
+  const handleDescargarPdf = () => {
+    if (!planilla) return;
+    descargarAsistenciasPdf({
+      cursoActual,
+      mesNombre: mesInfo.nombre,
+      anio: selectedAnio,
+      diasMes,
+      alumnos: planilla.alumnos || [],
+      registros: planilla.registros || {},
+      calcularTotalesAlumno,
+      balanceMensual,
+      esDocente
+    }).catch(() => alert("No se pudo generar el PDF de la planilla."));
+  };
+
+  const handleDescargarExcel = () => {
+    if (!planilla) return;
+    descargarAsistenciasExcel({
+      cursoActual,
+      mesNombre: mesInfo.nombre,
+      anio: selectedAnio,
+      diasMes,
+      alumnos: planilla.alumnos || [],
+      registros: planilla.registros || {},
+      calcularTotalesAlumno,
+      balanceMensual
+    }).catch(() => alert("No se pudo exportar la planilla a Excel."));
+  };
+
   // Separación de alumnos en Varones y Mujeres (según formato oficial de la foto)
   const varones = useMemo(() => {
     return (planilla?.alumnos || []).filter((a) => a.genero === "M");
@@ -843,6 +873,43 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
           saveSuccess
             ? h("span", { className: "save-pill-badge" }, "✓ Registro guardado correctamente")
             : null,
+
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-asistencias-accion btn-excel-planilla",
+              onClick: handleDescargarExcel,
+              disabled: !planilla,
+              title: "Descargar planilla en Excel (.xlsx)"
+            },
+            h(
+              "svg",
+              { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", width: 16, height: 16 },
+              h("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
+              h("polyline", { points: "7 10 12 15 17 10" }),
+              h("line", { x1: "12", y1: "15", x2: "12", y2: "3" })
+            ),
+            h("span", null, "Excel")
+          ),
+
+          h(
+            "button",
+            {
+              type: "button",
+              className: "btn-asistencias-accion btn-pdf-planilla",
+              onClick: handleDescargarPdf,
+              disabled: !planilla,
+              title: "Descargar planilla en PDF (A4 apaisada)"
+            },
+            h(
+              "svg",
+              { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", width: 16, height: 16 },
+              h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+              h("polyline", { points: "14 2 14 8 20 8" })
+            ),
+            h("span", null, "PDF")
+          ),
 
           h(
             "button",

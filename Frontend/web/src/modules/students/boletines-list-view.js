@@ -6,7 +6,7 @@ import { CustomSelect } from "../../components/common/custom-select.js";
 import { paginasVisibles } from "../../components/ui/index.js";
 import { StudentsService } from "./students-service.js";
 import { BoletinOficialModal } from "./components/boletin-oficial-modal.js";
-import { imprimirBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
+import { imprimirBoletinesDeAlumnos, descargarBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
 import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
 import { alumnoTieneNotas, useResumenCursos } from "../boletin/use-resumen-cursos.js";
 
@@ -125,6 +125,29 @@ export default function BoletinesListView() {
     } catch {
       if (ventana) ventana.close();
       setErrorImpresion("No se pudieron preparar los boletines. Revisá los filtros e intentá de nuevo.");
+    } finally {
+      setImprimiendo(false);
+    }
+  };
+
+  const descargarBoletinesDelCurso = async () => {
+    if (imprimiendo) return;
+    setErrorImpresion("");
+    setImprimiendo(true);
+    try {
+      const res = await StudentsService.getTodosLosAlumnos({
+        q: debouncedStudentSearch,
+        curso: selectedCurso,
+        division: selectedDivision,
+        turno: selectedTurno,
+        estado: "activo",
+        sortBy: "apellido",
+        sortOrder: "asc"
+      });
+      if (!res.data.length) throw new Error("sin alumnos");
+      await descargarBoletinesDeAlumnos(res.data);
+    } catch {
+      setErrorImpresion("No se pudieron descargar los boletines. Revisá los filtros e intentá de nuevo.");
     } finally {
       setImprimiendo(false);
     }
@@ -656,6 +679,23 @@ export default function BoletinesListView() {
                 errorImpresion
                   ? h("span", { role: "alert", className: "boletines-print-error" }, errorImpresion)
                   : null,
+                h(
+                  "button",
+                  {
+                    type: "button",
+                    className: "boletines-print-btn",
+                    onClick: descargarBoletinesDelCurso,
+                    disabled: imprimiendo,
+                    title: "Descarga el archivo PDF de todos los boletines filtrados (2 por hoja Oficio)"
+                  },
+                  h(
+                    "svg",
+                    { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", "aria-hidden": "true" },
+                    h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+                    h("polyline", { points: "14 2 14 8 20 8" })
+                  ),
+                  imprimiendo ? "Preparando…" : "Descargar PDF"
+                ),
                 h(
                   "button",
                   {

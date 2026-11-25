@@ -424,10 +424,29 @@ export async function abrirBoletinesOficial(boletines, ventana = null, opciones 
   setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 
+/* Descarga directa del PDF sin depender de ventanas emergentes. */
+export async function descargarBoletinesOficial(boletines, opciones = {}) {
+  const blob = await generarBoletinesOficialPdf(boletines, opciones);
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = nombreArchivoBoletines(boletines);
+  document.body.append(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 /* Boletines de todos los alumnos de la lista (cada uno en su año). */
 export async function imprimirBoletinesDeAlumnos(alumnos, ventana = null, opciones = {}) {
   /* Las notas se leen del backend (la misma fuente que la planilla y el portal). */
   const registros = await BoletinOficialService.obtenerVarios(alumnos.map((a) => a.id), new Date().getFullYear());
   const boletines = alumnos.map((a) => armarBoletinOficial(a, anioDelAlumno(a), { registro: registros[a.id] }));
   return abrirBoletinesOficial(boletines, ventana, opciones);
+}
+
+export async function descargarBoletinesDeAlumnos(alumnos, opciones = {}) {
+  const registros = await BoletinOficialService.obtenerVarios(alumnos.map((a) => a.id), new Date().getFullYear());
+  const boletines = alumnos.map((a) => armarBoletinOficial(a, anioDelAlumno(a), { registro: registros[a.id] }));
+  return descargarBoletinesOficial(boletines, opciones);
 }

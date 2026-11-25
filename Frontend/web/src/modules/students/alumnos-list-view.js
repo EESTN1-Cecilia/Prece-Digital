@@ -148,6 +148,44 @@ export default function AlumnosListView() {
     }
   }, [descargando, debouncedStudentSearch, selectedCurso, selectedDivision, selectedTurno, selectedEstado, selectedCondicion, sortBy, sortOrder]);
 
+  const descargarNominaEnPdf = useCallback(async () => {
+    if (descargando) return;
+    setDescargando(true);
+    try {
+      const [{ data: todos }, { descargarNominaPdf }] = await Promise.all([
+        StudentsService.getTodosLosAlumnos({
+          q: debouncedStudentSearch,
+          curso: selectedCurso,
+          division: selectedDivision,
+          turno: selectedTurno,
+          estado: selectedEstado,
+          condicion: selectedCondicion,
+          sortBy,
+          sortOrder
+        }),
+        import("./nomina-pdf.js")
+      ]);
+
+      if (!todos.length) {
+        alert("No hay alumnos para descargar con los filtros aplicados.");
+        return;
+      }
+
+      const filtros = [
+        selectedCurso ? `Curso: ${selectedCurso}` : null,
+        selectedDivision ? `Div: ${selectedDivision}°` : null,
+        selectedTurno ? `Turno: ${selectedTurno}` : null,
+        selectedEstado ? `Estado: ${selectedEstado}` : null
+      ].filter(Boolean).join(" · ");
+
+      await descargarNominaPdf(todos, filtros);
+    } catch (err) {
+      alert(`No se pudo descargar el PDF de la nómina: ${err?.message || "error desconocido"}`);
+    } finally {
+      setDescargando(false);
+    }
+  }, [descargando, debouncedStudentSearch, selectedCurso, selectedDivision, selectedTurno, selectedEstado, selectedCondicion, sortBy, sortOrder]);
+
   // Cargar nómina de alumnos con filtros y paginación
   const fetchStudents = useCallback(async () => {
     setLoading(true);
@@ -907,9 +945,19 @@ export default function AlumnosListView() {
                   tone: "secondary",
                   icon: "clipboard",
                   disabled: descargando,
+                  onClick: descargarNominaEnPdf
+                },
+                descargando ? "Generando..." : "Descargar PDF"
+              ),
+              h(
+                ActionButton,
+                {
+                  tone: "secondary",
+                  icon: "clipboard",
+                  disabled: descargando,
                   onClick: descargarNomina
                 },
-                descargando ? "Descargando..." : "Descargar Nómina"
+                descargando ? "Descargando..." : "Descargar Excel"
               )
             )
           )

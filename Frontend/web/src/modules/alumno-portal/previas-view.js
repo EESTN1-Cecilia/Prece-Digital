@@ -1,7 +1,7 @@
 /* Mis Previas: materias pendientes de aprobacion de ciclos anteriores. */
 
 import { useState } from "react";
-import { h, Cargando, Encabezado, ErrorCarga, Tarjeta, Vacio, fechaCorta, useDatos } from "./componentes.js";
+import { h, Cargando, Encabezado, ErrorCarga, Icono, Tarjeta, Vacio, fechaCorta, useDatos } from "./componentes.js";
 import { obtenerPrevias } from "./portal-api.js";
 
 function Previa({ previa }) {
@@ -59,7 +59,11 @@ export default function PreviasAlumnoView() {
   return h(
     "div",
     { className: "pa-pagina" },
-    h(Encabezado, { titulo: "Mis Previas", descripcion: "Materias pendientes de aprobación de ciclos lectivos anteriores." }),
+    h(
+      Encabezado,
+      { titulo: "Mis Previas", descripcion: "Materias pendientes de aprobación de ciclos lectivos anteriores." },
+      h("button", { type: "button", className: "pa-boton pa-boton--primario", onClick: () => window.print() }, h(Icono, { nombre: "impresora", tamano: 18 }), "Imprimir")
+    ),
     h(
       Tarjeta,
       { titulo: `Pendientes (${pendientes.length})` },

@@ -1133,9 +1133,8 @@
   }
 
   body:has(.boletin-modal-backdrop) .boletin-paper-card {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+    page: boletin-legacy-page;
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
     border: 2px solid #000000 !important;
@@ -1161,7 +1160,7 @@
     opacity: 0 !important;
   }
 
-  @page {
+  @page boletin-legacy-page {
     size: A4 portrait;
     margin: 6mm;
   }

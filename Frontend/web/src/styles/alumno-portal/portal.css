@@ -802,7 +802,7 @@ a.pa-indicador:hover {
 /* ---------------- Impresion del boletin (A4) ---------------- */
 
 @media print {
-  @page {
+  @page portal-page {
     size: A4 portrait;
     margin: 10mm;
   }
@@ -816,12 +816,13 @@ a.pa-indicador:hover {
   body .pa * { visibility: visible !important; }
   .page.page--alumno { padding: 0; background: #fff; }
 
-  .pa { background: #fff; font-size: 10.5pt; min-height: 0; }
+  .pa { page: portal-page; background: #fff; font-size: 10.5pt; min-height: 0; }
   .pa-cabecera,
   .pa-navegacion,
   .pa-encabezado,
   .pa-boton,
   .pa-chip,
+  .pa-filtros,
   .pa-selector { display: none !important; }
 
   .pa-contenido { max-width: none; padding: 0; }
