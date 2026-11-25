@@ -12,13 +12,21 @@ import { seedAlumnosTalleres } from "../database/seeds/alumnos-talleres.seed.mjs
 import { createApp } from "./app.mjs";
 import { buscarDivision } from "../modules/students/catalogo.mjs";
 import repositorioPortalAlumno from "../modules/student-portal/repositorio.mjs";
+import { iniciarPersistencia } from "../database/persistencia.mjs";
 
 const port = appConfig.apiPort;
 
 async function startServer() {
-  /* La API persiste en memoria: fuera de produccion arranca con los datos de
+  /* Con DB_CLIENT=mysql o sqlserver el store se carga de la base y se guarda en ella
+     (database/persistencia.mjs). Si la base ya tiene datos no se corren los seeds. */
+  const persistencia = await iniciarPersistencia();
+  const restauradas = persistencia ? await persistencia.cargar() : 0;
+
+  /* Sin datos guardados, fuera de produccion arranca con los datos de
      desarrollo de todos los modulos para que el frontend tenga con que trabajar. */
-  if (appConfig.env === "production") {
+  if (restauradas > 0) {
+    console.log(`Persistencia: ${restauradas} colecciones cargadas desde ${appConfig.database.client}`);
+  } else if (appConfig.env === "production") {
     await seedProductionAdmin();
     /* La nomina de la escuela (database/seeds/data/alumnos.local.json, fuera de git) tambien
        se carga en produccion: los modulos del personal leen los alumnos del store en memoria,
@@ -102,13 +110,20 @@ async function startServer() {
     console.log(`Portal del alumno conectado a ${repositorioPortalAlumno.motor}`);
   }
 
-  const server = createApp(apiRoutes);
+  if (persistencia) {
+    await persistencia.guardar();
+    setInterval(persistencia.guardar, 60 * 1000).unref();
+    console.log(`Persistencia: datos guardados en ${appConfig.database.client}`);
+  }
+
+  const server = createApp(apiRoutes, { alModificar: persistencia?.programarGuardado });
   server.listen(port, () => {
     console.log(`API lista en http://localhost:${port} (${appConfig.env})`);
   });
 
   const shutdown = () => {
     server.close();
+    persistencia?.cerrar().catch((error) => console.error("Persistencia: error al cerrar", error.message));
   };
 
   process.once("SIGINT", shutdown);

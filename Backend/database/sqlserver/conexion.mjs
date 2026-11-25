@@ -1,10 +1,7 @@
 /* Conexion a SQL Server (pool unico para toda la API).
 
-   Usa el paquete `mssql` (driver tedious). Se importa recien al primer uso, asi
-   el proyecto arranca y corre los tests sin tenerlo instalado mientras
-   DB_CLIENT no sea "sqlserver". Para instalarlo:
-
-     npm install mssql -w @prece-digital/api
+   Usa el paquete `mssql` (driver tedious), dependencia de la API. Se importa
+   recien al primer uso: con DB_CLIENT / DB_PORTAL en memoria no se carga.
 
    Configuracion: variables DB_* de Backend/.env (ver .env.example). */
 

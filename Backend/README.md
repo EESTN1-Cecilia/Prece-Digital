@@ -96,7 +96,7 @@ Los códigos van en `MAYUSCULAS_CON_GUION_BAJO`.
 
 ### Persistencia
 
-Todos los módulos persisten en el store en memoria (`database/memory-store.mjs`) a través de su repositorio. Los alumnos tienen una sola fuente (`modules/students/students.repository.mjs`) que usan también `academic`, `academic-records` y `tutors`.
+Todos los módulos trabajan sobre el store en memoria (`database/memory-store.mjs`) a través de su repositorio. Con `DB_CLIENT=mysql` (XAMPP) o `sqlserver`, `database/persistencia.mjs` guarda cada colección en su tabla `ps_<coleccion>` (p. ej. `ps_students`, `ps_grades_calificaciones`): una fila por registro con `clave`, `orden`, `datos` (JSON completo) y columnas indexadas para los campos clave (`alumno_id`, `materia_id`, `dni`, `fecha`, ...). `ps_colecciones` lista las tablas; lo que no es Map/Array va a `app_store`. Al arrancar se carga todo (si hay datos, no corren los seeds) y se escriben solo las filas que cambian tras cada POST/PUT/PATCH/DELETE, cada minuto y al apagar. Para volver a los datos de prueba, borrar la base. Los alumnos tienen una sola fuente (`modules/students/students.repository.mjs`) que usan también `academic`, `academic-records` y `tutors`.
 
 `database/schema.sql` es el modelo objetivo para MySQL/PostgreSQL. La migración se hace módulo por módulo reemplazando el repositorio, sin tocar controladores ni servicios.
 

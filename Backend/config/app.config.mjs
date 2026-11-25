@@ -35,12 +35,14 @@ export function assertProductionConfig({ env = environment, corsOrigins = listaE
     throw new Error("En produccion CORS_ORIGINS debe listar los origenes autorizados, sin *");
   }
 
-  if ((database.DB_CLIENT ?? "memoria").toLowerCase() === "sqlserver" && (!database.DB_USER || !database.DB_PASSWORD)) {
+  const usaSqlServer = [database.DB_CLIENT, database.DB_PORTAL].some((v) => (v ?? "memoria").toLowerCase() === "sqlserver");
+
+  if (usaSqlServer && (!database.DB_USER || !database.DB_PASSWORD)) {
     throw new Error("Con DB_CLIENT=sqlserver en produccion DB_USER y DB_PASSWORD son obligatorios");
   }
 
   /* Solo aviso: una base en el mismo host puede no tener TLS. */
-  if ((database.DB_CLIENT ?? "memoria").toLowerCase() === "sqlserver" && database.DB_ENCRYPT !== "true") {
+  if (usaSqlServer && database.DB_ENCRYPT !== "true") {
     console.warn("Aviso: DB_ENCRYPT no esta activo; la conexion con la base viaja sin cifrar");
   }
 }
@@ -79,8 +81,11 @@ export const appConfig = {
      store en memoria. Ver database/sqlserver/README.md. */
   database: {
     client: (process.env.DB_CLIENT ?? "memoria").toLowerCase(),
+    /* Portal del alumno sobre las tablas academicas reales (estudiantes, calificaciones...).
+       Independiente de DB_CLIENT: por defecto lee los mismos datos que el resto de la API. */
+    portal: (process.env.DB_PORTAL ?? "memoria").toLowerCase(),
     server: process.env.DB_SERVER ?? "localhost",
-    port: parseIntEnv("DB_PORT", 1433),
+    port: parseIntEnv("DB_PORT", (process.env.DB_CLIENT ?? "").toLowerCase() === "mysql" ? 3306 : 1433),
     database: process.env.DB_NAME ?? "prece_digital",
     user: process.env.DB_USER ?? null,
     password: process.env.DB_PASSWORD ?? null,

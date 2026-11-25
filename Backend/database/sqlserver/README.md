@@ -1,6 +1,11 @@
 # SQL Server
 
-Todo lo necesario para conectar el **portal del alumno** a SQL Server cuando la base esté disponible. Mientras `DB_CLIENT` no sea `sqlserver`, la API sigue en el store en memoria y nada de esta carpeta se ejecuta.
+Hay dos usos independientes de SQL Server:
+
+- **`DB_CLIENT=sqlserver`**: guarda todos los datos de la API en tablas `ps_*` (ver `../persistencia.mjs` y el README raíz). Solo necesita una base vacía y un usuario con permiso para crear tablas.
+- **`DB_PORTAL=sqlserver`**: el portal del alumno lee las tablas académicas reales del colegio. Es lo que describe este documento.
+
+Todo lo necesario para conectar el **portal del alumno** a las tablas académicas reales. Mientras `DB_PORTAL` no sea `sqlserver`, el portal lee los mismos datos que el resto de la API.
 
 | Archivo | Para qué |
 | --- | --- |
@@ -26,16 +31,13 @@ Todo lo necesario para conectar el **portal del alumno** a SQL Server cuando la 
    sqlcmd -S SERVIDOR -d prece_digital -U usuario -P clave -i Backend/database/sqlserver/verificacion-alumnos.sql -o verificacion.txt
    ```
 
-5. Instalar el driver:
-
-   ```bash
-   npm install mssql -w @prece-digital/api
-   ```
+5. El driver (`mssql`) ya viene con `npm install`.
 
 6. En `Backend/.env`:
 
    ```env
-   DB_CLIENT=sqlserver
+   DB_PORTAL=sqlserver
+   DB_CLIENT=sqlserver     # opcional: ademas guarda el resto de la API en la misma base
    DB_SERVER=localhost
    DB_PORT=1433
    DB_INSTANCE=            # p. ej. SQLEXPRESS (si se usa, se ignora DB_PORT)

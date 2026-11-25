@@ -4,7 +4,12 @@
   "private": true,
   "description": "Monorepo de Prece Digital: Backend, Frontend web, Frontend mobile y Shared.",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "postinstall": "node Shared/scripts/setup.mjs",
+    "setup": "node Shared/scripts/setup.mjs",
     "dev": "node Shared/scripts/dev.mjs",
     "dev:api": "npm run dev -w @prece-digital/api",
     "dev:web": "npm run dev -w @prece-digital/web",
