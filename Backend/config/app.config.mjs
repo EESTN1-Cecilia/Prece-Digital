@@ -84,6 +84,9 @@ export const appConfig = {
     /* Portal del alumno sobre las tablas academicas reales (estudiantes, calificaciones...).
        Independiente de DB_CLIENT: por defecto lee los mismos datos que el resto de la API. */
     portal: (process.env.DB_PORTAL ?? "memoria").toLowerCase(),
+    /* Personal (usuarios, roles, docentes y asignaciones) en las tablas relacionales.
+       Por defecto se activa solo con DB_CLIENT=sqlserver; DB_PERSONAL=memoria lo desactiva. */
+    personal: (process.env.DB_PERSONAL ?? ((process.env.DB_CLIENT ?? "").toLowerCase() === "sqlserver" ? "sqlserver" : "memoria")).toLowerCase(),
     server: process.env.DB_SERVER ?? "localhost",
     port: parseIntEnv("DB_PORT", (process.env.DB_CLIENT ?? "").toLowerCase() === "mysql" ? 3306 : 1433),
     database: process.env.DB_NAME ?? "prece_digital",

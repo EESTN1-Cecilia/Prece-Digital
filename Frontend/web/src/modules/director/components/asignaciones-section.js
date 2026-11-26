@@ -1113,15 +1113,7 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
     const filtrados = (personal || []).filter((p) =>
       p.roles?.some((r) => r.id === "docente" || r.id === "profesor")
     );
-    const fallback = [
-      { id: "usr-doc-1", nombreCompleto: "Docente Matemática", email: "docente@prece.local" },
-      { id: "usr-doc-2", nombreCompleto: "Prof. María Villatoro", email: "mvillatoro@prece.local" },
-      { id: "usr-doc-3", nombreCompleto: "Prof. Lucía Ríos", email: "lrios@prece.local" },
-      { id: "usr-doc-4", nombreCompleto: "Prof. Humberto Sosa", email: "hsosa@prece.local" },
-      { id: "usr-doc-5", nombreCompleto: "Prof. Esteban Gómez", email: "egomez@prece.local" },
-      { id: "usr-doc-6", nombreCompleto: "Prof. Andrea Ferreyra", email: "aferreyra@prece.local" },
-      { id: "usr-doc-7", nombreCompleto: "Prof. Pablo Morales", email: "pmorales@prece.local" }
-    ];
+    const fallback = [];
 
     const combinados = [...filtrados];
     for (const f of fallback) {
@@ -1160,7 +1152,8 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
         setNombrePersonalizado(catedra.profesor.nombre || "");
         setEmailPersonalizado(catedra.profesor.email || "");
       } else {
-        docId = profesoresDisponibles[0]?.id || "usr-doc-1";
+        /* Sin docente preseleccionado: antes se cargaba el primero de la lista y se asignaban materias que nadie eligio. */
+        docId = "";
         setProfesorSeleccionado(docId);
         setNombrePersonalizado("");
         setEmailPersonalizado("");
@@ -1588,11 +1581,13 @@ function ModalAsignarProfesor({ abierto, catedra, personal, alCerrar, alGuardar,
                 nombreCompleto: encontrado.nombreCompleto,
                 email: encontrado.email
               }
-            : {
-                id: "usr-doc-1",
-                nombreCompleto: "Docente Asignado",
-                email: "docente@prece.local"
-              };
+            : null;
+        }
+
+        if (!datosProfesor) {
+          setGuardando(false);
+          if (onMostrarToast) onMostrarToast("Elegí el docente al que se asigna la materia.", "error");
+          return;
         }
 
         const porCatedra = {};
@@ -2307,15 +2302,7 @@ export function calcularMetricasAsignaciones(personal = [], divisionesPreceptore
     .filter((p) => p.roles?.some((r) => r.id === "docente" || r.id === "profesor"))
     .forEach(agregarDocente);
 
-  const fallbackDoc = [
-    { id: "usr-doc-1", nombre: "Docente Matemática", email: "docente@prece.local" },
-    { id: "usr-doc-2", nombre: "Prof. María Villatoro", email: "mvillatoro@prece.local" },
-    { id: "usr-doc-3", nombre: "Prof. Lucía Ríos", email: "lrios@prece.local" },
-    { id: "usr-doc-4", nombre: "Prof. Humberto Sosa", email: "hsosa@prece.local" },
-    { id: "usr-doc-5", nombre: "Prof. Esteban Gómez", email: "egomez@prece.local" },
-    { id: "usr-doc-6", nombre: "Prof. Andrea Ferreyra", email: "aferreyra@prece.local" },
-    { id: "usr-doc-7", nombre: "Prof. Pablo Morales", email: "pmorales@prece.local" }
-  ];
+  const fallbackDoc = [];
   fallbackDoc.forEach(agregarDocente);
   (catedrasProfesores || []).forEach((c) => {
     if (c.profesor) agregarDocente(c.profesor);
@@ -2670,15 +2657,7 @@ export function AsignacionesSection({ personal = [], onMostrarToast, subpestanaI
       .forEach(agregarSiNoExiste);
 
     // 2. Fallback institucional
-    const fallback = [
-      { id: "usr-doc-1", nombre: "Docente Matemática", email: "docente@prece.local", avatar: "D" },
-      { id: "usr-doc-2", nombre: "Prof. María Villatoro", email: "mvillatoro@prece.local", avatar: "M" },
-      { id: "usr-doc-3", nombre: "Prof. Lucía Ríos", email: "lrios@prece.local", avatar: "L" },
-      { id: "usr-doc-4", nombre: "Prof. Humberto Sosa", email: "hsosa@prece.local", avatar: "H" },
-      { id: "usr-doc-5", nombre: "Prof. Esteban Gómez", email: "egomez@prece.local", avatar: "E" },
-      { id: "usr-doc-6", nombre: "Prof. Andrea Ferreyra", email: "aferreyra@prece.local", avatar: "A" },
-      { id: "usr-doc-7", nombre: "Prof. Pablo Morales", email: "pmorales@prece.local", avatar: "P" }
-    ];
+    const fallback = [];
     fallback.forEach(agregarSiNoExiste);
 
     // 3. Cualquier docente asignado en cátedras

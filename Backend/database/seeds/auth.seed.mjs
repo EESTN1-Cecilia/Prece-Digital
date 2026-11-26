@@ -42,6 +42,25 @@ export async function seedProductionAdmin({ email = process.env.BOOTSTRAP_ADMIN_
   });
 }
 
+/* Con el personal en tablas relacionales: si no hay ningun administrador activo (base nueva o
+   recien limpiada) se crea el inicial con las variables de entorno. Devuelve true si lo creo. */
+export async function asegurarAdministrador({ email = process.env.BOOTSTRAP_ADMIN_EMAIL, password = process.env.BOOTSTRAP_ADMIN_PASSWORD } = {}) {
+  const hayAdmin = userRepository.list().some((usuario) => usuario.assignments.some((asignacion) => asignacion.role === ROLES.ADMIN));
+  if (hayAdmin) return false;
+
+  if (!email || !password || password.length < 12) {
+    throw new Error("No hay administradores: BOOTSTRAP_ADMIN_EMAIL y BOOTSTRAP_ADMIN_PASSWORD (12 caracteres o mas) son obligatorios");
+  }
+
+  userRepository.create({
+    email,
+    passwordHash: await bcrypt.hash(password, 10),
+    displayName: "Administrador",
+    assignments: [{ role: ROLES.ADMIN }]
+  });
+  return true;
+}
+
 export async function seedAuthData() {
   if (userRepository.list({ includeInactive: true }).length > 0) {
     return;
