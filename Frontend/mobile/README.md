@@ -2,7 +2,7 @@
 
 ## App del alumno (implementada)
 
-App Android/iOS con Expo, **solo para alumnos**, sobre la misma API que la web (portal del alumno: `GET /api/v1/alumno/perfil` y endpoints relacionados). Misma información y opciones que el portal web del alumno, adaptadas a pantalla de celular. Marca institucional (bordó/gris + logo de la E.E.S. Técnica N° 1) aplicada solo en mobile.
+App Android/iOS con Expo, **solo para alumnos**, sobre la misma API que la web (portal del alumno: `GET /api/v1/alumno/perfil` y endpoints relacionados). Misma información y opciones que el portal web del alumno, adaptadas a pantalla de celular. Marca institucional (bordó/gris + logo de la E.E.S. Técnica N° 1) aplicada dentro de la app; el icono y la pantalla inicial usan la marca Prece Digital.
 
 ### Pantallas (menú inferior)
 
@@ -43,6 +43,9 @@ Escanear el QR con Expo Go (Android) o con la cámara (iOS). No presionar `w` (m
 - **Dirección de la API:** en desarrollo se detecta sola a partir de la IP de la PC que muestra Expo (puerto 3000). Solo si falla, copiar `.env.example` a `.env` y fijar `EXPO_PUBLIC_API_BASE_URL=http://<IP-de-la-PC>:3000`.
 - **Firewall de Windows:** permitir Node.js en redes privadas, o el celular no llega a la API.
 - **Producción:** `EXPO_PUBLIC_APP_ENV=production` exige una API `https://`.
+- **APK Android firmado:** desde `Frontend/mobile/android`, ejecutar `.\gradlew.bat assembleRelease` con `RELEASE_STORE_PASSWORD` y `RELEASE_KEY_PASSWORD` cargadas desde el keystore privado. El archivo queda en `android/app/build/outputs/apk/release/app-release.apk`.
+- **iPhone:** el proyecto incluye configuración iOS y el perfil EAS `production`; generar el `.ipa` requiere macOS/Xcode local o un build remoto de EAS y las credenciales de Apple. El APK no se instala en iOS.
+- **Play Protect:** una firma de release permite identificar al editor y verificar que el APK no cambió, pero no garantiza una aprobación ni evita avisos de Play Protect. La revisión de Google se solicita publicando el AAB desde Play Console.
 - **Tests:** `npm test` dentro de `Frontend/mobile`.
 
 ### Usuario de prueba

@@ -9,6 +9,7 @@
       "android": {
         "buildType": "apk"
       },
+      "ios": {},
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_API_BASE_URL": "https://precedigital.eestn1.com"
@@ -19,6 +20,7 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {},
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_API_BASE_URL": "https://precedigital.eestn1.com"
