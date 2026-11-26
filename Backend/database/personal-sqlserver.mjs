@@ -158,9 +158,17 @@ export function crearPersonalRelacional() {
       cargados += 1;
     }
 
-    /* Las catedras de la grilla que apuntan a un docente que ya no existe pierden la asignacion. */
-    for (const catedra of store.catedras) {
-      if (catedra.profesor && !store.users.has(catedra.profesor.id)) {
+    /* Limpieza de la grilla de Direccion. Las filas "cat-<numero>" son las del listado de ejemplo que
+       antes traia el frontend (docentes inventados) y que se guardaron en ps_catedras: se descartan si
+       no tienen un docente real. Cualquier otra fila que apunte a un docente que ya no existe queda sin asignar. */
+    const EJEMPLO = /^cat-\d+$/;
+    for (let i = store.catedras.length - 1; i >= 0; i -= 1) {
+      const catedra = store.catedras[i];
+      const docenteReal = catedra.profesor && store.users.has(catedra.profesor.id);
+
+      if (!docenteReal && EJEMPLO.test(String(catedra.id))) {
+        store.catedras.splice(i, 1);
+      } else if (catedra.profesor && !docenteReal) {
         catedra.profesor = null;
         catedra.estado = "sin_asignar";
       }
