@@ -230,7 +230,7 @@ export const DirectorService = {
     const cargoDocente = roles.includes("docente")
       ? {
           materia: String(datos.materia || "").trim(),
-          situacionRevista: datos.situacionRevista,
+          situacionRevista: datos.situacionRevista === "provisorio" ? "provisional" : datos.situacionRevista,
           docenteSuplido:
             datos.situacionRevista === "suplente" ? String(datos.docenteSuplido || "").trim() : undefined,
           modulos: Number(datos.modulos),
