@@ -463,7 +463,7 @@
 
 /* ==================== 3. ESTILOS PLANILLA ==================== */
 .doc-planilla-header {
-  border-bottom: 2px solid #222a4c;
+  border-bottom: 2px solid #591c23;
   padding-bottom: 12px;
   margin-bottom: 14px;
 }
@@ -478,7 +478,7 @@
 }
 
 .doc-escuela-title {
-  color: #222a4c;
+  color: #591c23;
   font-weight: 800;
 }
 
@@ -486,7 +486,7 @@
   text-align: center;
   font-size: 18px;
   font-weight: 900;
-  color: #222a4c;
+  color: #591c23;
   margin: 4px 0 12px 0;
   letter-spacing: 0.6px;
 }
@@ -495,8 +495,8 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
+  background: #fbf8f8;
+  border: 1px solid #d9c3c6;
   border-radius: 6px;
   padding: 8px 14px;
   font-size: 12.5px;
@@ -523,7 +523,7 @@
   display: grid;
   grid-template-columns: 1.15fr 3fr 3fr;
   background: #ffffff;
-  border: 1px solid #cbd5e1;
+  border: 1px solid #d9c3c6;
   border-radius: 8px;
   overflow: hidden;
   font-size: 12px;
@@ -533,7 +533,7 @@
 .doc-stat-group {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #cbd5e1;
+  border-right: 1px solid #d9c3c6;
   min-width: 0;
 }
 
@@ -542,9 +542,9 @@
 }
 
 .doc-stat-group__header {
-  background: #f1f5f9;
-  border-bottom: 1px solid #cbd5e1;
-  color: #222a4c;
+  background: #f6eded;
+  border-bottom: 1px solid #d9c3c6;
+  color: #591c23;
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -584,7 +584,7 @@
 .doc-stat-item__value {
   font-size: 14px;
   font-weight: 800;
-  color: #222a4c;
+  color: #591c23;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -614,26 +614,27 @@
 
 .doc-planilla-table th,
 .doc-planilla-table td {
-  border: 1px solid #94a3b8;
+  border: 1px solid #d9c3c6;
   padding: 4px 6px;
 }
 
 .doc-planilla-table thead th {
-  background: #222a4c;
+  background: #591c23;
   color: #ffffff;
   font-weight: 700;
   text-align: center;
   font-size: 10.5px;
   text-transform: uppercase;
+  border-color: #79232e;
 }
 
 .doc-planilla-table thead th.col-sub {
-  background: #2d3766;
+  background: #6f232c;
   font-size: 9.5px;
 }
 
 .doc-planilla-table tbody tr:hover {
-  background: #f1f5f9;
+  background: #fbf8f8;
 }
 
 .doc-planilla-footer-signatures {
@@ -655,7 +656,7 @@
 
 .doc-sig-line {
   width: 100%;
-  border-bottom: 1.5px solid #222a4c;
+  border-bottom: 1.5px solid #591c23;
   margin-bottom: 6px;
 }
 
@@ -820,6 +821,14 @@
 
 /* Reglas de Impresión para Documentos */
 @media print {
+  @page documento-page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  @page planilla-page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
   .doc-modal-paper-wrap {
     max-width: 100% !important;
     background: transparent !important;
@@ -827,11 +836,15 @@
     padding: 0 !important;
   }
   .doc-paper-sheet {
+    page: documento-page;
     margin: 0 !important;
     padding: 0 !important;
     max-width: 100% !important;
     box-shadow: none !important;
     border: none !important;
+  }
+  .doc-paper-sheet--wide {
+    page: planilla-page;
   }
   .no-print,
   .matriz-toolbar,
@@ -855,14 +868,21 @@
     height: auto !important;
     overflow: visible !important;
     background: #ffffff !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html:has(.doc-paper-sheet) ::-webkit-scrollbar,
+  body:has(.doc-paper-sheet) ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
   body:has(.doc-paper-sheet) .matriz-modal-backdrop {
     position: static !important;
     display: block !important;
     width: auto !important;
     height: auto !important;
+    overflow: visible !important;
     padding: 0 !important;
     background: none !important;
     backdrop-filter: none !important;
@@ -881,9 +901,92 @@
     background: transparent !important;
     animation: none !important;
   }
-  body:has(.doc-paper-sheet) .doc-paper-sheet {
+  body:has(.doc-paper-sheet) .doc-paper-sheet:not(.doc-paper-sheet--wide) {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  /* Paleta institucional de la escuela (bordó #591c23) igual que en los PDF */
+  body:has(.doc-paper-sheet) .doc-planilla-header {
+    border-bottom: 2px solid #591c23 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-escuela-title,
+  body:has(.doc-paper-sheet) .doc-planilla-main-title,
+  body:has(.doc-paper-sheet) .doc-paper-title,
+  body:has(.doc-paper-sheet) .doc-paper-subtitle,
+  body:has(.doc-paper-sheet) .doc-field-highlight,
+  body:has(.doc-paper-sheet) .doc-rite-title,
+  body:has(.doc-paper-sheet) .doc-rite-box-title,
+  body:has(.doc-paper-sheet) .doc-tramite-title,
+  body:has(.doc-paper-sheet) .doc-pase-publisher,
+  body:has(.doc-paper-sheet) .doc-pase-emphasis,
+  body:has(.doc-paper-sheet) .doc-regular-escuela {
+    color: #591c23 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-field-underlined,
+  body:has(.doc-paper-sheet) .doc-sig-line,
+  body:has(.doc-paper-sheet) .doc-rite-firma-line {
+    border-bottom-color: #591c23 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-meta-grid,
+  body:has(.doc-paper-sheet) .doc-rite-student-bar,
+  body:has(.doc-paper-sheet) .doc-stat-group__header {
+    background: #f6eded !important;
+    border-color: #d9c3c6 !important;
+    color: #591c23 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-stats-box,
+  body:has(.doc-paper-sheet) .doc-stat-group {
+    border-color: #d9c3c6 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-stat-item__value {
+    color: #591c23 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-table thead th,
+  body:has(.doc-paper-sheet) .doc-rite-table thead th,
+  body:has(.doc-paper-sheet) .doc-pase-blue-banner,
+  body:has(.doc-paper-sheet) .doc-regular-badge {
+    background: #591c23 !important;
+    color: #ffffff !important;
+    border-color: #79232e !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-row--selected {
+    background-color: transparent !important;
+    border-left: none !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-table tbody tr:nth-child(even) {
+    background-color: #fbf8f8 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-cell-input::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-paper-sheet--wide table {
+    width: 100% !important;
+    font-size: 8px !important;
+  }
+  body:has(.doc-paper-sheet) .doc-paper-sheet--wide thead {
+    display: table-header-group;
+  }
+  body:has(.doc-paper-sheet) .doc-paper-sheet--wide tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  body:has(.doc-paper-sheet) .doc-paper-sheet--wide th,
+  body:has(.doc-paper-sheet) .doc-paper-sheet--wide td {
+    padding: 1.5px 2px !important;
+    border-color: #c9b5b8 !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-cell-select .custom-select__arrow {
+    display: none !important;
+  }
+  body:has(.doc-paper-sheet) .doc-planilla-cell-select .custom-select__trigger {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    font-size: 8px !important;
   }
 }
 
@@ -1051,16 +1154,16 @@
 }
 
 .doc-planilla-cell-input:focus {
-  border-color: #2563eb;
+  border-color: #591c23;
   background: #ffffff;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 2px rgba(89, 28, 35, 0.15);
   outline: none;
 }
 
 .doc-planilla-cell-input--final {
   font-weight: 800;
-  color: #1e3a8a;
-  background: rgba(30, 58, 138, 0.05);
+  color: #591c23;
+  background: rgba(89, 28, 35, 0.06);
 }
 
 .doc-planilla-cell-input--approved {
@@ -1110,8 +1213,8 @@
 }
 
 .doc-planilla-row--selected {
-  background-color: #eff6ff !important;
-  border-left: 3px solid #2563eb;
+  background-color: #fbf4f5 !important;
+  border-left: 3px solid #591c23;
 }
 
 .doc-planilla-course-select.custom-select-wrapper {

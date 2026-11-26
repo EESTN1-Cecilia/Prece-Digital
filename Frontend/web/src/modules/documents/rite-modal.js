@@ -9,6 +9,8 @@ import {
 } from "./document-helpers.js";
 
 import { PLANES_BOLETIN } from "../students/components/boletin-digital-modal.js";
+import { BoletinOficialService } from "../boletin/boletin-oficial-service.js";
+import { descargarRitePdf } from "./constancias-pdf.js";
 
 // ============================================================================
 // 2. MODAL: RITE - REGISTRO INSTITUCIONAL DE TRAYECTORIAS EDUCATIVAS
@@ -23,12 +25,33 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
     alumno
   } = useDocumentStudent(alumnoInicial);
   const fecha = useMemo(() => getFechaActual(), []);
+  const [registroBackend, setRegistroBackend] = useState(null);
+  const [exportandoPdf, setExportandoPdf] = useState(false);
 
   const anioNum = useMemo(() => {
     return Number(String(alumno?.curso || "1").replace(/\D/g, "")) || 1;
   }, [alumno?.curso]);
 
-  // Cargar materias y calificaciones reales del alumno desde el boletín oficial
+  // Cargar notas e inasistencias reales del backend (misma fuente que boletin oficial y planilla)
+  useEffect(() => {
+    if (!abierto || !alumno?.id) {
+      setRegistroBackend(null);
+      return;
+    }
+    let activo = true;
+    BoletinOficialService.obtener(alumno, anioNum)
+      .then((res) => {
+        if (activo) setRegistroBackend(res || null);
+      })
+      .catch(() => {
+        if (activo) setRegistroBackend(null);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [abierto, alumno?.id, anioNum]);
+
+  // Cargar materias y calificaciones reales del alumno desde el backend (con fallback a localStorage)
   const materiasRite = useMemo(() => {
     const plan = PLANES_BOLETIN[anioNum] || PLANES_BOLETIN[1] || {};
     const ori = String(alumno?.orientacion || "").toLowerCase().includes("info") ? "informatica" : "programacion";
@@ -39,13 +62,17 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
     ];
 
     let califs = {};
-    try {
-      const raw = localStorage.getItem(`prece_boletin_${alumno?.id}_anio_${anioNum}`);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.calificaciones) califs = parsed.calificaciones;
-      }
-    } catch {}
+    if (registroBackend?.notas && typeof registroBackend.notas === "object") {
+      califs = registroBackend.notas;
+    } else {
+      try {
+        const raw = localStorage.getItem(`prece_boletin_${alumno?.id}_anio_${anioNum}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.calificaciones) califs = parsed.calificaciones;
+        }
+      } catch {}
+    }
 
     const NUM_A_PALABRA = {
       1: "UNO", 2: "DOS", 3: "TRES", 4: "CUATRO", 5: "CINCO",
@@ -53,34 +80,56 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
     };
 
     return listaMaterias.map((nombreMat) => {
-      const entry = califs[nombreMat] || califs[nombreMat.toUpperCase()] || {};
-      const n1 = entry.informe1 || "-";
-      const n2 = entry.informe2 || "-";
-      const dic = entry.diciembre || "-";
-      const feb = entry.febrero || "-";
-      const finalVal = entry.definitiva || entry.promedioAnual || "";
+      const entry =
+        califs[nombreMat] ||
+        califs[nombreMat.toUpperCase()] ||
+        Object.entries(califs).find(([k]) => k.toLowerCase() === nombreMat.toLowerCase())?.[1] ||
+        {};
+      const n1 = entry.c1 ?? entry.informe1 ?? entry.t1 ?? "-";
+      const n2 = entry.c2 ?? entry.informe2 ?? entry.t2 ?? "-";
+      const dic = entry.dic ?? entry.diciembre ?? "-";
+      const feb = entry.feb ?? entry.febrero ?? "-";
+      const finalVal = entry.definitiva ?? entry.final ?? entry.promedioAnual ?? "";
 
       let finalTexto = "-";
-      if (finalVal) {
+      if (finalVal !== "" && finalVal !== null && finalVal !== undefined) {
         const numF = Math.round(parseFloat(finalVal));
-        if (NUM_A_PALABRA[numF]) {
+        if (!Number.isNaN(numF) && NUM_A_PALABRA[numF]) {
           finalTexto = `${numF} (${NUM_A_PALABRA[numF]})`;
         } else {
-          finalTexto = finalVal;
+          finalTexto = String(finalVal);
         }
       }
 
       return {
         nombre: nombreMat,
         tipo: "C",
-        nota1C: n1,
-        nota2C: n2,
-        dic,
-        feb,
+        nota1C: n1 === "" ? "-" : String(n1),
+        nota2C: n2 === "" ? "-" : String(n2),
+        dic: dic === "" ? "-" : String(dic),
+        feb: feb === "" ? "-" : String(feb),
         final: finalTexto
       };
     });
-  }, [anioNum, alumno]);
+  }, [anioNum, alumno, registroBackend]);
+
+  const inasistenciasRite = useMemo(() => {
+    const inas = registroBackend?.inasistencias || {};
+    const c1 = inas.c1 ?? inas.t1 ?? alumno?.inasistencias1C ?? "-";
+    const c2 = inas.c2 ?? inas.t2 ?? alumno?.inasistencias2C ?? "-";
+    const total = inas.total ?? alumno?.inasistencias?.total ?? alumno?.inasistencias ?? "0";
+    return { c1, c2, total: String(total) };
+  }, [registroBackend, alumno]);
+
+  const handleDescargarPdf = async () => {
+    if (exportandoPdf) return;
+    setExportandoPdf(true);
+    try {
+      await descargarRitePdf({ alumno, materias: materiasRite, inasistencias: inasistenciasRite, fecha });
+    } finally {
+      setExportandoPdf(false);
+    }
+  };
 
   if (!abierto) return null;
 
@@ -116,6 +165,23 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
           }),
           h(
             "button",
+            {
+              type: "button",
+              className: "matriz-btn matriz-btn--pdf",
+              disabled: exportandoPdf,
+              onClick: handleDescargarPdf,
+              title: "Descargar RITE en PDF"
+            },
+            h(
+              "svg",
+              { className: "matriz-btn-icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", width: "16", height: "16" },
+              h("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+              h("polyline", { points: "14 2 14 8 20 8" })
+            ),
+            h("span", null, exportandoPdf ? "Generando..." : "Descargar PDF")
+          ),
+          h(
+            "button",
             { type: "button", className: "matriz-btn matriz-btn--primary", onClick: () => window.print() },
             h(
               "svg",
@@ -124,7 +190,7 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
               h("path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }),
               h("rect", { x: "6", y: "14", width: "12", height: "8" })
             ),
-            h("span", null, "Imprimir / PDF (2 x Hoja A4)")
+            h("span", null, "Imprimir")
           ),
           h(BotonCerrarBarra, { onCerrar })
         )
@@ -239,15 +305,15 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
               h("h3", { className: "doc-rite-box-title" }, "INASISTENCIAS"),
               h("div", { className: "doc-rite-asist-row" },
                 h("span", null, "1º Cuatrimestre:"),
-                h("strong", null, alumno?.inasistencias1C ?? "-")
+                h("strong", null, inasistenciasRite.c1)
               ),
               h("div", { className: "doc-rite-asist-row" },
                 h("span", null, "2º Cuatrimestre:"),
-                h("strong", null, alumno?.inasistencias2C ?? "-")
+                h("strong", null, inasistenciasRite.c2)
               ),
               h("div", { className: "doc-rite-asist-row doc-rite-asist-row--total" },
                 h("span", null, "TOTAL ANUAL:"),
-                h("strong", null, String(alumno?.inasistencias?.total ?? alumno?.inasistencias ?? "0"))
+                h("strong", null, inasistenciasRite.total)
               )
             ),
             h(

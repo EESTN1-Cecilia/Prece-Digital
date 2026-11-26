@@ -22,6 +22,8 @@ function idDelAlumno(alumno) {
 
 function Contenido({ alumnoId, onCerrar }) {
   const [anio, setAnio] = useState(null);
+  const [descargando, setDescargando] = useState(false);
+  const [errorDescarga, setErrorDescarga] = useState(false);
   const { cargando, error, datos, recargar } = useDatos(
     () => {
       const ruta = `/api/v1/alumnos/${encodeURIComponent(alumnoId)}/boletin`;
@@ -39,6 +41,19 @@ function Contenido({ alumnoId, onCerrar }) {
       window.removeEventListener("prece:calificaciones-updated", actualizar);
     };
   }, [recargar]);
+
+  async function descargar() {
+    if (!datos || descargando) return;
+    setDescargando(true);
+    setErrorDescarga(false);
+    try {
+      await descargarBoletinPdf(datos);
+    } catch {
+      setErrorDescarga(true);
+    } finally {
+      setDescargando(false);
+    }
+  }
 
   function imprimir() {
     document.body.classList.add("pa-imprimiendo-boletin");
@@ -61,11 +76,12 @@ function Contenido({ alumnoId, onCerrar }) {
         "div",
         { className: "pa-encabezado__acciones" },
         datos ? h(SelectorCiclo, { anios: datos.aniosDisponibles, valor: datos.cicloLectivo, onCambiar: setAnio }) : null,
-        datos ? h("button", { type: "button", className: "pa-boton pa-boton--secundario", onClick: () => descargarBoletinPdf(datos).catch(() => {}) }, "Descargar PDF") : null,
+        datos ? h("button", { type: "button", className: "pa-boton pa-boton--secundario", disabled: descargando, onClick: descargar }, descargando ? "Generando PDF..." : "Descargar PDF") : null,
         datos ? h("button", { type: "button", className: "pa-boton pa-boton--primario", onClick: imprimir }, "Imprimir") : null,
         h("button", { type: "button", className: "pa-boton pa-boton--secundario", onClick: onCerrar }, "Cerrar")
       )
     ),
+    errorDescarga ? h("div", { className: "pa-aviso pa-aviso--error", role: "alert" }, h("p", null, "No se pudo generar el PDF. Probá de nuevo o usá Imprimir.")) : null,
     cargando && !datos ? h(Cargando, { texto: "Cargando el boletín..." }) : error ? h(ErrorCarga, { error, onReintentar: recargar }) : h(BoletinDocumento, { datos })
   );
 }

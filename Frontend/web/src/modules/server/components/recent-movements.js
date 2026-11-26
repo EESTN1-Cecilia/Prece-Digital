@@ -40,7 +40,11 @@ export function RecentMovements({
           h(
             "div",
             { className: `activity-avatar movement-avatar movement-avatar--${mov.tipo}` },
-            isIngreso ? "📥" : isEgreso ? "📤" : "🔄"
+            isIngreso
+              ? h("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, h("path", { d: "M12 3v12" }), h("polyline", { points: "7 10 12 15 17 10" }), h("path", { d: "M5 21h14" }))
+              : isEgreso
+              ? h("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, h("path", { d: "M12 15V3" }), h("polyline", { points: "7 8 12 3 17 8" }), h("path", { d: "M5 21h14" }))
+              : h("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, h("polyline", { points: "23 4 23 10 17 10" }), h("polyline", { points: "1 20 1 14 7 14" }), h("path", { d: "M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" }))
           ),
           h(
             "div",

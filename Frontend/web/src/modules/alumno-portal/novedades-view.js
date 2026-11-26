@@ -184,7 +184,16 @@ export default function NovedadesAlumnoView() {
             }, pub.titulo)),
             h("p", null, pub.texto),
             pub.archivo?.nombre
-              ? h("p", { style: { fontSize: "12px", color: "#64748b", margin: "4px 0" } }, `📎 Archivo adjunto: ${pub.archivo.nombre}`)
+              ? h(
+                  "p",
+                  { style: { fontSize: "12px", color: "#64748b", margin: "4px 0", display: "inline-flex", alignItems: "center", gap: "5px" } },
+                  h(
+                    "svg",
+                    { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+                    h("path", { d: "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" })
+                  ),
+                  `Archivo adjunto: ${pub.archivo.nombre}`
+                )
               : null,
             h("span", { className: "pa-publicacion__leer", "aria-hidden": true }, "Leer comunicado →")
           )
@@ -234,7 +243,16 @@ export default function NovedadesAlumnoView() {
       h("p", null, aviso.texto),
       aviso.archivo?.nombre
         ? h("div", { className: "pa-aviso-modal__adjunto" },
-          h("span", null, `📎 Archivo adjunto: ${aviso.archivo.nombre}`),
+          h(
+            "span",
+            { style: { display: "inline-flex", alignItems: "center", gap: "6px" } },
+            h(
+              "svg",
+              { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+              h("path", { d: "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" })
+            ),
+            `Archivo adjunto: ${aviso.archivo.nombre}`
+          ),
           aviso.archivo.descargable
             ? h("button", {
               type: "button",

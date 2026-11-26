@@ -56,7 +56,17 @@ export function AccesosSection({ personal = [], usuarioActualId = null, onMostra
     h(
       "header",
       { className: "director-accesos-header" },
-      h("span", { className: "director-accesos-icono", "aria-hidden": "true" }, "🔑"),
+      h(
+        "span",
+        { className: "director-accesos-icono", "aria-hidden": "true" },
+        h(
+          "svg",
+          { width: "22", height: "22", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+          h("circle", { cx: "7.5", cy: "15.5", r: "5.5" }),
+          h("path", { d: "m21 2-9.6 9.6" }),
+          h("path", { d: "m15.5 7.5 3 3L22 7l-3-3" })
+        )
+      ),
       h(
         "div",
         null,
@@ -95,7 +105,16 @@ export function AccesosSection({ personal = [], usuarioActualId = null, onMostra
         h(
           "div",
           { className: "director-accesos-buscar" },
-          h("span", { className: "director-accesos-buscar-lupa", "aria-hidden": "true" }, "🔍"),
+          h(
+            "span",
+            { className: "director-accesos-buscar-lupa", "aria-hidden": "true" },
+            h(
+              "svg",
+              { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+              h("circle", { cx: "11", cy: "11", r: "8" }),
+              h("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })
+            )
+          ),
           h("input", {
             id: "accesos-buscar",
             type: "search",

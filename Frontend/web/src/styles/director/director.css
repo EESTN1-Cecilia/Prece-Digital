@@ -401,8 +401,7 @@
 
 @media (max-width: 1100px) {
   .director-sidebar-access {
-    width: 100%;
-    min-width: 0;
+    display: none !important;
   }
 }
 
@@ -6057,3 +6056,771 @@
 .director-accesos-acciones { display: flex; gap: 8px; }
 .director-accesos-error { margin: 0; padding: 10px 14px; border-radius: 8px; background: #fee2e2; color: #b91c1c; font-weight: 600; }
 @media (max-width: 720px) { .director-accesos-header { flex-wrap: wrap; } .director-accesos-contador { margin-left: 0; } }
+
+/* ==========================================================================
+   RESPONSIVE COMPLETO DEL DASHBOARD DE DIRECCIÓN (SOLO MÓVIL Y TABLET)
+   ========================================================================== */
+@media (max-width: 1100px) {
+  .director-sidebar-access {
+    display: none !important;
+  }
+
+  .director-page-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 8px 0 24px;
+    padding: 0 12px;
+    gap: 0;
+  }
+
+  .director-dashboard-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+}
+
+@media (max-width: 768px) {
+  .director-page-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .director-dashboard-wrapper {
+    padding: 12px 10px 18px !important;
+    border-radius: 14px !important;
+    gap: 12px;
+  }
+
+  .director-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .director-top-title-wrap,
+  .alumnos-top-badges {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .director-hero-banner {
+    padding: 14px 12px;
+    border-radius: 14px;
+    gap: 12px;
+  }
+
+  .director-hero-title {
+    font-size: clamp(18px, 5vw, 22px);
+    line-height: 1.2;
+  }
+
+  .director-hero-subtitle {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .director-hero-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .btn-director-hero-primary,
+  .btn-director-hero-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 10px;
+    font-size: 12.5px;
+  }
+
+  /* Pestañas deslizables sin desborde */
+  .director-tabs-shell {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .director-tabs-nav {
+    width: 100%;
+    padding: 4px;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .director-tabs-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .director-tab-btn {
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .director-tabs-arrow {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  /* KPIs: 2 tarjetas compactas por fila en celular */
+  .director-kpis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .director-kpi-card,
+  .director-kpi-card--wide,
+  .director-kpi-card--third {
+    grid-column: span 1 !important;
+    padding: 10px 10px !important;
+    border-radius: 12px !important;
+    gap: 5px !important;
+    min-width: 0;
+  }
+
+  .director-kpi-card__header {
+    gap: 4px 6px;
+  }
+
+  .director-kpi-label {
+    font-size: 10px !important;
+    letter-spacing: 0.02em;
+  }
+
+  .director-kpi-badge {
+    font-size: 9.5px !important;
+    padding: 2px 6px !important;
+    border-radius: 5px;
+  }
+
+  .director-kpi-value {
+    font-size: 22px !important;
+    line-height: 1.05;
+  }
+
+  .director-kpi-footer {
+    flex-wrap: wrap;
+    gap: 2px 5px;
+    font-size: 10.5px !important;
+    margin-top: 2px;
+  }
+
+  .director-kpi-assignment-breakdown {
+    gap: 3px 6px;
+    font-size: 10px !important;
+  }
+
+  .director-kpi-link-btn {
+    font-size: 10.5px !important;
+  }
+
+  .director-kpi-asistencias-layout {
+    gap: 8px;
+  }
+
+  .director-asistencia-header-badge-float,
+  .director-asistencia-toggle-float {
+    position: static;
+  }
+
+  .director-kpi-asistencias-left {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 4px;
+  }
+
+  .director-asistencia-header-left {
+    grid-column: 1;
+    grid-row: 1;
+    height: auto;
+    min-width: 0;
+  }
+
+  .director-asistencia-header-badge-float {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    flex-shrink: 0;
+  }
+
+  .director-kpi-asistencias-left .director-kpi-label {
+    font-size: 9.5px !important;
+    white-space: nowrap;
+  }
+
+  .director-kpi-asistencias-left .director-kpi-badge {
+    font-size: 8.5px !important;
+    padding: 2px 5px !important;
+  }
+
+  .director-kpi-asistencias-left .director-kpi-value {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .director-asistencia-toggle-float {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .director-kpi-asistencias-left .director-kpi-footer {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .director-asistencia-toggle-btn {
+    padding: 2px 5px;
+    font-size: 9.5px;
+  }
+
+  .director-hchart-container {
+    padding-top: 6px;
+    gap: 3px;
+  }
+
+  .director-hchart-axis-x {
+    margin-left: 42px;
+    margin-right: 30px;
+    font-size: 8.5px;
+    height: 14px;
+  }
+
+  .director-hchart-grid-lines {
+    left: 42px;
+    right: 30px;
+  }
+
+  .director-hchart-plot-area {
+    gap: 4px;
+    padding: 2px 0;
+  }
+
+  .director-hchart-row {
+    gap: 4px;
+  }
+
+  .director-hchart-label {
+    width: 38px;
+    font-size: 9.5px;
+  }
+
+  .director-hchart-track {
+    height: 6px;
+  }
+
+  .director-hchart-val {
+    width: 26px;
+    font-size: 9.5px;
+  }
+
+  /* === SECCIÓN: GESTIÓN DE PERSONAL === */
+  .director-main-card .dashboard-card__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .director-main-card .dashboard-card__actions {
+    width: 100%;
+  }
+
+  .director-main-card .btn-director-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .director-personal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .director-search-wrap,
+  .director-personal-toolbar .custom-select-wrapper,
+  .director-filter-custom-select {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Tabla de Personal -> tarjetas apiladas en celular (sin cortes) */
+  .director-table-responsive {
+    width: 100%;
+    overflow-x: visible;
+  }
+
+  .director-table,
+  .director-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .director-table thead {
+    display: none;
+  }
+
+  .director-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .director-table tr {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  }
+
+  .director-table td {
+    display: block;
+    padding: 0;
+    border: none;
+    white-space: normal !important;
+    font-size: 12.5px;
+  }
+
+  .director-contact-email {
+    word-break: break-word;
+  }
+
+  .director-actions-cell {
+    width: 100%;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .director-actions-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .btn-director-action-edit-roles,
+  .btn-director-action-toggle,
+  .btn-director-action-delete {
+    width: 100%;
+    justify-content: center;
+    padding: 7px 10px;
+  }
+
+  /* === SECCIÓN: ASIGNACIONES === */
+  .asignaciones-view-switcher {
+    display: none !important;
+  }
+
+  .asignaciones-card-title-wrap {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .asignaciones-header-icon-box {
+    flex-shrink: 0;
+  }
+
+  .asignaciones-card-title,
+  .director-main-card .dashboard-card__title,
+  .director-pedidos-title,
+  .director-informes-header__title,
+  .director-accesos-titulo,
+  .director-alert-title {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: clamp(15px, 4.3vw, 18px) !important;
+    line-height: 1.25 !important;
+  }
+
+  .asignaciones-subtabs-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .asignaciones-subtabs-nav {
+    display: flex !important;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    box-sizing: border-box;
+  }
+
+  .asignaciones-subtabs-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .asignaciones-subtabs-nav .director-tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .asignaciones-cards-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .asignaciones-card,
+  .asignaciones-docente-card {
+    padding: 12px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .asignaciones-card-header,
+  .asignaciones-docente-card-header,
+  .asignaciones-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .asignaciones-docente-card-header .asignaciones-badge-situacion,
+  .asignaciones-docente-card-header .director-status-tag {
+    width: fit-content;
+    align-self: flex-start;
+  }
+
+  .asignaciones-card-user,
+  .asignaciones-card-user-info,
+  .asignaciones-card-metrics,
+  .asignaciones-card-materias-section,
+  .asignaciones-current-divisions-wrap,
+  .asignaciones-div-materia-tag-wrap,
+  .asignaciones-division-tag-wrap {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .asignaciones-card-metrics {
+    padding: 8px 10px;
+    gap: 6px 10px;
+  }
+
+  .asignaciones-current-divisions-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .asignaciones-div-badge {
+    white-space: normal !important;
+    max-width: 100%;
+    word-break: break-word;
+    line-height: 1.3;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .asignaciones-card-footer .asignaciones-btn-reasignar,
+  .asignaciones-card-footer .asignaciones-btn-quitar,
+  .asignaciones-card-footer .asignaciones-btn-asignar {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .asignaciones-actions-wrap {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .asignaciones-actions-wrap > button {
+    flex: 1 1 120px;
+    justify-content: center;
+  }
+
+  .asignaciones-filter-custom-select,
+  .asignaciones-filter-custom-select--materia {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* === SECCIÓN: CARGA DE NOTAS (PERÍODOS) === */
+  .director-periodos-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .director-pedidos-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 12px;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .director-pedidos-title {
+    font-size: 17px;
+  }
+
+  .director-periodos-lista {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .director-periodo-card,
+  .director-pedidos-security-banner {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .director-periodos-acciones {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .director-periodos-acciones__botones {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .director-periodos-btn {
+    flex: 1 1 130px;
+    justify-content: center;
+  }
+
+  .director-pedidos-security-banner {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  /* === SECCIÓN: INFORMES === */
+  .director-informes-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 12px;
+    gap: 10px;
+  }
+
+  .director-informes-header__badges {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .director-informes-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .director-informes-form-card,
+  .director-informes-list-card {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+
+  .director-informes-dest-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  .director-informes-filter-pills {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .director-informes-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .director-informes-submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .director-informe-item__attachment-name {
+    word-break: break-word;
+  }
+
+  /* === SECCIÓN: ACCESOS (RESETEO DE CLAVES) === */
+  .director-accesos-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .director-accesos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .director-accesos-filtro {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .director-accesos-buscar {
+    width: 100%;
+  }
+
+  .director-accesos-tabla,
+  .director-accesos-tabla tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .director-accesos-tabla thead {
+    display: none;
+  }
+
+  .director-accesos-tabla tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .director-accesos-tabla tr {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+
+  .director-accesos-tabla td {
+    display: block;
+    padding: 0;
+    border: none;
+    text-align: left !important;
+  }
+
+  .director-accesos-celda-accion,
+  .director-accesos-acciones {
+    width: 100%;
+  }
+
+  .director-accesos-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .director-accesos-resultado {
+    padding: 12px;
+    word-break: break-word;
+  }
+
+  /* === SECCIÓN: ALERTAS === */
+  .director-alert-item {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .director-alert-item__top {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .director-section-content,
+  .director-main-card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .director-toast {
+    left: 10px;
+    right: 10px;
+    bottom: 12px;
+    max-width: calc(100vw - 20px);
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .director-dashboard-wrapper {
+    padding: 10px 8px 16px !important;
+    border-radius: 12px !important;
+    gap: 10px;
+  }
+
+  .director-kpis-grid {
+    gap: 6px !important;
+  }
+
+  .director-kpi-card {
+    padding: 9px 8px !important;
+  }
+
+  .director-kpi-value {
+    font-size: 20px !important;
+  }
+
+  .director-kpi-badge {
+    font-size: 8.5px !important;
+    padding: 2px 5px !important;
+  }
+
+  .director-hchart-axis-x {
+    margin-left: 38px;
+    margin-right: 26px;
+    font-size: 8px;
+  }
+
+  .director-hchart-grid-lines {
+    left: 38px;
+    right: 26px;
+  }
+
+  .director-hchart-label {
+    width: 34px;
+    font-size: 9px;
+  }
+
+  .director-hchart-val {
+    width: 22px;
+    font-size: 9px;
+  }
+}

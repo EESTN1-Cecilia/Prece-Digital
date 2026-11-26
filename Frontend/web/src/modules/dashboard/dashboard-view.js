@@ -10,7 +10,7 @@ import { DirectorService } from "../director/director-service.js";
 import { CursoDistribucionGrafico } from "../../components/dashboard/curso-distribucion-grafico.js";
 import { PlanillaCalificacionesModal, obtenerClavesMateriaBoletin } from "../documents/planilla-calificaciones-modal.js";
 import { BoletinOficialModal } from "../students/components/boletin-oficial-modal.js";
-import { imprimirBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
+import { imprimirBoletinesDeAlumnos, descargarBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
 import { alumnoTieneNotas, materiaTieneNotas, useResumenCursos } from "../boletin/use-resumen-cursos.js";
 import { AlumnoMatrizModal } from "../students/alumno-matriz-wiew.js";
 
@@ -370,6 +370,20 @@ export default function DashboardView() {
     } catch {
       if (ventana) ventana.close();
       setErrorBoletines("No se pudieron preparar los boletines. Intentá de nuevo.");
+    } finally {
+      setImprimiendoBoletines(null);
+    }
+  };
+
+  const descargarBoletines = async () => {
+    const lista = alumnosFiltrados.filter((a) => a?.id != null);
+    if (lista.length === 0 || imprimiendoBoletines) return;
+    setErrorBoletines("");
+    setImprimiendoBoletines({ hecho: 0, total: lista.length });
+    try {
+      await descargarBoletinesDeAlumnos(lista);
+    } catch {
+      setErrorBoletines("No se pudieron descargar los boletines. Intentá de nuevo.");
     } finally {
       setImprimiendoBoletines(null);
     }
@@ -1268,6 +1282,17 @@ export default function DashboardView() {
               { className: "preceptoria-subview-header-actions" },
               errorBoletines ? h("span", { role: "alert", style: { color: "#b91c1c", fontSize: "13px" } }, errorBoletines) : null,
               h("span", { className: "preceptoria-hero-pill preceptoria-hero-pill--primary" }, `${alumnosFiltrados.length} Alumnos en Padrón`),
+              h(
+                "button",
+                {
+                  type: "button",
+                  className: "preceptoria-btn-print-boletines",
+                  onClick: descargarBoletines,
+                  disabled: Boolean(imprimiendoBoletines) || alumnosFiltrados.length === 0,
+                  title: "Descarga el archivo PDF de los boletines del curso filtrado: 2 por hoja Oficio apaisada"
+                },
+                imprimiendoBoletines ? "Preparando…" : "Descargar Boletines PDF"
+              ),
               h(
                 "button",
                 {

@@ -1,7 +1,7 @@
 /* Mis Asistencias: totales y detalle por fecha. Solo lectura. */
 
 import { useState } from "react";
-import { h, Cargando, Encabezado, ErrorCarga, Indicador, SelectorCiclo, Tarjeta, Vacio, fechaCorta, useDatos } from "./componentes.js";
+import { h, Cargando, Encabezado, ErrorCarga, Icono, Indicador, SelectorCiclo, Tarjeta, Vacio, fechaCorta, useDatos } from "./componentes.js";
 import { obtenerAsistencias } from "./portal-api.js";
 
 const FILTROS = [
@@ -31,7 +31,8 @@ export default function AsistenciasAlumnoView() {
     h(
       Encabezado,
       { titulo: "Mis Asistencias", descripcion: `${cursoDivision ?? ""} · Ciclo lectivo ${cicloLectivo}` },
-      h(SelectorCiclo, { anios: aniosDisponibles, valor: cicloLectivo, onCambiar: setAnio })
+      h(SelectorCiclo, { anios: aniosDisponibles, valor: cicloLectivo, onCambiar: setAnio }),
+      h("button", { type: "button", className: "pa-boton pa-boton--primario", onClick: () => window.print() }, h(Icono, { nombre: "impresora", tamano: 18 }), "Imprimir")
     ),
     h(
       "div",
