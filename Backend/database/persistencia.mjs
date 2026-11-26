@@ -112,7 +112,11 @@ function volcar(store, clave, valor) {
      asegurarTabla({ coleccion, tabla, tipo, columnas, indexadas })
      escribirFilas(tabla, columnas, filas, borrar)   filas: [{ clave, orden, datos, ...columnas }]
      escribirBlob(clave, partes), cerrar() */
-export function crearPersistencia(adaptador, store = getStore()) {
+export function crearPersistencia(adaptador, store = getStore(), opciones = {}) {
+  /* opciones.filtros: { coleccion: { alCargar(valor), alGuardar(valor) } } transforman una coleccion al
+     leerla de / escribirla en `ps_*` (p. ej. dejar afuera lo que vive en tablas relacionales).
+     opciones.alGuardar: funcion async que corre al final de cada guardado. */
+  const filtros = opciones.filtros ?? {};
   /* coleccion -> { tipo, tabla, columnas: Set, filas: Map<clave, firma> } | { blob: texto } */
   const guardado = new Map();
   let enCurso = null;
@@ -141,7 +145,8 @@ export function crearPersistencia(adaptador, store = getStore()) {
         pares.push([clave, deserializar(datos)]);
         filas.set(clave, `${orden}|${datos}`);
       }
-      volcar(store, coleccion, tipo === "Array" ? pares.map(([, v]) => v) : new Map(pares));
+      const cargada = tipo === "Array" ? pares.map(([, v]) => v) : new Map(pares);
+      volcar(store, coleccion, filtros[coleccion]?.alCargar ? filtros[coleccion].alCargar(cargada) : cargada);
       guardado.set(coleccion, { tipo, tabla, columnas: null, filas });
       cargadas += 1;
     }
@@ -197,7 +202,11 @@ export function crearPersistencia(adaptador, store = getStore()) {
   }
 
   async function guardarAhora() {
-    for (const coleccion of Object.keys(store)) await guardarColeccion(coleccion, store[coleccion]);
+    for (const coleccion of Object.keys(store)) {
+      const valor = filtros[coleccion]?.alGuardar ? filtros[coleccion].alGuardar(store[coleccion]) : store[coleccion];
+      await guardarColeccion(coleccion, valor);
+    }
+    await opciones.alGuardar?.();
   }
 
   /* Un guardado a la vez; si piden otro mientras tanto, se repite al terminar. */
@@ -449,8 +458,8 @@ async function adaptadorSqlServer() {
 }
 
 /* Devuelve null si DB_CLIENT no es una base (memoria). */
-export async function iniciarPersistencia(db = appConfig.database) {
-  if (db.client === "mysql") return crearPersistencia(await adaptadorMysql(db));
-  if (db.client === "sqlserver") return crearPersistencia(await adaptadorSqlServer());
+export async function iniciarPersistencia(db = appConfig.database, opciones = {}) {
+  if (db.client === "mysql") return crearPersistencia(await adaptadorMysql(db), getStore(), opciones);
+  if (db.client === "sqlserver") return crearPersistencia(await adaptadorSqlServer(), getStore(), opciones);
   return null;
 }

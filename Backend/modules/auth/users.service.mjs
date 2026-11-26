@@ -1,7 +1,9 @@
 /* Gestion de cuentas de usuario (modulo Identidad): alta, consulta, edicion,
    cambio de estado y roles. Las cuentas nunca se borran: la baja es logica. */
 
-import { sincronizarDocentes } from "../teachers/catedras.service.mjs";
+import { registrarCatedrasDeDocente, sincronizarDocentes } from "../teachers/catedras.service.mjs";
+import { getStore } from "../../database/memory-store.mjs";
+import { personalRelacional } from "../../database/personal-sqlserver.mjs";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { userRepository } from "../../database/repositories/user.repository.mjs";
@@ -119,8 +121,20 @@ function datosCargoDocente(cargo, roles, errores) {
     docenteSuplido: null,
     modulos: Number(cargo.modulos),
     horaDesde: String(cargo.horaDesde ?? ""),
-    horaHasta: String(cargo.horaHasta ?? "")
+    horaHasta: String(cargo.horaHasta ?? ""),
+    grupoTaller: texto(cargo.grupoTaller, 120),
+    dias: []
   };
+
+  /* Dias de la semana en que dicta (1 = lunes ... 5 = viernes). Obligatorios si se eligen cursos. */
+  if (cargo.dias !== undefined && cargo.dias !== null) {
+    const pedidos = Array.isArray(cargo.dias) ? cargo.dias.map(Number) : [];
+    if (!Array.isArray(cargo.dias) || pedidos.some((dia) => !Number.isInteger(dia) || dia < 1 || dia > 5)) {
+      errores.push({ field: "cargoDocente.dias", message: "Los dias deben ser numeros de 1 (lunes) a 5 (viernes)." });
+    } else {
+      salida.dias = [...new Set(pedidos)].sort();
+    }
+  }
 
   /* Cursos en los que dicta la materia (ids "anio-division" del catalogo). */
   if (cargo.cursos !== undefined && cargo.cursos !== null) {
@@ -136,6 +150,10 @@ function datosCargoDocente(cargo, roles, errores) {
 
   if (!salida.materia) {
     errores.push({ field: "cargoDocente.materia", message: "La materia es obligatoria." });
+  }
+
+  if (salida.cursos?.length && salida.dias.length === 0) {
+    errores.push({ field: "cargoDocente.dias", message: "Elegi al menos un dia en que dicta la materia." });
   }
 
   if (!SITUACIONES_REVISTA.includes(salida.situacionRevista)) {
@@ -217,6 +235,10 @@ export const usersService = {
     const passwordTemporal = crypto.randomBytes(9).toString("base64url");
     const schoolId = escuelaDel(actor, cuerpo);
 
+    if (datos.dni && userRepository.list({ includeInactive: true }).some((otro) => otro.dni === datos.dni && !otro.studentId)) {
+      throw conflicto("Ya existe una persona del personal con ese DNI.");
+    }
+
     const usuario = userRepository.create({
       ...datos,
       cargoDocente,
@@ -225,7 +247,27 @@ export const usersService = {
       assignments: roles.map((role) => (schoolId ? { role, schoolId } : { role }))
     });
 
-    return { ...userRepository.publicView(usuario), passwordTemporal };
+    /* Un docente con cursos queda asignado en la grilla de Direccion: materia, curso, grupo de taller,
+       dias y horario. Es la misma fila que despues se guarda en asignaciones_docentes. */
+    const catedras = cargoDocente?.cursos?.length ? registrarCatedrasDeDocente(usuario, cargoDocente) : null;
+
+    /* Con el personal en tablas relacionales, la cuenta se guarda en la base antes de responder:
+       si no se puede guardar, no queda nada a medias en memoria. */
+    if (personalRelacional) {
+      try {
+        await personalRelacional.sincronizar(getStore(), { forzar: true });
+      } catch (error) {
+        console.error(`[personal] no se pudo guardar el alta de ${datos.email}: ${error.message}`);
+        catedras?.deshacer();
+        userRepository.remove(usuario.id);
+        sincronizarDocentes();
+        throw errorHttp(500, "PERSONAL_NO_GUARDADO", "No se pudo guardar la cuenta en la base de datos. Intenta de nuevo; si sigue fallando, avisa al administrador del sistema.");
+      }
+    }
+
+    /* El alta pudo renumerar el id (usr_<id de la base>): se vuelve a leer por correo. */
+    const guardado = userRepository.findByEmail(datos.email, { includeInactive: true });
+    return { ...userRepository.publicView(guardado), passwordTemporal };
   },
 
   async update(actor, id, cuerpo = {}) {

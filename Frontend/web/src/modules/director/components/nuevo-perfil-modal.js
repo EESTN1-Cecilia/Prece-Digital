@@ -122,8 +122,18 @@ const FORMULARIO_INICIAL = {
   modulos: 4,
   horaDesde: "",
   horaHasta: "",
-  cursos: []
+  cursos: [],
+  grupoTaller: "",
+  dias: []
 };
+
+const DIAS_SEMANA = [
+  { id: 1, nombre: "Lunes" },
+  { id: 2, nombre: "Martes" },
+  { id: 3, nombre: "Miércoles" },
+  { id: 4, nombre: "Jueves" },
+  { id: 5, nombre: "Viernes" }
+];
 
 export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
   const [form, setForm] = useState(FORMULARIO_INICIAL);
@@ -219,6 +229,7 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
         errs.modulos = "Indica la cantidad de módulos semanales (mayor a 0).";
       }
       if (!form.cursos.length) errs.cursos = "Elegí al menos un curso en el que dicta la materia.";
+      if (!form.dias.length) errs.dias = "Elegí al menos un día de la semana en que dicta la materia.";
       if (!form.horaDesde || !form.horaHasta) {
         errs.horario = "Completa el horario desde y hasta.";
       } else if (form.horaHasta <= form.horaDesde) {
@@ -637,6 +648,22 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
                         errores.cursos ? h("span", { className: "director-form-error" }, errores.cursos) : null
                       ),
 
+                      // Grupo de taller (opcional): se crea en la base y queda vinculado a la asignación
+                      h(
+                        "div",
+                        { className: "director-form-group" },
+                        h("label", { className: "director-form-label", htmlFor: "perfil-grupo-taller" }, "Grupo de taller (si corresponde)"),
+                        h("input", {
+                          id: "perfil-grupo-taller",
+                          type: "text",
+                          className: "director-form-input",
+                          placeholder: "Ej: Grupo A",
+                          maxLength: 120,
+                          value: form.grupoTaller,
+                          onChange: (e) => handleChange("grupoTaller", e.target.value)
+                        })
+                      ),
+
                       // Situación de revista (diseño idéntico al de asignación docente)
                       h(
                         "div",
@@ -775,6 +802,33 @@ export function NuevoPerfilModal({ abierto, alCerrar, alPerfilCreado }) {
                           )
                         ),
                         errores.modulos ? h("span", { className: "director-form-error" }, errores.modulos) : null
+                      ),
+
+                      // Días de la semana en que dicta
+                      h(
+                        "div",
+                        { className: "director-form-group" },
+                        h("label", { className: "director-form-label" }, "Días en que dicta *"),
+                        h(
+                          "div",
+                          { className: "asignaciones-chip-row", style: { display: "flex", flexWrap: "wrap", gap: "6px" } },
+                          DIAS_SEMANA.map((dia) => {
+                            const activo = form.dias.includes(dia.id);
+                            return h(
+                              "button",
+                              {
+                                key: dia.id,
+                                type: "button",
+                                className: `asignaciones-chip-btn ${activo ? "asignaciones-chip-btn--active" : ""}`,
+                                "aria-pressed": activo,
+                                onClick: () =>
+                                  handleChange("dias", activo ? form.dias.filter((id) => id !== dia.id) : [...form.dias, dia.id])
+                              },
+                              dia.nombre
+                            );
+                          })
+                        ),
+                        errores.dias ? h("span", { className: "director-form-error" }, errores.dias) : null
                       ),
 
                       // Horario desde / hasta

@@ -1,6 +1,9 @@
 import { appConfig } from "../config/app.config.mjs";
 import { apiRoutes } from "../routes/index.mjs";
-import { seedProductionAdmin } from "../database/seeds/auth.seed.mjs";
+import { asegurarAdministrador, seedProductionAdmin } from "../database/seeds/auth.seed.mjs";
+import { personalRelacional, soloCuentasNoPersonal } from "../database/personal-sqlserver.mjs";
+import { getStore } from "../database/memory-store.mjs";
+import { sincronizarDocentes } from "../modules/teachers/catedras.service.mjs";
 import { seedDesarrollo } from "../database/seeds/index.mjs";
 import { seedAlumnosLocales } from "../database/seeds/students.seed.mjs";
 import studentRepository from "../modules/students/students.repository.mjs";
@@ -19,8 +22,18 @@ const port = appConfig.apiPort;
 async function startServer() {
   /* Con DB_CLIENT=mysql o sqlserver el store se carga de la base y se guarda en ella
      (database/persistencia.mjs). Si la base ya tiene datos no se corren los seeds. */
-  const persistencia = await iniciarPersistencia();
+  /* El personal (usuarios, roles, docentes y asignaciones) vive en tablas relacionales: se lo saca de
+     `ps_users` y se lo carga/guarda con database/personal-sqlserver.mjs. */
+  const persistencia = await iniciarPersistencia(undefined, personalRelacional ? {
+    filtros: { users: { alCargar: soloCuentasNoPersonal, alGuardar: soloCuentasNoPersonal } },
+    alGuardar: () => personalRelacional.sincronizar(getStore())
+  } : {});
   const restauradas = persistencia ? await persistencia.cargar() : 0;
+
+  if (personalRelacional) {
+    const cargados = await personalRelacional.cargar(getStore());
+    console.log(`Personal: ${cargados} cuentas cargadas desde las tablas relacionales`);
+  }
 
   /* Sin datos guardados, fuera de produccion arranca con los datos de
      desarrollo de todos los modulos para que el frontend tenga con que trabajar. */
@@ -87,6 +100,15 @@ async function startServer() {
     console.log("Talleres de jefatura asignados (menos 3 cursos de prueba)");
     const alumnosAsignados = seedAlumnosTalleres();
     console.log(`Alumnos asignados a grupos de taller: ${alumnosAsignados} (pendientes: 1°3, 1°4 y 1°6)`);
+  }
+
+  if (personalRelacional) {
+    if (appConfig.env === "production" && await asegurarAdministrador()) {
+      console.log("Personal: no habia administradores, se creo el inicial (BOOTSTRAP_ADMIN_EMAIL)");
+    }
+    sincronizarDocentes();
+    await personalRelacional.sincronizar(getStore(), { forzar: true });
+    console.log("Personal: cuentas, roles, docentes y asignaciones sincronizados con SQL Server");
   }
 
   const nuevosEventos = calendarioService.cargarIniciales();
