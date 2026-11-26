@@ -121,10 +121,12 @@ function datosCargoDocente(cargo, roles, errores) {
     docenteSuplido: null,
     modulos: Number(cargo.modulos),
     horaDesde: String(cargo.horaDesde ?? ""),
-    horaHasta: String(cargo.horaHasta ?? ""),
-    grupoTaller: texto(cargo.grupoTaller, 120),
-    dias: []
+    horaHasta: String(cargo.horaHasta ?? "")
   };
+
+  /* Grupo de taller (opcional): solo se guarda si se envia. */
+  const grupoTaller = texto(cargo.grupoTaller, 120);
+  if (grupoTaller) salida.grupoTaller = grupoTaller;
 
   /* Dias de la semana en que dicta (1 = lunes ... 5 = viernes). Obligatorios si se eligen cursos. */
   if (cargo.dias !== undefined && cargo.dias !== null) {
@@ -132,7 +134,7 @@ function datosCargoDocente(cargo, roles, errores) {
     if (!Array.isArray(cargo.dias) || pedidos.some((dia) => !Number.isInteger(dia) || dia < 1 || dia > 5)) {
       errores.push({ field: "cargoDocente.dias", message: "Los dias deben ser numeros de 1 (lunes) a 5 (viernes)." });
     } else {
-      salida.dias = [...new Set(pedidos)].sort();
+      if (pedidos.length) salida.dias = [...new Set(pedidos)].sort();
     }
   }
 
@@ -152,7 +154,7 @@ function datosCargoDocente(cargo, roles, errores) {
     errores.push({ field: "cargoDocente.materia", message: "La materia es obligatoria." });
   }
 
-  if (salida.cursos?.length && salida.dias.length === 0) {
+  if (salida.cursos?.length && !salida.dias?.length) {
     errores.push({ field: "cargoDocente.dias", message: "Elegi al menos un dia en que dicta la materia." });
   }
 

@@ -54,6 +54,8 @@ Abrir http://localhost:5173 y entrar con `secretario@prece.local` / `Secretaria1
 3. En `Backend/.env`: `DB_CLIENT=sqlserver`, `DB_SERVER=localhost`, `DB_PORT=1433`, `DB_NAME=prece_digital`, `DB_USER=prece_api`, `DB_PASSWORD=...`.
 4. `npm run dev`. Las tablas `ps_*` se crean solas en el primer arranque, con los datos de prueba.
 
+Con `DB_CLIENT=sqlserver` el personal (usuarios, roles, docentes, materias, grupos de taller, asignaciones y horarios) se guarda en tablas relacionales con claves foráneas, no en `ps_*`. Los usuarios de desarrollo de este README (`secretario@prece.local`, etc.) existen solo con datos en memoria; en producción las cuentas se crean desde la plataforma y las credenciales no se guardan en el repositorio. Detalle y orden de migraciones: [`Backend/database/sqlserver/README.md`](Backend/database/sqlserver/README.md).
+
 El portal del alumno sobre las tablas académicas reales del colegio (`DB_PORTAL=sqlserver`) es un paso aparte: ver [`Backend/database/sqlserver/README.md`](Backend/database/sqlserver/README.md).
 
 Más detalle en [`Backend/README.md`](Backend/README.md).
