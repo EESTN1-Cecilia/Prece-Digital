@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff",
+        "backgroundColor": "#5c0f0f",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
       "package": "com.eestn1.precedigital",
