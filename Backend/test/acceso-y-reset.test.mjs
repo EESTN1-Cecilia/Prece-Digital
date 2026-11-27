@@ -13,8 +13,6 @@ const PUERTO = 4031;
 const base = `http://127.0.0.1:${PUERTO}`;
 const RUTAS_PUBLICAS = new Set([
   "GET /health",
-  "GET /api/v1/modules",
-  "GET /api/v1/roles",
   "POST /api/v1/auth/login",
   "POST /api/v1/auth/refresh",
   "POST /api/v1/auth/logout"

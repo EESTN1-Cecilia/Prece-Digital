@@ -7,7 +7,7 @@ import studentRepository from "../modules/students/students.repository.mjs";
 import planillasRepository from "../modules/attendance/planillas.repository.mjs";
 import { getStore } from "../database/memory-store.mjs";
 
-const PUERTO = 4031;
+const PUERTO = 4034;
 const base = `http://127.0.0.1:${PUERTO}`;
 const RUTA = "/api/v1/asistencias/planillas";
 let servidor;

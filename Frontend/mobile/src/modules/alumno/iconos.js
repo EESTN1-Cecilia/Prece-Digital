@@ -21,7 +21,12 @@ const TRAZOS = {
   salir: "M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9",
   menu: "M3 6h18M3 12h18M3 18h18",
   cerrar: "M6 6l12 12M18 6L6 18",
-  chevron: "M9 6l6 6-6 6"
+  chevron: "M9 6l6 6-6 6",
+  alerta: "M12 4 2.8 19.5h18.4L12 4zM12 10v4.5M12 17v.5",
+  reloj: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
+  descarga: "M12 4v11M7 11l5 5 5-5M5 20h14",
+  impresora: "M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2M7 14h10v6H7z",
+  clip: "M21 12.5l-8.5 8.5a5 5 0 0 1-7-7L14 5.5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 8.5"
 };
 
 export function Icono({ nombre, tamano = 20, color = "#7a2530" }) {

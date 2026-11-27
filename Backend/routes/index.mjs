@@ -77,8 +77,9 @@ function required(permission) {
 
 const rutasDeclaradas = [
   { method: "GET", path: "/health", handler: healthCheck },
-  { method: "GET", path: "/api/v1/modules", handler: listModules },
-  { method: "GET", path: "/api/v1/roles", handler: listRoles },
+  /* Catalogos de modulos y roles: solo con sesion iniciada (no se exponen a cualquiera). */
+  { method: "GET", path: "/api/v1/modules", middlewares: [verifyToken], handler: listModules },
+  { method: "GET", path: "/api/v1/roles", middlewares: [verifyToken], handler: listRoles },
   { method: "GET", path: "/api/v1/annual-management/preview", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_MANAGE)], handler: annualManagementController.preview },
   { method: "POST", path: "/api/v1/annual-management/confirm", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_MANAGE)], handler: annualManagementController.confirmar },
   { method: "GET", path: "/api/v1/annual-management/report", middlewares: [verifyToken, required(P.ANNUAL_MANAGEMENT_READ)], handler: annualManagementController.informe },
