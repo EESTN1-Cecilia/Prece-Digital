@@ -67,7 +67,6 @@ export function HabilitarPedidosSection({
   pedidos = [],
   alAprobar,
   alRechazar,
-  alCrearPrueba
 }) {
   const [filtroEstado, setFiltroEstado] = useState("todos"); // 'todos' | 'pendiente' | 'aprobado' | 'rechazado'
   const [filtroSector, setFiltroSector] = useState("todos"); // 'todos' | 'Server' | 'Secretaría' | 'Preceptoría'
@@ -140,20 +139,6 @@ export function HabilitarPedidosSection({
           "Autorización de cambios críticos: planillas de Server, rectificación de calificaciones e inventario. Hasta que el Director no lo apruebe, los datos permanecen congelados y no se actualizan."
         )
       ),
-      h(
-        "div",
-        { className: "director-pedidos-hero__actions" },
-        h(
-          "button",
-          {
-            type: "button",
-            className: "btn-director-simular-pedido",
-            onClick: () => alCrearPrueba("Server")
-          },
-          h(IconServer, { width: "16", height: "16" }),
-          h("span", null, "+ Simular Pedido de Server")
-        )
-      )
     ),
 
     // Banner Informativo de Bloqueo / Seguridad
@@ -284,7 +269,7 @@ export function HabilitarPedidosSection({
           { className: "director-pedidos-empty" },
           h(IconFileSpreadsheet, { width: "36", height: "36", className: "text-slate-400" }),
           h("h3", null, "No se encontraron pedidos con los filtros aplicados"),
-          h("p", null, "Prueba cambiando el estado, el sector o genera un pedido de prueba.")
+          h("p", null, "Probá con otro estado o sector. Los pedidos nuevos llegan desde cada sector y se guardan en el servidor.")
         )
       : h(
           "div",

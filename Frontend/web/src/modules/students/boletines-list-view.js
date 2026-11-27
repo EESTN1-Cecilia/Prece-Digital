@@ -9,19 +9,13 @@ import { BoletinOficialModal } from "./components/boletin-oficial-modal.js";
 import { imprimirBoletinesDeAlumnos, descargarBoletinesDeAlumnos } from "../boletin/boletin-oficial-pdf.js";
 import { PlanillaCalificacionesModal } from "../documents/planilla-calificaciones-modal.js";
 import { alumnoTieneNotas, useResumenCursos } from "../boletin/use-resumen-cursos.js";
-
-// Cursos de referencia para la cuenta docente institucional
-const ASIGNACIONES_DOCENTE_DEFAULT = [
-  { anio: 1, curso: "1°", division: "1", materia: "Matemática I" },
-  { anio: 2, curso: "2°", division: "1", materia: "Matemática II" },
-  { anio: 3, curso: "3°", division: "3", materia: "Matemática III" }
-];
+import { cursosAsignadosDelDocente } from "../../utils/asignaciones-docente.js";
 
 function normalizarAsignacion(asig) {
   const anio = Number(String(asig.anio || asig.curso || "").replace(/\D/g, "")) || 1;
   const division = String(asig.division || "").trim();
   const cursoStr = `${anio}°`;
-  return { anio, curso: cursoStr, division, materia: asig.materia || "Matemática" };
+  return { anio, curso: cursoStr, division, materia: asig.materia || null };
 }
 
 export default function BoletinesListView() {
@@ -38,11 +32,7 @@ export default function BoletinesListView() {
 
   const asignacionesDocente = useMemo(() => {
     if (!esDocente) return null;
-    const raw =
-      user?.assignments && user.assignments.length > 0
-        ? user.assignments
-        : ASIGNACIONES_DOCENTE_DEFAULT;
-    return raw.map(normalizarAsignacion);
+    return cursosAsignadosDelDocente(user).map(normalizarAsignacion);
   }, [user, esDocente]);
 
   // Filtros

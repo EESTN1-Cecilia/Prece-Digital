@@ -2,7 +2,7 @@
 
 <!-- Archivo generado por `npm run docs:endpoints` desde routes/index.mjs. No editar a mano. -->
 
-Total: 469 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
+Total: 475 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo las rutas publicas.
 
 ## health
 
@@ -213,6 +213,15 @@ Total: 469 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
 | POST | `/api/v1/alerts/:alertId/dismiss` | `students.write` |
+
+## pedidos-direccion
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/pedidos-direccion` | sesion valida |
+| POST | `/api/v1/pedidos-direccion` | sesion valida |
+| POST | `/api/v1/pedidos-direccion/:pedidoId/aprobar` | sesion valida |
+| POST | `/api/v1/pedidos-direccion/:pedidoId/rechazar` | sesion valida |
 
 ## informes-direccion
 
@@ -468,6 +477,13 @@ Total: 469 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 | --- | --- | --- |
 | PATCH | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
 | DELETE | `/api/v1/teacher-courses/:assignmentId` | `teachers.write` |
+
+## asistencias
+
+| Metodo | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/api/v1/asistencias/planillas` | `attendance.read` |
+| PUT | `/api/v1/asistencias/planillas` | `attendance.write` |
 
 ## inasistencias
 

@@ -39,6 +39,7 @@ import * as materialReservationsController from "../modules/material-reservation
 import * as attendanceAlertsController from "../modules/attendance-alerts/attendance-alerts.controller.mjs";
 import * as attendanceFollowupsController from "../modules/attendance-followups/attendance-followups.controller.mjs";
 import * as inasistenciasController from "../modules/inasistencias/inasistencias.controller.mjs";
+import * as planillasAsistenciaController from "../modules/attendance/planillas.controller.mjs";
 import * as workshopsController from "../modules/workshops/workshops.controller.mjs";
 import * as inventoryController from "../modules/inventory/inventory.controller.mjs";
 import * as requestsController from "../modules/requests/requests.controller.mjs";
@@ -53,6 +54,7 @@ import * as tutorController from "../modules/tutors/tutors.controller.mjs";
 import * as auditController from "../modules/audit/audit.controller.mjs";
 import * as jefaturaController from "../modules/jefatura/jefatura.controller.mjs";
 import * as informesDireccionController from "../modules/director/informes-direccion.controller.mjs";
+import * as pedidosDireccionController from "../modules/director/pedidos-direccion.controller.mjs";
 import { soloDireccion, soloPersonal } from "../modules/director/informes-direccion.middleware.mjs";
 import { MAX_BODY_INFORME_BYTES } from "../modules/director/informes-direccion.service.mjs";
 import * as studentPortalController from "../modules/student-portal/student-portal.controller.mjs";
@@ -187,6 +189,11 @@ const rutasDeclaradas = [
   /* Informes y comunicados emitidos por Dirección. Solo el director emite y
      elimina; el alumno los ve en /api/v1/alumno/novedades. El POST acepta
      adjuntos en base64, por eso declara un limite de cuerpo propio. */
+  /* Pedidos de los sectores a la Direccion (habilitar / rechazar), guardados en el servidor. */
+  { method: "GET", path: "/api/v1/pedidos-direccion", middlewares: [verifyToken, soloPersonal], handler: pedidosDireccionController.listar },
+  { method: "POST", path: "/api/v1/pedidos-direccion", middlewares: [verifyToken, soloPersonal], handler: pedidosDireccionController.crear },
+  { method: "POST", path: "/api/v1/pedidos-direccion/:pedidoId/aprobar", middlewares: [verifyToken, soloDireccion], handler: pedidosDireccionController.aprobar },
+  { method: "POST", path: "/api/v1/pedidos-direccion/:pedidoId/rechazar", middlewares: [verifyToken, soloDireccion], handler: pedidosDireccionController.rechazar },
   { method: "GET", path: "/api/v1/informes-direccion", middlewares: [verifyToken, soloPersonal], handler: informesDireccionController.listar },
   { method: "POST", path: "/api/v1/informes-direccion", middlewares: [verifyToken, soloDireccion], maxBodyBytes: MAX_BODY_INFORME_BYTES, handler: informesDireccionController.crear },
   { method: "GET", path: "/api/v1/informes-direccion/:informeId/archivo", middlewares: [verifyToken, soloPersonal], handler: informesDireccionController.archivo },
@@ -377,6 +384,10 @@ const rutasDeclaradas = [
   { method: "GET", path: "/api/v1/teachers/:teacherId/courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_READ)], handler: teachersController.getTeacherCourse },
   { method: "PATCH", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.updateTeacherCourse },
   { method: "DELETE", path: "/api/v1/teacher-courses/:assignmentId", middlewares: [verifyToken, required(P.TEACHERS_WRITE)], handler: teachersController.removeCourseFromTeacher },
+
+  /* Planillas mensuales de asistencia (preceptoria y docentes), guardadas en el servidor. */
+  { method: "GET", path: "/api/v1/asistencias/planillas", middlewares: [verifyToken, required(P.ATTENDANCE_READ)], handler: planillasAsistenciaController.obtener },
+  { method: "PUT", path: "/api/v1/asistencias/planillas", middlewares: [verifyToken, required(P.ATTENDANCE_WRITE)], handler: planillasAsistenciaController.guardar },
 
   /* Inasistencias de alumnos: rutas mas especificas primero por como matchea
      matchRoute (quien haga coincidir antes gana).

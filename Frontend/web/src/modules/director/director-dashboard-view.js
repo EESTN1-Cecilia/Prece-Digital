@@ -220,7 +220,8 @@ export default function DirectorDashboardView() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const [resumenData, personalData, pedidosData, precData, profData, informesData] = await Promise.all([
+      /* Cada bloque se carga por separado: si uno falla, el resto del panel se ve igual. */
+      const [resumenData, personalData, pedidosData, precData, profData, informesData] = await Promise.allSettled([
         DirectorService.getDashboardConsolidado(),
         DirectorService.listarPerfiles(),
         DirectorService.listarPedidos(),
@@ -228,14 +229,15 @@ export default function DirectorDashboardView() {
         DirectorService.listarAsignacionesProfesores(),
         DirectorService.listarInformes()
       ]);
-      setResumen(resumenData);
-      setPersonal(personalData);
-      setPedidos(pedidosData);
-      setDivisionesPreceptores(precData || []);
-      setCatedrasProfesores(profData || []);
-      setInformes(informesData || []);
-    } catch {
-      // Ignorar fallback silencioso
+      const valor = (r, defecto) => (r.status === "fulfilled" ? r.value ?? defecto : defecto);
+      setResumen(valor(resumenData, null));
+      setPersonal(valor(personalData, []));
+      setPedidos(valor(pedidosData, []));
+      setDivisionesPreceptores(valor(precData, []));
+      setCatedrasProfesores(valor(profData, []));
+      setInformes(valor(informesData, []));
+      const fallidos = [resumenData, personalData, pedidosData, precData, profData, informesData].filter((r) => r.status === "rejected").length;
+      if (fallidos > 0) mostrarToast(`No se pudieron cargar ${fallidos} sección(es) del panel. Recargá la página para reintentar.`);
     } finally {
       setCargando(false);
     }
@@ -258,29 +260,27 @@ export default function DirectorDashboardView() {
     try {
       const lista = await DirectorService.aprobarPedido(id);
       setPedidos(lista);
-      mostrarToast("Pedido habilitado con éxito. Las planillas de Server se han actualizado.");
-    } catch {
-      mostrarToast("No se pudo habilitar el pedido.");
+      mostrarToast("Pedido habilitado. Quedó registrado quién y cuándo lo aprobó.");
+    } catch (e) {
+      mostrarToast(e?.mensaje || "No se pudo habilitar el pedido.");
+      setPedidos(await DirectorService.listarPedidos().catch(() => pedidos));
     }
   };
 
   const handleRechazarPedido = async (id) => {
     try {
-      const lista = await DirectorService.rechazarPedido(id);
+      const motivo = window.prompt("Motivo del rechazo (lo verá quien hizo el pedido):", "");
+      if (motivo === null) return;
+      if (motivo.trim().length < 3) {
+        mostrarToast("Escribí el motivo del rechazo.");
+        return;
+      }
+      const lista = await DirectorService.rechazarPedido(id, motivo.trim());
       setPedidos(lista);
-      mostrarToast("Pedido rechazado. No se modificó ninguna planilla.");
-    } catch {
-      mostrarToast("No se pudo rechazar el pedido.");
-    }
-  };
-
-  const handleCrearPedidoPrueba = async (sector = "Server") => {
-    try {
-      const lista = await DirectorService.crearPedidoPrueba(sector);
-      setPedidos(lista);
-      mostrarToast(`Nuevo pedido de ${sector} generado y en espera de autorización.`);
-    } catch {
-      mostrarToast("Error al simular pedido.");
+      mostrarToast("Pedido rechazado. Quedó registrado el motivo.");
+    } catch (e) {
+      mostrarToast(e?.mensaje || "No se pudo rechazar el pedido.");
+      setPedidos(await DirectorService.listarPedidos().catch(() => pedidos));
     }
   };
 
@@ -1502,7 +1502,6 @@ export default function DirectorDashboardView() {
             pedidos,
             alAprobar: handleAprobarPedido,
             alRechazar: handleRechazarPedido,
-            alCrearPrueba: handleCrearPedidoPrueba
           })
         )
         : null,

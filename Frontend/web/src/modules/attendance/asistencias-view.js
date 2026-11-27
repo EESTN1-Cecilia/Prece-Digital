@@ -10,6 +10,7 @@ import {
 } from "./asistencias-service.js";
 import { descargarAsistenciasPdf, descargarAsistenciasExcel } from "./asistencias-export.js";
 import { useUsuarioActual } from "../../estado/index.js";
+import { cursosAsignadosDelDocente } from "../../utils/asignaciones-docente.js";
 
 const ESTADOS_ASISTENCIA = {
   P: { label: "Presente", clase: "cell-presente" },
@@ -189,11 +190,21 @@ async function imprimirPlanillaAsistencia(original) {
 
 const imprimirEnHojaOficio = imprimirPlanillaAsistencia;
 
-const ASIGNACIONES_DOCENTE_DEFAULT = [
-  { id: "1-1", anio: 1, curso: "1°", division: "1", materia: "Matemática I", turno: "Mañana", orientacion: "Ciclo Básico" },
-  { id: "2-1", anio: 2, curso: "2°", division: "1", materia: "Matemática II", turno: "Mañana", orientacion: "Ciclo Básico" },
-  { id: "3-3", anio: 3, curso: "3°", division: "3", materia: "Matemática III", turno: "Tarde", orientacion: "Ciclo Básico" }
-];
+/* Cursos del docente para el selector. Si dicta dos materias en la misma division,
+   cada una es una opcion distinta (id con la materia); cursoId es siempre "año-division". */
+function cursosDocente(user) {
+  const lista = cursosAsignadosDelDocente(user);
+  const porCurso = new Map();
+  lista.forEach((c) => porCurso.set(c.id, (porCurso.get(c.id) ?? 0) + 1));
+  return lista.map((c) => ({
+    ...c,
+    cursoId: c.id,
+    id: porCurso.get(c.id) > 1 ? `${c.id}|${c.materia ?? ""}` : c.id,
+    turno: c.turno || "Mañana",
+    orientacion: c.anio <= 3 ? "Ciclo Básico" : "Ciclo Superior",
+    preceptor: `Docente: ${user?.displayName || user?.nombre || "Docente"}`
+  }));
+}
 
 export default function AsistenciasView({ modoDocente = false, grupoTaller = null, onVolver = null }) {
   const user = useUsuarioActual();
@@ -221,7 +232,8 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const alumnosGrupo = useMemo(() => grupoTaller?.alumnoIds ?? null, [clavesAlumnos]);
 
-  const [cursos, setCursos] = useState(() => (cursoGrupo ? [cursoGrupo] : esDocente ? ASIGNACIONES_DOCENTE_DEFAULT : []));
+  const [cursos, setCursos] = useState(() => (cursoGrupo ? [cursoGrupo] : esDocente ? cursosDocente(user) : []));
+  const [errorCarga, setErrorCarga] = useState(null);
   const [cursosListos, setCursosListos] = useState(esDocente);
 
   // Estados de navegación y selección de curso/mes
@@ -255,29 +267,21 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
     }
 
     if (esDocente) {
-      const asigs =
-        user?.assignments && user.assignments.length > 0
-          ? user.assignments.map((a) => {
-              const anioLimpio = String(a.anio || a.curso || "1").replace(/\D/g, "");
-              const divLimpia = String(a.division || "1").trim();
-              return {
-                id: `${anioLimpio}-${divLimpia}`,
-                curso: a.curso || `${anioLimpio}°`,
-                division: divLimpia,
-                turno: a.turno || (Number(anioLimpio) === 3 ? "Tarde" : "Mañana"),
-                materia: a.materia || "Matemática",
-                orientacion: "Ciclo Básico",
-                preceptor: `Docente: ${user?.nombre || "Docente"}`
-              };
-            })
-          : ASIGNACIONES_DOCENTE_DEFAULT;
-
+      const asigs = cursosDocente(user);
       if (montado) {
         setCursos(asigs);
         const hash = window.location.hash || "";
-        if (!hash.includes("?curso=") && asigs.length > 0) {
-          setSelectedCursoId(asigs[0].id);
-        }
+        const q = hash.includes("?") ? new URLSearchParams(hash.split("?")[1]) : null;
+        const pedido = q?.get("curso") && (q.get("div") || q.get("division"))
+          ? `${String(q.get("curso")).replace(/\D/g, "")}-${String(q.get("div") || q.get("division")).replace(/\D/g, "")}`
+          : null;
+        const materiaPedida = String(q?.get("materia") ?? "").trim().toLowerCase();
+        const elegido =
+          asigs.find((c) => c.cursoId === pedido && (!materiaPedida || String(c.materia ?? "").toLowerCase() === materiaPedida)) ||
+          asigs.find((c) => c.cursoId === pedido) ||
+          asigs[0];
+        setSelectedCursoId(elegido?.id ?? null);
+        setCursosListos(true);
       }
       return;
     }
@@ -325,7 +329,7 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
         curso: "1°",
         division: "1",
         turno: "Mañana",
-        materia: esDocente ? "Matemática" : undefined,
+        materia: undefined,
         orientacion: "Ciclo Básico",
         preceptor: esDocente ? `Docente: ${user?.nombre || "Docente"}` : "Preceptoría"
       }
@@ -354,11 +358,12 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
   };
 
   // Cargar planilla al cambiar de curso o mes (con materia si es docente)
-  const cursoPermitido = esDocente || cursos.some((c) => c.id === selectedCursoId);
+  const cursoPermitido = cursos.some((c) => c.id === selectedCursoId);
 
   const cargarPlanilla = useCallback(async () => {
     setLoading(true);
     setSaveSuccess(false);
+    setErrorCarga(null);
     /* Nunca se abre la planilla de un curso que la sesion no tiene asignado. */
     if (!cursoPermitido) {
       setPlanilla(null);
@@ -366,10 +371,17 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
       setLoading(!cursosListos);
       return;
     }
+    const materiaDocente = esDocente ? cursoActual.materia || null : null;
+    if (esDocente && !materiaDocente) {
+      setPlanilla(null);
+      setPlanillaOriginal(null);
+      setErrorCarga("Este curso no tiene una materia asignada. Pedile a la Dirección que complete tu cátedra.");
+      setLoading(false);
+      return;
+    }
     try {
-      const materiaDocente = esDocente ? (cursoActual.materia || "Matemática") : null;
       const data = await AsistenciasService.getPlanilla(
-        selectedCursoId,
+        cursoActual.cursoId || selectedCursoId,
         selectedMes,
         selectedAnio,
         materiaDocente,
@@ -378,11 +390,14 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
       setPlanilla(data);
       setPlanillaOriginal(JSON.parse(JSON.stringify(data)));
     } catch (err) {
-      console.error("Error al cargar la planilla:", err);
+      /* Nunca queda en pantalla la planilla del curso anterior. */
+      setPlanilla(null);
+      setPlanillaOriginal(null);
+      setErrorCarga(err?.mensaje || "No se pudo cargar la planilla. Revisá la conexión y volvé a intentar.");
     } finally {
       setLoading(false);
     }
-  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia, cursoPermitido, cursosListos, alumnosGrupo]);
+  }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia, cursoActual.cursoId, cursoPermitido, cursosListos, alumnosGrupo]);
 
   useEffect(() => {
     cargarPlanilla();
@@ -493,18 +508,26 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
 
   // Guardar planilla
   const handleGuardarPlanilla = async () => {
-    if (!planilla) return;
+    if (!planilla || saving) return;
     setSaving(true);
     try {
       const guardada = await AsistenciasService.guardarPlanilla(planilla);
       if (guardada?.sincronizacion?.fallidas) {
-        alert("La planilla se guardó, pero algunas asistencias no llegaron al portal del alumno. Volvé a guardar para reintentar.");
+        alert("La planilla se guardó, pero algunas inasistencias no llegaron al portal del alumno. Volvé a guardar para reintentar.");
       }
-      setPlanillaOriginal(JSON.parse(JSON.stringify(planilla)));
+      /* La version nueva queda en pantalla: el proximo guardado la usa. */
+      const { sincronizacion, ...sinSync } = guardada;
+      setPlanilla(sinSync);
+      setPlanillaOriginal(JSON.parse(JSON.stringify(sinSync)));
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3500);
     } catch (e) {
-      alert("Error al guardar los registros de asistencia.");
+      if (e?.status === 409) {
+        alert(e.mensaje || "Otra persona guardó esta planilla mientras la tenías abierta. Se va a recargar con los cambios guardados.");
+        await cargarPlanilla();
+      } else {
+        alert(e?.mensaje || "No se pudieron guardar los registros de asistencia. No se perdió nada de lo que cargaste: volvé a intentar.");
+      }
     } finally {
       setSaving(false);
     }
@@ -698,11 +721,11 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
 
   const mesInfo = MESES_DEL_ANIO.find((m) => m.id === selectedMes) || MESES_DEL_ANIO[6];
 
-  if (!esDocente && cursosListos && cursos.length === 0) {
+  if (cursosListos && cursos.length === 0) {
     return h(
       "section",
       { className: "asistencias-page secretaria-dashboard" },
-      h(EmptyState, { mensaje: "Todavía no tenés cursos asignados. La Dirección debe asignártelos para ver sus asistencias." })
+      h(EmptyState, { mensaje: esDocente ? "Todavía no tenés cátedras asignadas. La Dirección debe asignarte tus cursos y materias." : "Todavía no tenés cursos asignados. La Dirección debe asignártelos para ver sus asistencias." })
     );
   }
 
@@ -971,7 +994,7 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
       loading
         ? h(LoadingState, { mensaje: "Cargando nómina y registro de asistencias del curso..." })
         : !planilla
-        ? h(EmptyState, { mensaje: "Ese curso no está asignado a tu perfil." })
+        ? h(EmptyState, { mensaje: errorCarga || "Ese curso no está asignado a tu perfil." })
         : h(
             "div",
             { className: "planilla-table-scroll-container" },

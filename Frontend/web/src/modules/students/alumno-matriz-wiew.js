@@ -241,16 +241,8 @@ function generarFilasPorDefecto(materias, anioBase) {
 }
 
 // Alumnos de muestra institucionales para pruebas inmediatas de cambio de orientación y materias
-const SAMPLE_ALUMNOS = [
-  { id: 1, apellido: "González", nombre: "Lucas Agustín", dni: "46.123.456", curso: "7°", division: "2", turno: "Tarde", orientacion: "Técnico en Programación" },
-  { id: 19, apellido: "Medina", nombre: "Lautaro Nahuel", dni: "43.111.222", curso: "7°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-  { id: 24, apellido: "Molina", nombre: "Kiara Denise", dni: "42.666.777", curso: "5°", division: "2", turno: "Tarde", orientacion: "Técnico en Informática" },
-  { id: 21, apellido: "Aguirre", nombre: "Thiago Valentín", dni: "43.333.444", curso: "4°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-  { id: 23, apellido: "Gutiérrez", nombre: "Matías Alejandro", dni: "42.555.666", curso: "5°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-  { id: 28, apellido: "Ortiz", nombre: "Constanza Guadalupe", dni: "41.234.567", curso: "6°", division: "3", turno: "Mañana", orientacion: "Técnico en Programación" },
-  { id: 29, apellido: "Vargas", nombre: "Maximiliano Gastón", dni: "40.345.678", curso: "7°", division: "1", turno: "Mañana", orientacion: "Técnico en Informática" },
-  { id: 30, apellido: "Cabrera", nombre: "Antonella Solange", dni: "40.456.789", curso: "7°", division: "2", turno: "Tarde", orientacion: "Técnico en Programación" }
-];
+/* Sin alumnos de ejemplo: la lista sale siempre del padrón del servidor. */
+const SAMPLE_ALUMNOS = [];
 
 // Componente Desplegable Estilizado para Barra Superior (Matching image 2 with dark theme)
 function DarkCustomDropdown({
@@ -550,11 +542,8 @@ export function AlumnoMatrizModal({
         }
       })
       .catch(() => {
-        const fallback = alumnoInicial ? [alumnoInicial, ...SAMPLE_ALUMNOS] : SAMPLE_ALUMNOS;
-        setAlumnosList(fallback);
-        if (!alumnoInicial && fallback.length > 0 && !alumnoSeleccionadoId) {
-          handleSeleccionarAlumno(fallback[0].id, fallback[0]);
-        }
+        /* Sin conexión no se inventan alumnos: solo queda el que se abrió, si hay. */
+        setAlumnosList(alumnoInicial ? [alumnoInicial] : []);
       });
   }, [alumnoInicial, permitirSeleccionarAlumno]);
 
