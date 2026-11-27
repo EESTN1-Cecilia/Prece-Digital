@@ -31,6 +31,6 @@ export function esSoloDocente(user) {
 
 export async function soloDireccion(ctx) {
   if (!rolesDe(ctx).some((rol) => rol === ROLES.DIRECTOR || rol === ROLES.ADMIN)) {
-    throw sinPermisos("Solo Dirección puede emitir o eliminar informes.");
+    throw sinPermisos("Solo la Dirección puede realizar esta acción.");
   }
 }

@@ -4,12 +4,7 @@ import { useUsuarioActual } from "../../estado/index.js";
 import { DashboardCard } from "../../components/dashboard/dashboard-card.js";
 import { LoadingState, EmptyState, ErrorState } from "../../components/common/state-handlers.js";
 import { StudentsService } from "../students/students-service.js";
-
-const ASIGNACIONES_DOCENTE_DEFAULT = [
-  { id: "1-1", anio: 1, curso: "1°", division: "1", materia: "Matemática I", turnoAula: "Mañana", turnoTaller: "Tarde", orientacion: "Ciclo Básico", cantidad: 28, activos: 28 },
-  { id: "2-1", anio: 2, curso: "2°", division: "1", materia: "Matemática II", turnoAula: "Mañana", turnoTaller: "Tarde", orientacion: "Ciclo Básico", cantidad: 28, activos: 28 },
-  { id: "3-3", anio: 3, curso: "3°", division: "3", materia: "Matemática III", turnoAula: "Tarde", turnoTaller: "Mañana", orientacion: "Ciclo Básico", cantidad: 28, activos: 28 }
-];
+import { cursosAsignadosDelDocente } from "../../utils/asignaciones-docente.js";
 
 export default function DocenteCursosView() {
   const user = useUsuarioActual();
@@ -26,9 +21,8 @@ export default function DocenteCursosView() {
       setError(null);
       const divisiones = await StudentsService.getDivisiones();
 
-      const asignaciones = (user?.assignments && user.assignments.length > 0)
-        ? user.assignments
-        : ASIGNACIONES_DOCENTE_DEFAULT;
+      /* Solo las catedras reales que asigno la Direccion. */
+      const asignaciones = cursosAsignadosDelDocente(user);
 
       const cursosAsignados = (divisiones || []).filter((div) => {
         return asignaciones.some((asig) => {
@@ -50,15 +44,11 @@ export default function DocenteCursosView() {
         });
         return {
           ...c,
-          materia: asig?.materia || "Matemática"
+          materia: asig?.materia || null
         };
       });
 
-      if (cursosListos.length === 0) {
-        setCursos(ASIGNACIONES_DOCENTE_DEFAULT);
-      } else {
-        setCursos(cursosListos);
-      }
+      setCursos(cursosListos);
     } catch (err) {
       console.error("Error al cargar cursos a cargo:", err);
       setError("No se pudieron cargar los cursos asignados desde la base de datos.");
@@ -421,7 +411,7 @@ export default function DocenteCursosView() {
                     h(
                       "td",
                       null,
-                      h("strong", { className: "alumno-name" }, c.materia || "Matemática")
+                      h("strong", { className: "alumno-name" }, c.materia || "Sin materia asignada")
                     ),
                     h("td", null, displayTurno),
                     h("td", null, c.turnoTaller || (displayTurno === "Mañana" ? "Tarde" : "Mañana")),

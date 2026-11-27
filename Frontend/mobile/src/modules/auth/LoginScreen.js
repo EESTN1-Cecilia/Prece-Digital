@@ -4,6 +4,7 @@
    Las credenciales se validan en la API comun, no aca. */
 
 import React, { useState } from "react";
+import Constants from "expo-constants";
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { baseUrlActual, esDesarrollo } from "../../config/env.js";
@@ -248,7 +249,9 @@ export default function LoginScreen() {
       h(
         View,
         { style: styles.pie },
-        h(Text, { style: styles.pieTexto }, "Acceso protegido · Prece.Digital")
+        h(Text, { style: styles.pieTexto }, "Acceso protegido · Prece.Digital"),
+        /* Version instalada: sirve para saber que APK tiene cada equipo. */
+        h(Text, { style: [styles.pieTexto, { opacity: 0.7, marginTop: 4 }] }, `Versión ${Constants.expoConfig?.version ?? "?"}`)
       )
     )
   );

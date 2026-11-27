@@ -5,6 +5,7 @@ import { BotonVolverDireccion } from "../../components/common/boton-volver-direc
 import { StudentsService } from "../students/students-service.js";
 import { AsistenciasService, calcularMetricasPlanilla } from "../attendance/asistencias-service.js";
 import { DocenteCursosGrafico } from "./docente-cursos-grafico.js";
+import { cursosAsignadosDelDocente } from "../../utils/asignaciones-docente.js";
 
 // Helper icons para las tarjetas de métricas del docente
 function IconGroupUsers({ className }) {
@@ -78,13 +79,6 @@ function IconBookSubject({ className }) {
     h("line", { x1: "8", y1: "10", x2: "14", y2: "10" })
   );
 }
-
-// Cursos asignados a la cuenta de prueba del docente (exactamente 3 cursos: dos turno mañana, uno turno tarde)
-const ASIGNACIONES_DOCENTE_DEFAULT = [
-  { anio: 1, curso: "1°", division: "1", materia: "Matemática I" },
-  { anio: 2, curso: "2°", division: "1", materia: "Matemática II" },
-  { anio: 3, curso: "3°", division: "3", materia: "Matemática III" }
-];
 
 function DocenteKpiGrid({
   totalEstudiantes,
@@ -229,9 +223,7 @@ export default function DocenteDashboardView() {
       const divisiones = await StudentsService.getDivisiones();
 
       // Cursos asignados a la cuenta del docente (desde su perfil de sesión o asignaciones registradas)
-      const asignaciones = (user?.assignments && user.assignments.length > 0)
-        ? user.assignments
-        : ASIGNACIONES_DOCENTE_DEFAULT;
+      const asignaciones = cursosAsignadosDelDocente(user);
 
       // Filtramos las divisiones de la institución para conservar las asignadas a este docente
       const cursosAsignados = (divisiones || []).filter((div) => {

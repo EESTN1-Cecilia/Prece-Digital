@@ -51,7 +51,7 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
     };
   }, [abierto, alumno?.id, anioNum]);
 
-  // Cargar materias y calificaciones reales del alumno desde el backend (con fallback a localStorage)
+  // Materias y calificaciones reales del alumno, desde el servidor
   const materiasRite = useMemo(() => {
     const plan = PLANES_BOLETIN[anioNum] || PLANES_BOLETIN[1] || {};
     const ori = String(alumno?.orientacion || "").toLowerCase().includes("info") ? "informatica" : "programacion";
@@ -61,18 +61,8 @@ export function RiteModal({ abierto, onCerrar, alumnoInicial = null }) {
       ...(plan.orientaciones?.[ori] || [])
     ];
 
-    let califs = {};
-    if (registroBackend?.notas && typeof registroBackend.notas === "object") {
-      califs = registroBackend.notas;
-    } else {
-      try {
-        const raw = localStorage.getItem(`prece_boletin_${alumno?.id}_anio_${anioNum}`);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed.calificaciones) califs = parsed.calificaciones;
-        }
-      } catch {}
-    }
+    /* Solo las notas guardadas en el servidor. */
+    const califs = registroBackend?.notas && typeof registroBackend.notas === "object" ? registroBackend.notas : {};
 
     const NUM_A_PALABRA = {
       1: "UNO", 2: "DOS", 3: "TRES", 4: "CUATRO", 5: "CINCO",

@@ -38,7 +38,7 @@ export function formatDni(dni) {
 
 /**
  * Obtiene libro, folio y número de legajo de un estudiante,
- * priorizando datos del backend o cambios locales en localStorage.
+ * con los datos del servidor.
  * Formato requerido: Legajo: (Libro-Folio-Número de Legajo)
  */
 export function obtenerLibroFolioLegajo(alumnoOrDatos = {}) {
@@ -50,32 +50,6 @@ export function obtenerLibroFolioLegajo(alumnoOrDatos = {}) {
   let folio = alumnoOrDatos.folio;
   const numLegajo = alumnoOrDatos.legajo || (id ? id : "S/N");
 
-  if ((!libro || !folio) && id && typeof localStorage !== "undefined") {
-    try {
-      const stored = localStorage.getItem(`prece_student_${id}_libro_folio`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (!libro && parsed?.libro) libro = parsed.libro;
-        if (!folio && parsed?.folio) folio = parsed.folio;
-      }
-
-      if (!libro || !folio) {
-        for (let anio = 1; anio <= 7; anio++) {
-          const bKey = localStorage.getItem(`prece_boletin_${id}_anio_${anio}`);
-          if (bKey) {
-            const parsedB = JSON.parse(bKey);
-            if (parsedB?.libroFolio) {
-              if (!libro && parsedB.libroFolio.libro) libro = parsedB.libroFolio.libro;
-              if (!folio && parsedB.libroFolio.folio) folio = parsedB.libroFolio.folio;
-              break;
-            }
-          }
-        }
-      }
-    } catch {
-      // Ignorar error de lectura de localStorage
-    }
-  }
 
   if (!libro) {
     libro = "2026";
@@ -342,22 +316,6 @@ export const StudentsService = {
 
   async getAlumnoSummary(studentId) {
     const data = await pedir(`/api/v1/students/${encodeURIComponent(studentId)}/summary`, { recurso: "el alumno solicitado" });
-    if (typeof localStorage !== "undefined" && data?.informacionEscolar) {
-      try {
-        const stored = localStorage.getItem(`prece_student_${studentId}_estado_override`);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed?.estado) {
-            data.informacionEscolar.estado = parsed.estado;
-            data.informacionEscolar.isActive = parsed.isActive;
-            if (parsed.fecha) data.informacionEscolar.fechaBaja = parsed.fecha;
-            if (parsed.motivo) data.informacionEscolar.motivoBaja = parsed.motivo;
-          }
-        }
-      } catch {
-        // Ignorar fallo de lectura local
-      }
-    }
     return { success: true, data };
   },
 
@@ -380,19 +338,6 @@ export const StudentsService = {
       });
     }
 
-    if (typeof localStorage !== "undefined") {
-      try {
-        localStorage.setItem(`prece_student_${studentId}_estado_override`, JSON.stringify({
-          estado: nuevoEstado,
-          isActive: !esInactivo,
-          fecha,
-          motivo,
-          actualizadoEn: new Date().toISOString()
-        }));
-      } catch {
-        // Ignorar
-      }
-    }
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("prece:student-status-changed", {

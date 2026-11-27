@@ -863,16 +863,6 @@ export default function AsignacionesTalleres({
 
     opcionesDocentes(personal, asignaciones).forEach(agregarSiNoExiste);
 
-    const fallback = [
-      { id: "usr-doc-1", nombre: "Docente Matemática", email: "docente@prece.local", avatar: "D" },
-      { id: "usr-doc-2", nombre: "Prof. María Villatoro", email: "mvillatoro@prece.local", avatar: "M" },
-      { id: "usr-doc-3", nombre: "Prof. Lucía Ríos", email: "lrios@prece.local", avatar: "L" },
-      { id: "usr-doc-4", nombre: "Prof. Humberto Sosa", email: "hsosa@prece.local", avatar: "H" },
-      { id: "usr-doc-5", nombre: "Prof. Esteban Gómez", email: "egomez@prece.local", avatar: "E" },
-      { id: "usr-doc-6", nombre: "Prof. Andrea Ferreyra", email: "aferreyra@prece.local", avatar: "A" },
-      { id: "usr-doc-7", nombre: "Prof. Pablo Morales", email: "pmorales@prece.local", avatar: "P" }
-    ];
-    fallback.forEach(agregarSiNoExiste);
 
     asignaciones.forEach((item) => {
       if (item.docente) agregarSiNoExiste(item.docente);

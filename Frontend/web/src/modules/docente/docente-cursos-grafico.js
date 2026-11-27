@@ -5,7 +5,7 @@ import { calcularMetricasPlanilla } from "../attendance/asistencias-service.js";
 /**
  * Calcula el porcentaje de asistencia de un curso a partir de los datos reales:
  * 1. Asistencia calculada por el dashboard (a partir de la planilla oficial de AsistenciasService)
- * 2. Planillas oficiales guardadas por el docente o preceptor en el almacenamiento local.
+ * 2. Sin planilla calculada, se informa la matrícula sin registros.
  * Si no existen registros computados, refleja la asistencia oficial de la planilla escolar.
  */
 function calcularAsistenciaCurso(curso) {
@@ -25,49 +25,14 @@ function calcularAsistenciaCurso(curso) {
     };
   }
 
-  const anioNum = String(curso.anio || curso.curso || "1").replace(/\D/g, "");
-  const divNum = String(curso.division || "1").replace(/\D/g, "");
-  const cursoId = `${anioNum}-${divNum}`;
-  const now = new Date();
-  const mes = now.getMonth() + 1;
-  const anio = now.getFullYear();
-  const rawMateria = curso.materia ? String(curso.materia).trim().toLowerCase().replace(/\s+/g, "_") : "";
-  const normMateria = curso.materia
-    ? String(curso.materia).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, "_")
-    : "";
-
-  // Intentamos leer la planilla guardada en localStorage
-  let planillaGuardada = null;
-  if (typeof localStorage !== "undefined") {
-    const keys = [
-      rawMateria ? `prece_asistencias_planilla_docente_${rawMateria}_${cursoId}_${anio}_${mes}` : null,
-      normMateria && normMateria !== rawMateria ? `prece_asistencias_planilla_docente_${normMateria}_${cursoId}_${anio}_${mes}` : null,
-      `prece_asistencias_planilla_${cursoId}_${anio}_${mes}`
-    ].filter(Boolean);
-
-    for (const k of keys) {
-      const raw = localStorage.getItem(k);
-      if (raw) {
-        try {
-          planillaGuardada = JSON.parse(raw);
-          break;
-        } catch (e) {}
-      }
-    }
-  }
-
-  if (planillaGuardada) {
-    return calcularMetricasPlanilla(planillaGuardada);
-  }
-
-  // Si tiene matrícula asignada pero no se han registrado inasistencias, la asistencia oficial es 100%
+  /* Con matrícula pero sin planilla calculada no se inventa un porcentaje. */
   if (cantAlumnos > 0) {
     return {
-      porcentaje: 100,
-      label: "100%",
+      porcentaje: 0,
+      label: "—",
       sinAlumnos: false,
-      sinRegistros: false,
-      subtexto: "100% asistencia computable"
+      sinRegistros: true,
+      subtexto: "Sin asistencias registradas"
     };
   }
 

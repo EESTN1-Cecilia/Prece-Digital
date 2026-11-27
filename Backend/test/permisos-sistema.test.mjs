@@ -37,7 +37,8 @@ const SOLO_SESION = new Set(["/api/v1/auth/me", "/api/v1/auth/permissions", "/ap
    - calendario (lectura), calificaciones/periodos (lectura) y devices: informacion institucional
      de solo lectura o del propio usuario (devices filtra por el usuario del token).
    - auth/change-password: cada persona cambia su propia clave; exige la clave actual. */
-const POR_ROL = /^\/api\/v1\/informes-direccion/;
+/* Rutas protegidas por rol (soloPersonal / soloDireccion) en lugar de un permiso del catalogo. */
+const POR_ROL = /^\/api\/v1\/(informes-direccion|pedidos-direccion)/;
 const ABIERTAS_A_SESION = new Set(["GET /api/v1/calendario/eventos", "GET /api/v1/calendario/avisos", "GET /api/v1/calificaciones/periodos", "POST /api/v1/auth/change-password", "POST /api/v1/devices", "GET /api/v1/devices", "DELETE /api/v1/devices/:deviceId"]);
 
 const CUENTAS = {

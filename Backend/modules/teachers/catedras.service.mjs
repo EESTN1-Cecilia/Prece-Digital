@@ -85,7 +85,9 @@ export function sincronizarDocentes() {
       anio: catedra.anio,
       curso: `${catedra.anio}°`,
       division: catedra.numDivision,
-      materia: catedra.materia ?? null
+      materia: catedra.materia ?? null,
+      ...(catedra.grupoTaller ? { grupoTaller: catedra.grupoTaller } : {}),
+      ...(catedra.turno ? { turno: catedra.turno } : {})
     }));
 
     userRepository.update(usuario.id, { assignments: [...base, ...nuevas] });

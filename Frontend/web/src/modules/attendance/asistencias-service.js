@@ -94,100 +94,78 @@ export const AsistenciasService = {
   },
 
   /**
-   * Obtiene la planilla de asistencias para el curso, mes y año cargando los alumnos reales del padrón.
-   * Si se especifica materia (rol docente), almacena y recupera el registro específico de dicha asignatura.
+   * Alumnos activos del curso, ordenados por apellido y nombre. Con soloAlumnosIds
+   * (lista de un grupo de taller) quedan solo los de ese grupo, numerados de nuevo.
    */
-  async _planillaLocal(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null, soloAlumnosIds = null) {
-    const rawMateria = materia ? String(materia).trim().toLowerCase().replace(/\s+/g, "_") : "";
-    const normMateria = materia
-      ? String(materia).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, "_")
-      : "";
-
-    let guardado = null;
-    if (typeof localStorage !== "undefined") {
-      const keys = [
-        rawMateria ? `${STORAGE_KEY_PREFIX}docente_${rawMateria}_${cursoId}_${anio}_${mes}` : null,
-        normMateria && normMateria !== rawMateria ? `${STORAGE_KEY_PREFIX}docente_${normMateria}_${cursoId}_${anio}_${mes}` : null,
-        `${STORAGE_KEY_PREFIX}${cursoId}_${anio}_${mes}`
-      ].filter(Boolean);
-
-      for (const k of keys) {
-        const item = localStorage.getItem(k);
-        if (item) {
-          guardado = item;
-          break;
-        }
-      }
-    }
-
+  async _alumnosDelCurso(cursoId, soloAlumnosIds = null) {
     const [cursoNumRaw, divNumRaw] = (cursoId || "1-1").split("-");
     const cursoNum = String(cursoNumRaw || "1").replace(/°/g, "").trim();
     const divNum = String(divNumRaw || "1").replace(/°/g, "").trim();
-
-    // 1. Obtener los alumnos reales matriculados en ese curso y división desde la base de datos
-    let alumnos = [];
-    try {
-      const res = await StudentsService.getAlumnos({ curso: `${cursoNum}°`, division: divNum, estado: "activo", limit: 100 });
-      if (res.data && res.data.length > 0) {
-        // Ordenar alfabéticamente por apellido y nombre
-        const ordenados = [...res.data].sort((a, b) => {
-          const compAp = (a.apellido || "").localeCompare(b.apellido || "");
-          if (compAp !== 0) return compAp;
-          return (a.nombre || "").localeCompare(b.nombre || "");
-        });
-
-        /* Lista de un grupo de taller: solo los alumnos de ese grupo, numerados de nuevo */
-        const delGrupo = Array.isArray(soloAlumnosIds) ? ordenados.filter((a) => soloAlumnosIds.includes(a.id)) : ordenados;
-
-        alumnos = delGrupo.map((a, idx) => ({
-          id: a.id,
-          orden: idx + 1,
-          genero: (a.genero || "").toLowerCase().startsWith("f") ? "F" : "M",
-          apellido: (a.apellido || "").toUpperCase(),
-          nombre: a.nombre || "",
-          dni: a.dni || ""
-        }));
-      }
-    } catch (e) {
-      console.warn("No se pudieron consultar alumnos de la API para el curso:", e);
-    }
-
-    // 2. Si ya existía una planilla guardada, fusionamos los registros guardados con los alumnos actuales
-    if (guardado) {
-      try {
-        const datosGuardados = JSON.parse(guardado);
-        if (alumnos.length > 0) {
-          datosGuardados.alumnos = alumnos;
-        }
-        return datosGuardados;
-      } catch (e) {
-        console.error("Error al parsear planilla guardada:", e);
-      }
-    }
-
-    // 3. Si es una planilla nueva, inicializar días del mes
-    const diasEnMes = new Date(anio, mes, 0).getDate();
-    const registros = {};
-
-    alumnos.forEach((alumno) => {
-      registros[alumno.orden] = {};
-      for (let dia = 1; dia <= diasEnMes; dia++) {
-        const fecha = new Date(anio, mes - 1, dia);
-        const diaSemana = fecha.getDay(); // 0 = Domingo, 6 = Sábado
-        const esFinDeSemana = diaSemana === 0 || diaSemana === 6;
-
-        if (esFinDeSemana) {
-          registros[alumno.orden][dia] = "—";
-        } else {
-          // Inicializa en blanco para que el preceptor registre las asistencias reales
-          registros[alumno.orden][dia] = "P";
-        }
-      }
+    const res = await StudentsService.getAlumnos({ curso: `${cursoNum}°`, division: divNum, estado: "activo", limit: 100 });
+    const ordenados = [...(res?.data ?? [])].sort((a, b) => {
+      const compAp = (a.apellido || "").localeCompare(b.apellido || "");
+      return compAp !== 0 ? compAp : (a.nombre || "").localeCompare(b.nombre || "");
     });
+    const delGrupo = Array.isArray(soloAlumnosIds) ? ordenados.filter((a) => soloAlumnosIds.includes(a.id)) : ordenados;
+    return delGrupo.map((a, idx) => ({
+      id: a.id,
+      orden: idx + 1,
+      genero: (a.genero || "").toLowerCase().startsWith("f") ? "F" : "M",
+      apellido: (a.apellido || "").toUpperCase(),
+      nombre: a.nombre || "",
+      dni: a.dni || ""
+    }));
+  },
 
+  /* Dias del mes de un alumno sin marcas guardadas: presente en dias habiles. */
+  _diasPorDefecto(mes, anio) {
+    const dias = {};
+    const diasEnMes = new Date(anio, mes, 0).getDate();
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+      const diaSemana = new Date(anio, mes - 1, dia).getDay();
+      dias[dia] = diaSemana === 0 || diaSemana === 6 ? "—" : "P";
+    }
+    return dias;
+  },
+
+  _consultaPlanilla(cursoId, mes, anio, materia) {
+    const parametros = new URLSearchParams({ curso: cursoId, anio: String(anio), mes: String(mes) });
+    if (materia) parametros.set("materia", materia);
+    return `/api/v1/asistencias/planillas?${parametros.toString()}`;
+  },
+
+  /* Planillas que quedaron guardadas solo en este navegador (version anterior del
+     sistema). Se suben una vez al servidor y se borran de aca. */
+  _planillaDelNavegador(cursoId, mes, anio, materia) {
+    if (typeof localStorage === "undefined") return null;
+    const raw = materia ? String(materia).trim().toLowerCase().replace(/\s+/g, "_") : "";
+    const norm = materia ? String(materia).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/\s+/g, "_") : "";
+    const claves = materia
+      ? [`${STORAGE_KEY_PREFIX}docente_${raw}_${cursoId}_${anio}_${mes}`, `${STORAGE_KEY_PREFIX}docente_${norm}_${cursoId}_${anio}_${mes}`]
+      : [`${STORAGE_KEY_PREFIX}${cursoId}_${anio}_${mes}`];
+    for (const clave of [...new Set(claves)]) {
+      try {
+        const texto = localStorage.getItem(clave);
+        if (texto) return { clave, datos: JSON.parse(texto) };
+      } catch {
+        /* Copia local ilegible: se ignora. */
+      }
+    }
+    return null;
+  },
+
+  /* Pasa una planilla del servidor (marcas por id de alumno) al formato de la
+     pantalla (marcas por numero de orden). */
+  _aPantalla(guardada, alumnos, { cursoId, mes, anio, materia }) {
+    const registros = {};
+    const observacionesPorAlumno = {};
+    for (const alumno of alumnos) {
+      registros[alumno.orden] = { ...AsistenciasService._diasPorDefecto(mes, anio), ...(guardada?.registros?.[alumno.id] ?? {}) };
+      const obs = guardada?.observacionesPorAlumno?.[alumno.id];
+      if (obs) observacionesPorAlumno[alumno.orden] = obs;
+    }
     const mesInfo = MESES_DEL_ANIO.find((m) => m.id === mes) || { diasHabiles: 20 };
-
-    const nuevaPlanilla = {
+    return {
       cursoId,
       materia: materia || null,
       mes,
@@ -195,51 +173,107 @@ export const AsistenciasService = {
       diasHabiles: mesInfo.diasHabiles,
       alumnos,
       registros,
-      observacionesPorAlumno: {},
-      observacionesMes: [],
-      matriculaInicial: alumnos.length,
-      entradas: 0,
-      salidas: 0,
-      ultimaActualizacion: new Date().toISOString()
+      observacionesPorAlumno,
+      observacionesMes: guardada?.observacionesMes ?? [],
+      matriculaInicial: guardada?.matriculaInicial || alumnos.length,
+      entradas: guardada?.entradas ?? 0,
+      salidas: guardada?.salidas ?? 0,
+      version: guardada?.version ?? 0,
+      ultimaActualizacion: guardada?.actualizadoEn ?? null,
+      actualizadoPor: guardada?.actualizadoPor ?? null
     };
+  },
 
-    return nuevaPlanilla;
+  /* Pasa la planilla de la pantalla al formato del servidor (por id de alumno). */
+  _aServidor(planilla) {
+    const registros = {};
+    const observacionesPorAlumno = {};
+    for (const alumno of planilla.alumnos ?? []) {
+      if (!alumno?.id) continue;
+      registros[alumno.id] = { ...(planilla.registros?.[alumno.orden] ?? {}) };
+      const obs = planilla.observacionesPorAlumno?.[alumno.orden];
+      if (obs && String(obs).trim()) observacionesPorAlumno[alumno.id] = String(obs).trim();
+    }
+    return {
+      version: planilla.version ?? 0,
+      registros,
+      observacionesPorAlumno,
+      observacionesMes: planilla.observacionesMes ?? [],
+      matriculaInicial: planilla.matriculaInicial ?? 0,
+      entradas: planilla.entradas ?? 0,
+      salidas: planilla.salidas ?? 0
+    };
+  },
+
+  /* Convierte una planilla vieja del navegador (marcas por orden) a la pantalla
+     actual, buscando cada alumno por su id para que nada quede en otra fila. */
+  _desdeCopiaLocal(copia, alumnos, contexto) {
+    const porId = {};
+    const obsPorId = {};
+    for (const viejo of copia?.alumnos ?? []) {
+      if (!viejo?.id) continue;
+      if (copia.registros?.[viejo.orden]) porId[viejo.id] = copia.registros[viejo.orden];
+      if (copia.observacionesPorAlumno?.[viejo.orden]) obsPorId[viejo.id] = copia.observacionesPorAlumno[viejo.orden];
+    }
+    return AsistenciasService._aPantalla(
+      { registros: porId, observacionesPorAlumno: obsPorId, observacionesMes: copia?.observacionesMes, matriculaInicial: copia?.matriculaInicial, entradas: copia?.entradas, salidas: copia?.salidas, version: 0 },
+      alumnos,
+      contexto
+    );
   },
 
   /**
-   * Planilla del curso y mes. La del preceptor (sin materia) toma del backend las
-   * inasistencias ya registradas, para que lo que ve coincida con lo que ve el
-   * alumno aunque la planilla se haya cargado desde otro navegador.
+   * Planilla del curso y mes, guardada en el servidor: todos los perfiles y
+   * dispositivos ven la misma. Con materia es la planilla del docente.
    */
   async getPlanilla(cursoId, mes = new Date().getMonth() + 1, anio = new Date().getFullYear(), materia = null, soloAlumnosIds = null) {
-    const planilla = await AsistenciasService._planillaLocal(cursoId, mes, anio, materia, soloAlumnosIds);
-    if (materia || !planilla?.alumnos?.length) return planilla;
+    const contexto = { cursoId, mes, anio, materia };
+    const [alumnos, respuesta] = await Promise.all([
+      AsistenciasService._alumnosDelCurso(cursoId, soloAlumnosIds),
+      pedir(AsistenciasService._consultaPlanilla(cursoId, mes, anio, materia))
+    ]);
+    const guardada = respuesta?.data ?? null;
+    let planilla = AsistenciasService._aPantalla(guardada, alumnos, contexto);
 
-    try {
-      const guardadas = await AsistenciasService._inasistenciasDelMes(planilla);
-      const ordenPorAlumno = new Map(planilla.alumnos.map((a) => [a.id, a.orden]));
-      const registros = { ...planilla.registros };
-
-      for (const [ordenTexto, dias] of Object.entries(registros)) {
-        registros[ordenTexto] = { ...dias };
-        for (const dia of Object.keys(dias)) {
-          /* Se parte de lo que dice el backend: una marca local sin registro
-             alla se vuelve a enviar al guardar. */
-          if (["A", "J", "T"].includes(registros[ordenTexto][dia])) registros[ordenTexto][dia] = "P";
+    /* Sin planilla en el servidor pero con una copia vieja en este navegador:
+       se sube ahora, una sola vez, y despues se borra la copia local. */
+    if (!guardada && alumnos.length > 0) {
+      const local = AsistenciasService._planillaDelNavegador(cursoId, mes, anio, materia);
+      if (local) {
+        const migrada = AsistenciasService._desdeCopiaLocal(local.datos, alumnos, contexto);
+        try {
+          const subida = await AsistenciasService.guardarPlanilla(migrada);
+          planilla = subida;
+          try { localStorage.removeItem(local.clave); } catch { /* sin acceso al almacenamiento local */ }
+        } catch {
+          /* Si no se pudo subir se muestra igual; al guardar se vuelve a intentar. */
+          planilla = migrada;
         }
       }
+    }
 
-      for (const reg of guardadas) {
+    if (materia || !planilla.alumnos.length) return planilla;
+
+    /* La planilla del preceptor muestra las inasistencias registradas en el
+       backend (las que ve el alumno en su portal). */
+    try {
+      const inasistencias = await AsistenciasService._inasistenciasDelMes(planilla);
+      const ordenPorAlumno = new Map(planilla.alumnos.map((a) => [a.id, a.orden]));
+      const registros = {};
+      for (const [orden, dias] of Object.entries(planilla.registros)) {
+        registros[orden] = { ...dias };
+        for (const dia of Object.keys(dias)) {
+          if (["A", "J", "T"].includes(registros[orden][dia])) registros[orden][dia] = "P";
+        }
+      }
+      for (const reg of inasistencias) {
         const orden = ordenPorAlumno.get(reg.alumnoId);
         const dia = Number(String(reg.fecha).slice(8, 10));
         if (!orden || !dia) continue;
-        const codigo = reg.tipo === "tarde" ? "T" : reg.justificada ? "J" : "A";
-        registros[orden] = { ...(registros[orden] || {}), [dia]: codigo };
+        registros[orden][dia] = reg.tipo === "tarde" ? "T" : reg.justificada ? "J" : "A";
       }
-
       return { ...planilla, registros };
     } catch {
-      /* Sin conexion se trabaja con la copia local; al guardar se avisa. */
       return planilla;
     }
   },
@@ -309,18 +343,21 @@ export const AsistenciasService = {
   },
 
   /**
-   * Guarda los cambios de la planilla en el almacenamiento institucional.
+   * Guarda la planilla en el servidor. Si otra persona la guardo mientras estaba
+   * abierta, el servidor responde 409 y no se pisa nada: la pantalla avisa.
    */
   async guardarPlanilla(planilla) {
-    const materiaPrefix = planilla.materia ? `docente_${String(planilla.materia).trim().toLowerCase().replace(/\s+/g, "_")}_` : "";
-    const key = `${STORAGE_KEY_PREFIX}${materiaPrefix}${planilla.cursoId}_${planilla.anio}_${planilla.mes}`;
+    const respuesta = await pedir(AsistenciasService._consultaPlanilla(planilla.cursoId, planilla.mes, planilla.anio, planilla.materia), {
+      method: "PUT",
+      body: JSON.stringify(AsistenciasService._aServidor(planilla))
+    });
+    const guardada = respuesta?.data ?? null;
     const actualizado = {
       ...planilla,
-      ultimaActualizacion: new Date().toISOString()
+      version: guardada?.version ?? (planilla.version ?? 0) + 1,
+      ultimaActualizacion: guardada?.actualizadoEn ?? new Date().toISOString(),
+      actualizadoPor: guardada?.actualizadoPor ?? planilla.actualizadoPor ?? null
     };
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(key, JSON.stringify(actualizado));
-    }
 
     /* La planilla del preceptor (sin materia) se refleja en el portal del alumno. */
     if (!planilla.materia && planilla.alumnos?.length) {
