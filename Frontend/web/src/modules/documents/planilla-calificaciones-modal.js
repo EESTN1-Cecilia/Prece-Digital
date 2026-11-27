@@ -208,6 +208,8 @@ export function PlanillaCalificacionesModal({
   const [ordenDir, setOrdenDir] = useState("asc");
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+  /* "ok" (verde) o "error" (rojo): un error nunca se muestra como guardado. */
+  const [toastTipo, setToastTipo] = useState("ok");
   const fecha = useMemo(() => getFechaActual(), []);
 
   // Nombre del docente a cargo
@@ -358,6 +360,7 @@ export function PlanillaCalificacionesModal({
         );
       } catch (errNotas) {
         console.error("No se pudieron cargar las calificaciones:", errNotas);
+        setToastTipo("error");
         setToastMsg("No se pudieron cargar las calificaciones guardadas");
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3500);
@@ -472,7 +475,8 @@ export function PlanillaCalificacionesModal({
   const handleGuardarCalificaciones = async () => {
     if (guardando) return;
     setGuardando(true);
-    const avisar = (mensaje, ms = 3000) => {
+    const avisar = (mensaje, ms = 3000, tipo = "ok") => {
+      setToastTipo(tipo);
       setToastMsg(mensaje);
       setShowToast(true);
       setTimeout(() => setShowToast(false), ms);
@@ -518,10 +522,10 @@ export function PlanillaCalificacionesModal({
       );
       window.dispatchEvent(new CustomEvent("prece:boletin-updated"));
 
-      avisar("✓ Calificaciones guardadas: ya las ven el Boletín Oficial y el portal del alumno");
+      avisar("Calificaciones guardadas: ya las ven el Boletín Oficial y el portal del alumno");
     } catch (e) {
       console.error("Error al guardar calificaciones:", e);
-      avisar(`No se guardaron las calificaciones: ${e?.mensaje ?? "intentá de nuevo."}`, 5000);
+      avisar(`No se guardaron las calificaciones: ${e?.mensaje ?? "intentá de nuevo."}`, 7000, "error");
     } finally {
       setGuardando(false);
     }
@@ -572,6 +576,7 @@ export function PlanillaCalificacionesModal({
       });
     } catch (err) {
       console.error(`Error exportando planilla a ${formato}:`, err);
+      setToastTipo("error");
       setToastMsg(`No se pudo generar el archivo ${formato}. Intentá de nuevo.`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -595,11 +600,11 @@ export function PlanillaCalificacionesModal({
     showToast
       ? h(
           "div",
-          { className: "doc-planilla-toast" },
+          { className: `doc-planilla-toast ${toastTipo === "error" ? "doc-planilla-toast--error" : ""}`, role: toastTipo === "error" ? "alert" : "status" },
           h(
             "svg",
-            { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5" },
-            h("path", { d: "M20 6L9 17l-5-5" })
+            { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.5", "aria-hidden": "true" },
+            h("path", { d: toastTipo === "error" ? "M12 4 2.8 19.5h18.4L12 4zM12 10v4.5M12 17v.5" : "M20 6L9 17l-5-5" })
           ),
           h("span", null, toastMsg)
         )

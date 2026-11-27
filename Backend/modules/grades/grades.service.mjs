@@ -435,6 +435,33 @@ function esDocenteRestringido(user) {
   return roles.includes("docente");
 }
 
+/* Catedra de la sesion: el backend copia cada catedra de la grilla de Direccion a
+   las asignaciones del usuario ({ role: "docente", anio, division, materia }).
+   Es la fuente para los docentes del personal relacional, que no tienen legajo
+   en el modulo teachers. */
+function asignacionDeSesion(user, { materiaId, cursoId, divisionId, alumno }) {
+  if (!user?.assignments) return null;
+  const materiaObj = academicRepository.findSubjectRefById(materiaId);
+  const raizBuscada = normalizarRaizMateria(materiaObj?.nombre ?? materiaId);
+  if (!raizBuscada) return null;
+  const cursoObj = cursoId ? academicRepository.findCursoById(cursoId) : null;
+  const divObj = divisionId ? academicRepository.findDivisionById(divisionId) : null;
+  const anioCurso = Number(cursoObj?.anio ?? String(alumno?.curso ?? "").replace(/\D/g, "")) || null;
+  const divNumero = String(divObj?.nombre ?? alumno?.division ?? "").replace(/\D/g, "") || null;
+
+  return (
+    user.assignments.find((a) => {
+      if (a.role !== "docente" || !a.materia) return false;
+      if (normalizarRaizMateria(a.materia) !== raizBuscada) return false;
+      /* Sin curso de la catedra o del alumno no se puede comprobar: no autoriza. */
+      const anioAsig = Number(a.anio ?? String(a.curso ?? "").replace(/\D/g, "")) || null;
+      const divAsig = String(a.division ?? "").replace(/\D/g, "") || null;
+      if (!anioAsig || !divAsig || !anioCurso || !divNumero) return false;
+      return anioAsig === anioCurso && divAsig === divNumero;
+    }) ?? null
+  );
+}
+
 function buscarAsignacion(docenteId, { materiaId, cursoId, divisionId, anio, alumno }, user = null) {
   const asignaciones = teachersRepository.listAsignacionesMateria({ docenteId, materiaId, anio, estado: "activo" });
 
@@ -472,25 +499,8 @@ function buscarAsignacion(docenteId, { materiaId, cursoId, divisionId, anio, alu
 
   if (porAlias) return porAlias;
 
-  if (user?.assignments) {
-    const cursoObj = cursoId ? academicRepository.findCursoById(cursoId) : null;
-    const divObj = divisionId ? academicRepository.findDivisionById(divisionId) : null;
-    const anioCurso = Number(cursoObj?.anio ?? String(alumno?.curso ?? "").replace(/\D/g, "")) || null;
-    const divNumero = String(divObj?.nombre ?? alumno?.division ?? "").replace(/\D/g, "") || null;
-
-    const asigUsuario = user.assignments.find((a) => {
-      if (a.role !== "docente" || !a.materia) return false;
-      if (normalizarRaizMateria(a.materia) !== raizBuscada) return false;
-      const anioAsig = Number(a.anio ?? String(a.curso ?? "").replace(/\D/g, "")) || null;
-      if (anioAsig && anioCurso && anioAsig !== anioCurso) return false;
-      const divAsig = String(a.division ?? "").replace(/\D/g, "") || null;
-      if (divAsig && divNumero && divAsig !== divNumero) return false;
-      return true;
-    });
-
-    if (asigUsuario) {
-      return { id: null, docenteId, materiaId };
-    }
+  if (asignacionDeSesion(user, { materiaId, cursoId, divisionId, alumno })) {
+    return { id: null, docenteId, materiaId };
   }
 
   return null;
@@ -499,8 +509,13 @@ function buscarAsignacion(docenteId, { materiaId, cursoId, divisionId, anio, alu
 function exigirAutorizacionDocente(user, alcance) {
   const docente = teachersRepository.findDocenteByUserId(user?.id);
 
+  /* Docente del personal relacional (sin legajo en el modulo teachers): lo
+     autorizan sus catedras asignadas por la Direccion, materia y curso exactos. */
   if (!docente) {
-    throw sinPermisos("El usuario no tiene un legajo de docente asociado a esta escuela.");
+    if (!asignacionDeSesion(user, alcance)) {
+      throw sinPermisos("No tenés asignada esa materia en ese curso. Pedile a la Dirección que revise tus cátedras.");
+    }
+    return { docenteId: null, asignacionMateriaId: null };
   }
 
   if (docente.estado !== "activo") {
