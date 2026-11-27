@@ -47,3 +47,41 @@ test("una copia vieja del navegador se convierte buscando cada alumno por su id"
   assert.equal(planilla.observacionesPorAlumno[2], "Obs de Beto");
   assert.equal(planilla.version, 0, "se sube como planilla nueva");
 });
+
+test("si la planilla cambio en el servidor, se combinan solo las casillas que tocó esta persona", () => {
+  const original = AsistenciasService._aPantalla({ registros: {}, version: 1 }, alumnos, contexto);
+  const local = JSON.parse(JSON.stringify(original));
+  local.registros[1][2] = "A"; // esta persona marca ausente a Ana el dia 2
+  local.observacionesPorAlumno[2] = "Retiro anticipado";
+  /* Mientras tanto otra pestaña guardo la version 2 con un tarde de Beto el dia 3. */
+  const servidor = AsistenciasService._aPantalla({ registros: { b: { 3: "T" } }, version: 2 }, alumnos, contexto);
+
+  const { planilla, cambios, choques } = AsistenciasService.combinarCambios(servidor, local, original);
+  assert.equal(cambios, 2);
+  assert.equal(choques, 0);
+  assert.equal(planilla.version, 2, "se guarda con la version del servidor");
+  assert.equal(planilla.registros[1][2], "A", "queda lo que cargó esta persona");
+  assert.equal(planilla.registros[2][3], "T", "y lo que guardó la otra");
+  assert.equal(planilla.observacionesPorAlumno[2], "Retiro anticipado");
+});
+
+test("si los dos cambiaron la misma casilla con valores distintos se informa el choque", () => {
+  const original = AsistenciasService._aPantalla({ registros: {}, version: 1 }, alumnos, contexto);
+  const local = JSON.parse(JSON.stringify(original));
+  local.registros[1][2] = "A";
+  const servidor = AsistenciasService._aPantalla({ registros: { a: { 2: "J" } }, version: 2 }, alumnos, contexto);
+  const { planilla, choques } = AsistenciasService.combinarCambios(servidor, local, original);
+  assert.equal(choques, 1);
+  assert.equal(planilla.registros[1][2], "A");
+});
+
+test("la combinación cruza por id aunque haya cambiado el orden de los alumnos", () => {
+  const original = AsistenciasService._aPantalla({ registros: {}, version: 1 }, alumnos, contexto);
+  const local = JSON.parse(JSON.stringify(original));
+  local.registros[2][6] = "A"; // Beto, orden 2
+  const conNuevo = [{ id: "aa", orden: 1, apellido: "AAA", nombre: "Nuevo" }, { ...alumnos[0], orden: 2 }, { ...alumnos[1], orden: 3 }];
+  const servidor = AsistenciasService._aPantalla({ registros: {}, version: 2 }, conNuevo, contexto);
+  const { planilla } = AsistenciasService.combinarCambios(servidor, local, original);
+  assert.equal(planilla.registros[3][6], "A", "Beto ahora es el orden 3");
+  assert.equal(planilla.registros[2][6], "P", "Ana no recibe la marca");
+});

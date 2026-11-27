@@ -360,7 +360,12 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
   // Cargar planilla al cambiar de curso o mes (con materia si es docente)
   const cursoPermitido = cursos.some((c) => c.id === selectedCursoId);
 
+  /* Cada carga tiene un numero: si se dispararon varias seguidas (cambio de
+     curso, de mes o de permisos), solo la ultima llega a la pantalla. */
+  const cargaActual = useRef(0);
+
   const cargarPlanilla = useCallback(async () => {
+    const numeroCarga = ++cargaActual.current;
     setLoading(true);
     setSaveSuccess(false);
     setErrorCarga(null);
@@ -387,15 +392,17 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
         materiaDocente,
         alumnosGrupo
       );
+      if (numeroCarga !== cargaActual.current) return;
       setPlanilla(data);
       setPlanillaOriginal(JSON.parse(JSON.stringify(data)));
     } catch (err) {
+      if (numeroCarga !== cargaActual.current) return;
       /* Nunca queda en pantalla la planilla del curso anterior. */
       setPlanilla(null);
       setPlanillaOriginal(null);
       setErrorCarga(err?.mensaje || "No se pudo cargar la planilla. Revisá la conexión y volvé a intentar.");
     } finally {
-      setLoading(false);
+      if (numeroCarga === cargaActual.current) setLoading(false);
     }
   }, [selectedCursoId, selectedMes, selectedAnio, esDocente, cursoActual.materia, cursoActual.cursoId, cursoPermitido, cursosListos, alumnosGrupo]);
 
@@ -507,24 +514,61 @@ export default function AsistenciasView({ modoDocente = false, grupoTaller = nul
   };
 
   // Guardar planilla
+  const aplicarGuardada = (guardada) => {
+    if (guardada?.sincronizacion?.fallidas) {
+      alert("La planilla se guardó, pero algunas inasistencias no llegaron al portal del alumno. Volvé a guardar para reintentar.");
+    }
+    /* La version nueva queda en pantalla: el proximo guardado la usa. */
+    const { sincronizacion, ...sinSync } = guardada;
+    setPlanilla(sinSync);
+    setPlanillaOriginal(JSON.parse(JSON.stringify(sinSync)));
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3500);
+  };
+
+  /* La planilla cambio en el servidor (otra pestaña, otro dispositivo u otra
+     persona): se trae la ultima, se le aplican solo las casillas que tocaste y,
+     si nadie cambio esas mismas casillas, se guarda sola. Nunca se pierde lo que
+     cargaste. */
+  const resolverConflicto = async () => {
+    const materiaDocente = esDocente ? cursoActual.materia || null : null;
+    const servidor = await AsistenciasService.getPlanilla(
+      cursoActual.cursoId || selectedCursoId,
+      selectedMes,
+      selectedAnio,
+      materiaDocente,
+      alumnosGrupo
+    );
+    const { planilla: combinada, cambios, choques } = AsistenciasService.combinarCambios(servidor, planilla, planillaOriginal ?? servidor);
+    if (!cambios) {
+      setPlanilla(servidor);
+      setPlanillaOriginal(JSON.parse(JSON.stringify(servidor)));
+      return;
+    }
+    if (!choques) {
+      aplicarGuardada(await AsistenciasService.guardarPlanilla(combinada));
+      return;
+    }
+    setPlanilla(combinada);
+    setPlanillaOriginal(JSON.parse(JSON.stringify(servidor)));
+    alert(
+      `${servidor.actualizadoPor || "Otra persona"} también cambió ${choques === 1 ? "una casilla" : `${choques} casillas`} que modificaste. ` +
+        "En pantalla quedaron tus valores junto con el resto de sus cambios: revisalos y tocá Guardar."
+    );
+  };
+
   const handleGuardarPlanilla = async () => {
     if (!planilla || saving) return;
     setSaving(true);
     try {
-      const guardada = await AsistenciasService.guardarPlanilla(planilla);
-      if (guardada?.sincronizacion?.fallidas) {
-        alert("La planilla se guardó, pero algunas inasistencias no llegaron al portal del alumno. Volvé a guardar para reintentar.");
-      }
-      /* La version nueva queda en pantalla: el proximo guardado la usa. */
-      const { sincronizacion, ...sinSync } = guardada;
-      setPlanilla(sinSync);
-      setPlanillaOriginal(JSON.parse(JSON.stringify(sinSync)));
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3500);
+      aplicarGuardada(await AsistenciasService.guardarPlanilla(planilla));
     } catch (e) {
       if (e?.status === 409) {
-        alert(e.mensaje || "Otra persona guardó esta planilla mientras la tenías abierta. Se va a recargar con los cambios guardados.");
-        await cargarPlanilla();
+        try {
+          await resolverConflicto();
+        } catch (otro) {
+          alert(otro?.mensaje || "La planilla cambió mientras la tenías abierta y no se pudo combinar. Tus cambios siguen en pantalla: volvé a tocar Guardar.");
+        }
       } else {
         alert(e?.mensaje || "No se pudieron guardar los registros de asistencia. No se perdió nada de lo que cargaste: volvé a intentar.");
       }

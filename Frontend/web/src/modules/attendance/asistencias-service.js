@@ -246,8 +246,10 @@ export const AsistenciasService = {
           planilla = subida;
           try { localStorage.removeItem(local.clave); } catch { /* sin acceso al almacenamiento local */ }
         } catch {
-          /* Si no se pudo subir se muestra igual; al guardar se vuelve a intentar. */
-          planilla = migrada;
+          /* Si otra carga simultanea ya la subio, se usa la del servidor (con su
+             version); si no, se muestra la copia y al guardar se reintenta. */
+          const otra = await pedir(AsistenciasService._consultaPlanilla(cursoId, mes, anio, materia)).catch(() => null);
+          planilla = otra?.data ? AsistenciasService._aPantalla(otra.data, alumnos, contexto) : migrada;
         }
       }
     }
@@ -340,6 +342,51 @@ export const AsistenciasService = {
       fallidas += resultados.filter((r) => r.status === "rejected").length;
     }
     return { operaciones: tareas.length, fallidas };
+  },
+
+  /**
+   * Cuando el servidor rechaza un guardado porque la planilla cambio (409), se
+   * combinan los cambios: sobre la planilla que esta en el servidor se aplican
+   * solo las casillas que esta persona modifico desde que la abrio. Se cruza por
+   * id de alumno, no por numero de orden. `choques` cuenta las casillas que
+   * tambien cambio la otra persona con un valor distinto (ahi queda el de esta).
+   */
+  combinarCambios(servidor, local, original) {
+    const porId = (planilla) => {
+      const mapa = new Map();
+      for (const alumno of planilla?.alumnos ?? []) if (alumno?.id) mapa.set(alumno.id, alumno.orden);
+      return mapa;
+    };
+    const ordenServidor = porId(servidor);
+    const ordenOriginal = porId(original);
+    const combinada = JSON.parse(JSON.stringify(servidor));
+    combinada.registros ??= {};
+    combinada.observacionesPorAlumno ??= {};
+    let cambios = 0;
+    let choques = 0;
+
+    for (const alumno of local?.alumnos ?? []) {
+      const destino = ordenServidor.get(alumno.id);
+      if (destino === undefined) continue;
+      const origen = ordenOriginal.get(alumno.id);
+      const propios = local.registros?.[alumno.orden] ?? {};
+      const antes = origen === undefined ? {} : original.registros?.[origen] ?? {};
+      const enServidor = servidor.registros?.[destino] ?? {};
+      for (const [dia, valor] of Object.entries(propios)) {
+        if (antes[dia] === valor) continue;
+        if (enServidor[dia] !== undefined && enServidor[dia] !== antes[dia] && enServidor[dia] !== valor) choques += 1;
+        combinada.registros[destino] = { ...(combinada.registros[destino] ?? {}), [dia]: valor };
+        cambios += 1;
+      }
+      const obs = local.observacionesPorAlumno?.[alumno.orden] ?? "";
+      const obsAntes = origen === undefined ? "" : original.observacionesPorAlumno?.[origen] ?? "";
+      if (obs !== obsAntes) {
+        if (obs) combinada.observacionesPorAlumno[destino] = obs;
+        else delete combinada.observacionesPorAlumno[destino];
+        cambios += 1;
+      }
+    }
+    return { planilla: combinada, cambios, choques };
   },
 
   /**
