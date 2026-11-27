@@ -1234,6 +1234,8 @@
   background: #ffffff;
 }
 
+.doc-planilla-toast.doc-planilla-toast--error { background: #b91c1c; }
+
 .doc-planilla-toast {
   position: fixed;
   top: 24px;

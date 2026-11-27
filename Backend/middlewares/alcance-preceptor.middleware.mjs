@@ -25,6 +25,16 @@ function fueraDeAlcance() {
   return errorHttp(403, "OUT_OF_SCOPE", "Ese curso o alumno no está asignado a tu perfil.");
 }
 
+/* El alumno es de la escuela del usuario. El personal cargado desde las tablas
+   relacionales no trae schoolId en sus asignaciones (un sistema por escuela): en
+   ese caso el alumno se considera de su escuela y el alcance se controla igual.
+   Antes, sin schoolId el control se salteaba y un preceptor llegaba a alumnos
+   de cursos ajenos. */
+function deSuEscuela(user, alumno) {
+  const escuelas = new Set((user?.assignments ?? []).map((asignacion) => asignacion.schoolId).filter(Boolean));
+  return escuelas.size === 0 || escuelas.has(alumno.escuelaId);
+}
+
 function esPreceptorDeAlcanceLimitado(user) {
   const roles = new Set((user?.assignments ?? []).map((asignacion) => asignacion.role));
   return roles.has(ROLES.PRECEPTOR) && [...roles].every((rol) => [ROLES.PRECEPTOR, ROLES.DOCENTE].includes(rol));
@@ -69,8 +79,7 @@ export async function alcancePreceptor(ctx) {
       if (!id) continue;
       const alumno = studentRepository.findById(String(id));
       /* Un id inexistente o de otra escuela sigue al handler, que ya los rechaza (404 / 422). */
-      const escuelas = new Set((ctx.user.assignments ?? []).map((asignacion) => asignacion.schoolId).filter(Boolean));
-      if (alumno && escuelas.has(alumno.escuelaId) && !alumnoEnAlcance(alcance, alumno)) throw fueraDeAlcance();
+      if (alumno && deSuEscuela(ctx.user, alumno) && !alumnoEnAlcance(alcance, alumno)) throw fueraDeAlcance();
     }
 
     const curso = fuente.curso ?? fuente.anioCurso ?? fuente.cursoNuevo;
@@ -108,7 +117,6 @@ export function alcancePreceptorRegistro(ctx) {
     if (!registro?.alumnoId) continue;
     const alumno = studentRepository.findById(registro.alumnoId);
     /* Otra escuela: sigue al handler, que responde 404 como si no existiera. */
-    const escuelas = new Set((ctx.user.assignments ?? []).map((asignacion) => asignacion.schoolId).filter(Boolean));
-    if (alumno && escuelas.has(alumno.escuelaId) && !alumnoEnAlcance(alcance, alumno)) throw fueraDeAlcance();
+    if (alumno && deSuEscuela(ctx.user, alumno) && !alumnoEnAlcance(alcance, alumno)) throw fueraDeAlcance();
   }
 }

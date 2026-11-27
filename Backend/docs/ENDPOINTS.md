@@ -14,13 +14,13 @@ Total: 475 endpoints. Autenticacion: `Authorization: Bearer <accessToken>` salvo
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
-| GET | `/api/v1/modules` | publica |
+| GET | `/api/v1/modules` | sesion valida |
 
 ## roles
 
 | Metodo | Ruta | Permiso |
 | --- | --- | --- |
-| GET | `/api/v1/roles` | publica |
+| GET | `/api/v1/roles` | sesion valida |
 
 ## annual-management
 

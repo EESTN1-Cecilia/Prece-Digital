@@ -2,18 +2,18 @@
 
 ## App del alumno (implementada)
 
-App Android/iOS con Expo, **solo para alumnos**, sobre la misma API que la web (portal del alumno: `GET /api/v1/alumno/perfil` y endpoints relacionados). Misma información y opciones que el portal web del alumno, adaptadas a pantalla de celular. Marca institucional (bordó/gris + logo de la E.E.S. Técnica N° 1) aplicada dentro de la app; el icono y la pantalla inicial usan la marca Prece Digital.
+App Android/iOS con Expo, **solo para alumnos**, sobre la misma API que la web (portal del alumno: `GET /api/v1/alumno/perfil` y endpoints relacionados). Misma información y opciones que el portal web del alumno, adaptadas a pantalla de celular. Las pantallas son **iguales a la versión celular de la web** (mismos colores, tarjetas, indicadores y textos). El icono es el escudo de la E.E.S.T. N°1 "Cecilia Berdichevsky" sobre fondo bordó. La versión instalada se ve abajo en la pantalla de ingreso (por ejemplo "Versión 0.2.0").
 
-### Pantallas (menú inferior)
+### Pantallas (menú lateral, como la web)
 
 | Pantalla | Qué muestra | Equivalente web |
 | --- | --- | --- |
 | Inicio | Saludo, 4 indicadores (ausentes, TEP, aprobadas, previas) y "Mis datos" (incluye ciclo lectivo y grupo de taller) | Inicio |
-| Boletín | Boletín con el mismo diseño que la web, selector de ciclo, **Descargar PDF** e **Imprimir** | Mi Boletín |
-| Asistencias | Totales (ausentes, justificadas, injustificadas, tardes, parciales, presentes) y detalle por fecha con filtro, curso y motivo | Mis Asistencias |
+| Mi Boletín | Boletín con el mismo diseño que la web, selector de ciclo, **Descargar PDF** e **Imprimir** | Mi Boletín |
+| Mis Asistencias | Totales (ausentes, justificadas, injustificadas, tardes, parciales, presentes) y detalle por fecha con filtro, curso y motivo | Mis Asistencias |
 | Novedades | Cartelera escolar (comunicados de Dirección + avisos fijos), filtro por área, paginación, lectura completa y descarga de adjuntos; "Mi actividad académica" | Novedades |
-| Reportes | Accesos a Boletín, Asistencias, Situación académica y Previas | Mis Reportes |
-| Cuenta | Datos de acceso, cambio de contraseña y de usuario, cerrar sesión | Mi Cuenta |
+| Mis Reportes | Accesos a Boletín, Asistencias, Situación académica y Previas | Mis Reportes |
+| Mi Cuenta | Datos de acceso, cambio de contraseña y de usuario, cerrar sesión | Mi Cuenta |
 
 Situación académica y Previas se abren desde Reportes o desde los indicadores de Inicio (en la web son vistas ocultas del menú). En el primer ingreso la app obliga a configurar la cuenta, igual que la web.
 
@@ -48,6 +48,19 @@ Escanear el QR con Expo Go (Android) o con la cámara (iOS). No presionar `w` (m
 - **Play Protect:** una firma de release permite identificar al editor y verificar que el APK no cambió, pero no garantiza una aprobación ni evita avisos de Play Protect. La revisión de Google se solicita publicando el AAB desde Play Console.
 - **Tests:** `npm test` dentro de `Frontend/mobile`.
 
+### Compilar la APK (EAS)
+
+```powershell
+cd Frontend/mobile
+npx eas build --platform android --profile preview
+```
+
+- **EAS compila lo que está commiteado**, no los archivos sin commitear. Antes de compilar: commit (y push) de los cambios. Para confirmar qué se compiló: `npx eas build:list --platform android --limit 3` muestra el commit y la versión de cada build.
+- Subir `version` en `app.json` en cada entrega; se ve en la pantalla de ingreso y permite saber qué APK tiene cada equipo.
+- Una APK instalada desde un archivo **no se actualiza sola**: se instala la nueva encima (misma firma) o se desinstala la anterior.
+- **Descarga oficial para alumnos:** `https://precedigital.eestn1.com/descargas/` (servidor de la escuela, sin datos de Expo). El archivo se guarda como `EEST_N1_Cecilia_Berdichevsky.apk` y el botón del sitio lo descarga con el nombre `EEST_N°1_Cecilia_Berdichevsky.apk`. Al reemplazarlo, purgar la caché de Cloudflare de esa URL.
+- La página de instalación de Expo muestra al dueño de la cuenta de Expo; para que figure la escuela hay que transferir el proyecto a una organización de Expo de la escuela (junto con la clave de firma).
+
 ### Usuario de prueba
 
 `ana.perez@alumno.prece.local` (o el DNI `40123456`), contraseña inicial `40123456`; en el primer ingreso pide una contraseña nueva. Los datos están en memoria: al reiniciar la API vuelven a su estado inicial. Web y mobile usan el mismo backend, así que ven los mismos datos.
@@ -62,6 +75,9 @@ Escanear el QR con Expo Go (Android) o con la cámara (iOS). No presionar `w` (m
 | Falla "Descargar PDF" o un adjunto | Faltan `expo-print`, `expo-sharing` o `expo-file-system`: correr el paso 2. |
 
 ### Cambios recientes
+
+- **0.2.0:** encabezado y menú lateral iguales a la web (botón de menú, logo y "Salir"); Inicio, Mi Boletín, Mis Asistencias, Novedades y Mis Reportes con el diseño de la web en celular; ícono con el escudo de la escuela.
+- **Ingreso:** si el equipo no puede guardar la sesión en su almacén seguro (pasaba en tablets Fire de Amazon), la app entra igual y la sesión dura hasta cerrar la app. Antes mostraba "No se pudo iniciar sesión" aunque las credenciales eran correctas.
 
 - Menú alineado con la web: se agregó **Novedades** y **Reportes** pasó a ser un índice de cuatro informes.
 - Inicio: campo "Ciclo lectivo", mensaje "Sin registros hasta el momento" y accesos directos a Situación y Previas.

@@ -9,6 +9,7 @@ import { obtenerAsistencias, obtenerBoletin } from "../../services/alumno-api.js
 import { PORTAL } from "../../theme/tokens.js";
 import { fechaCorta, tonoDeEstado } from "../../utils/alumno-reglas.js";
 import { AREAS, armarActividad, construirPublicaciones, paginar } from "../../utils/novedades.js";
+import { Icono } from "./iconos.js";
 import { Aviso, Boton, Cargando, Chips, Encabezado, ErrorCarga, Insignia, Nota, Pantalla, Tarjeta, Vacio, h, useDatos } from "./componentes.js";
 
 const REFRESCO_MS = 60000;
@@ -69,9 +70,8 @@ function Aviso_({ publicacion, onCerrar }) {
   );
 }
 
-function Cartelera() {
+function Cartelera({ area }) {
   const [informes, setInformes] = useState([]);
-  const [area, setArea] = useState("");
   const [pagina, setPagina] = useState(0);
   const [abierta, setAbierta] = useState(null);
 
@@ -88,50 +88,47 @@ function Cartelera() {
     return () => clearInterval(intervalo);
   }, [cargar]);
 
+  useEffect(() => setPagina(0), [area]);
   const publicaciones = useMemo(() => construirPublicaciones(informes, area), [informes, area]);
   const vista = paginar(publicaciones, pagina);
 
   return h(
     Tarjeta,
-    { titulo: "Cartelera escolar" },
-    h(Text, { style: estilos.subtitulo }, "Avisos institucionales"),
-    h(Chips, {
-      opciones: [{ valor: "", etiqueta: "Todas las áreas" }, ...AREAS.map((item) => ({ valor: item, etiqueta: item }))],
-      valor: area,
-      onCambiar: (valor) => {
-        setArea(valor);
-        setPagina(0);
-      }
-    }),
-    vista.items.map((pub, indice) =>
-      h(
+    { acento: false },
+    h(View, { style: estilos.carteleraCabecera }, h(Text, { style: estilos.carteleraTitulo, accessibilityRole: "header" }, "Cartelera escolar"), h(Text, { style: estilos.subtitulo }, "Avisos institucionales")),
+    vista.items.length === 0 ? h(Vacio, { titulo: "No hay comunicados para esta área." }) : null,
+    vista.items.map((pub, indice) => {
+      const destacada = indice === 0 && vista.pagina === 0;
+      return h(
         Pressable,
         {
           key: pub.id,
           onPress: () => setAbierta(pub),
           accessibilityRole: "button",
           accessibilityLabel: `Leer comunicado: ${pub.titulo}`,
-          style: ({ pressed }) => [estilos.publicacion, indice === 0 && vista.pagina === 0 && estilos.destacada, pressed && { opacity: 0.85 }]
+          style: ({ pressed }) => [estilos.publicacion, destacada && estilos.destacada, pressed && { opacity: 0.85 }]
         },
         h(
           View,
           { style: estilos.meta },
-          h(Text, { style: estilos.area }, pub.area),
-          h(Text, { style: estilos.categoria }, pub.categoria),
-          pub.fecha ? h(Text, { style: estilos.fechaMeta }, fechaCorta(pub.fecha)) : null
+          h(View, { style: [estilos.areaPill, destacada && { backgroundColor: "#fff" }] }, h(Text, { style: estilos.area }, pub.area)),
+          h(Text, { style: [estilos.categoria, destacada && estilos.blancoSuave] }, pub.categoria),
+          pub.fecha ? h(Text, { style: [estilos.fechaMeta, destacada && estilos.blancoSuave] }, fechaCorta(pub.fecha)) : null
         ),
-        h(Text, { style: estilos.titulo }, pub.titulo),
-        h(Text, { style: estilos.texto, numberOfLines: 3 }, pub.texto),
-        pub.archivo?.nombre ? h(Text, { style: estilos.adjuntoTexto }, `📎 Archivo adjunto: ${pub.archivo.nombre}`) : null,
-        h(Text, { style: estilos.leer }, "Leer comunicado →")
-      )
-    ),
+        h(Text, { style: [estilos.titulo, destacada && { color: "#fff" }] }, pub.titulo),
+        h(Text, { style: [estilos.texto, destacada && { color: "#fff" }], numberOfLines: 4 }, pub.texto),
+        pub.archivo?.nombre
+          ? h(View, { style: estilos.adjuntoFila }, h(Icono, { nombre: "clip", tamano: 15, color: destacada ? "#e8c5c5" : "#8c8c8c" }), h(Text, { style: [estilos.adjuntoTexto, destacada && { color: "#e8c5c5" }] }, `Archivo adjunto: ${pub.archivo.nombre}`))
+          : null,
+        h(Text, { style: [estilos.leer, destacada && { color: "#fff" }] }, "Leer comunicado →")
+      );
+    }),
     h(
       View,
       { style: estilos.paginas },
-      h(Boton, { texto: "Ver anterior", onPress: () => setPagina(vista.pagina - 1), deshabilitado: vista.pagina === 0, variante: "claro" }),
+      h(Pressable, { onPress: () => setPagina(vista.pagina - 1), disabled: vista.pagina === 0, accessibilityRole: "button", style: [estilos.paginaBoton, vista.pagina === 0 && { opacity: 0.55 }] }, h(Text, { style: estilos.paginaBotonTexto }, "Ver anterior")),
       h(Text, { style: estilos.paginaTexto, accessibilityRole: "text" }, `Página ${vista.pagina + 1} de ${vista.total}`),
-      h(Boton, { texto: "Ver próximo", onPress: () => setPagina(vista.pagina + 1), deshabilitado: vista.pagina + 1 >= vista.total, variante: "claro" })
+      h(Pressable, { onPress: () => setPagina(vista.pagina + 1), disabled: vista.pagina + 1 >= vista.total, accessibilityRole: "button", style: [estilos.paginaBoton, vista.pagina + 1 >= vista.total && { opacity: 0.55 }] }, h(Text, { style: estilos.paginaBotonTexto }, "Ver próximo"))
     ),
     h(Aviso_, { publicacion: abierta, onCerrar: () => setAbierta(null) })
   );
@@ -146,8 +143,8 @@ function Actividad({ irA }) {
 
   return h(
     Tarjeta,
-    { titulo: "Mi actividad académica" },
-    h(Pressable, { onPress: () => setAbierta((v) => !v), accessibilityRole: "button", accessibilityState: { expanded: abierta } }, h(Text, { style: estilos.enlace }, abierta ? "Ocultar actividad" : "Ver actividad reciente")),
+    { acento: false },
+    h(Pressable, { onPress: () => setAbierta((v) => !v), accessibilityRole: "button", accessibilityState: { expanded: abierta } }, h(Text, { style: estilos.carteleraTitulo }, `${abierta ? "▼" : "▶"} Mi actividad académica`)),
     !abierta
       ? null
       : cargando && !datos
@@ -175,31 +172,51 @@ function Actividad({ irA }) {
 
 export default function NovedadesScreen({ irA }) {
   const [version, setVersion] = useState(0);
+  const [area, setArea] = useState("");
 
   return h(
     Pantalla,
     { refrescando: false, onRefrescar: () => setVersion((v) => v + 1) },
     h(Encabezado, { titulo: "Comunicados institucionales", descripcion: "Información de Dirección, Jefatura de Área y Preceptoría para estudiantes y familias." }),
-    h(Cartelera, { key: `c${version}` }),
-    h(Tarjeta, { titulo: "Información académica" }, h(Nota, null, "Consultá tu información académica y los datos de tu cuenta."), h(Boton, { texto: "Mi Boletín", onPress: () => irA("boletin"), variante: "claro" }), h(Boton, { texto: "Mis Asistencias", onPress: () => irA("asistencias"), variante: "claro" })),
+    h(Cartelera, { key: `c${version}`, area }),
+    h(
+      Tarjeta,
+      { acento: false },
+      h(Text, { style: estilos.filtroTitulo }, "Filtrar por área"),
+      h(Chips, { opciones: [{ valor: "", etiqueta: "Todas las áreas" }, ...AREAS.map((item) => ({ valor: item, etiqueta: item }))], valor: area, onCambiar: setArea }),
+      h(Text, { style: [estilos.carteleraTitulo, { marginTop: 6 }] }, "Información académica"),
+      h(Text, { style: estilos.texto }, "Consultá tu información académica y los datos de tu cuenta."),
+      h(Pressable, { onPress: () => irA("boletin"), accessibilityRole: "link", style: estilos.linkFila }, h(Text, { style: estilos.link }, "Mi Boletín")),
+      h(Pressable, { onPress: () => irA("asistencias"), accessibilityRole: "link", style: [estilos.linkFila, { borderBottomWidth: 0 }] }, h(Text, { style: estilos.link }, "Mis Asistencias"))
+    ),
     h(Actividad, { key: `a${version}`, irA })
   );
 }
 
 const estilos = StyleSheet.create({
-  subtitulo: { fontSize: 12.5, color: PORTAL.subtitulo },
-  publicacion: { gap: 6, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: PORTAL.linea, backgroundColor: PORTAL.blanco },
-  destacada: { backgroundColor: PORTAL.bordo, borderColor: PORTAL.bordo },
+  subtitulo: { fontSize: 13, color: "#5b6b86" },
+  carteleraCabecera: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#e3dfdf" },
+  carteleraTitulo: { fontSize: 19, fontWeight: "800", color: "#2b2b2b" },
+  filtroTitulo: { fontSize: 16, fontWeight: "700", color: "#404040" },
+  publicacion: { gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: "#e3dfdf", backgroundColor: PORTAL.blanco },
+  destacada: { backgroundColor: "#6a1e28", borderColor: "#6a1e28" },
+  areaPill: { backgroundColor: "#f6eced", borderRadius: 8, paddingHorizontal: 9, paddingVertical: 4 },
+  blancoSuave: { color: "rgba(255,255,255,0.85)" },
+  adjuntoFila: { flexDirection: "row", alignItems: "center", gap: 6 },
+  paginaBoton: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 44, borderRadius: 10, borderWidth: 1, borderColor: "#e8d5d7", backgroundColor: "#f6eced" },
+  paginaBotonTexto: { fontSize: 14, color: "#5b6b86", fontWeight: "600" },
+  linkFila: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#e3dfdf" },
+  link: { fontSize: 15, color: "#7a2530", textDecorationLine: "underline" },
   meta: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" },
-  area: { fontSize: 11, fontWeight: "800", color: PORTAL.bordo2, textTransform: "uppercase" },
+  area: { fontSize: 12.5, fontWeight: "800", color: "#7a2530" },
   categoria: { fontSize: 11.5, color: PORTAL.subtitulo },
   fechaMeta: { marginLeft: "auto", fontSize: 11.5, color: PORTAL.subtitulo },
   titulo: { fontSize: 15.5, fontWeight: "800", color: PORTAL.titulo },
   texto: { fontSize: 13.5, lineHeight: 19, color: PORTAL.titulo },
   leer: { fontSize: 12.5, fontWeight: "700", color: PORTAL.bordo2 },
   adjuntoTexto: { fontSize: 12, color: PORTAL.subtitulo },
-  paginas: { gap: 8, alignItems: "stretch" },
-  paginaTexto: { textAlign: "center", fontSize: 13, color: PORTAL.subtitulo },
+  paginas: { flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#e3dfdf" },
+  paginaTexto: { textAlign: "center", fontSize: 13.5, color: "#404040" },
   fondoModal: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.45)" },
   modal: { maxHeight: "85%", backgroundColor: PORTAL.blanco, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 18, gap: 10 },
   modalCabecera: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

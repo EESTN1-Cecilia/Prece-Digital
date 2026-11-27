@@ -5,6 +5,7 @@ Plataforma web y móvil para la gestión escolar interna: alumnos y legajos, obs
 Monorepo único con npm workspaces. Backend, Frontend y Shared viven y se versionan juntos: un cambio que toca la API y la pantalla va en el mismo Pull Request.
 
 
+
 ## Estructura
 
 ```text
@@ -129,6 +130,14 @@ El portal del alumno usa el mismo login que el personal (`#/login`); el sistema 
 - Regla general para cualquier alumno: usuario = `nombre.apellido@alumno.prece.local` (primer nombre y primer apellido, sin tildes; si hay homónimos se agregan los últimos 3 dígitos del DNI) y contraseña inicial = DNI.
 - Los alumnos de la nómina local (`alumnos.local.json`) tienen DNI provisorio (`99xxxxxx`) y **no pueden ingresar** hasta que Secretaría cargue el DNI real.
 - Son datos de desarrollo con la API en memoria: al reiniciarla, la cuenta vuelve a su estado inicial. Más detalle en `Backend/modules/student-portal/README.md`.
+
+## Datos compartidos y seguridad
+
+- **Todo lo que se carga queda en la base del servidor** y lo ven todos los perfiles desde cualquier dispositivo: planillas de asistencia del preceptor y de cada docente (`/api/v1/asistencias/planillas`, por alumno y con control de versión: si dos personas guardan a la vez, la segunda recibe un aviso y no se pisa nada), notas (boletín oficial), inasistencias, pedidos a Dirección (`/api/v1/pedidos-direccion`), comunicados y cátedras. En el navegador solo quedan preferencias de cada usuario (filtros, avisos vistos).
+- **Sin datos inventados:** si el servidor no responde, la pantalla avisa; no se muestran alumnos, docentes ni cantidades de ejemplo.
+- **Alcance:** preceptores y docentes solo ven y modifican los alumnos de sus cursos asignados (`middlewares/alcance-preceptor.middleware.mjs`), también cuando su cuenta viene de las tablas relacionales sin escuela en las asignaciones. Toda ruta exige sesión salvo `GET /health` y login/refresh/logout; los permisos por rol están en `Backend/config/permissions.config.mjs` y los verifican los tests `permisos-sistema`, `acceso-y-reset` y `alcance-sin-escuela`.
+- **Credenciales:** no se guardan contraseñas ni claves en el repositorio. Las de producción viven en el `compose.yaml`/`.env` del servidor (fuera de git). Los usuarios `@prece.local` con contraseñas de ejemplo existen **solo en desarrollo**; en producción el único usuario inicial es el administrador de `BOOTSTRAP_ADMIN_EMAIL`.
+- **Migración a tablas relacionales:** personal, docentes, divisiones, alumnos importados y grupos de taller ya están en tablas relacionales de SQL Server; el resto de las colecciones se migra por bloques (alumno completo, calendario, observaciones, resto) y después se eliminan las tablas `ps_*`.
 
 ## Forma de trabajo (8 personas, un repo)
 

@@ -35,12 +35,12 @@ export default function AsistenciasScreen() {
     h(
       View,
       { style: estilos.grilla },
-      h(Indicador, { titulo: "Ausentes", valor: totales.ausentes, detalle: "Jornadas completas", tono: totales.ausentes ? "alerta" : "neutro" }),
-      h(Indicador, { titulo: "Justificadas", valor: totales.ausentesJustificados, detalle: totales.ausentesPendientes ? `${totales.ausentesPendientes} pendiente(s)` : "De los ausentes", tono: "ok" }),
-      h(Indicador, { titulo: "Injustificadas", valor: totales.ausentesInjustificados, detalle: "De los ausentes", tono: totales.ausentesInjustificados ? "peligro" : "neutro" }),
-      h(Indicador, { titulo: "Llegadas tarde", valor: totales.llegadasTarde, detalle: "No suman como ausentes" }),
-      h(Indicador, { titulo: "Ausentes parciales", valor: totales.ausentesParciales, detalle: "Retiros anticipados" }),
-      h(Indicador, { titulo: "Presentes", valor: totales.presentesDisponible ? totales.presentes : "Sin registro", detalle: "El sistema registra solo inasistencias" })
+      h(Indicador, { titulo: "Ausentes", icono: "calendario", valor: totales.ausentes, detalle: "Jornadas completas", tono: "neutro" }),
+      h(Indicador, { titulo: "Justificadas", icono: "tilde", valor: totales.ausentesJustificados, detalle: totales.ausentesPendientes ? `${totales.ausentesPendientes} pendiente(s)` : "De los ausentes", tono: "ok" }),
+      h(Indicador, { titulo: "Injustificadas", icono: "alerta", valor: totales.ausentesInjustificados, detalle: "De los ausentes", tono: "neutro" }),
+      h(Indicador, { titulo: "Llegadas tarde", icono: "reloj", valor: totales.llegadasTarde, detalle: "No suman como ausentes" }),
+      h(Indicador, { titulo: "Ausentes parciales", icono: "calendario", valor: totales.ausentesParciales, detalle: "Retiros anticipados" }),
+      h(Indicador, { titulo: "Presentes", icono: "usuario", valor: totales.presentesDisponible ? totales.presentes : "Sin registro", detalle: "El sistema registra solo inasistencias" })
     ),
     h(
       Tarjeta,
@@ -68,7 +68,7 @@ export default function AsistenciasScreen() {
 }
 
 const estilos = StyleSheet.create({
-  grilla: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  grilla: { flexDirection: "row", flexWrap: "wrap", columnGap: 10, rowGap: 10 },
   fila: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, borderTopColor: PORTAL.linea, borderTopWidth: StyleSheet.hairlineWidth },
   fecha: { fontSize: 15, fontWeight: "700", color: PORTAL.titulo },
   detalle: { fontSize: 12.5, color: PORTAL.subtitulo }

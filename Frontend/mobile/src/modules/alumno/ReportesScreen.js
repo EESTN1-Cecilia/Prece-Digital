@@ -6,6 +6,7 @@ import { Text, View, StyleSheet, Pressable } from "react-native";
 import { obtenerPrevias, obtenerSituacion } from "../../services/alumno-api.js";
 import { PORTAL } from "../../theme/tokens.js";
 import { fechaCorta, filtrarSituacion, tonoDeEstado } from "../../utils/alumno-reglas.js";
+import { Icono } from "./iconos.js";
 import { Cargando, Chips, Encabezado, ErrorCarga, Indicador, Insignia, Nota, Pantalla, Tarjeta, Vacio, h, useDatos } from "./componentes.js";
 
 function Situacion() {
@@ -107,10 +108,10 @@ function Previas() {
 }
 
 const REPORTES = [
-  { clave: "boletin", titulo: "Boletín", texto: "Calificaciones por período y estado de cada materia. Se imprime en A4." },
-  { clave: "asistencias", titulo: "Asistencias", texto: "Inasistencias, llegadas tarde y retiros anticipados, con su justificación." },
-  { clave: "situacion", titulo: "Situación académica", texto: "Materias con TEP, notas menores a 6 y materias pendientes." },
-  { clave: "previas", titulo: "Previas", texto: "Materias pendientes de aprobación de ciclos anteriores." }
+  { clave: "boletin", icono: "libro", titulo: "Boletín", texto: "Calificaciones por período y estado de cada materia. Se imprime en A4." },
+  { clave: "asistencias", icono: "calendario", titulo: "Asistencias", texto: "Inasistencias, llegadas tarde y retiros anticipados, con su justificación." },
+  { clave: "situacion", icono: "grafico", titulo: "Situación académica", texto: "Materias con TEP, notas menores a 6 y materias pendientes." },
+  { clave: "previas", icono: "portapapeles", titulo: "Previas", texto: "Materias pendientes de aprobación de ciclos anteriores." }
 ];
 
 export default function ReportesScreen({ irA, sub = null }) {
@@ -122,7 +123,7 @@ export default function ReportesScreen({ irA, sub = null }) {
     return h(
       Pantalla,
       null,
-      h(Pressable, { onPress: () => setSeccion(null), accessibilityRole: "button" }, h(Text, { style: estilos.enlace }, "← Mis Reportes")),
+      h(Pressable, { onPress: () => setSeccion(null), accessibilityRole: "button", style: { flexDirection: "row", alignItems: "center", gap: 4 } }, h(Text, { style: estilos.enlace }, "← Volver a Mis Reportes")),
       h(Encabezado, { titulo: seccion === "situacion" ? "Mi Situación Académica" : "Mis Previas", descripcion: seccion === "situacion" ? "Materias con TEP, notas menores a 6 y pendientes." : "Materias pendientes de ciclos anteriores." }),
       seccion === "situacion" ? h(Situacion) : h(Previas)
     );
@@ -136,21 +137,25 @@ export default function ReportesScreen({ irA, sub = null }) {
       h(
         Pressable,
         { key: reporte.clave, onPress: () => abrir(reporte.clave), accessibilityRole: "button", style: ({ pressed }) => [estilos.reporte, pressed && { opacity: 0.85 }] },
-        h(View, { style: { flex: 1, gap: 2 } }, h(Text, { style: estilos.titulo }, reporte.titulo), h(Text, { style: estilos.detalle }, reporte.texto)),
-        h(Text, { style: estilos.chevron }, "›")
+        h(View, { style: estilos.reporteIcono }, h(Icono, { nombre: reporte.icono, tamano: 22, color: "#7a2530" })),
+        h(View, { style: { flex: 1, gap: 3 } }, h(Text, { style: estilos.reporteTitulo }, reporte.titulo), h(Text, { style: estilos.reporteTexto }, reporte.texto)),
+        h(Icono, { nombre: "chevron", tamano: 20, color: "#7a2530" })
       )
     )
   );
 }
 
 const estilos = StyleSheet.create({
-  grilla: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  grilla: { flexDirection: "row", flexWrap: "wrap", columnGap: 10, rowGap: 10 },
   fila: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, borderTopColor: PORTAL.linea, borderTopWidth: StyleSheet.hairlineWidth },
   fila2: { gap: 6, paddingVertical: 8, borderTopColor: PORTAL.linea, borderTopWidth: StyleSheet.hairlineWidth },
   filaCabecera: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   titulo: { fontSize: 15, fontWeight: "800", color: PORTAL.titulo },
   detalle: { fontSize: 12.5, color: PORTAL.subtitulo },
-  reporte: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: PORTAL.linea, backgroundColor: PORTAL.blanco },
+  reporte: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 18, paddingHorizontal: 16, borderRadius: 16, borderLeftWidth: 7, borderLeftColor: "#7a2530", backgroundColor: PORTAL.blanco, shadowColor: "#40141c", shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  reporteIcono: { width: 46, height: 46, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "#f3dfe1" },
+  reporteTitulo: { fontSize: 17, fontWeight: "800", color: "#1d2a44" },
+  reporteTexto: { fontSize: 13.5, lineHeight: 19, color: "#404040" },
   chevron: { fontSize: 26, color: PORTAL.bordo2 },
   enlace: { fontSize: 13, fontWeight: "700", color: PORTAL.bordo2, textDecorationLine: "underline" }
 });

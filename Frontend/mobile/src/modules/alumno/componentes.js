@@ -5,6 +5,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { PORTAL } from "../../theme/tokens.js";
+import { Icono } from "./iconos.js";
+
+/* Colores del portal web (Frontend/web/src/styles/alumno-portal/portal.css). */
+export const WEB = { bordo: "#591c23", bordo2: "#7a2530", suave: "#f6eced", iconoFondo: "#f3dfe1", titulo: "#1d2a44", subtitulo: "#5b6b86", gris: "#8c8c8c", linea: "#e3dfdf" };
+const SOMBRA = { shadowColor: "#40141c", shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: 3 };
 
 export const h = React.createElement;
 
@@ -81,12 +86,13 @@ export function Encabezado({ titulo, descripcion }) {
     View,
     { style: estilos.encabezado },
     h(Text, { style: estilos.encabezadoTitulo, accessibilityRole: "header" }, titulo),
-    descripcion ? h(Text, { style: estilos.encabezadoTexto }, descripcion) : null
+    descripcion ? h(Text, { style: estilos.encabezadoTexto }, descripcion) : null,
+    h(View, { style: estilos.encabezadoLinea })
   );
 }
 
-export function Tarjeta({ titulo, children }) {
-  return h(View, { style: estilos.tarjeta }, titulo ? h(Text, { style: estilos.tarjetaTitulo }, titulo) : null, children);
+export function Tarjeta({ titulo, children, acento = true }) {
+  return h(View, { style: [estilos.tarjeta, acento && estilos.tarjetaAcento] }, titulo ? h(Text, { style: estilos.tarjetaTitulo }, titulo) : null, children);
 }
 
 export function Nota({ children }) {
@@ -106,11 +112,21 @@ export function Insignia({ texto, tono = "neutro" }) {
   return h(View, { style: [estilos.insignia, { backgroundColor: fondo }] }, h(Text, { style: [estilos.insigniaTexto, { color }] }, texto));
 }
 
-export function Indicador({ titulo, valor, detalle, tono = "neutro", onPress }) {
-  const [color] = TONOS[tono] ?? TONOS.neutro;
+/* Indicador como .pa-indicador de la web: etiqueta, valor y detalle, con borde
+   izquierdo de color e icono en un circulo arriba a la derecha. */
+export function Indicador({ titulo, valor, detalle, tono = "neutro", onPress, icono }) {
+  const [color, fondo] = TONOS[tono] ?? TONOS.neutro;
+  const sinDato = valor === null || valor === undefined;
+  const esTexto = typeof valor === "string" && !/^\d+$/.test(valor);
+  const borde = tono === "neutro" ? WEB.bordo2 : color;
   const contenido = [
-    h(Text, { key: "t", style: estilos.indicadorTitulo }, titulo),
-    h(Text, { key: "v", style: [estilos.indicadorValor, { color: valor === null || valor === undefined ? PORTAL.gris : color }] }, String(valor ?? "—")),
+    h(
+      View,
+      { key: "a", style: estilos.indicadorArriba },
+      h(Text, { style: estilos.indicadorTitulo, numberOfLines: 2 }, titulo),
+      icono ? h(View, { style: [estilos.indicadorIcono, { backgroundColor: tono === "neutro" ? WEB.iconoFondo : fondo }] }, h(Icono, { nombre: icono, tamano: 18, color: borde })) : null
+    ),
+    h(Text, { key: "v", style: [estilos.indicadorValor, esTexto && estilos.indicadorValorTexto, { color: sinDato ? PORTAL.gris : tono === "neutro" ? WEB.titulo : color }] }, String(valor ?? "—")),
     detalle ? h(Text, { key: "d", style: estilos.indicadorDetalle }, detalle) : null
   ];
 
@@ -121,15 +137,16 @@ export function Indicador({ titulo, valor, detalle, tono = "neutro", onPress }) 
           onPress,
           accessibilityRole: "button",
           accessibilityLabel: `${titulo}: ${valor ?? "sin dato"}`,
-          style: ({ pressed }) => [estilos.indicador, pressed && estilos.presionado]
+          style: ({ pressed }) => [estilos.indicador, { borderLeftColor: borde }, pressed && estilos.presionado]
         },
         contenido
       )
-    : h(View, { style: estilos.indicador, accessible: true, accessibilityLabel: `${titulo}: ${valor ?? "sin dato"}` }, contenido);
+    : h(View, { style: [estilos.indicador, { borderLeftColor: borde }], accessible: true, accessibilityLabel: `${titulo}: ${valor ?? "sin dato"}` }, contenido);
 }
 
-export function Boton({ texto, onPress, variante = "primario", deshabilitado = false, cargando = false }) {
+export function Boton({ texto, onPress, variante = "primario", deshabilitado = false, cargando = false, icono }) {
   const primario = variante === "primario";
+  const colorTexto = primario ? PORTAL.blanco : WEB.bordo;
   return h(
     Pressable,
     {
@@ -147,8 +164,8 @@ export function Boton({ texto, onPress, variante = "primario", deshabilitado = f
     h(
       View,
       { style: estilos.botonFila },
-      cargando ? h(ActivityIndicator, { size: "small", color: primario ? PORTAL.blanco : PORTAL.bordo2 }) : null,
-      h(Text, { style: [estilos.botonTexto, { color: primario ? PORTAL.blanco : PORTAL.bordo2 }] }, texto)
+      cargando ? h(ActivityIndicator, { size: "small", color: colorTexto }) : icono ? h(Icono, { nombre: icono, tamano: 19, color: colorTexto }) : null,
+      h(Text, { style: [estilos.botonTexto, { color: colorTexto }] }, texto)
     )
   );
 }
@@ -240,32 +257,37 @@ export function Aviso({ tipo = "error", children }) {
 }
 
 export const estilos = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: PORTAL.fondo },
-  pantallaContenido: { padding: 16, gap: 14, paddingBottom: 32 },
+  pantalla: { flex: 1, backgroundColor: "#f7f4f4" },
+  pantallaContenido: { padding: 16, gap: 14, paddingBottom: 36 },
   centro: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
   presionado: { opacity: 0.85 },
   deshabilitado: { opacity: 0.6 },
-  encabezado: { gap: 2 },
-  encabezadoTitulo: { fontSize: 24, fontWeight: "800", color: PORTAL.titulo },
-  encabezadoTexto: { fontSize: 14, color: PORTAL.subtitulo },
-  tarjeta: { backgroundColor: PORTAL.blanco, borderColor: PORTAL.linea, borderWidth: 1, borderRadius: 14, padding: 14, gap: 10 },
-  tarjetaTitulo: { fontSize: 16, fontWeight: "800", color: PORTAL.titulo },
-  nota: { fontSize: 12, lineHeight: 17, color: PORTAL.subtitulo },
+  encabezado: { gap: 0 },
+  encabezadoTitulo: { fontSize: 26, fontWeight: "800", lineHeight: 30, letterSpacing: -0.3, color: WEB.titulo },
+  encabezadoLinea: { width: 38, height: 3, borderRadius: 2, backgroundColor: WEB.bordo2 },
+  tarjetaAcento: { borderLeftWidth: 5, borderLeftColor: WEB.bordo2 },
+  indicadorArriba: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  indicadorIcono: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  indicadorValorTexto: { fontSize: 22 },
+  encabezadoTexto: { marginTop: 4, marginBottom: 8, fontSize: 13.5, color: WEB.subtitulo },
+  tarjeta: { backgroundColor: PORTAL.blanco, borderRadius: 16, padding: 16, gap: 12, ...SOMBRA },
+  tarjetaTitulo: { fontSize: 19, fontWeight: "800", color: WEB.titulo },
+  nota: { fontSize: 12.5, lineHeight: 18, color: WEB.subtitulo },
   insignia: { alignSelf: "flex-start", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   insigniaTexto: { fontSize: 12, fontWeight: "700" },
-  indicador: { flexBasis: "47%", flexGrow: 1, backgroundColor: PORTAL.blanco, borderColor: PORTAL.linea, borderWidth: 1, borderRadius: 14, padding: 14, gap: 2, minHeight: 96 },
-  indicadorTitulo: { fontSize: 13, fontWeight: "700", color: PORTAL.titulo },
-  indicadorValor: { fontSize: 30, fontWeight: "800" },
-  indicadorDetalle: { fontSize: 11.5, color: PORTAL.subtitulo },
-  boton: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 999, paddingHorizontal: 18 },
-  botonPrimario: { backgroundColor: PORTAL.bordo2 },
-  botonClaro: { backgroundColor: PORTAL.blanco, borderColor: PORTAL.bordo2, borderWidth: 1.5 },
+  indicador: { flexBasis: "47%", flexGrow: 1, backgroundColor: PORTAL.blanco, borderRadius: 14, borderLeftWidth: 5, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 12, gap: 2, minHeight: 104, ...SOMBRA },
+  indicadorTitulo: { flex: 1, fontSize: 12.5, fontWeight: "600", color: WEB.subtitulo },
+  indicadorValor: { fontSize: 26, fontWeight: "800", lineHeight: 30 },
+  indicadorDetalle: { fontSize: 11, lineHeight: 14, color: WEB.gris },
+  boton: { minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 18 },
+  botonPrimario: { backgroundColor: WEB.bordo },
+  botonClaro: { backgroundColor: PORTAL.blanco, borderColor: WEB.bordo, borderWidth: 1.5 },
   botonFila: { flexDirection: "row", alignItems: "center", gap: 8 },
-  botonTexto: { fontSize: 14.5, fontWeight: "700" },
+  botonTexto: { fontSize: 15, fontWeight: "700" },
   chips: { gap: 8, paddingVertical: 2 },
-  chip: { minHeight: 36, justifyContent: "center", borderRadius: 999, borderWidth: 1, borderColor: PORTAL.linea, backgroundColor: PORTAL.blanco, paddingHorizontal: 14 },
-  chipActivo: { backgroundColor: PORTAL.bordo2, borderColor: PORTAL.bordo2 },
-  chipTexto: { fontSize: 13, fontWeight: "600", color: PORTAL.grisOscuro },
+  chip: { minHeight: 38, justifyContent: "center", borderRadius: 999, borderWidth: 1, borderColor: WEB.linea, backgroundColor: PORTAL.blanco, paddingHorizontal: 16 },
+  chipActivo: { backgroundColor: WEB.bordo, borderColor: WEB.bordo },
+  chipTexto: { fontSize: 13.5, fontWeight: "600", color: WEB.titulo },
   chipTextoActivo: { color: PORTAL.blanco },
   requisitos: { gap: 2 },
   requisito: { fontSize: 12.5 },
@@ -283,7 +305,7 @@ export const estilos = StyleSheet.create({
   avisoOk: { backgroundColor: PORTAL.okFondo, borderColor: PORTAL.ok },
   avisoTitulo: { fontSize: 14, fontWeight: "800", color: PORTAL.peligro },
   avisoTexto: { fontSize: 13, color: PORTAL.peligro },
-  vacio: { alignItems: "center", padding: 16, gap: 4 },
-  vacioTitulo: { fontSize: 14, fontWeight: "700", color: PORTAL.grisOscuro, textAlign: "center" },
+  vacio: { alignItems: "center", paddingVertical: 26, paddingHorizontal: 12, gap: 6 },
+  vacioTitulo: { fontSize: 16, lineHeight: 23, fontWeight: "500", color: "#2b2b2b", textAlign: "center" },
   vacioTexto: { fontSize: 12.5, color: PORTAL.subtitulo, textAlign: "center" }
 });
