@@ -66,10 +66,21 @@ export async function guardarTokens(tokens) {
   refreshToken = refresh;
   cargaIniciada = true;
 
-  await Promise.all([
-    escribirSeguro(CLAVE_ACCESS_TOKEN, access),
-    escribirSeguro(CLAVE_REFRESH_TOKEN, refresh)
-  ]);
+  /* El guardado en el dispositivo es "lo mejor posible": los tokens ya estan en
+     memoria y la sesion funciona. Algunos equipos (por ejemplo tablets Fire de
+     Amazon) fallan al escribir en el almacen seguro; antes eso hacia que el login
+     pareciera fallar aunque el Backend ya hubiera aceptado las credenciales. Si no
+     se pudo guardar, la sesion dura hasta cerrar la app y nunca se guarda en un
+     lugar inseguro. */
+  try {
+    await Promise.all([
+      escribirSeguro(CLAVE_ACCESS_TOKEN, access),
+      escribirSeguro(CLAVE_REFRESH_TOKEN, refresh)
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function limpiarTokens() {

@@ -18,6 +18,9 @@ function validar(datos) {
   return Object.keys(errores).length ? errores : null;
 }
 
+/* El APK vive en /srv/sitios/precedigital/descargas y nginx lo publica en esta ruta. */
+const URL_APP_ANDROID = "/descargas/prece-digital.apk";
+
 export default function LoginView({ titulo = "Iniciar Sesión" }) {
   const { iniciarSesion } = useSesion();
   const [datos, setDatos] = useState(INICIAL);
@@ -309,6 +312,20 @@ export default function LoginView({ titulo = "Iniciar Sesión" }) {
               )
         )
       ),
+
+      // Descarga de la app Android (solo se ofrece en el inicio de sesion, no al activar cuenta)
+      titulo === "Activar Cuenta"
+        ? null
+        : h(
+            "a",
+            {
+              href: URL_APP_ANDROID,
+              download: "prece-digital.apk",
+              className: "login-app-download"
+            },
+            h("span", null, "Descargar app Android"),
+            h("small", null, "Solo para alumnos")
+          ),
 
       // 5. Nota de pie de tarjeta con sello institucional
       h(

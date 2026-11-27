@@ -29,6 +29,20 @@ function normalizarSesion(payload) {
   };
 }
 
+/* Tiempo maximo que se espera a que el almacen seguro termine de escribir los
+   tokens. Los tokens ya quedan en memoria apenas se llama a guardarTokens: si el
+   guardado en el dispositivo tarda, la pantalla no se queda esperando (antes el
+   login parecia no responder hasta minimizar y volver a abrir la app). */
+const ESPERA_GUARDADO_MS = 1500;
+
+async function guardarSinBloquear(payload) {
+  const guardado = guardarTokens(payload);
+  /* Si falla despues de la espera, el error no debe quedar sin manejar. */
+  guardado.catch(() => {});
+
+  await Promise.race([guardado, new Promise((resolver) => setTimeout(resolver, ESPERA_GUARDADO_MS))]);
+}
+
 export async function iniciarSesion({ email, password }) {
   const payload = await pedir(RUTA_LOGIN, {
     metodo: "POST",
@@ -37,7 +51,7 @@ export async function iniciarSesion({ email, password }) {
     permitirRenovacion: false
   });
 
-  await guardarTokens(payload);
+  await guardarSinBloquear(payload);
 
   return normalizarSesion(payload);
 }
