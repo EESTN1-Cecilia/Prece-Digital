@@ -31,6 +31,12 @@ import attendanceAlertsRepository from "../attendance-alerts/attendance-alerts.r
 import academicRecordsRepository from "../academic-records/academic-records.repository.mjs";
 import courseChangesRepository from "../course-changes/course-changes.repository.mjs";
 import workshopsRepository from "../workshops/workshops.repository.mjs";
+import planillasRepository from "../attendance/planillas.repository.mjs";
+
+function unirConPlanilla(registros, dePlanilla) {
+  const ocupados = new Set(registros.map((registro) => `${registro.alumnoId}|${registro.fecha}`));
+  return [...registros, ...dePlanilla.filter((registro) => !ocupados.has(`${registro.alumnoId}|${registro.fecha}`))];
+}
 
 export function agruparPor(lista, clave) {
   const mapa = new Map();
@@ -144,12 +150,17 @@ const studentPortalRepository = {
     return agruparPor(inasistenciasRepository.list({}), "alumnoId");
   },
 
+  /* Registros por tipo + marcas de la planilla oficial del preceptor. Si un dia
+     ya tiene registro cargado a mano, vale ese y la marca de la planilla se ignora. */
   registrosAsistenciaDe(alumnoId) {
-    return attendanceAlertsRepository.listInasistencias({ alumnoId });
+    return unirConPlanilla(attendanceAlertsRepository.listInasistencias({ alumnoId }), planillasRepository.registrosOficiales(alumnoId));
   },
 
   registrosAsistenciaPorAlumno() {
-    return agruparPor(attendanceAlertsRepository.listInasistencias({}), "alumnoId");
+    return agruparPor(
+      unirConPlanilla(attendanceAlertsRepository.listInasistencias({}), planillasRepository.registrosOficiales()),
+      "alumnoId"
+    );
   },
 
   /* ---------------- Situacion academica ---------------------------------- */
